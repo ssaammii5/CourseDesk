@@ -1,0 +1,172 @@
+# ==========================================
+# OS & Editor Files
+# ==========================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+*.sublime-*
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Ignore VS Code settings but keep shared extensions
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ==========================================
+# Environment & Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+*.local
+
+# ==========================================
+# Node.js (Root, Backend, Worker, Frontends)
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# Yarn Plug'n'Play (If applicable)
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ==========================================
+# TypeScript
+# ==========================================
+*.tsbuildinfo
+
+# ==========================================
+# NestJS / Backend (backend & worker)
+# ==========================================
+dist/
+build/
+.nest/
+
+# ==========================================
+# Next.js (frontend / admin-frontend)
+# ==========================================
+.next/
+out/
+frontend/.next/
+frontend/out/
+admin-frontend/.next/
+admin-frontend/out/
+next-env.d.ts
+.vercel
+
+# ==========================================
+# Svelte / Vite (widget)
+# ==========================================
+widget/dist/
+widget/dist-ssr/
+widget/.vite/
+widget/.svelte-kit/
+
+# ==========================================
+# Python (ai-service)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+ai-service/venv/
+ai-service/env/
+ai-service/.venv/
+
+# Caches & Builds
+ai-service/.pytest_cache/
+ai-service/.mypy_cache/
+ai-service/.ruff_cache/
+ai-service/*.egg-info/
+ai-service/dist/
+ai-service/build/
+
+# ==========================================
+# Docker
+# ==========================================
+docker-compose.override.yml
+*.tar
+*.tar.gz
+# Note: Do not ignore .dockerignore files, they should be committed!
+
+# ==========================================
+# Database & Data (Local Docker Volumes)
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+redis_data/
+*.dump
+*.backup
+
+# ==========================================
+# Logs & Temporary Files
+# ==========================================
+logs/
+*.log
+tmp/
+temp/
+*.pid
+*.seed
+
+# ==========================================
+# Testing & Coverage (Cross-Platform)
+# ==========================================
+coverage/
+.nyc_output/
+*.lcov
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# ==========================================
+# AI / ML Models & Embeddings (Large Files)
+# ==========================================
+*.h5
+*.onnx
+*.pt
+*.bin
+*.safetensors
+*.gguf
+ai-service/embeddings_cache/
+ai-service/models/*.pkl
+ai-service/models/*.joblib
+
+# ==========================================
+# Misc Caches
+# ==========================================
+.cache/
+.eslintcache
+.stylelintcache
+
+# ==========================================
+# Custom Files
+# ==========================================
+*.local.md
+*.local.txt
