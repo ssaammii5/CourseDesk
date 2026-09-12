@@ -181,28 +181,28 @@ export function AdminCoursesView() {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search courses or teachers..."
+                        placeholder="Search courses or instructors..."
                         className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
-                <select
-                    value={programFilter}
-                    onChange={(e) => setProgramFilter(e.target.value)}
-                    className="rounded-md border border-gray-400/80 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                >
-                    <option value="all">All Programs</option>
-                    {programOptions.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                    ))}
-                </select>
                 <select
                     value={departmentFilter}
                     onChange={(e) => setDepartmentFilter(e.target.value)}
                     className="rounded-md border border-gray-400/80 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                 >
-                    <option value="all">All Departments</option>
+                    <option value="all">All Categories</option>
                     {departmentOptions.map((d) => (
                         <option key={d} value={d}>{d}</option>
+                    ))}
+                </select>
+                <select
+                    value={programFilter}
+                    onChange={(e) => setProgramFilter(e.target.value)}
+                    className="rounded-md border border-gray-400/80 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                >
+                    <option value="all">All Tracks / Levels</option>
+                    {programOptions.map((p) => (
+                        <option key={p} value={p}>{p}</option>
                     ))}
                 </select>
                 <select
@@ -210,7 +210,7 @@ export function AdminCoursesView() {
                     onChange={(e) => setSessionFilter(e.target.value)}
                     className="rounded-md border border-gray-400/80 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                 >
-                    <option value="all">All Sessions</option>
+                    <option value="all">All Cohorts / Schedules</option>
                     {sessionOptions.map((s) => (
                         <option key={s} value={s}>{s}</option>
                     ))}
@@ -220,12 +220,12 @@ export function AdminCoursesView() {
             <div className="mt-6">
                 <DataTable
                     columns={[
-                        { key: "name", header: "Course Name" },
-                        { key: "program", header: "Program" },
-                        { key: "department", header: "Department" },
+                        { key: "name", header: "Course Title" },
+                        { key: "department", header: "Category" },
+                        { key: "program", header: "Track / Level" },
                         {
                             key: "teachers",
-                            header: "Teachers",
+                            header: "Instructors",
                             render: (c: AdminCourse) => {
                                 const names = (courseNames[c.id] ?? []).join(", ");
                                 return names ? (
@@ -237,13 +237,13 @@ export function AdminCoursesView() {
                         },
                         {
                             key: "students",
-                            header: "Students",
+                            header: "Learners",
                             className: "text-center",
                             render: (c: AdminCourse) => (
                                 <span className="text-sm text-gray-900">{c.studentIds.length}</span>
                             ),
                         },
-                        { key: "session", header: "Session" },
+                        { key: "session", header: "Cohort / Schedule" },
                         {
                             key: "isActive",
                             header: "Status",

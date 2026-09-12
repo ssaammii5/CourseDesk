@@ -27,7 +27,7 @@ interface ClassesLayout {
     sort: SortMode;
 }
 
-const STORAGE_KEY = "eclassroompro.classes.layout.v1";
+const STORAGE_KEY = "coursedesk.courses.layout.v1";
 
 function defaultLayout(ids: number[]): ClassesLayout {
     return { order: ids, hiddenIds: [], sort: "custom" };
@@ -64,7 +64,7 @@ function mapCourseToHomeClass(c: CourseDto): HomeClass {
         name: c.name,
         subject: c.subject || c.program,
         teacherId: c.teacherId ?? 0,
-        teacherName: c.teacherName ?? "No teacher assigned",
+        teacherName: c.teacherName ?? "No instructor assigned",
         studentCount: c.studentCount,
         headerColor: headerColorFor(c.id),
         emoji: emojiFor(c.id),
@@ -199,11 +199,11 @@ export function ClassesSection() {
     return (
         <section className="rounded-xl bg-[#f9fafc] px-6 py-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl text-gray-800">Classes</h2>
+                <h2 className="text-xl text-gray-800">My Courses</h2>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <div className="relative">
                         <select
-                            aria-label="Sort classes"
+                            aria-label="Sort courses"
                             value={layout.sort}
                             onChange={(e) => handleSortChange(e.target.value)}
                             className="cursor-pointer appearance-none rounded-full border border-gray-400 bg-transparent py-2 pl-4 pr-9 text-sm font-medium text-[#1a73e8] hover:bg-blue-50 focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
@@ -231,7 +231,7 @@ export function ClassesSection() {
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#e8f0fe] px-4 py-2.5">
                     <p className="text-sm text-[#174ea6]">
                         {canDrag
-                            ? "Edit mode: drag cards to rearrange your classes."
+                            ? "Edit mode: drag cards to rearrange your courses."
                             : 'Edit mode: switch sorting to "Custom order" to drag cards.'}
                     </p>
                     <button
@@ -247,8 +247,8 @@ export function ClassesSection() {
             {visibleClasses.length === 0 ? (
                 <p className="py-10 text-center text-sm text-gray-600">
                     {homeClasses.length === 0
-                        ? "You are not enrolled in any classes."
-                        : "All of your classes are hidden. Expand the Hidden classes section below to unhide them."}
+                        ? "You are not enrolled in any courses."
+                        : "All of your courses are hidden. Expand the Hidden courses section below to unhide them."}
                 </p>
             ) : (
                 <div
@@ -282,7 +282,7 @@ export function ClassesSection() {
                     >
                         <span className="flex items-center gap-3 text-base font-medium text-gray-800">
                             <EyeOff className="h-5 w-5 text-gray-600" />
-                            Hidden classes
+                            Hidden courses
                             <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-300/80 px-1.5 text-xs font-semibold text-gray-700">
                                 {hiddenClasses.length}
                             </span>
@@ -335,7 +335,7 @@ function ClassCard({ course, isHidden = false, canDrag = false, onToggleHide }: 
                         <p className="mt-1 truncate text-sm font-medium text-white/90">{course.subject}</p>
                     )}
                     <p className="mt-1 truncate text-xs text-white/90">
-                        {course.teacherName ?? "No teacher assigned"}
+                        {course.teacherName ?? "No instructor assigned"}
                     </p>
                     <span
                         className={`absolute -bottom-7 right-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white ${course.teacherAvatarClass}`}
@@ -389,7 +389,7 @@ function ClassCard({ course, isHidden = false, canDrag = false, onToggleHide }: 
                                     className="flex w-full cursor-pointer items-center gap-3 px-5 py-3 text-left text-sm text-gray-900 hover:bg-gray-900/5"
                                 >
                                     {isHidden ? <Eye className="h-4 w-4 text-gray-700" /> : <EyeOff className="h-4 w-4 text-gray-700" />}
-                                    {isHidden ? "Unhide class" : "Hide class"}
+                                    {isHidden ? "Unhide course" : "Hide course"}
                                 </button>
                             </div>
                         </>

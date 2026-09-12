@@ -105,7 +105,7 @@ export function AdminDashboardView() {
         <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
             <h1 className="text-3xl font-semibold text-gray-900">Admin Dashboard</h1>
             <p className="mt-1 text-sm text-gray-600">
-                Overview of your classroom management system
+                Overview of your course & assignment management workspace
             </p>
 
             {/* Stat Cards */}
@@ -113,14 +113,14 @@ export function AdminDashboardView() {
                 <StatCard
                     icon={<UserRound className="h-6 w-6 text-[#174ea6]" />}
                     iconBg="bg-[#d7e3fd]"
-                    label="Teachers"
+                    label="Instructors"
                     value={totalTeachers}
                     onClick={() => router.push("/teachers")}
                 />
                 <StatCard
                     icon={<Users className="h-6 w-6 text-[#137333]" />}
                     iconBg="bg-[#ceead6]"
-                    label="Students"
+                    label="Learners"
                     value={totalStudents}
                     onClick={() => router.push("/students")}
                 />
@@ -157,7 +157,7 @@ export function AdminDashboardView() {
                     <h2 className="text-lg font-medium text-gray-900">User Distribution</h2>
                     <div className="mt-4 space-y-4">
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Teachers</span>
+                            <span className="text-sm text-gray-700">Instructors</span>
                             <span className="text-sm font-semibold text-gray-900">{totalTeachers}</span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-gray-200">
@@ -168,7 +168,7 @@ export function AdminDashboardView() {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Students</span>
+                            <span className="text-sm text-gray-700">Learners</span>
                             <span className="text-sm font-semibold text-gray-900">{totalStudents}</span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-gray-200">

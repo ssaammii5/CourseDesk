@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
-    GraduationCap,
-    Building2,
+    Layers,
+    Tag,
     CalendarRange,
     BookOpen,
     Search,
@@ -232,7 +232,7 @@ export function AdminSubmissionsView() {
     const columns = [
         {
             key: "studentId",
-            header: "ID",
+            header: "Learner ID",
             width: "13%",
             truncate: true,
             render: (s: SubmissionRow) =>
@@ -244,7 +244,7 @@ export function AdminSubmissionsView() {
         },
         {
             key: "studentName",
-            header: "Student",
+            header: "Learner",
             width: "18%",
             truncate: true,
         },
@@ -323,7 +323,7 @@ export function AdminSubmissionsView() {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search by student, ID, assignment, or course..."
+                        placeholder="Search by learner, ID, assignment, or course..."
                         className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
@@ -359,7 +359,7 @@ export function AdminSubmissionsView() {
             {filtersOpen && (
                 <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Program</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Track / Level</span>
                         <select
                             value={programFilter}
                             onChange={(e) => {
@@ -369,33 +369,33 @@ export function AdminSubmissionsView() {
                             }}
                             className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
-                            <option value="all">All Programs</option>
+                            <option value="all">All Tracks</option>
                             {PROGRAM_TYPES.map((p) => (
                                 <option key={p} value={p}>{p}</option>
                             ))}
                         </select>
                     </label>
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Department</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Category / Domain</span>
                         <select
                             value={departmentFilter}
                             onChange={(e) => setDepartmentFilter(e.target.value)}
                             className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
-                            <option value="all">All Departments</option>
+                            <option value="all">All Categories</option>
                             {departmentOptions.map((d) => (
                                 <option key={d} value={d}>{d}</option>
                             ))}
                         </select>
                     </label>
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Session</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Cohort / Schedule</span>
                         <select
                             value={sessionFilter}
                             onChange={(e) => setSessionFilter(e.target.value)}
                             className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
-                            <option value="all">All Sessions</option>
+                            <option value="all">All Cohorts</option>
                             {sessionOptions.map((s) => (
                                 <option key={s} value={s}>{s}</option>
                             ))}
@@ -429,7 +429,7 @@ export function AdminSubmissionsView() {
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-300 pb-3">
                             <div className="flex min-w-0 items-center gap-3">
                                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7e3fd] text-[#174ea6] sm:h-10 sm:w-10">
-                                    <GraduationCap className="h-5 w-5" />
+                                    <Layers className="h-5 w-5" />
                                 </span>
                                 <h2 className="truncate text-xl text-gray-900 sm:text-2xl">{pg.name}</h2>
                             </div>
@@ -442,7 +442,7 @@ export function AdminSubmissionsView() {
                             <div key={dept.name} className="mt-6">
                                 <div className="flex flex-wrap items-center justify-between gap-2 px-1">
                                     <div className="flex min-w-0 items-center gap-2">
-                                        <Building2 className="h-4 w-4 shrink-0 text-gray-500" />
+                                        <Tag className="h-4 w-4 shrink-0 text-gray-500" />
                                         <h3 className="min-w-0 truncate text-lg text-gray-800 sm:text-xl">
                                             {dept.name}
                                         </h3>

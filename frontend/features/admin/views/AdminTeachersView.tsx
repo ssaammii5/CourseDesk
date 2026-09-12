@@ -167,12 +167,13 @@ export function AdminTeachersView() {
         for (const u of filtered) {
             if (!hasFullDetails(u)) continue;
             const d = u.teacherDetails!;
-            const dept = d.department.trim();
+            const dept = (d.department ?? "").trim() || "General";
+            const desg = d.designation ?? "Instructor";
 
             if (!map.has(dept)) map.set(dept, new Map());
             const desgMap = map.get(dept)!;
-            if (!desgMap.has(d.designation)) desgMap.set(d.designation, []);
-            desgMap.get(d.designation)!.push(u);
+            if (!desgMap.has(desg)) desgMap.set(desg, []);
+            desgMap.get(desg)!.push(u);
         }
 
         const departments = Array.from(map.keys()).sort((a, b) => a.localeCompare(b));
@@ -276,7 +277,7 @@ export function AdminTeachersView() {
         },
         {
             key: "teacherId",
-            header: "Teacher ID",
+            header: "Instructor ID",
             width: "13%",
             truncate: true,
             render: (u: AdminUser) =>
@@ -290,7 +291,7 @@ export function AdminTeachersView() {
         },
         {
             key: "designation",
-            header: "Designation",
+            header: "Title / Role",
             width: "15%",
             truncate: true,
             render: (u: AdminUser) =>
@@ -373,9 +374,9 @@ export function AdminTeachersView() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Manage Teachers</h1>
+                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Manage Instructors</h1>
                     <p className="mt-1 text-sm text-gray-600">
-                        {users.length} teachers total • {filtered.length} shown
+                        {users.length} instructors total • {filtered.length} shown
                     </p>
                 </div>
                 <button
@@ -384,7 +385,7 @@ export function AdminTeachersView() {
                     className="flex cursor-pointer items-center gap-2 self-start rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] sm:self-auto"
                 >
                     <Plus className="h-4 w-4" />
-                    Add Teacher
+                    Add Instructor
                 </button>
             </div>
 
@@ -396,7 +397,7 @@ export function AdminTeachersView() {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search by name, email, or teacher ID..."
+                        placeholder="Search by name, email, or instructor ID..."
                         className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>

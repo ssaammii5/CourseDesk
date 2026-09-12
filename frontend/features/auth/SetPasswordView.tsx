@@ -1,14 +1,14 @@
 "use client";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Check, Eye, EyeOff, GraduationCap, Loader2, Lock } from "lucide-react";
+import { Check, Eye, EyeOff, Layers, Loader2, Lock } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 function SetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const email = searchParams.get("email") ?? "user@eclassroompro.com";
+    const email = searchParams.get("email") ?? "user@coursedesk.com";
 
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -62,7 +62,7 @@ function SetPasswordForm() {
                     </span>
                     <h2 className="mt-6 text-3xl font-semibold text-gray-900">Password set successfully</h2>
                     <p className="mt-3 max-w-sm text-sm leading-6 text-gray-600">
-                        Your password has been created. You can now sign in to eClassroomPro with your email and new password.
+                        Your password has been created. You can now sign in to CourseDesk with your email and new password.
                     </p>
                     <button
                         type="button"
@@ -89,16 +89,16 @@ function SetPasswordForm() {
                 <div className="relative">
                     <div className="flex items-center gap-3">
                         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-                            <GraduationCap className="h-6 w-6" />
+                            <Layers className="h-6 w-6" />
                         </span>
-                        <span className="text-xl font-medium">eClassroomPro</span>
+                        <span className="text-xl font-semibold tracking-tight">CourseDesk</span>
                     </div>
                     <h1 className="mt-10 text-4xl font-bold tracking-[0.06em] sm:text-5xl">SET PASSWORD</h1>
                     <p className="mt-4 text-sm font-semibold uppercase tracking-[0.28em] text-white/90">
                         Secure your account
                     </p>
                     <p className="mt-6 max-w-md text-sm leading-6 text-white/80">
-                        An administrator has created your account. Set a strong password below to activate your access to the classroom platform.
+                        An administrator has created your account. Set a strong password below to activate your access to the CourseDesk platform.
                     </p>
                 </div>
             </div>

@@ -19,7 +19,7 @@ Base.metadata.create_all(engine)
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
-app = FastAPI(title="eClassroomPro API")
+app = FastAPI(title="CourseDesk API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,4 +43,4 @@ app.include_router(dashboard_routes)
 
 @app.get("/", tags=["health"])
 def health_check():
-    return {"status": "ok", "app": "eClassroomPro API"}
+    return {"status": "ok", "app": "CourseDesk API"}

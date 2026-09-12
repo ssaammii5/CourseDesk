@@ -7,11 +7,11 @@ export function PeopleView({ people }: { people: ClassPerson[] }) {
 
     return (
         <div className="mx-auto w-full max-w-[1100px] px-6 py-10 sm:px-10">
-            {/* Teachers */}
+            {/* Instructors */}
             <section>
-                <h2 className="text-3xl text-gray-900">Teachers</h2>
+                <h2 className="text-3xl text-gray-900">Instructors</h2>
                 {teachers.length === 0 ? (
-                    <p className="mt-6 text-sm text-gray-600">No teachers assigned yet.</p>
+                    <p className="mt-6 text-sm text-gray-600">No instructors assigned yet.</p>
                 ) : (
                     <ul className="mt-5 divide-y divide-gray-300 border-y border-gray-300">
                         {teachers.map((p) => (
@@ -21,14 +21,16 @@ export function PeopleView({ people }: { people: ClassPerson[] }) {
                 )}
             </section>
 
-            {/* Classmates */}
+            {/* Learners */}
             <section className="mt-14">
                 <div className="flex items-end justify-between">
-                    <h2 className="text-3xl text-gray-900">Classmates</h2>
-                    <p className="text-sm font-medium text-gray-800">{students.length} students</p>
+                    <h2 className="text-3xl text-gray-900">Learners</h2>
+                    <p className="text-sm font-medium text-gray-800">
+                        {students.length} learner{students.length === 1 ? "" : "s"}
+                    </p>
                 </div>
                 {students.length === 0 ? (
-                    <p className="mt-6 text-sm text-gray-600">No students enrolled yet.</p>
+                    <p className="mt-6 text-sm text-gray-600">No learners enrolled yet.</p>
                 ) : (
                     <ul className="mt-5 divide-y divide-gray-300 border-y border-gray-300">
                         {students.map((p) => (

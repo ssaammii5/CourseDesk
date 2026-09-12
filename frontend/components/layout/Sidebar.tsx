@@ -9,11 +9,11 @@ import {
     ClipboardList,
     Cog,
     FileText,
-    GraduationCap,
     House,
+    Layers,
     ListTodo,
-    School,
     Settings,
+    Tag,
     Users,
     UserRound,
 } from "lucide-react";
@@ -135,10 +135,10 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
 
                     {isAdmin && (
                         <>
-                            <NavItem open={open} active={pathname === "/teachers"} href="/teachers" icon={<UserRound className="h-6 w-6" />} label="Teachers" />
-                            <NavItem open={open} active={pathname === "/students"} href="/students" icon={<Users className="h-6 w-6" />} label="Students" />
+                            <NavItem open={open} active={pathname === "/teachers"} href="/teachers" icon={<UserRound className="h-6 w-6" />} label="Instructors" />
+                            <NavItem open={open} active={pathname === "/students"} href="/students" icon={<Users className="h-6 w-6" />} label="Learners" />
                             <NavItem open={open} active={pathname === "/courses"} href="/courses" icon={<BookOpen className="h-6 w-6" />} label="Courses" />
-                            <NavItem open={open} active={pathname === "/academics"} href="/academics" icon={<School className="h-6 w-6" />} label="Academics" />
+                            <NavItem open={open} active={pathname === "/academics"} href="/academics" icon={<Tag className="h-6 w-6" />} label="Categories & Tracks" />
                             <NavItem open={open} active={pathname === "/assignments"} href="/assignments" icon={<ClipboardList className="h-6 w-6" />} label="Assignments" />
                             <NavItem open={open} active={pathname === "/submissions"} href="/submissions" icon={<FileText className="h-6 w-6" />} label="Submissions" />
                             <NavItem open={open} active={pathname === "/app-settings"} href="/app-settings" icon={<Cog className="h-6 w-6" />} label="App Settings" />
@@ -159,8 +159,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                                     className="flex items-center justify-between rounded-full px-6 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-900/5"
                                 >
                                     <span className="flex items-center gap-4">
-                                        <GraduationCap className="h-6 w-6 text-gray-600" />
-                                        Enrolled
+                                        <BookOpen className="h-6 w-6 text-gray-600" />
+                                        My Courses
                                     </span>
                                     <ChevronUp
                                         className={`h-5 w-5 text-gray-600 transition-transform ${enrolledOpen ? "" : "rotate-180"}`}
@@ -169,12 +169,12 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                             ) : (
                                 <button
                                     type="button"
-                                    title="Enrolled"
-                                    aria-label="Enrolled"
+                                    title="My Courses"
+                                    aria-label="My Courses"
                                     onClick={onExpand}
                                     className="my-2 flex h-11 w-full items-center justify-center rounded-full text-gray-700 hover:bg-gray-900/5"
                                 >
-                                    <GraduationCap className="h-6 w-6" />
+                                    <BookOpen className="h-6 w-6" />
                                 </button>
                             )}
 

@@ -138,12 +138,9 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
         clearError(key as string);
     };
 
-    const setAddressField = <K extends keyof StudentDetails["address"]>(
-        key: K,
-        value: StudentDetails["address"][K]
-    ) => {
-        setDetails((prev) => ({ ...prev, address: { ...(prev.address ?? {}), [key]: value } }));
-        clearError(key as string);
+    const setAddressField = (key: "street" | "city" | "state" | "zip" | "country", value?: string) => {
+        setDetails((prev) => ({ ...prev, address: { ...(prev.address ?? {}), [key]: value ?? "" } }));
+        clearError(key);
     };
 
     const validate = () => {
@@ -151,7 +148,7 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
         if (!name.trim()) next.name = "Full name is required.";
         if (!email.trim()) next.email = "Email is required.";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Enter a valid email.";
-        if (!details.studentId.trim()) next.studentId = "Student ID is required.";
+        if (!details.studentId?.trim()) next.studentId = "Learner ID is required.";
         return next;
     };
 
@@ -160,7 +157,7 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
         const errs = validate();
         setErrors(errs);
         if (Object.keys(errs).length > 0) {
-            setSaveError("Please fill in all required fields (Name, Email, and Student ID).");
+            setSaveError("Please fill in all required fields (Name, Email, and Learner ID).");
             return;
         }
 
@@ -174,7 +171,7 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                 studentDetails: { ...details },
             });
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Failed to save student details.";
+            const msg = err instanceof Error ? err.message : "Failed to save learner details.";
             setSaveError(msg);
         } finally {
             setIsSaving(false);
@@ -189,7 +186,7 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
                     <h2 className="text-xl font-semibold text-gray-900">
-                        {user ? "Edit Student" : "Add New Student"}
+                        {user ? "Edit Learner" : "Add New Learner"}
                     </h2>
                     <button
                         type="button"
@@ -245,77 +242,80 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                         </div>
                     </section>
 
-                    {/* Personal Information */}
+                    {/* Learner Profile */}
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Personal Information</h3>
-                        <div className="grid gap-5 md:grid-cols-2">
-                            <Field label="Father's Name" value={details.fathersName} onChange={(v) => setField("fathersName", v)} />
-                            <Field label="Mother's Name" value={details.mothersName} onChange={(v) => setField("mothersName", v)} />
-                            <Field label="Date of Birth" type="date" value={details.dateOfBirth} onChange={(v) => setField("dateOfBirth", v)} />
-                            <Field label="Mobile Number" type="tel" value={details.mobile} onChange={(v) => setField("mobile", v)} />
-                            <Field label="Nationality" value={details.nationality} onChange={(v) => setField("nationality", v)} />
-                        </div>
-                    </section>
-
-                    {/* Academic Details */}
-                    <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Academic Details</h3>
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Learner Profile</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
-                                label="Student ID"
+                                label="Learner ID"
                                 required
-                                value={details.studentId}
+                                value={details.studentId ?? ""}
                                 onChange={(v) => setField("studentId", v)}
+                                placeholder="e.g., LRN-2001"
                                 error={errors.studentId}
                             />
-                            <Field label="Registration No" value={details.regNo} onChange={(v) => setField("regNo", v)} />
+                            <Field
+                                label="Organization / Company"
+                                value={details.organization ?? ""}
+                                onChange={(v) => setField("organization", v)}
+                                placeholder="e.g., Acme Tech, Independent"
+                            />
+                            <Field
+                                label="Professional Role / Headline"
+                                value={details.headline ?? ""}
+                                onChange={(v) => setField("headline", v)}
+                                placeholder="e.g., Aspiring Full-Stack Developer"
+                            />
                             <SelectField
-                                label="Department"
-                                value={details.department}
+                                label="Primary Domain / Category"
+                                value={details.department ?? ""}
                                 onChange={(v) => setField("department", v)}
                                 options={departmentOptions}
-                                placeholder="Select department"
+                                placeholder="Select category"
                             />
                             <SelectField
-                                label="Current Program"
-                                value={details.currentProgram}
+                                label="Learning Track / Level"
+                                value={details.currentProgram ?? "Professional Track"}
                                 onChange={(v) => setField("currentProgram", v as StudentProgramType)}
                                 options={programOptions}
-                                placeholder="Select program type"
+                                placeholder="Select track or level"
                             />
-                            <Field label="Session" value={details.session} onChange={(v) => setField("session", v)} />
                             <SelectField
-                                label="Semester"
-                                value={details.semesterSession}
+                                label="Cohort / Schedule"
+                                value={details.semesterSession ?? ""}
                                 onChange={(v) => setField("semesterSession", v)}
                                 options={semesterOptions}
-                                error={errors.semesterSession}
-                                placeholder="Select semester"
+                                placeholder="Select cohort or self-paced"
                             />
                         </div>
                     </section>
 
-                    {/* Location */}
+                    {/* Contact & Location */}
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Location</h3>
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Contact &amp; Location</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
-                                label="Street Address"
-                                value={details.address?.street ?? ""}
-                                onChange={(v) => setAddressField("street", v)}
-                                placeholder="House, Road, Area"
+                                label="Mobile Number"
+                                type="tel"
+                                value={details.mobile ?? ""}
+                                onChange={(v) => setField("mobile", v)}
+                                placeholder="+1 (555) 000-0000"
                             />
-                            <Field label="City" value={details.address?.city ?? ""} onChange={(v) => setAddressField("city", v)} />
-                            <Field label="State / Province" value={details.address?.state ?? ""} onChange={(v) => setAddressField("state", v)} />
-                            <Field label="ZIP / Postal Code" value={details.address?.zip ?? ""} onChange={(v) => setAddressField("zip", v)} />
-                            <SelectField
-                                label="Country"
-                                value={details.address?.country ?? ""}
-                                onChange={(v) => setAddressField("country", v)}
-                                options={COUNTRIES}
-                                error={errors.country}
-                                placeholder="Select your country"
+                            <Field
+                                label="City / Region"
+                                value={details.address?.city ?? ""}
+                                onChange={(v) => setAddressField("city", v)}
+                                placeholder="e.g., San Francisco"
                             />
+                            <div className="md:col-span-2">
+                                <SelectField
+                                    label="Country"
+                                    value={details.address?.country ?? ""}
+                                    onChange={(v) => setAddressField("country", v)}
+                                    options={COUNTRIES}
+                                    placeholder="Select your country"
+                                />
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -336,7 +336,7 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                         disabled={isSaving}
                         className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isSaving ? "Saving..." : user ? "Save Changes" : "Create Student"}
+                        {isSaving ? "Saving..." : user ? "Save Changes" : "Create Learner"}
                     </button>
                 </div>
             </div>

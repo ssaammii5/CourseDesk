@@ -40,11 +40,13 @@ export const COUNTRIES = [
 ];
 
 export const PROGRAM_TYPES: ProgramType[] = [
+    "Professional Track",
+    "Foundations",
+    "Advanced Mastery",
+    "Executive Certificate",
+    "Open Workshop",
     "Undergraduate",
     "Postgraduate",
-    "Post Graduate Diploma",
-    "M.Phil",
-    "PhD",
 ];
 
 export const MAX_AVATAR_SIZE = 2 * 1024 * 1024;

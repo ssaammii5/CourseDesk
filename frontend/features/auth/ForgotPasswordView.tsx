@@ -7,7 +7,7 @@ import {
     Check,
     Eye,
     EyeOff,
-    GraduationCap,
+    Layers,
     Loader2,
     Lock,
     Mail,
@@ -196,9 +196,9 @@ export function ForgotPasswordView() {
                 <div className="relative">
                     <div className="flex items-center gap-3">
                         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-                            <GraduationCap className="h-6 w-6" />
+                            <Layers className="h-6 w-6" />
                         </span>
-                        <span className="text-xl font-medium">eClassroomPro</span>
+                        <span className="text-xl font-semibold tracking-tight">CourseDesk</span>
                     </div>
 
                     <h1 className="mt-10 text-4xl font-bold tracking-[0.06em] sm:text-5xl">
@@ -209,7 +209,7 @@ export function ForgotPasswordView() {
                     </p>
                     <p className="mt-6 max-w-md text-sm leading-6 text-white/80">
                         Verify your email with a one-time code, choose a new password, and
-                        you&apos;ll be back in your classroom in minutes.
+                        you&apos;ll be back in your workspace in minutes.
                     </p>
                 </div>
             </div>
@@ -485,7 +485,7 @@ export function ForgotPasswordView() {
                             <h2 className="mt-6 text-3xl font-semibold text-gray-900">Password updated</h2>
                             <p className="mt-3 max-w-sm text-sm leading-6 text-gray-600">
                                 Your password has been changed successfully. Use your new password
-                                to sign in to eClassroomPro.
+                                to sign in to CourseDesk.
                             </p>
                             <button
                                 type="button"

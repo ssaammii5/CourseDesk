@@ -196,11 +196,12 @@ export function AdminStudentsView() {
         for (const u of filtered) {
             if (!hasFullDetails(u)) continue;
             const d = u.studentDetails!;
-            const dept = d.department.trim();
-            const ssKey = d.semesterSession.trim();
+            const dept = (d.department ?? "").trim() || "General";
+            const ssKey = (d.semesterSession ?? "").trim() || "Self-Paced";
+            const prog = d.currentProgram ?? "General Track";
 
-            if (!map.has(d.currentProgram)) map.set(d.currentProgram, new Map());
-            const deptMap = map.get(d.currentProgram)!;
+            if (!map.has(prog)) map.set(prog, new Map());
+            const deptMap = map.get(prog)!;
             if (!deptMap.has(dept)) deptMap.set(dept, new Map());
             const ssMap = deptMap.get(dept)!;
             if (!ssMap.has(ssKey)) ssMap.set(ssKey, new Map());
@@ -301,7 +302,7 @@ export function AdminStudentsView() {
                     studentDetails,
                 });
                 setSuccessMessage(
-                    `Student "${data.name}" created successfully. A password setup link has been sent to ${data.email}.`
+                    `Learner "${data.name}" created successfully. A password setup link has been sent to ${data.email}.`
                 );
                 window.setTimeout(() => setSuccessMessage(null), 6000);
             }
@@ -310,7 +311,7 @@ export function AdminStudentsView() {
             setEditingUser(null);
             await loadUsers();
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Failed to save student.";
+            const msg = err instanceof Error ? err.message : "Failed to save learner.";
             setError(msg);
             throw err;
         }
@@ -323,7 +324,7 @@ export function AdminStudentsView() {
             setDeleteTarget(null);
             await loadUsers();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to delete student.");
+            setError(err instanceof Error ? err.message : "Failed to delete learner.");
             setDeleteTarget(null);
         }
     };
@@ -343,7 +344,7 @@ export function AdminStudentsView() {
         },
         {
             key: "studentId",
-            header: "Student ID",
+            header: "Learner ID",
             width: "13%",
             truncate: true,
             render: (u: AdminUser) =>
@@ -357,13 +358,13 @@ export function AdminStudentsView() {
         },
         {
             key: "department",
-            header: "Department",
+            header: "Category / Track",
             width: "15%",
             truncate: true,
             render: (u: AdminUser) =>
-                u.studentDetails?.department ? (
-                    <span className="text-sm text-gray-900" title={u.studentDetails.department}>
-                        {u.studentDetails.department}
+                u.studentDetails?.department || u.studentDetails?.currentProgram ? (
+                    <span className="text-sm text-gray-900">
+                        {u.studentDetails.department || u.studentDetails.currentProgram}
                     </span>
                 ) : (
                     <span className="text-gray-400">—</span>
@@ -440,9 +441,9 @@ export function AdminStudentsView() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Manage Students</h1>
+                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Manage Learners</h1>
                     <p className="mt-1 text-sm text-gray-600">
-                        {users.length} students total • {filtered.length} shown
+                        {users.length} learners total • {filtered.length} shown
                     </p>
                 </div>
                 <button
@@ -451,7 +452,7 @@ export function AdminStudentsView() {
                     className="flex cursor-pointer items-center gap-2 self-start rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] sm:self-auto"
                 >
                     <Plus className="h-4 w-4" />
-                    Add Student
+                    Add Learner
                 </button>
             </div>
 
@@ -463,14 +464,14 @@ export function AdminStudentsView() {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search by name, email, or student ID..."
+                        placeholder="Search by name, email, or learner ID..."
                         className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2">
                         <span className="whitespace-nowrap text-sm font-medium text-gray-700">
-                            Semester order
+                            Cohort order
                         </span>
                         <select
                             value={sessionSort}

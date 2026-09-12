@@ -1,6 +1,6 @@
 import type { ClassworkEntry } from "./schemas";
 
-const STORAGE_KEY = "eclassroompro.teacher.classwork.v1";
+const STORAGE_KEY = "coursedesk.instructor.coursework.v1";
 
 type Store = Record<string, ClassworkEntry[]>;
 

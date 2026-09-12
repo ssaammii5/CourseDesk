@@ -7,6 +7,7 @@ import {
     ChevronRight,
     ClipboardList,
     GraduationCap,
+    Layers,
     LogOut,
     Menu,
     MessageSquare,
@@ -101,11 +102,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 <IconButton label="Open menu" onClick={onMenuClick}>
                     <Menu className="h-6 w-6" />
                 </IconButton>
-                <Link href="/" className="ml-1 flex shrink-0 items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#188038]">
-                        <GraduationCap className="h-6 w-6 text-white" />
+                <Link href="/" className="ml-1 flex shrink-0 items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-sm shadow-blue-500/20">
+                        <Layers className="h-5 w-5 text-white" />
                     </span>
-                    <span className="text-[22px] text-gray-700 max-sm:hidden">Classroom</span>
+                    <span className="text-[21px] font-semibold tracking-tight text-gray-900 max-sm:hidden">
+                        Course<span className="text-blue-600">Desk</span>
+                    </span>
                 </Link>
 
                 {/* Class breadcrumb */}
@@ -146,10 +149,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     <span className="flex min-w-0 items-center">
                         <ChevronRight className="mx-1 h-5 w-5 shrink-0 text-gray-500" />
                         <span className="truncate text-[15px] font-medium text-gray-800">
-                            {isTeachers && "Manage Teachers"}
-                            {isStudents && "Manage Students"}
+                            {isTeachers && "Manage Instructors"}
+                            {isStudents && "Manage Learners"}
                             {isCourses && "Manage Courses"}
-                            {isAcademics && "Academics"}
+                            {isAcademics && "Categories & Tracks"}
                             {isAssignments && "All Assignments"}
                             {isSubmissions && "All Submissions"}
                             {isAppSettings && "App Settings"}

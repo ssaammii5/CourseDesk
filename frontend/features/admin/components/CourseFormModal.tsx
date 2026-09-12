@@ -394,10 +394,10 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
     const validate = () => {
         const next: Record<string, string> = {};
-        if (!program) next.program = "Program is required.";
-        if (!department) next.department = "Department is required.";
-        if (!session) next.session = "Session is required.";
-        if (!courseName) next.courseName = "Course name is required.";
+        if (!program) next.program = "Track / level is required.";
+        if (!department) next.department = "Category is required.";
+        if (!session) next.session = "Cohort / schedule is required.";
+        if (!courseName) next.courseName = "Course title is required.";
         return next;
     };
 
@@ -440,7 +440,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         <div className="grid gap-5 md:grid-cols-2">
                             <div>
                                 <label className="mb-1.5 block text-sm font-medium text-gray-800">
-                                    Program <span className="text-[#c5221f]">*</span>
+                                    Learning Track / Level <span className="text-[#c5221f]">*</span>
                                 </label>
                                 <div className="relative">
                                     <select
@@ -451,7 +451,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
                                             } ${program ? "text-gray-900" : "text-gray-600"}`}
                                     >
-                                        <option value="" disabled>Select program</option>
+                                        <option value="" disabled>Select track or level</option>
                                         {programOptions.map((p) => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
@@ -463,7 +463,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
                             <div>
                                 <label className="mb-1.5 block text-sm font-medium text-gray-800">
-                                    Department <span className="text-[#c5221f]">*</span>
+                                    Category / Domain <span className="text-[#c5221f]">*</span>
                                 </label>
                                 <div className="relative">
                                     <select
@@ -474,7 +474,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
                                             } ${department ? "text-gray-900" : "text-gray-600"}`}
                                     >
-                                        <option value="" disabled>Select department</option>
+                                        <option value="" disabled>Select category</option>
                                         {departmentOptions.map((d) => (
                                             <option key={d.value} value={d.value}>{d.label}</option>
                                         ))}
@@ -486,7 +486,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
                             <div>
                                 <label className="mb-1.5 block text-sm font-medium text-gray-800">
-                                    Session <span className="text-[#c5221f]">*</span>
+                                    Cohort / Schedule <span className="text-[#c5221f]">*</span>
                                 </label>
                                 <div className="relative">
                                     <select
@@ -497,7 +497,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
                                             } ${session ? "text-gray-900" : "text-gray-600"}`}
                                     >
-                                        <option value="" disabled>Select session</option>
+                                        <option value="" disabled>Select cohort / schedule</option>
                                         {sessionOptions.map((s) => (
                                             <option key={s} value={s}>{s}</option>
                                         ))}
@@ -510,7 +510,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="block text-sm font-medium text-gray-800">
-                                        Course Name <span className="text-[#c5221f]">*</span>
+                                        Course Title <span className="text-[#c5221f]">*</span>
                                     </label>
                                     {program && department && (
                                         <button
@@ -523,7 +523,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                         >
                                             {isCustomCourse
                                                 ? "← Pick from catalog/database"
-                                                : "+ Enter custom name"}
+                                                : "+ Enter custom title"}
                                         </button>
                                     )}
                                 </div>
@@ -548,15 +548,15 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             >
                                                 <option value="" disabled>
                                                     {!program || !department
-                                                        ? "Select program & department first"
+                                                        ? "Select track & category first"
                                                         : availableCourses.length === 0
                                                             ? "No catalog courses available"
-                                                            : "Select course name"}
+                                                            : "Select course title"}
                                                 </option>
                                                 {availableCourses.map((c) => (
                                                     <option key={c} value={c}>{c}</option>
                                                 ))}
-                                                <option value="__custom__">+ Enter custom course name...</option>
+                                                <option value="__custom__">+ Enter custom course title...</option>
                                             </select>
                                             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
                                         </>
@@ -565,7 +565,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             type="text"
                                             value={courseName}
                                             onChange={(e) => handleCourseNameChange(e.target.value)}
-                                            placeholder="e.g. CSE 420: Distributed Systems"
+                                            placeholder="e.g. Full-Stack Web Development Bootcamp"
                                             disabled={!program || !department}
                                             className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none ${errors.courseName
                                                 ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
@@ -581,7 +581,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
                     <section>
                         <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                            Assigned Teachers
+                            Assigned Instructors
                             {teacherIds.length > 0 && (
                                 <span className="ml-2 rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-medium text-[#174ea6]">
                                     {teacherIds.length} selected
@@ -590,7 +590,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         </h3>
                         <div className="mb-3">
                             <label className="mb-1.5 block text-sm font-medium text-gray-800">
-                                Select Department to view teachers
+                                Filter by Category / Domain
                             </label>
                             <div className="relative">
                                 <select
@@ -598,7 +598,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                     onChange={(e) => handleTeacherDeptChange(e.target.value)}
                                     className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 pr-10 text-[15px] text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 >
-                                    <option value="" disabled>Select department</option>
+                                    <option value="" disabled>Select category / domain</option>
                                     {departmentOptions.map((d) => (
                                         <option key={d.value} value={d.value}>{d.label}</option>
                                     ))}
@@ -609,7 +609,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         {teacherDeptFilter && (
                             <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200">
                                 {filteredTeachers.length === 0 ? (
-                                    <p className="px-4 py-3 text-sm text-gray-500">No active teachers in {teacherDeptFilter}.</p>
+                                    <p className="px-4 py-3 text-sm text-gray-500">No active instructors in {teacherDeptFilter}.</p>
                                 ) : (
                                     filteredTeachers.map((t) => (
                                         <label key={t.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-gray-50">
@@ -622,7 +622,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             <div className="min-w-0 flex-1">
                                                 <span className="block truncate text-sm text-gray-900">{t.name}</span>
                                                 <span className="block text-xs text-gray-500">
-                                                    {t.teacherDetails?.teacherId ?? "N/A"} • {t.teacherDetails?.department ?? "N/A"} • {t.teacherDetails?.designation ?? "N/A"}
+                                                    {t.teacherDetails?.teacherId ?? "N/A"} • {t.teacherDetails?.department ?? "N/A"} • {t.teacherDetails?.designation ?? "Instructor"}
                                                 </span>
                                             </div>
                                         </label>
@@ -649,7 +649,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
                     <section>
                         <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                            Enrolled Students
+                            Enrolled Learners
                             {totalEnrolledCount > 0 && (
                                 <span className="ml-2 rounded-full bg-[#e6f4ea] px-2 py-0.5 text-xs font-medium text-[#137333]">
                                     {totalEnrolledCount} enrolled
@@ -657,7 +657,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                             )}
                         </h3>
                         <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4">
-                            <p className="mb-3 text-sm font-medium text-gray-700">Group Enrollment</p>
+                            <p className="mb-3 text-sm font-medium text-gray-700">Cohort & Track Enrollment</p>
                             <div className="grid gap-3 sm:grid-cols-3">
                                 <div className="relative">
                                     <select
@@ -665,7 +665,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                         onChange={(e) => handleStudentProgramChange(e.target.value)}
                                         className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                     >
-                                        <option value="" disabled>Select program</option>
+                                        <option value="" disabled>Select track</option>
                                         {programOptions.map((p) => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
@@ -679,7 +679,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                         disabled={!studentProgram}
                                         className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!studentProgram ? "cursor-not-allowed bg-gray-100" : ""}`}
                                     >
-                                        <option value="" disabled>Select department</option>
+                                        <option value="" disabled>Select category</option>
                                         {departmentOptions.map((d) => (
                                             <option key={d.value} value={d.value}>{d.label}</option>
                                         ))}
@@ -693,7 +693,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                         disabled={!studentDept}
                                         className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!studentDept ? "cursor-not-allowed bg-gray-100" : ""}`}
                                     >
-                                        <option value="" disabled>Select session</option>
+                                        <option value="" disabled>Select cohort / schedule</option>
                                         {combinedStudentSessionOptions.map((s) => (
                                             <option key={s} value={s}>{s}</option>
                                         ))}
@@ -704,14 +704,14 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         </div>
 
                         <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4">
-                            <p className="mb-3 text-sm font-medium text-gray-700">Manual Enrollment</p>
+                            <p className="mb-3 text-sm font-medium text-gray-700">Individual Learner Enrollment</p>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                                 <input
                                     type="text"
                                     value={manualStudentSearch}
                                     onChange={(e) => handleManualSearch(e.target.value)}
-                                    placeholder="Type student ID, email, or name..."
+                                    placeholder="Type learner ID, email, or name..."
                                     className="w-full rounded-md border border-gray-400/80 py-2 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 />
                                 {showManualResults && manualStudentResults.length > 0 && (
@@ -748,7 +748,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         {enrolledGroups.length > 0 && (
                             <div className="mb-4">
                                 <p className="mb-2 text-sm font-medium text-gray-700">
-                                    Enrolled Groups ({enrolledGroups.length})
+                                    Enrolled Cohorts / Groups ({enrolledGroups.length})
                                 </p>
                                 <div className="space-y-2">
                                     {enrolledGroups.map((group, index) => (
@@ -762,7 +762,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                     {group.program} • {group.department} • {group.session}
                                                 </span>
                                                 <span className="block text-xs text-[#2e7d32]">
-                                                    {group.studentIds.length} student{group.studentIds.length === 1 ? "" : "s"} enrolled
+                                                    {group.studentIds.length} learner{group.studentIds.length === 1 ? "" : "s"} enrolled
                                                 </span>
                                             </div>
                                             <button
@@ -782,7 +782,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         {manualStudentIds.length > 0 && (
                             <div>
                                 <p className="mb-2 text-sm font-medium text-gray-700">
-                                    Manually Enrolled Students ({manualStudentIds.length})
+                                    Individually Enrolled Learners ({manualStudentIds.length})
                                 </p>
                                 <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200">
                                     {manualStudentIds.map((id) => {
@@ -799,7 +799,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                     type="button"
                                                     onClick={() => removeManualStudent(id)}
                                                     className="shrink-0 cursor-pointer rounded p-1 text-gray-500 hover:bg-red-50 hover:text-[#c5221f]"
-                                                    title="Remove student"
+                                                    title="Remove learner"
                                                 >
                                                     <X className="h-4 w-4" />
                                                 </button>

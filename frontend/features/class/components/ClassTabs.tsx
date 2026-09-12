@@ -2,7 +2,7 @@
 
 export const CLASS_TABS = [
     { id: "stream", label: "Stream" },
-    { id: "classwork", label: "Classwork" },
+    { id: "classwork", label: "Coursework" },
     { id: "people", label: "People" },
 ] as const;
 

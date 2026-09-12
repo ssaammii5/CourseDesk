@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Plus, Search, Pencil, Trash2, GraduationCap, CalendarRange, Building2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Layers, CalendarRange, Tag } from "lucide-react";
 import { DataTable, ConfirmDialog } from "@/components/ui";
 import { AcademicFormModal } from "../components/AcademicFormModal";
 import {
@@ -10,18 +10,18 @@ import {
     type AcademicProgramDto, type AcademicDepartmentDto, type AcademicSemesterDto,
 } from "@/lib/api/academics";
 
-type AcademicTab = "programs" | "departments" | "semesters";
+type AcademicTab = "departments" | "programs" | "semesters";
 
 const TABS: { id: AcademicTab; label: string; icon: React.ReactNode }[] = [
-    { id: "programs", label: "Programs", icon: <GraduationCap className="h-4 w-4" /> },
-    { id: "departments", label: "Departments", icon: <Building2 className="h-4 w-4" /> },
-    { id: "semesters", label: "Semesters", icon: <CalendarRange className="h-4 w-4" /> },
+    { id: "departments", label: "Categories", icon: <Tag className="h-4 w-4" /> },
+    { id: "programs", label: "Learning Tracks & Levels", icon: <Layers className="h-4 w-4" /> },
+    { id: "semesters", label: "Cohorts & Schedules", icon: <CalendarRange className="h-4 w-4" /> },
 ];
 
 type AcademicItem = { id: number; name: string; description?: string; code?: string };
 
 export function AdminAcademicsView() {
-    const [activeTab, setActiveTab] = useState<AcademicTab>("programs");
+    const [activeTab, setActiveTab] = useState<AcademicTab>("departments");
     const [programs, setPrograms] = useState<AcademicProgramDto[]>([]);
     const [departments, setDepartments] = useState<AcademicDepartmentDto[]>([]);
     const [semesters, setSemesters] = useState<AcademicSemesterDto[]>([]);
@@ -144,8 +144,8 @@ export function AdminAcademicsView() {
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-semibold text-gray-900">Academics</h1>
-                    <p className="mt-1 text-sm text-gray-600">Manage programs, departments, and semesters for your institution</p>
+                    <h1 className="text-3xl font-semibold text-gray-900">Categories &amp; Tracks</h1>
+                    <p className="mt-1 text-sm text-gray-600">Configure course categories, learning tracks, and delivery cohorts</p>
                 </div>
             </div>
 
@@ -168,6 +168,58 @@ export function AdminAcademicsView() {
                 </nav>
             </div>
 
+            {activeTab === "departments" && (
+                <div className="mt-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="relative max-w-sm flex-1">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                            <input
+                                type="text"
+                                value={departmentSearch}
+                                onChange={(e) => setDepartmentSearch(e.target.value)}
+                                placeholder="Search categories..."
+                                className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => openAddModal("department")}
+                            className="flex cursor-pointer items-center gap-2 self-start rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] sm:self-auto"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Category
+                        </button>
+                    </div>
+                    <div className="mt-6">
+                        <DataTable
+                            columns={[
+                                { key: "code", header: "Code", width: "120px" },
+                                { key: "name", header: "Category Name" },
+                                {
+                                    key: "actions",
+                                    header: "Actions",
+                                    width: "150px",
+                                    className: "text-right",
+                                    render: (d: AcademicDepartmentDto) => (
+                                        <div className="flex items-center justify-end gap-1">
+                                            <button type="button" title="Edit" onClick={() => openEditModal("department", d)} className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100">
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
+                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "department", id: d.id, name: d.name })} className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50">
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    ),
+                                },
+                            ]}
+                            data={filteredDepartments}
+                            keyExtractor={(d) => d.id}
+                            emptyMessage="No categories found."
+                        />
+                    </div>
+                </div>
+            )}
+
             {activeTab === "programs" && (
                 <div className="mt-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -177,7 +229,7 @@ export function AdminAcademicsView() {
                                 type="text"
                                 value={programSearch}
                                 onChange={(e) => setProgramSearch(e.target.value)}
-                                placeholder="Search programs..."
+                                placeholder="Search tracks..."
                                 className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         </div>
@@ -187,13 +239,13 @@ export function AdminAcademicsView() {
                             className="flex cursor-pointer items-center gap-2 self-start rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] sm:self-auto"
                         >
                             <Plus className="h-4 w-4" />
-                            Add Program
+                            Add Learning Track
                         </button>
                     </div>
                     <div className="mt-6">
                         <DataTable
                             columns={[
-                                { key: "name", header: "Program Name" },
+                                { key: "name", header: "Track / Level Name" },
                                 { key: "description", header: "Description" },
                                 {
                                     key: "actions",
@@ -214,59 +266,7 @@ export function AdminAcademicsView() {
                             ]}
                             data={filteredPrograms}
                             keyExtractor={(p) => p.id}
-                            emptyMessage="No programs found."
-                        />
-                    </div>
-                </div>
-            )}
-
-            {activeTab === "departments" && (
-                <div className="mt-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="relative max-w-sm flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-                            <input
-                                type="text"
-                                value={departmentSearch}
-                                onChange={(e) => setDepartmentSearch(e.target.value)}
-                                placeholder="Search departments..."
-                                className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                            />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => openAddModal("department")}
-                            className="flex cursor-pointer items-center gap-2 self-start rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] sm:self-auto"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Add Department
-                        </button>
-                    </div>
-                    <div className="mt-6">
-                        <DataTable
-                            columns={[
-                                { key: "code", header: "Code", width: "100px" },
-                                { key: "name", header: "Department Name" },
-                                {
-                                    key: "actions",
-                                    header: "Actions",
-                                    width: "150px",
-                                    className: "text-right",
-                                    render: (d: AcademicDepartmentDto) => (
-                                        <div className="flex items-center justify-end gap-1">
-                                            <button type="button" title="Edit" onClick={() => openEditModal("department", d)} className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100">
-                                                <Pencil className="h-4 w-4" />
-                                            </button>
-                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "department", id: d.id, name: d.name })} className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50">
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    ),
-                                },
-                            ]}
-                            data={filteredDepartments}
-                            keyExtractor={(d) => d.id}
-                            emptyMessage="No departments found."
+                            emptyMessage="No tracks found."
                         />
                     </div>
                 </div>
@@ -281,7 +281,7 @@ export function AdminAcademicsView() {
                                 type="text"
                                 value={semesterSearch}
                                 onChange={(e) => setSemesterSearch(e.target.value)}
-                                placeholder="Search semesters..."
+                                placeholder="Search cohorts..."
                                 className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         </div>
@@ -291,13 +291,13 @@ export function AdminAcademicsView() {
                             className="flex cursor-pointer items-center gap-2 self-start rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] sm:self-auto"
                         >
                             <Plus className="h-4 w-4" />
-                            Add Semester
+                            Add Cohort / Schedule
                         </button>
                     </div>
                     <div className="mt-6">
                         <DataTable
                             columns={[
-                                { key: "name", header: "Semester" },
+                                { key: "name", header: "Cohort / Schedule" },
                                 {
                                     key: "actions",
                                     header: "Actions",
@@ -317,7 +317,7 @@ export function AdminAcademicsView() {
                             ]}
                             data={filteredSemesters}
                             keyExtractor={(s) => s.id}
-                            emptyMessage="No semesters found."
+                            emptyMessage="No cohorts found."
                         />
                     </div>
                 </div>
@@ -333,7 +333,7 @@ export function AdminAcademicsView() {
 
             <ConfirmDialog
                 open={!!deleteTarget}
-                title={`Delete ${deleteTarget?.type === "program" ? "Program" : deleteTarget?.type === "semester" ? "Semester" : "Department"}`}
+                title={`Delete ${deleteTarget?.type === "program" ? "Track" : deleteTarget?.type === "semester" ? "Cohort" : "Category"}`}
                 message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
                 confirmLabel="Delete"
                 variant="danger"

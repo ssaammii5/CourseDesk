@@ -6,6 +6,12 @@ export const ROLE_STYLES: Record<"Admin" | "Teacher" | "Student", string> = {
     Student: "bg-[#e6f4ea] text-[#137333]",
 };
 
+export const ROLE_LABELS: Record<"Admin" | "Teacher" | "Student", string> = {
+    Admin: "Admin",
+    Teacher: "Instructor",
+    Student: "Learner",
+};
+
 export interface CurrentUser {
     id?: number;
     name: string;
@@ -39,7 +45,7 @@ export function avatarClassFor(role: string): string {
 }
 export const currentUser: CurrentUser = {
     name: "Admin User",
-    email: "admin@eclassroompro.com",
+    email: "admin@coursedesk.com",
     role: "Admin",
     avatarClass: "bg-[#c5221f]",
 };
@@ -52,11 +58,17 @@ export interface Address {
 }
 
 export type ProgramType =
+    | "Professional Track"
+    | "Foundations"
+    | "Advanced Mastery"
+    | "Certification Track"
+    | "Self-Paced / Open"
     | "Undergraduate"
     | "Postgraduate"
     | "Post Graduate Diploma"
     | "M.Phil"
-    | "PhD";
+    | "PhD"
+    | string;
 
 export interface StudentProfile {
     fullName: string;

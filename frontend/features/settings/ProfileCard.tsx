@@ -127,7 +127,7 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
     const validate = () => {
         const next: Record<string, string> = {};
         if (!form.fullName.trim()) next.fullName = "Full name is required.";
-        if (!form.studentId.trim()) next.studentId = "Student ID is required.";
+        if (user?.role === "Student" && !form.studentId.trim()) next.studentId = "Learner ID is required.";
         if (!form.permanentAddress.country) next.country = "Country is required.";
         return next;
     };
@@ -141,15 +141,15 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
         window.setTimeout(() => setFlash(false), 2000);
     };
 
-    const displayName = userName || form.fullName || user?.name || "Student";
+    const displayName = userName || form.fullName || user?.name || "User";
 
     return (
         <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
             <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
                 <div>
                     <h2 className="text-2xl text-gray-900">Profile</h2>
-                    <p className="mt-3 text-sm font-semibold text-gray-900">Student Information</p>
-                    <p className="mt-1 text-sm text-gray-700">View your personal, academic, and contact details.</p>
+                    <p className="mt-3 text-sm font-semibold text-gray-900">Account Details</p>
+                    <p className="mt-1 text-sm text-gray-700">View your personal, program, and contact details.</p>
                     {readOnly && (
                         <p className="mt-4 flex items-start gap-2 rounded-md bg-[#fef7e0] px-3 py-2.5 text-sm text-[#b06000]">
                             <Lock className="mt-0.5 h-4 w-4 shrink-0" />
@@ -164,7 +164,7 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
                         {avatarUrl ? (
                             <img src={avatarUrl} alt="Profile avatar" className="h-20 w-20 rounded-lg object-cover" />
                         ) : (
-                            <span className="flex h-20 w-20 items-center justify-center rounded-lg bg-purple-800 text-3xl text-white">
+                            <span className="flex h-20 w-20 items-center justify-center rounded-lg bg-blue-700 text-3xl text-white">
                                 {initialOf(displayName)}
                             </span>
                         )}
@@ -182,23 +182,19 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
                             <h3 className="mb-4 text-lg font-semibold text-gray-900">Personal Information</h3>
                             <div className="grid gap-5 md:grid-cols-2">
                                 <Field label="Full Name" value={form.fullName} onChange={(v) => setField("fullName", v)} required disabled={readOnly} error={errors.fullName} />
-                                <Field label="Father's Name" value={form.fathersName} onChange={(v) => setField("fathersName", v)} disabled={readOnly} />
-                                <Field label="Mother's Name" value={form.mothersName} onChange={(v) => setField("mothersName", v)} disabled={readOnly} />
-                                <Field label="Date of Birth" type="date" value={form.dateOfBirth} onChange={(v) => setField("dateOfBirth", v)} disabled={readOnly} />
                                 <Field label="Mobile Number" type="tel" value={form.mobile} onChange={(v) => setField("mobile", v)} disabled={readOnly} />
+                                <Field label="Date of Birth" type="date" value={form.dateOfBirth} onChange={(v) => setField("dateOfBirth", v)} disabled={readOnly} />
                                 <Field label="Nationality" value={form.nationality} onChange={(v) => setField("nationality", v)} disabled={readOnly} />
                             </div>
                         </div>
 
                         <div>
-                            <h3 className="mb-4 text-lg font-semibold text-gray-900">Academic Details</h3>
+                            <h3 className="mb-4 text-lg font-semibold text-gray-900">Learning Track &amp; Program</h3>
                             <div className="grid gap-5 md:grid-cols-2">
-                                <Field label="Student ID" value={form.studentId} onChange={(v) => setField("studentId", v)} required disabled={readOnly} error={errors.studentId} />
-                                <Field label="Registration No" value={form.regNo} onChange={(v) => setField("regNo", v)} disabled={readOnly} />
-                                <Field label="Department" value={form.department} onChange={(v) => setField("department", v)} disabled={readOnly} />
-                                <SelectField label="Current Program" value={form.currentProgram} onChange={(v) => setField("currentProgram", v as ProgramType)} options={PROGRAM_TYPES} disabled={readOnly} placeholder="Select program type" />
-                                <Field label="Session" value={form.session} onChange={(v) => setField("session", v)} disabled={readOnly} />
-                                <Field label="Semester" value={form.semesterSession || (form.semester ? `Semester ${form.semester}` : "")} onChange={(v) => setField("semesterSession", v)} disabled={readOnly} />
+                                <Field label="Learner ID" value={form.studentId} onChange={(v) => setField("studentId", v)} required={user?.role === "Student"} disabled={readOnly} error={errors.studentId} />
+                                <Field label="Category / Domain" value={form.department} onChange={(v) => setField("department", v)} disabled={readOnly} />
+                                <SelectField label="Learning Track / Level" value={form.currentProgram} onChange={(v) => setField("currentProgram", v as ProgramType)} options={PROGRAM_TYPES} disabled={readOnly} placeholder="Select track type" />
+                                <Field label="Cohort / Schedule" value={form.session || form.semesterSession || ""} onChange={(v) => setField("session", v)} disabled={readOnly} />
                             </div>
                         </div>
 

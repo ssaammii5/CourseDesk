@@ -62,7 +62,7 @@ SEMESTERS = [
 ]
 
 SETTINGS = [
-    ("site_name", "eClassroomPro", "The display name of the application", "General"),
+    ("site_name", "CourseDesk", "The display name of the application", "General"),
     ("max_file_size_mb", "10", "Maximum file upload size in MB", "General"),
     ("allowed_file_types", "pdf,doc,docx,zip,txt", "Comma-separated list of allowed file types", "General"),
     ("email_notifications_enabled", "true", "Enable email notifications for assignments", "Notifications"),

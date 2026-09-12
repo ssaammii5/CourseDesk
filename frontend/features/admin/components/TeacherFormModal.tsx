@@ -6,19 +6,23 @@ import { TEACHER_DEPARTMENTS } from "@/lib/adminData";
 import { Field, SelectField } from "@/components/ui";
 import { X } from "lucide-react";
 
-const DESIGNATION_TYPES: TeacherDesignation[] = [
-    "Professor",
-    "Associate Professor",
-    "Assistant Professor",
-    "Senior Lecturer",
+const DESIGNATION_TYPES: string[] = [
+    "Lead Instructor",
+    "Senior Instructor",
+    "Staff Engineer",
+    "Principal Designer",
+    "Course Creator",
+    "Industry Mentor",
+    "Workshop Lead",
     "Lecturer",
+    "Professor",
 ];
 
 const DEPARTMENT_OPTIONS: string[] = [...TEACHER_DEPARTMENTS];
 
 const EMPTY_DETAILS: TeacherDetails = {
     teacherId: "",
-    designation: "Assistant Professor",
+    designation: "Lead Instructor",
     department: "",
 };
 
@@ -64,9 +68,8 @@ export function TeacherFormModal({ open, user, onSave, onClose }: TeacherFormMod
         if (!name.trim()) next.name = "Full name is required.";
         if (!email.trim()) next.email = "Email is required.";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Enter a valid email.";
-        if (!details.teacherId.trim()) next.teacherId = "Teacher ID is required.";
-        if (!details.department) next.department = "Department is required.";
-        if (!details.designation) next.designation = "Designation is required.";
+        if (!details.teacherId?.trim()) next.teacherId = "Instructor ID is required.";
+        if (!details.department) next.department = "Domain / Category is required.";
         return next;
     };
 
@@ -92,7 +95,7 @@ export function TeacherFormModal({ open, user, onSave, onClose }: TeacherFormMod
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
                     <h2 className="text-xl font-semibold text-gray-900">
-                        {user ? "Edit Teacher" : "Add New Teacher"}
+                        {user ? "Edit Instructor" : "Add New Instructor"}
                     </h2>
                     <button
                         type="button"
@@ -114,7 +117,7 @@ export function TeacherFormModal({ open, user, onSave, onClose }: TeacherFormMod
                                 required
                                 value={name}
                                 onChange={(v) => { setName(v); clearError("name"); }}
-                                placeholder="Enter full name"
+                                placeholder="e.g., Sarah Jenkins"
                                 error={errors.name}
                             />
                             <Field
@@ -123,7 +126,7 @@ export function TeacherFormModal({ open, user, onSave, onClose }: TeacherFormMod
                                 type="email"
                                 value={email}
                                 onChange={(v) => { setEmail(v); clearError("email"); }}
-                                placeholder="Enter email address"
+                                placeholder="instructor@coursedesk.com"
                                 error={errors.email}
                             />
                         </div>
@@ -146,30 +149,34 @@ export function TeacherFormModal({ open, user, onSave, onClose }: TeacherFormMod
                         <h3 className="mb-4 text-lg font-semibold text-gray-900">Professional Details</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
-                                label="Teacher ID"
+                                label="Instructor ID"
                                 required
-                                value={details.teacherId}
+                                value={details.teacherId ?? ""}
                                 onChange={(v) => setField("teacherId", v)}
-                                placeholder="e.g., FAC-2001"
+                                placeholder="e.g., INS-101"
                                 error={errors.teacherId}
                             />
                             <SelectField
-                                label="Department"
+                                label="Title / Role"
+                                value={details.designation ?? "Lead Instructor"}
+                                onChange={(v) => setField("designation", v as any)}
+                                options={DESIGNATION_TYPES}
+                                placeholder="Select title"
+                            />
+                            <SelectField
+                                label="Primary Domain / Category"
                                 required
-                                value={details.department}
+                                value={details.department ?? ""}
                                 onChange={(v) => setField("department", v)}
                                 options={DEPARTMENT_OPTIONS}
                                 error={errors.department}
-                                placeholder="Select department"
+                                placeholder="Select domain or category"
                             />
-                            <SelectField
-                                label="Designation"
-                                required
-                                value={details.designation}
-                                onChange={(v) => setField("designation", v as TeacherDesignation)}
-                                options={DESIGNATION_TYPES}
-                                error={errors.designation}
-                                placeholder="Select designation"
+                            <Field
+                                label="Organization / Institution"
+                                value={details.organization ?? ""}
+                                onChange={(v) => setField("organization", v)}
+                                placeholder="e.g., Google, Stripe, Independent"
                             />
                         </div>
                     </section>
@@ -189,7 +196,7 @@ export function TeacherFormModal({ open, user, onSave, onClose }: TeacherFormMod
                         onClick={handleSubmit}
                         className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
                     >
-                        {user ? "Save Changes" : "Create Teacher"}
+                        {user ? "Save Changes" : "Create Instructor"}
                     </button>
                 </div>
             </div>

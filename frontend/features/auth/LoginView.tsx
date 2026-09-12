@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { GraduationCap, Loader2, Lock, Mail } from "lucide-react";
+import { Layers, Loader2, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,18 +81,18 @@ export function LoginView() {
                     {/* Logo */}
                     <div className="flex items-center gap-3">
                         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-                            <GraduationCap className="h-6 w-6" />
+                            <Layers className="h-6 w-6" />
                         </span>
-                        <span className="text-xl font-medium">eClassroomPro</span>
+                        <span className="text-xl font-semibold tracking-tight">CourseDesk</span>
                     </div>
                     <h1 className="mt-10 text-4xl font-bold tracking-[0.06em] sm:text-5xl">WELCOME</h1>
-                    <p className="mt-4 text-sm font-semibold uppercase tracking-[0.28em] text-white/90">
-                        One classroom for every role
+                    <p className="mt-4 text-sm font-semibold uppercase tracking-[0.24em] text-white/90">
+                        Modern Course &amp; Assignment Platform
                     </p>
                     <p className="mt-6 max-w-md text-sm leading-6 text-white/80">
-                        Role-based Assignment &amp; Submission Management System for admins,
-                        teachers and students. Create assignments, collect submissions, grade
-                        work and share feedback — all in one place.
+                        Universal workspace for instructors, learners, and program managers.
+                        Manage cohorts, organize learning tracks, deliver assignments, and review
+                        submissions seamlessly in one place.
                     </p>
                 </div>
             </div>
@@ -106,7 +106,7 @@ export function LoginView() {
                 />
                 <div className="relative mx-auto w-full max-w-md">
                     <h2 className="text-3xl font-semibold text-gray-900">Sign in</h2>
-                    <p className="mt-2 text-sm text-gray-600">to continue to eClassroomPro</p>
+                    <p className="mt-2 text-sm text-gray-600">to continue to CourseDesk</p>
 
                     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
                         {/* Email */}

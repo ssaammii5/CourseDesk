@@ -1,44 +1,63 @@
 export interface StudentAddress {
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
+    street?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
 }
 
 export type StudentProgramType =
+    | "Professional Track"
+    | "Foundations"
+    | "Advanced Mastery"
+    | "Certification Track"
+    | "Self-Paced / Open"
     | "Undergraduate"
     | "Postgraduate"
     | "Post Graduate Diploma"
     | "M.Phil"
-    | "PhD";
+    | "PhD"
+    | string;
 
 export interface StudentDetails {
-    fathersName: string;
-    mothersName: string;
-    dateOfBirth: string;
-    mobile: string;
-    nationality: string;
-    studentId: string;
-    regNo: string;
-    department: string;
-    currentProgram: StudentProgramType;
-    session: string;
-    semesterSession: string;
-    address: StudentAddress;
+    fathersName?: string;
+    mothersName?: string;
+    dateOfBirth?: string;
+    mobile?: string;
+    nationality?: string;
+    studentId?: string;
+    regNo?: string;
+    department?: string;
+    currentProgram?: StudentProgramType;
+    session?: string;
+    semesterSession?: string;
+    headline?: string;
+    organization?: string;
+    bio?: string;
+    address?: StudentAddress;
 }
 
 export type TeacherDesignation =
+    | "Lead Instructor"
+    | "Senior Instructor"
+    | "Staff Engineer"
+    | "Principal Designer"
+    | "Course Creator"
+    | "Mentor"
     | "Professor"
     | "Associate Professor"
     | "Assistant Professor"
     | "Senior Lecturer"
-    | "Lecturer";
+    | "Lecturer"
+    | string;
 
 export interface TeacherDetails {
-    teacherId: string;
-    designation: TeacherDesignation;
-    department: string;
+    teacherId?: string;
+    designation?: TeacherDesignation;
+    department?: string;
+    headline?: string;
+    organization?: string;
+    bio?: string;
 }
 
 export interface AcademicProgram {

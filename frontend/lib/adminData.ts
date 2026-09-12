@@ -42,21 +42,17 @@ export interface TeacherDetails {
 }
 
 export const TEACHER_DEPARTMENTS = [
-    "CSE",
-    "EEE",
-    "BBA",
-    "English",
-    "Economics",
-    "Law",
-    "Mathematics",
-    "Physics",
-    "Chemistry",
-    "Architecture",
-    "Civil Engineering",
-    "Mechanical Engineering",
+    "Software Engineering",
+    "AI & Data Science",
+    "Cloud & DevOps",
+    "UI/UX & Product Design",
+    "Cybersecurity",
+    "Web Development",
+    "Mobile Development",
+    "Business & Leadership",
 ] as const;
 
-// ===== ACADEMICS DATA =====
+// ===== TAXONOMY DATA (Categories, Tracks, Cohorts) =====
 export interface AcademicProgram {
     id: number;
     name: string;
@@ -75,37 +71,31 @@ export interface AcademicDepartment {
 }
 
 export const academicPrograms: AcademicProgram[] = [
-    { id: 1, name: "Undergraduate", description: "Bachelor's degree programs (4 years)" },
-    { id: 2, name: "Postgraduate", description: "Master's degree programs (2 years)" },
-    { id: 3, name: "Post Graduate Diploma", description: "Postgraduate diploma programs (1 year)" },
-    { id: 4, name: "M.Phil", description: "Master of Philosophy research program" },
-    { id: 5, name: "PhD", description: "Doctoral research program" },
+    { id: 1, name: "Professional Track", description: "Comprehensive career-focused tracks with hands-on projects" },
+    { id: 2, name: "Foundations", description: "Core fundamentals and essential concepts for beginners" },
+    { id: 3, name: "Advanced Mastery", description: "Specialized deep-dives and architectural masterclasses" },
+    { id: 4, name: "Certification Track", description: "Industry-aligned curriculum with verified capstones" },
+    { id: 5, name: "Self-Paced / Open", description: "Flexible on-demand learning track" },
 ];
 
 export const academicDepartments: AcademicDepartment[] = [
-    { id: 1, name: "Computer Science and Engineering", code: "CSE" },
-    { id: 2, name: "Electrical and Electronic Engineering", code: "EEE" },
-    { id: 3, name: "Business Administration", code: "BBA" },
-    { id: 4, name: "English", code: "ENG" },
-    { id: 5, name: "Economics", code: "ECO" },
-    { id: 6, name: "Law", code: "LAW" },
-    { id: 7, name: "Mathematics", code: "MTH" },
-    { id: 8, name: "Physics", code: "PHY" },
-    { id: 9, name: "Chemistry", code: "CHM" },
-    { id: 10, name: "Architecture", code: "ARCH" },
-    { id: 11, name: "Civil Engineering", code: "CE" },
-    { id: 12, name: "Mechanical Engineering", code: "ME" },
+    { id: 1, name: "Software Engineering", code: "SWE" },
+    { id: 2, name: "AI & Data Science", code: "AI-DS" },
+    { id: 3, name: "Cloud & DevOps", code: "CLOUD" },
+    { id: 4, name: "UI/UX & Product Design", code: "DESIGN" },
+    { id: 5, name: "Cybersecurity", code: "SEC" },
+    { id: 6, name: "Web Development", code: "WEB" },
+    { id: 7, name: "Mobile Development", code: "MBL" },
+    { id: 8, name: "Business & Leadership", code: "MGMT" },
 ];
 
 export const academicSemesters: AcademicSemester[] = [
-    { id: 8, name: "July-December/2026" },
-    { id: 7, name: "January-June/2026" },
-    { id: 6, name: "July-December/2025" },
-    { id: 5, name: "January-June/2025" },
-    { id: 4, name: "July-December/2024" },
-    { id: 3, name: "January-June/2024" },
-    { id: 2, name: "July-December/2023" },
-    { id: 1, name: "January-June/2023" },
+    { id: 1, name: "Spring 2025 Cohort" },
+    { id: 2, name: "Summer 2025 Cohort" },
+    { id: 3, name: "Fall 2025 Cohort" },
+    { id: 4, name: "Self-Paced / On-Demand" },
+    { id: 5, name: "Q1 Intensive" },
+    { id: 6, name: "Q2 Intensive" },
 ];
 
 export interface AdminUser {
@@ -343,7 +333,7 @@ export const adminSubmissions: AdminSubmission[] = [
 ];
 
 export const appSettings: AppSetting[] = [
-    { key: "site_name", value: "eClassroomPro", description: "The display name of the application", category: "General" },
+    { key: "site_name", value: "CourseDesk", description: "The display name of the application", category: "General" },
     { key: "max_file_size_mb", value: "10", description: "Maximum file upload size in MB", category: "General" },
     { key: "allowed_file_types", value: "pdf,doc,docx,zip,txt", description: "Comma-separated list of allowed file types", category: "General" },
     { key: "email_notifications_enabled", value: "true", description: "Enable email notifications for assignments", category: "Notifications" },

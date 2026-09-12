@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "eClassroomPro",
-  description: "Role-based Assignment & Submission Management System",
+  title: "CourseDesk - Course & Assignment Management",
+  description: "Modern Course and Assignment Management Platform for instructors, learners, and teams",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
