@@ -10,6 +10,14 @@ import {
     getCoursesRequest, createCourseRequest, updateCourseRequest, deleteCourseRequest,
     type CourseDto,
 } from "@/lib/api/courses";
+import {
+    getProgramsRequest,
+    getDepartmentsRequest,
+    getSemestersRequest,
+    type AcademicProgramDto,
+    type AcademicDepartmentDto,
+    type AcademicSemesterDto,
+} from "@/lib/api/academics";
 
 function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
     return {
@@ -27,6 +35,9 @@ function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
 export function AdminCoursesView() {
     const [courses, setCourses] = useState<AdminCourse[]>([]);
     const [courseNames, setCourseNames] = useState<Record<number, string[]>>({});
+    const [academicPrograms, setAcademicPrograms] = useState<AcademicProgramDto[]>([]);
+    const [academicDepartments, setAcademicDepartments] = useState<AcademicDepartmentDto[]>([]);
+    const [academicSemesters, setAcademicSemesters] = useState<AcademicSemesterDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
@@ -40,8 +51,16 @@ export function AdminCoursesView() {
     const loadCourses = useCallback(async () => {
         try {
             setError(null);
-            const dtos = await getCoursesRequest();
+            const [dtos, progs, depts, sems] = await Promise.all([
+                getCoursesRequest(),
+                getProgramsRequest().catch(() => []),
+                getDepartmentsRequest().catch(() => []),
+                getSemestersRequest().catch(() => []),
+            ]);
             setCourses(dtos.map(mapCourseDtoToAdminCourse));
+            setAcademicPrograms(progs);
+            setAcademicDepartments(depts);
+            setAcademicSemesters(sems);
             const names: Record<number, string[]> = {};
             for (const d of dtos) names[d.id] = d.teacherNames;
             setCourseNames(names);
@@ -57,16 +76,22 @@ export function AdminCoursesView() {
     }, [loadCourses]);
 
     const departmentOptions = useMemo(() => {
-        return Array.from(new Set(courses.map((c) => c.department).filter(Boolean))).sort();
-    }, [courses]);
+        const fromDepts = academicDepartments.map((d) => d.code || d.name);
+        const fromCourses = courses.map((c) => c.department).filter(Boolean);
+        return Array.from(new Set([...fromDepts, ...fromCourses])).sort();
+    }, [academicDepartments, courses]);
 
     const programOptions = useMemo(() => {
-        return Array.from(new Set(courses.map((c) => c.program).filter(Boolean))).sort();
-    }, [courses]);
+        const fromProgs = academicPrograms.map((p) => p.name);
+        const fromCourses = courses.map((c) => c.program).filter(Boolean);
+        return Array.from(new Set([...fromProgs, ...fromCourses])).sort();
+    }, [academicPrograms, courses]);
 
     const sessionOptions = useMemo(() => {
-        return Array.from(new Set(courses.map((c) => c.session).filter(Boolean))).sort();
-    }, [courses]);
+        const fromSems = academicSemesters.map((s) => s.name);
+        const fromCourses = courses.map((c) => c.session).filter(Boolean);
+        return Array.from(new Set([...fromSems, ...fromCourses])).sort();
+    }, [academicSemesters, courses]);
 
     const filtered = useMemo(() => {
         return courses.filter((c) => {

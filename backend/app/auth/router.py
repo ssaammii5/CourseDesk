@@ -1,7 +1,13 @@
 from fastapi import APIRouter, status
 
 from app.auth import controller
-from app.auth.dtos import LoginResponseSchema, LoginSchema, MeResponseSchema, RefreshSchema
+from app.auth.dtos import (
+    LoginResponseSchema,
+    LoginSchema,
+    MeResponseSchema,
+    RefreshResponseSchema,
+    RefreshSchema,
+)
 from app.utils.db import get_db
 from app.utils.helpers import DbSession, IsAuthenticated
 
@@ -18,7 +24,7 @@ def me(user: IsAuthenticated):
     return user
 
 
-@auth_routes.post("/refresh", response_model=LoginResponseSchema, status_code=status.HTTP_200_OK)
+@auth_routes.post("/refresh", response_model=RefreshResponseSchema, status_code=status.HTTP_200_OK)
 def refresh(body: RefreshSchema, db: DbSession):
     return controller.refresh_tokens(body.refresh_token, db)
 

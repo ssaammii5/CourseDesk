@@ -24,6 +24,16 @@ class LoginResponseSchema(CamelModel):
     role: str
 
 
+class RefreshResponseSchema(CamelModel):
+    token: str
+    access_token: str
+    access_token_expires_at_utc: datetime
+    refresh_token: str
+    email: str | None = None
+    name: str | None = None
+    role: str | None = None
+
+
 class MeResponseSchema(CamelModel):
     id: int
     name: str

@@ -85,6 +85,9 @@ def refresh_tokens(refresh_token: str, db: Session) -> dict:
         "access_token": access_token,
         "access_token_expires_at_utc": exp_time,
         "refresh_token": new_refresh,
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
     }
 
 

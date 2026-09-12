@@ -4,9 +4,16 @@ import type { AdminCourse, AdminUser } from "@/lib/adminData";
 import { COURSE_CATALOG, AVAILABLE_SESSIONS, TEACHER_DEPARTMENTS } from "@/lib/adminData";
 import { PROGRAM_TYPES } from "@/components/settings/constants";
 import { getUsersRequest, type UserDto } from "@/lib/api/users";
+import {
+    getProgramsRequest,
+    getDepartmentsRequest,
+    getSemestersRequest,
+    type AcademicProgramDto,
+    type AcademicDepartmentDto,
+    type AcademicSemesterDto,
+} from "@/lib/api/academics";
+import { getCoursesRequest, type CourseDto } from "@/lib/api/courses";
 import { X, ChevronDown, Search, UserPlus, Users } from "lucide-react";
-
-const DEPARTMENT_OPTIONS: string[] = [...TEACHER_DEPARTMENTS];
 
 interface EnrolledGroup {
     program: string;
@@ -67,6 +74,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     const [department, setDepartment] = useState("");
     const [session, setSession] = useState("");
     const [courseName, setCourseName] = useState("");
+    const [isCustomCourse, setIsCustomCourse] = useState(false);
     const [isActive, setIsActive] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [teacherDeptFilter, setTeacherDeptFilter] = useState("");
@@ -81,28 +89,85 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     const [showManualResults, setShowManualResults] = useState(false);
 
     const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
-    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [academicPrograms, setAcademicPrograms] = useState<AcademicProgramDto[]>([]);
+    const [academicDepartments, setAcademicDepartments] = useState<AcademicDepartmentDto[]>([]);
+    const [academicSemesters, setAcademicSemesters] = useState<AcademicSemesterDto[]>([]);
+    const [existingCourses, setExistingCourses] = useState<CourseDto[]>([]);
+    const [loadingData, setLoadingData] = useState(false);
     const lastAppliedGroupFilter = useRef<string>("");
 
-    // Fetch teachers/students when the modal opens.
+    // Fetch teachers/students, programs, departments, semesters, and courses when modal opens.
     useEffect(() => {
         if (!open) return;
         let cancelled = false;
-        setLoadingUsers(true);
-        getUsersRequest()
-            .then((dtos) => {
-                if (!cancelled) setAllUsers(dtos.map(mapUserDtoToAdminUser));
-            })
-            .catch(() => {
-                if (!cancelled) setAllUsers([]);
+        setLoadingData(true);
+        Promise.all([
+            getUsersRequest().catch(() => []),
+            getProgramsRequest().catch(() => []),
+            getDepartmentsRequest().catch(() => []),
+            getSemestersRequest().catch(() => []),
+            getCoursesRequest().catch(() => []),
+        ])
+            .then(([userDtos, progDtos, deptDtos, semDtos, courseDtos]) => {
+                if (cancelled) return;
+                setAllUsers(userDtos.map(mapUserDtoToAdminUser));
+                setAcademicPrograms(progDtos);
+                setAcademicDepartments(deptDtos);
+                setAcademicSemesters(semDtos);
+                setExistingCourses(courseDtos);
             })
             .finally(() => {
-                if (!cancelled) setLoadingUsers(false);
+                if (!cancelled) setLoadingData(false);
             });
         return () => {
             cancelled = true;
         };
     }, [open]);
+
+    const matchDept = (userOrCourseDept?: string, targetDept?: string): boolean => {
+        if (!userOrCourseDept || !targetDept) return false;
+        const u = userOrCourseDept.trim().toLowerCase();
+        const t = targetDept.trim().toLowerCase();
+        if (u === t) return true;
+        const deptObj = academicDepartments.find(
+            (d) => d.code?.toLowerCase() === t || d.name.toLowerCase() === t
+        );
+        if (deptObj) {
+            return u === deptObj.name.toLowerCase() || u === deptObj.code?.toLowerCase();
+        }
+        return false;
+    };
+
+    const programOptions = useMemo(() => {
+        if (academicPrograms.length > 0) {
+            return academicPrograms.map((p) => p.name);
+        }
+        return [...PROGRAM_TYPES];
+    }, [academicPrograms]);
+
+    const departmentOptions = useMemo(() => {
+        if (academicDepartments.length > 0) {
+            return academicDepartments.map((d) => ({
+                value: d.code || d.name,
+                label: d.code ? `${d.name} (${d.code})` : d.name,
+                code: d.code,
+                name: d.name,
+            }));
+        }
+        return TEACHER_DEPARTMENTS.map((d) => ({
+            value: d,
+            label: d,
+            code: d,
+            name: d,
+        }));
+    }, [academicDepartments]);
+
+    const sessionOptions = useMemo(() => {
+        if (academicSemesters.length > 0) {
+            return academicSemesters.map((s) => s.name);
+        }
+        return [...AVAILABLE_SESSIONS];
+    }, [academicSemesters]);
 
     const allTeachers = useMemo(
         () => allUsers.filter((u) => u.role === "Teacher" && u.isActive),
@@ -114,23 +179,36 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     );
 
     const availableCourses = useMemo(() => {
-        return COURSE_CATALOG.filter(
-            (c) => c.program === program && c.department === department
-        );
-    }, [program, department]);
+        const fromDb = existingCourses
+            .filter(
+                (c) =>
+                    (!program || c.program === program) &&
+                    (!department || matchDept(c.department, department))
+            )
+            .map((c) => c.name);
+
+        const fromCatalog = COURSE_CATALOG.filter(
+            (c) =>
+                (!program || c.program === program) &&
+                (!department || matchDept(c.department, department))
+        ).map((c) => c.name);
+
+        return Array.from(new Set([...fromDb, ...fromCatalog]));
+    }, [program, department, existingCourses, academicDepartments]);
 
     const filteredTeachers = useMemo(() => {
         if (!teacherDeptFilter) return [];
-        return allTeachers.filter(
-            (t) => t.teacherDetails?.department === teacherDeptFilter
+        return allTeachers.filter((t) =>
+            matchDept(t.teacherDetails?.department, teacherDeptFilter)
         );
-    }, [allTeachers, teacherDeptFilter]);
+    }, [allTeachers, teacherDeptFilter, academicDepartments]);
 
-    const studentSessionOptions = useMemo(() => {
-        return Array.from(
-            new Set(allStudents.map((s) => s.studentDetails?.semesterSession ?? "").filter(Boolean))
-        ).sort();
-    }, [allStudents]);
+    const combinedStudentSessionOptions = useMemo(() => {
+        const fromStudents = allStudents
+            .map((s) => s.studentDetails?.semesterSession ?? "")
+            .filter(Boolean);
+        return Array.from(new Set([...sessionOptions, ...fromStudents])).sort();
+    }, [sessionOptions, allStudents]);
 
     const totalEnrolledCount = useMemo(() => {
         const groupIds = new Set(enrolledGroups.flatMap((g) => g.studentIds));
@@ -175,7 +253,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
             const d = s.studentDetails;
             return (
                 d?.currentProgram === studentProgram &&
-                d?.department === studentDept &&
+                matchDept(d?.department, studentDept) &&
                 d?.semesterSession === studentSession
             );
         });
@@ -191,14 +269,16 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [studentProgram, studentDept, studentSession, allStudents]);
+    }, [studentProgram, studentDept, studentSession, allStudents, academicDepartments]);
 
     useEffect(() => {
         if (open) {
             setProgram(course?.program ?? "");
             setDepartment(course?.department ?? "");
             setSession(course?.session ?? "");
-            setCourseName(course?.name ?? "");
+            const initialCourseName = course?.name ?? "";
+            setCourseName(initialCourseName);
+            setIsCustomCourse(Boolean(initialCourseName));
             setTeacherIds(course?.teacherIds ?? []);
             setIsActive(course?.isActive ?? true);
             setErrors({});
@@ -225,12 +305,14 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     const handleProgramChange = (value: string) => {
         setProgram(value);
         setCourseName("");
+        setIsCustomCourse(false);
         clearError("program");
         clearError("courseName");
     };
     const handleDepartmentChange = (value: string) => {
         setDepartment(value);
         setCourseName("");
+        setIsCustomCourse(false);
         clearError("department");
         clearError("courseName");
     };
@@ -349,8 +431,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                 </div>
 
                 <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-6 py-6">
-                    {loadingUsers && (
-                        <p className="text-sm text-gray-500">Loading teachers & students…</p>
+                    {loadingData && (
+                        <p className="text-sm text-gray-500">Loading academic data & users…</p>
                     )}
 
                     <section>
@@ -370,7 +452,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             } ${program ? "text-gray-900" : "text-gray-600"}`}
                                     >
                                         <option value="" disabled>Select program</option>
-                                        {PROGRAM_TYPES.map((p) => (
+                                        {programOptions.map((p) => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
                                     </select>
@@ -393,8 +475,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             } ${department ? "text-gray-900" : "text-gray-600"}`}
                                     >
                                         <option value="" disabled>Select department</option>
-                                        {DEPARTMENT_OPTIONS.map((d) => (
-                                            <option key={d} value={d}>{d}</option>
+                                        {departmentOptions.map((d) => (
+                                            <option key={d.value} value={d.value}>{d.label}</option>
                                         ))}
                                     </select>
                                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
@@ -416,7 +498,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             } ${session ? "text-gray-900" : "text-gray-600"}`}
                                     >
                                         <option value="" disabled>Select session</option>
-                                        {AVAILABLE_SESSIONS.map((s) => (
+                                        {sessionOptions.map((s) => (
                                             <option key={s} value={s}>{s}</option>
                                         ))}
                                     </select>
@@ -426,31 +508,71 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
-                                    Course Name <span className="text-[#c5221f]">*</span>
-                                </label>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-sm font-medium text-gray-800">
+                                        Course Name <span className="text-[#c5221f]">*</span>
+                                    </label>
+                                    {program && department && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsCustomCourse(!isCustomCourse);
+                                                clearError("courseName");
+                                            }}
+                                            className="text-xs font-medium text-[#1a73e8] hover:underline cursor-pointer"
+                                        >
+                                            {isCustomCourse
+                                                ? "← Pick from catalog/database"
+                                                : "+ Enter custom name"}
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="relative">
-                                    <select
-                                        value={courseName}
-                                        onChange={(e) => handleCourseNameChange(e.target.value)}
-                                        disabled={!program || !department}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none ${errors.courseName
-                                            ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
-                                            } ${!program || !department ? "cursor-not-allowed bg-gray-100 text-gray-500" : courseName ? "text-gray-900" : "text-gray-600"}`}
-                                    >
-                                        <option value="" disabled>
-                                            {!program || !department
-                                                ? "Select program & department first"
-                                                : availableCourses.length === 0
-                                                    ? "No courses available"
-                                                    : "Select course name"}
-                                        </option>
-                                        {availableCourses.map((c) => (
-                                            <option key={c.name} value={c.name}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
+                                    {!isCustomCourse ? (
+                                        <>
+                                            <select
+                                                value={courseName}
+                                                onChange={(e) => {
+                                                    if (e.target.value === "__custom__") {
+                                                        setIsCustomCourse(true);
+                                                        setCourseName("");
+                                                    } else {
+                                                        handleCourseNameChange(e.target.value);
+                                                    }
+                                                }}
+                                                disabled={!program || !department}
+                                                className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none ${errors.courseName
+                                                    ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
+                                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                                                    } ${!program || !department ? "cursor-not-allowed bg-gray-100 text-gray-500" : courseName ? "text-gray-900" : "text-gray-600"}`}
+                                            >
+                                                <option value="" disabled>
+                                                    {!program || !department
+                                                        ? "Select program & department first"
+                                                        : availableCourses.length === 0
+                                                            ? "No catalog courses available"
+                                                            : "Select course name"}
+                                                </option>
+                                                {availableCourses.map((c) => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
+                                                <option value="__custom__">+ Enter custom course name...</option>
+                                            </select>
+                                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
+                                        </>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={courseName}
+                                            onChange={(e) => handleCourseNameChange(e.target.value)}
+                                            placeholder="e.g. CSE 420: Distributed Systems"
+                                            disabled={!program || !department}
+                                            className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none ${errors.courseName
+                                                ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
+                                                : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                                                } ${!program || !department ? "cursor-not-allowed bg-gray-100 text-gray-500" : "text-gray-900"}`}
+                                        />
+                                    )}
                                 </div>
                                 {errors.courseName && <span className="mt-1 block text-sm text-[#c5221f]">{errors.courseName}</span>}
                             </div>
@@ -477,8 +599,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                     className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 pr-10 text-[15px] text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 >
                                     <option value="" disabled>Select department</option>
-                                    {DEPARTMENT_OPTIONS.map((d) => (
-                                        <option key={d} value={d}>{d}</option>
+                                    {departmentOptions.map((d) => (
+                                        <option key={d.value} value={d.value}>{d.label}</option>
                                     ))}
                                 </select>
                                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
@@ -520,7 +642,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             </button>
                                         </span>
                                     ) : null;
-                                })}
+                                    })}
                             </div>
                         )}
                     </section>
@@ -544,7 +666,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                         className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                     >
                                         <option value="" disabled>Select program</option>
-                                        {PROGRAM_TYPES.map((p) => (
+                                        {programOptions.map((p) => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
                                     </select>
@@ -558,8 +680,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                         className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!studentProgram ? "cursor-not-allowed bg-gray-100" : ""}`}
                                     >
                                         <option value="" disabled>Select department</option>
-                                        {DEPARTMENT_OPTIONS.map((d) => (
-                                            <option key={d} value={d}>{d}</option>
+                                        {departmentOptions.map((d) => (
+                                            <option key={d.value} value={d.value}>{d.label}</option>
                                         ))}
                                     </select>
                                     <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700" />
@@ -572,7 +694,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                         className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!studentDept ? "cursor-not-allowed bg-gray-100" : ""}`}
                                     >
                                         <option value="" disabled>Select session</option>
-                                        {studentSessionOptions.map((s) => (
+                                        {combinedStudentSessionOptions.map((s) => (
                                             <option key={s} value={s}>{s}</option>
                                         ))}
                                     </select>
