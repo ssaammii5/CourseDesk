@@ -34,8 +34,14 @@ class RefreshResponseSchema(CamelModel):
     role: str | None = None
 
 
+from app.user.dtos import StudentDetailsSchema, TeacherDetailsSchema
+
+
 class MeResponseSchema(CamelModel):
     id: int
     name: str
     email: str
     role: str
+    is_active: bool = True
+    student_details: StudentDetailsSchema | None = None
+    teacher_details: TeacherDetailsSchema | None = None

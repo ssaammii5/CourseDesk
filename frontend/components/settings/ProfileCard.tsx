@@ -1,24 +1,82 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Lock } from "lucide-react";
-import {
-    currentStudentProfile,
-    type StudentProfile,
-    type Address,
-    type ProgramType,
+import type {
+    CurrentUser,
+    StudentProfile,
+    Address,
+    ProgramType,
 } from "@/lib/currentUser";
+import { getMeRequest, type MeResponse } from "@/lib/api/auth";
 import { initialOf } from "@/lib/schemas";
 import { COUNTRIES, PROGRAM_TYPES, MAX_AVATAR_SIZE } from "./constants";
 import { Field, SelectField } from "./FormFields";
 
-export function ProfileCard({ userName, readOnly }: { userName: string; readOnly: boolean }) {
-    const [form, setForm] = useState<StudentProfile>(currentStudentProfile);
+interface ProfileCardProps {
+    user?: CurrentUser | null;
+    userName?: string;
+    readOnly: boolean;
+}
+
+function buildStudentProfile(user?: CurrentUser | null, meDto?: MeResponse | null): StudentProfile {
+    const name = meDto?.name ?? user?.name ?? "";
+    const sd = meDto?.studentDetails ?? user?.studentDetails;
+    const addr = sd?.address;
+    return {
+        fullName: name,
+        fathersName: sd?.fathersName ?? "",
+        mothersName: sd?.mothersName ?? "",
+        dateOfBirth: sd?.dateOfBirth ?? "",
+        mobile: sd?.mobile ?? "",
+        nationality: sd?.nationality ?? "",
+        studentId: sd?.studentId ?? "",
+        regNo: sd?.regNo ?? "",
+        department: sd?.department ?? "",
+        currentProgram: (sd?.currentProgram ?? "Undergraduate") as ProgramType,
+        session: sd?.session ?? "",
+        semesterSession: sd?.semesterSession ?? "",
+        level: 1,
+        semester: 1,
+        permanentAddress: {
+            street: addr?.street ?? "",
+            city: addr?.city ?? "",
+            state: addr?.state ?? "",
+            zip: addr?.zip ?? "",
+            country: addr?.country ?? "",
+        },
+    };
+}
+
+export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
+    const [freshMe, setFreshMe] = useState<MeResponse | null>(null);
+    const [form, setForm] = useState<StudentProfile>(() => buildStudentProfile(user));
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [flash, setFlash] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarError, setAvatarError] = useState<string | null>(null);
+
+    // Re-sync whenever user prop updates
+    useEffect(() => {
+        setForm(buildStudentProfile(user, freshMe));
+    }, [user]);
+
+    // Fetch fresh profile from backend on mount
+    useEffect(() => {
+        let cancelled = false;
+        getMeRequest()
+            .then((me) => {
+                if (!cancelled) {
+                    setFreshMe(me);
+                    setForm(buildStudentProfile(user, me));
+                }
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const setField = <K extends keyof StudentProfile>(key: K, value: StudentProfile[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }));
@@ -83,6 +141,8 @@ export function ProfileCard({ userName, readOnly }: { userName: string; readOnly
         window.setTimeout(() => setFlash(false), 2000);
     };
 
+    const displayName = userName || form.fullName || user?.name || "Student";
+
     return (
         <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
             <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
@@ -105,7 +165,7 @@ export function ProfileCard({ userName, readOnly }: { userName: string; readOnly
                             <img src={avatarUrl} alt="Profile avatar" className="h-20 w-20 rounded-lg object-cover" />
                         ) : (
                             <span className="flex h-20 w-20 items-center justify-center rounded-lg bg-purple-800 text-3xl text-white">
-                                {initialOf(userName)}
+                                {initialOf(displayName)}
                             </span>
                         )}
                         <div>
@@ -138,8 +198,7 @@ export function ProfileCard({ userName, readOnly }: { userName: string; readOnly
                                 <Field label="Department" value={form.department} onChange={(v) => setField("department", v)} disabled={readOnly} />
                                 <SelectField label="Current Program" value={form.currentProgram} onChange={(v) => setField("currentProgram", v as ProgramType)} options={PROGRAM_TYPES} disabled={readOnly} placeholder="Select program type" />
                                 <Field label="Session" value={form.session} onChange={(v) => setField("session", v)} disabled={readOnly} />
-                                <Field label="Level" type="number" value={String(form.level)} onChange={(v) => setField("level", Number(v) || 0)} disabled={readOnly} />
-                                <Field label="Semester" type="number" value={String(form.semester)} onChange={(v) => setField("semester", Number(v) || 0)} disabled={readOnly} />
+                                <Field label="Semester" value={form.semesterSession || (form.semester ? `Semester ${form.semester}` : "")} onChange={(v) => setField("semesterSession", v)} disabled={readOnly} />
                             </div>
                         </div>
 
@@ -158,7 +217,7 @@ export function ProfileCard({ userName, readOnly }: { userName: string; readOnly
                     {!readOnly && (
                         <div className="mt-8 flex items-center justify-end gap-3">
                             {flash && <span className="text-sm font-medium text-[#188038]">Changes saved</span>}
-                            <button type="button" onClick={() => { setForm(currentStudentProfile); setErrors({}); }} className="cursor-pointer rounded-full bg-[#cdd7ea] px-6 py-2.5 text-sm font-medium text-gray-900 hover:bg-[#bcc9e2]">
+                            <button type="button" onClick={() => { setForm(buildStudentProfile(user, freshMe)); setErrors({}); }} className="cursor-pointer rounded-full bg-[#cdd7ea] px-6 py-2.5 text-sm font-medium text-gray-900 hover:bg-[#bcc9e2]">
                                 Discard
                             </button>
                             <button type="button" onClick={save} className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]">
@@ -170,4 +229,4 @@ export function ProfileCard({ userName, readOnly }: { userName: string; readOnly
             </div>
         </section>
     );
-}
+}

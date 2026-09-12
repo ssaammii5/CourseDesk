@@ -1,32 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { AdminUser, StudentDetails, StudentProgramType } from "@/lib/adminData";
-import { academicSemesters } from "@/lib/adminData";
-import { COUNTRIES } from "@/components/settings/constants";
+import { academicSemesters as staticSemesters, TEACHER_DEPARTMENTS } from "@/lib/adminData";
+import { COUNTRIES, PROGRAM_TYPES as STATIC_PROGRAM_TYPES } from "@/components/settings/constants";
 import { Field, SelectField } from "@/components/settings/FormFields";
+import {
+    getProgramsRequest,
+    getDepartmentsRequest,
+    getSemestersRequest,
+    type AcademicProgramDto,
+    type AcademicDepartmentDto,
+    type AcademicSemesterDto,
+} from "@/lib/api/academics";
 import { X } from "lucide-react";
-
-const PROGRAM_TYPES: StudentProgramType[] = [
-    "Undergraduate",
-    "Postgraduate",
-    "Post Graduate Diploma",
-    "M.Phil",
-    "PhD",
-];
-
-const SEMESTER_OPTIONS = academicSemesters
-    .slice()
-    .sort((a, b) => {
-        const rankOf = (name: string) => {
-            const [period, yearStr] = name.split("/");
-            const year = Number(yearStr);
-            if (!Number.isFinite(year)) return 0;
-            const periodIndex = period === "July-December" ? 1 : 0;
-            return year * 2 + periodIndex;
-        };
-        return rankOf(b.name) - rankOf(a.name);
-    })
-    .map((s) => s.name);
 
 const EMPTY_DETAILS: StudentDetails = {
     fathersName: "",
@@ -46,7 +32,7 @@ const EMPTY_DETAILS: StudentDetails = {
 interface StudentFormModalProps {
     open: boolean;
     user: AdminUser | null;
-    onSave: (data: Omit<AdminUser, "id" | "createdAt">) => void;
+    onSave: (data: Omit<AdminUser, "id" | "createdAt">) => void | Promise<void>;
     onClose: () => void;
 }
 
@@ -56,6 +42,53 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
     const [details, setDetails] = useState<StudentDetails>(EMPTY_DETAILS);
     const [isActive, setIsActive] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+
+    const [academicPrograms, setAcademicPrograms] = useState<AcademicProgramDto[]>([]);
+    const [academicDepartments, setAcademicDepartments] = useState<AcademicDepartmentDto[]>([]);
+    const [academicSemesters, setAcademicSemesters] = useState<AcademicSemesterDto[]>([]);
+
+    useEffect(() => {
+        if (!open) return;
+        let cancelled = false;
+        Promise.all([
+            getProgramsRequest().catch(() => []),
+            getDepartmentsRequest().catch(() => []),
+            getSemestersRequest().catch(() => []),
+        ]).then(([progs, depts, sems]) => {
+            if (cancelled) return;
+            setAcademicPrograms(progs);
+            setAcademicDepartments(depts);
+            setAcademicSemesters(sems);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [open]);
+
+    // Compute dynamic dropdown options with static fallbacks
+    const departmentOptions = useMemo(() => {
+        const fromDb = academicDepartments.map((d) => d.name).filter(Boolean);
+        const set = new Set([...fromDb, ...TEACHER_DEPARTMENTS]);
+        if (details.department) set.add(details.department);
+        return Array.from(set);
+    }, [academicDepartments, details.department]);
+
+    const programOptions = useMemo(() => {
+        const fromDb = academicPrograms.map((p) => p.name).filter(Boolean);
+        const set = new Set([...fromDb, ...STATIC_PROGRAM_TYPES]);
+        if (details.currentProgram) set.add(details.currentProgram);
+        return Array.from(set);
+    }, [academicPrograms, details.currentProgram]);
+
+    const semesterOptions = useMemo(() => {
+        const fromDb = academicSemesters.map((s) => s.name).filter(Boolean);
+        const fallback = staticSemesters.map((s) => s.name);
+        const set = new Set([...fromDb, ...fallback]);
+        if (details.semesterSession) set.add(details.semesterSession);
+        return Array.from(set);
+    }, [academicSemesters, details.semesterSession]);
 
     useEffect(() => {
         if (open) {
@@ -63,8 +96,29 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
             setEmail(user?.email ?? "");
             setIsActive(user?.isActive ?? true);
             setErrors({});
+            setSaveError(null);
             if (user?.studentDetails) {
-                setDetails(user.studentDetails);
+                const addr = user.studentDetails.address;
+                setDetails({
+                    fathersName: user.studentDetails.fathersName ?? "",
+                    mothersName: user.studentDetails.mothersName ?? "",
+                    dateOfBirth: user.studentDetails.dateOfBirth ?? "",
+                    mobile: user.studentDetails.mobile ?? "",
+                    nationality: user.studentDetails.nationality ?? "",
+                    studentId: user.studentDetails.studentId ?? "",
+                    regNo: user.studentDetails.regNo ?? "",
+                    department: user.studentDetails.department ?? "",
+                    currentProgram: (user.studentDetails.currentProgram ?? "Undergraduate") as StudentProgramType,
+                    session: user.studentDetails.session ?? "",
+                    semesterSession: user.studentDetails.semesterSession ?? "",
+                    address: {
+                        street: addr?.street ?? "",
+                        city: addr?.city ?? "",
+                        state: addr?.state ?? "",
+                        zip: addr?.zip ?? "",
+                        country: addr?.country ?? "",
+                    },
+                });
             } else {
                 setDetails(EMPTY_DETAILS);
             }
@@ -88,7 +142,7 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
         key: K,
         value: StudentDetails["address"][K]
     ) => {
-        setDetails((prev) => ({ ...prev, address: { ...prev.address, [key]: value } }));
+        setDetails((prev) => ({ ...prev, address: { ...(prev.address ?? {}), [key]: value } }));
         clearError(key as string);
     };
 
@@ -98,23 +152,33 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
         if (!email.trim()) next.email = "Email is required.";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Enter a valid email.";
         if (!details.studentId.trim()) next.studentId = "Student ID is required.";
-        if (!details.address.country) next.country = "Country is required.";
-        if (!details.semesterSession) next.semesterSession = "Semester is required.";
         return next;
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        setSaveError(null);
         const errs = validate();
         setErrors(errs);
-        if (Object.keys(errs).length > 0) return;
+        if (Object.keys(errs).length > 0) {
+            setSaveError("Please fill in all required fields (Name, Email, and Student ID).");
+            return;
+        }
 
-        onSave({
-            name: name.trim(),
-            email: email.trim(),
-            role: "Student",
-            isActive,
-            studentDetails: { ...details },
-        });
+        try {
+            setIsSaving(true);
+            await onSave({
+                name: name.trim(),
+                email: email.trim(),
+                role: "Student",
+                isActive,
+                studentDetails: { ...details },
+            });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Failed to save student details.";
+            setSaveError(msg);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (!open) return null;
@@ -135,6 +199,13 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                         <X className="h-5 w-5" />
                     </button>
                 </div>
+
+                {/* Error Banner */}
+                {saveError && (
+                    <div className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        {saveError}
+                    </div>
+                )}
 
                 {/* Body */}
                 <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-6 py-6">
@@ -198,21 +269,26 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                                 error={errors.studentId}
                             />
                             <Field label="Registration No" value={details.regNo} onChange={(v) => setField("regNo", v)} />
-                            <Field label="Department" value={details.department} onChange={(v) => setField("department", v)} />
+                            <SelectField
+                                label="Department"
+                                value={details.department}
+                                onChange={(v) => setField("department", v)}
+                                options={departmentOptions}
+                                placeholder="Select department"
+                            />
                             <SelectField
                                 label="Current Program"
                                 value={details.currentProgram}
                                 onChange={(v) => setField("currentProgram", v as StudentProgramType)}
-                                options={PROGRAM_TYPES}
+                                options={programOptions}
                                 placeholder="Select program type"
                             />
                             <Field label="Session" value={details.session} onChange={(v) => setField("session", v)} />
                             <SelectField
                                 label="Semester"
-                                required
                                 value={details.semesterSession}
                                 onChange={(v) => setField("semesterSession", v)}
-                                options={SEMESTER_OPTIONS}
+                                options={semesterOptions}
                                 error={errors.semesterSession}
                                 placeholder="Select semester"
                             />
@@ -225,17 +301,16 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
                                 label="Street Address"
-                                value={details.address.street}
+                                value={details.address?.street ?? ""}
                                 onChange={(v) => setAddressField("street", v)}
                                 placeholder="House, Road, Area"
                             />
-                            <Field label="City" value={details.address.city} onChange={(v) => setAddressField("city", v)} />
-                            <Field label="State / Province" value={details.address.state} onChange={(v) => setAddressField("state", v)} />
-                            <Field label="ZIP / Postal Code" value={details.address.zip} onChange={(v) => setAddressField("zip", v)} />
+                            <Field label="City" value={details.address?.city ?? ""} onChange={(v) => setAddressField("city", v)} />
+                            <Field label="State / Province" value={details.address?.state ?? ""} onChange={(v) => setAddressField("state", v)} />
+                            <Field label="ZIP / Postal Code" value={details.address?.zip ?? ""} onChange={(v) => setAddressField("zip", v)} />
                             <SelectField
                                 label="Country"
-                                required
-                                value={details.address.country}
+                                value={details.address?.country ?? ""}
                                 onChange={(v) => setAddressField("country", v)}
                                 options={COUNTRIES}
                                 error={errors.country}
@@ -250,19 +325,21 @@ export function StudentFormModal({ open, user, onSave, onClose }: StudentFormMod
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        disabled={isSaving}
+                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
+                        disabled={isSaving}
+                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {user ? "Save Changes" : "Create Student"}
+                        {isSaving ? "Saving..." : user ? "Save Changes" : "Create Student"}
                     </button>
                 </div>
             </div>
         </div>
     );
-}
+}

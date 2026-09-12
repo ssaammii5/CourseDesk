@@ -29,13 +29,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function toCurrentUser(source: { name: string; email: string; role: string }): CurrentUser {
+function toCurrentUser(source: {
+    id?: number;
+    name: string;
+    email: string;
+    role: string;
+    studentDetails?: CurrentUser["studentDetails"];
+    teacherDetails?: CurrentUser["teacherDetails"];
+}): CurrentUser {
     const role = mapRole(source.role);
     return {
+        id: source.id,
         name: source.name,
         email: source.email,
         role,
         avatarClass: avatarClassFor(role),
+        studentDetails: source.studentDetails,
+        teacherDetails: source.teacherDetails,
     };
 }
 
@@ -79,7 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await loginRequest(email, password);
         const accessToken = response.accessToken || response.token;
         setTokens(accessToken, response.refreshToken);
-        setUser(toCurrentUser(response));
+        try {
+            const me = await getMeRequest();
+            setUser(toCurrentUser(me));
+        } catch {
+            setUser(toCurrentUser(response));
+        }
         setStatus("authenticated");
     }, []);
 

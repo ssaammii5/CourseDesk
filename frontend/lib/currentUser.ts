@@ -1,3 +1,5 @@
+import type { StudentDetails, TeacherDetails } from "./api/users";
+
 // lib/currentUser.ts
 export const ROLE_STYLES: Record<"Admin" | "Teacher" | "Student", string> = {
     Admin: "bg-[#fce8e6] text-[#c5221f]",
@@ -6,10 +8,13 @@ export const ROLE_STYLES: Record<"Admin" | "Teacher" | "Student", string> = {
 };
 
 export interface CurrentUser {
+    id?: number;
     name: string;
     email: string;
     role: keyof typeof ROLE_STYLES;
     avatarClass: string;
+    studentDetails?: StudentDetails;
+    teacherDetails?: TeacherDetails;
 }
 
 /** Normalize the role string coming from the API. */
@@ -73,6 +78,7 @@ export interface StudentProfile {
     department: string;
     currentProgram: ProgramType;
     session: string;
+    semesterSession?: string;
     level: number;
     semester: number;
     permanentAddress: Address;

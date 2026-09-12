@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, Request, UploadFile, status
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.user.models import UserModel
 from app.utils.db import get_db
@@ -47,7 +47,14 @@ def is_authenticated(request: Request, db: DbSession) -> UserModel:
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, detail="You're unauthorized"
             )
-        user = db.scalar(select(UserModel).where(UserModel.id == user_id))
+        user = db.scalar(
+            select(UserModel)
+            .options(
+                selectinload(UserModel.student_details),
+                selectinload(UserModel.teacher_details),
+            )
+            .where(UserModel.id == user_id)
+        )
         if not user:
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, detail="You're unauthorized"

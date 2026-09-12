@@ -8,6 +8,7 @@ from app.auth.dtos import (
     RefreshResponseSchema,
     RefreshSchema,
 )
+from app.user.controller import serialize_user
 from app.utils.db import get_db
 from app.utils.helpers import DbSession, IsAuthenticated
 
@@ -21,7 +22,7 @@ def login(body: LoginSchema, db: DbSession):
 
 @auth_routes.get("/me", response_model=MeResponseSchema, status_code=status.HTTP_200_OK)
 def me(user: IsAuthenticated):
-    return user
+    return serialize_user(user)
 
 
 @auth_routes.post("/refresh", response_model=RefreshResponseSchema, status_code=status.HTTP_200_OK)

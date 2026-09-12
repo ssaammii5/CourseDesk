@@ -1,4 +1,5 @@
 import { apiFetch } from "./client";
+import type { StudentDetails, TeacherDetails } from "./users";
 
 export interface LoginResponse {
     token: string;
@@ -15,6 +16,9 @@ export interface MeResponse {
     name: string;
     email: string;
     role: string;
+    isActive?: boolean;
+    studentDetails?: StudentDetails;
+    teacherDetails?: TeacherDetails;
 }
 
 export function loginRequest(email: string, password: string): Promise<LoginResponse> {

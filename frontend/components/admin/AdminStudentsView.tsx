@@ -276,11 +276,11 @@ export function AdminStudentsView() {
                     session: data.studentDetails.session,
                     semesterSession: data.studentDetails.semesterSession,
                     address: {
-                        street: data.studentDetails.address.street,
-                        city: data.studentDetails.address.city,
-                        state: data.studentDetails.address.state,
-                        zip: data.studentDetails.address.zip,
-                        country: data.studentDetails.address.country,
+                        street: data.studentDetails.address?.street ?? "",
+                        city: data.studentDetails.address?.city ?? "",
+                        state: data.studentDetails.address?.state ?? "",
+                        zip: data.studentDetails.address?.zip ?? "",
+                        country: data.studentDetails.address?.country ?? "",
                     },
                 }
                 : undefined;
@@ -312,7 +312,9 @@ export function AdminStudentsView() {
             setEditingUser(null);
             await loadUsers();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to save student.");
+            const msg = err instanceof Error ? err.message : "Failed to save student.";
+            setError(msg);
+            throw err;
         }
     };
 

@@ -8,9 +8,11 @@ import { SecurityCard } from "./SecurityCard";
 import { NotificationsCard } from "./NotificationsCard";
 
 export function SettingsView({
-    userName = currentUser.name,
-    role = currentUser.role,
+    user,
+    userName = user?.name ?? currentUser.name,
+    role = user?.role ?? currentUser.role,
 }: {
+    user?: CurrentUser | null;
     userName?: string;
     role?: CurrentUser["role"];
 }) {
@@ -43,7 +45,7 @@ export function SettingsView({
                 </div>
 
                 <div className="mt-8">
-                    {tab === "profile" && <ProfileCard userName={userName} readOnly={isProfileReadOnly} />}
+                    {tab === "profile" && <ProfileCard user={user} userName={userName} readOnly={isProfileReadOnly} />}
                     {tab === "security" && <SecurityCard />}
                     {tab === "notifications" && <NotificationsCard />}
                 </div>
