@@ -1,7 +1,7 @@
 "use client";
 
-import { SettingsView } from "@/components/settings/SettingsView";
-import { useAuth } from "@/lib/auth/AuthProvider";
+import { SettingsView } from "@/features/settings";
+import { useAuth } from "@/hooks";
 
 export default function SettingsPage() {
     const { user } = useAuth();

@@ -1,4 +1,4 @@
-import { AdminSubmissionsView } from "@/components/admin/AdminSubmissionsView";
+import { AdminSubmissionsView } from "@/features/admin";
 
 export default function AdminSubmissionsPage() {
     return <AdminSubmissionsView />;

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { ClassPageClient } from "@/components/class/ClassPageClient";
+import { ClassPageClient } from "@/features/class";
 import { getCourseRequest, getCoursePeopleRequest } from "@/lib/api/courses";
 import { getCourseAssignmentsRequest, type AssignmentDto } from "@/lib/api/assignments";
-import { emojiFor, headerColorFor, avatarClassFor } from "@/lib/courseTheme";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import type { ClassDetails, ClassPerson, ClassworkEntry } from "@/lib/schemas";
+import { emojiFor, headerColorFor, avatarClassFor } from "@/lib/utils";
+import { useAuth } from "@/hooks";
+import type { ClassDetails, ClassPerson, ClassworkEntry } from "@/types";
 
 function formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });

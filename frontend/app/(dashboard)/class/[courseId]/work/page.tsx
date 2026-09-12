@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { StudentWorkView } from "@/components/class/StudentWorkView";
+import { StudentWorkView } from "@/features/class";
 import { homeClasses, sidebarClasses } from "@/lib/mock-data";
 import { getStudentWork } from "@/lib/studentWork";
 

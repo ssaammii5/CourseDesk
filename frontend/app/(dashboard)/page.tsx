@@ -1,9 +1,8 @@
 "use client";
 
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { AdminDashboardView } from "@/components/admin/AdminDashboardView";
-import { ClassesSection } from "@/components/home/ClassesSection";
-import { DueSoonCard } from "@/components/home/DueSoonCard";
+import { useAuth } from "@/hooks";
+import { AdminDashboardView } from "@/features/admin";
+import { ClassesSection, DueSoonCard } from "@/features/home";
 
 export default function DashboardHomePage() {
     const { user } = useAuth();

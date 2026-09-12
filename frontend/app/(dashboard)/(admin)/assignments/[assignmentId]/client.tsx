@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { AssignmentDetailView } from "@/components/class/AssignmentDetailView";
+import { AssignmentDetailView } from "@/features/class";
 import { getAssignmentRequest, type AssignmentDto } from "@/lib/api/assignments";
 import type { AssignmentDetail } from "@/lib/assignmentDetails";
 

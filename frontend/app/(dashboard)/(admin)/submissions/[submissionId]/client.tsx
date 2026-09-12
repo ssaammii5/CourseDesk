@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { AdminSubmissionDetailView } from "@/components/admin/AdminSubmissionDetailView";
+import { AdminSubmissionDetailView } from "@/features/admin";
 import { getSubmissionRequest, type SubmissionDto } from "@/lib/api/submissions";
 
 interface AdminSubmissionDetailClientProps {

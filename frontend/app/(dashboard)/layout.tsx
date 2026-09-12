@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { TopBar } from "@/components/layout/TopBar";
-import { RequireAuth } from "@/lib/auth/AuthProvider";
+import { Sidebar, TopBar } from "@/components/layout";
+import { RequireAuth } from "@/context";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 

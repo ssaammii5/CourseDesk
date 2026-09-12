@@ -20,8 +20,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
-import { avatarClassFor, letterOf } from "@/lib/courseTheme";
-import { useAuth } from "@/lib/auth/AuthProvider";
+import { avatarClassFor, letterOf } from "@/lib/utils/theme";
+import { useAuth } from "@/hooks/useAuth";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 

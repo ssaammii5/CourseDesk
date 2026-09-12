@@ -17,11 +17,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { IconButton } from "@/components/ui/IconButton";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { ROLE_STYLES } from "@/lib/currentUser";
+import { IconButton } from "@/components/ui";
+import { useAuth } from "@/hooks/useAuth";
+import { ROLE_STYLES } from "@/types";
 import { homeClasses, sidebarClasses } from "@/lib/mock-data";
-import { initialOf } from "@/lib/schemas";
+import { initialOf } from "@/lib/utils/format";
 
 interface TopBarProps {
     onMenuClick: () => void;

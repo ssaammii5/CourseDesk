@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { AssignmentDetailView } from "@/components/class/AssignmentDetailView";
+import { AssignmentDetailView } from "@/features/class";
 import { getAssignmentRequest, type AssignmentDto } from "@/lib/api/assignments";
 import { getMySubmissionsRequest } from "@/lib/api/submissions";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import type { AssignmentDetail } from "@/lib/assignmentDetails";
+import { useAuth } from "@/hooks";
+import type { AssignmentDetail } from "@/types";
 
 function formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
