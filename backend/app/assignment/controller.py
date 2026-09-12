@@ -1,0 +1,278 @@
+from fastapi import HTTPException, UploadFile
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
+
+from app.assignment.dtos import (
+    AssignmentAttachmentResponseSchema,
+    AssignmentResponseSchema,
+    AssignmentSchema,
+    AssignmentUpdateSchema,
+)
+from app.assignment.models import AssignmentAttachmentModel, AssignmentModel
+from app.course.models import CourseModel
+from app.submission.dtos import SubmissionResponseSchema, serialize_submission
+from app.submission.models import SubmissionModel
+from app.user.models import UserModel
+from app.utils.helpers import save_upload_file
+
+
+def serialize_assignment(
+    assignment: AssignmentModel, my_status: str | None = None
+) -> AssignmentResponseSchema:
+    course = assignment.course
+    return AssignmentResponseSchema(
+        id=assignment.id,
+        course_id=assignment.course_id,
+        course_name=course.name if course else None,
+        subject=course.subject if course else None,
+        program=course.program if course else None,
+        department=course.department if course else None,
+        session=course.session if course else None,
+        title=assignment.title,
+        description=assignment.description,
+        topic=assignment.topic,
+        kind=assignment.kind,
+        deadline_utc=assignment.deadline_utc,
+        max_marks=assignment.max_marks,
+        status=assignment.status,
+        created_by_id=assignment.created_by_id,
+        created_by_name=assignment.created_by.name if assignment.created_by else None,
+        created_at_utc=assignment.created_at_utc,
+        submission_count=len([s for s in assignment.submissions if s.submitted_at_utc]),
+        my_submission_status=my_status,
+    )
+
+
+def _assignment_stmt():
+    return select(AssignmentModel).options(
+        selectinload(AssignmentModel.course).selectinload(CourseModel.teachers),
+        selectinload(AssignmentModel.course).selectinload(CourseModel.students),
+        selectinload(AssignmentModel.created_by),
+        selectinload(AssignmentModel.submissions),
+    )
+
+
+def _can_manage_course(user: UserModel, course: CourseModel) -> bool:
+    if user.role == "Admin":
+        return True
+    if user.role == "Teacher":
+        return any(t.id == user.id for t in course.teachers)
+    return False
+
+
+def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str | None:
+    if user.role != "Student":
+        return None
+    mine = next((s for s in assignment.submissions if s.student_id == user.id), None)
+    if not mine or not mine.submitted_at_utc:
+        return "Assigned"
+    return "Graded" if mine.status == "Graded" else "Submitted"
+
+
+def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSchema]:
+    stmt = _assignment_stmt()
+    if user.role == "Admin":
+        assignments = db.scalars(stmt).all()
+    elif user.role == "Teacher":
+        assignments = db.scalars(
+            stmt.where(CourseModel.teachers.any(UserModel.id == user.id))
+        ).all()
+    else:
+        assignments = db.scalars(
+            stmt.where(
+                CourseModel.students.any(UserModel.id == user.id),
+                AssignmentModel.status == "Published",
+            )
+        ).all()
+    return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
+
+
+def get_course_assignments(
+    course_id: int, user: UserModel, db: Session
+) -> list[AssignmentResponseSchema]:
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.teachers), selectinload(CourseModel.students))
+        .where(CourseModel.id == course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    stmt = _assignment_stmt().where(AssignmentModel.course_id == course_id)
+    if user.role == "Student":
+        if not any(s.id == user.id for s in course.students):
+            raise HTTPException(403, detail="You are not enrolled in this course")
+        stmt = stmt.where(AssignmentModel.status == "Published")
+    elif user.role == "Teacher":
+        if not any(t.id == user.id for t in course.teachers):
+            raise HTTPException(403, detail="You do not teach this course")
+    assignments = db.scalars(stmt).all()
+    return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
+
+
+def _check_assignment_visible(assignment: AssignmentModel, user: UserModel) -> None:
+    if user.role == "Admin":
+        return
+    course = assignment.course
+    if user.role == "Teacher" and any(t.id == user.id for t in course.teachers):
+        return
+    if (
+        user.role == "Student"
+        and assignment.status == "Published"
+        and any(s.id == user.id for s in course.students)
+    ):
+        return
+    raise HTTPException(403, detail="You don't have access to this assignment")
+
+
+def get_assignment(
+    assignment_id: int, user: UserModel, db: Session
+) -> AssignmentResponseSchema:
+    assignment = db.scalar(_assignment_stmt().where(AssignmentModel.id == assignment_id))
+    if not assignment:
+        raise HTTPException(404, detail="Assignment id is incorrect")
+    _check_assignment_visible(assignment, user)
+    return serialize_assignment(assignment, _my_submission_status(assignment, user))
+
+
+def _get_manageable_assignment(
+    assignment_id: int, user: UserModel, db: Session
+) -> AssignmentModel:
+    assignment = db.scalar(_assignment_stmt().where(AssignmentModel.id == assignment_id))
+    if not assignment:
+        raise HTTPException(404, detail="Assignment id is incorrect")
+    if not _can_manage_course(user, assignment.course):
+        raise HTTPException(403, detail="You cannot manage this assignment")
+    return assignment
+
+
+def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> AssignmentModel:
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.teachers))
+        .where(CourseModel.id == body.course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    if not _can_manage_course(user, course):
+        raise HTTPException(403, detail="You cannot create assignments in this course")
+    assignment = AssignmentModel(
+        course_id=course.id,
+        title=body.title,
+        description=body.description,
+        topic=body.topic,
+        kind=body.kind,
+        deadline_utc=body.deadline_utc,
+        max_marks=body.max_marks,
+        status="Draft",
+        created_by_id=user.id,
+    )
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+    return assignment
+
+
+def update_assignment(
+    assignment_id: int, body: AssignmentUpdateSchema, user: UserModel, db: Session
+) -> None:
+    assignment = _get_manageable_assignment(assignment_id, user, db)
+    assignment.title = body.title
+    assignment.description = body.description
+    assignment.topic = body.topic
+    assignment.kind = body.kind
+    assignment.deadline_utc = body.deadline_utc
+    assignment.max_marks = body.max_marks
+    db.add(assignment)
+    db.commit()
+
+
+def delete_assignment(assignment_id: int, user: UserModel, db: Session) -> None:
+    assignment = _get_manageable_assignment(assignment_id, user, db)
+    db.delete(assignment)
+    db.commit()
+
+
+def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None:
+    assignment = _get_manageable_assignment(assignment_id, user, db)
+    assignment.status = "Published"
+    db.add(assignment)
+    db.flush()
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.students))
+        .where(CourseModel.id == assignment.course_id)
+    )
+    existing_ids = set(
+        db.scalars(
+            select(SubmissionModel.student_id).where(
+                SubmissionModel.assignment_id == assignment.id
+            )
+        ).all()
+    )
+    for student in course.students if course else []:
+        if student.id not in existing_ids:
+            db.add(
+                SubmissionModel(
+                    assignment_id=assignment.id, student_id=student.id, status="Draft"
+                )
+            )
+    db.commit()
+
+
+def get_assignment_submissions(
+    assignment_id: int, user: UserModel, db: Session
+) -> list[SubmissionResponseSchema]:
+    assignment = _get_manageable_assignment(assignment_id, user, db)
+    from app.submission.controller import _submission_stmt
+
+    submissions = db.scalars(
+        _submission_stmt().where(SubmissionModel.assignment_id == assignment.id)
+    ).all()
+    return [serialize_submission(s) for s in submissions]
+
+
+def add_attachment(
+    assignment_id: int,
+    user: UserModel,
+    db: Session,
+    file: UploadFile | None,
+    link_url: str | None,
+    link_title: str | None,
+) -> AssignmentAttachmentResponseSchema:
+    assignment = _get_manageable_assignment(assignment_id, user, db)
+    if link_url:
+        attachment = AssignmentAttachmentModel(
+            assignment_id=assignment.id,
+            file_name=link_title or link_url,
+            file_type="Link",
+            file_size="—",
+            kind="link",
+            url=link_url,
+        )
+    elif file is not None:
+        url, file_type, file_size = save_upload_file(file, f"assignments/{assignment.id}")
+        attachment = AssignmentAttachmentModel(
+            assignment_id=assignment.id,
+            file_name=file.filename or "file",
+            file_type=file_type,
+            file_size=file_size,
+            kind="file",
+            url=url,
+        )
+    else:
+        raise HTTPException(400, detail="No file or link provided")
+    db.add(attachment)
+    db.commit()
+    db.refresh(attachment)
+    return AssignmentAttachmentResponseSchema.model_validate(attachment)
+
+
+def delete_attachment(
+    assignment_id: int, attachment_id: int, user: UserModel, db: Session
+) -> None:
+    assignment = _get_manageable_assignment(assignment_id, user, db)
+    attachment = db.get(AssignmentAttachmentModel, attachment_id)
+    if not attachment or attachment.assignment_id != assignment.id:
+        raise HTTPException(404, detail="Attachment id is incorrect")
+    db.delete(attachment)
+    db.commit()

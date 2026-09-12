@@ -170,3 +170,14 @@ ai-service/models/*.joblib
 # ==========================================
 *.local.md
 *.local.txt
+
+
+
+
+#-------------fastapi
+__pycache__/
+*.py[oc]
+.venv
+venv/
+uploads/
+.env.local

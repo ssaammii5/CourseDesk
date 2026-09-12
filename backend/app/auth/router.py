@@ -1,0 +1,28 @@
+from fastapi import APIRouter, status
+
+from app.auth import controller
+from app.auth.dtos import LoginResponseSchema, LoginSchema, MeResponseSchema, RefreshSchema
+from app.utils.db import get_db
+from app.utils.helpers import DbSession, IsAuthenticated
+
+auth_routes = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+@auth_routes.post("/login", response_model=LoginResponseSchema, status_code=status.HTTP_200_OK)
+def login(body: LoginSchema, db: DbSession):
+    return controller.login_user(body, db)
+
+
+@auth_routes.get("/me", response_model=MeResponseSchema, status_code=status.HTTP_200_OK)
+def me(user: IsAuthenticated):
+    return user
+
+
+@auth_routes.post("/refresh", response_model=LoginResponseSchema, status_code=status.HTTP_200_OK)
+def refresh(body: RefreshSchema, db: DbSession):
+    return controller.refresh_tokens(body.refresh_token, db)
+
+
+@auth_routes.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(db: DbSession, user: IsAuthenticated):
+    return controller.logout_user(user, db)

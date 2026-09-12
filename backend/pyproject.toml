@@ -1,0 +1,28 @@
+[project]
+name = "coursedesk-backend"
+version = "0.1.0"
+description = "CourseDesk — Role-based Assignment & Submission Management System API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.19.2",
+    "fastapi[standard]>=0.141.1",
+    "psycopg[binary]>=3.3.5",
+    "pwdlib[argon2]>=0.3.1",
+    "pydantic-settings>=2.15.0",
+    "pyjwt>=2.13.0",
+    "sqlalchemy>=2.0.52",
+]
+
+[tool.basedpyright]
+include = ["app"]
+exclude = [".venv", "venv", "**/__pycache__"]
+pythonVersion = "3.12"
+typeCheckingMode = "recommended"
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnusedCallResult = "none"
+
+[tool.ruff.lint]
+unfixable = ["F401"]
