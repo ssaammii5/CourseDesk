@@ -144,20 +144,15 @@ export function LiveClassBanner({
         );
     }
 
+    if (!scheduleNotes) {
+        return null;
+    }
+
     return (
-        <div className="rounded-xl border border-gray-200 bg-white px-6 py-4">
-            <div className="flex items-center gap-3">
-                <Video className="h-5 w-5 text-gray-400" />
-                <div>
-                    <p className="text-sm font-medium text-gray-700">
-                        {state === "post"
-                            ? "Last session completed — next session details coming soon."
-                            : "No upcoming live sessions scheduled."}
-                    </p>
-                    {scheduleNotes && (
-                        <p className="mt-0.5 text-xs text-gray-500">{scheduleNotes}</p>
-                    )}
-                </div>
+        <div className="rounded-xl border border-gray-200 bg-white px-5 py-3">
+            <div className="flex items-center gap-2.5 text-xs text-gray-600">
+                <Video className="h-4 w-4 text-gray-400" />
+                <span>{scheduleNotes}</span>
             </div>
         </div>
     );

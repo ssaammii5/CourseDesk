@@ -1,5 +1,6 @@
 export * from "./components/AnnouncementCard";
 export * from "./components/AnnouncementFormModal";
+export * from "./components/ClassHeroBanner";
 export * from "./components/ClassTabs";
 export * from "./components/LiveClassBanner";
 export * from "./components/SessionCard";

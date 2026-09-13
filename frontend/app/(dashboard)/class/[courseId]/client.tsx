@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { ClassPageClient } from "@/features/class";
-import { getCourseRequest, getCoursePeopleRequest } from "@/lib/api/courses";
+import { getCourseRequest, getCoursePeopleRequest, type CourseDto } from "@/lib/api/courses";
 import {
     getCourseAssignmentsRequest,
     type AssignmentDto,
@@ -59,6 +59,7 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
     const { user } = useAuth();
     const isStudent = user?.role === "Student";
     const [title, setTitle] = useState("");
+    const [course, setCourse] = useState<CourseDto | null>(null);
     const [details, setDetails] = useState<ClassDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [notFoundFlag, setNotFoundFlag] = useState(false);
@@ -93,6 +94,7 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
                 ];
 
                 setTitle(course.name);
+                setCourse(course);
                 setDetails({
                     courseId,
                     session: course.session || course.subject || undefined,
@@ -126,5 +128,5 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
         );
     }
 
-    return <ClassPageClient title={title} details={details} />;
+    return <ClassPageClient title={title} details={details} course={course} />;
 }

@@ -10,6 +10,7 @@ import { StreamView } from "./StreamView";
 import { TeacherClassworkView } from "./TeacherClassworkView";
 import { AssignmentCreateView } from "./AssignmentCreateView";
 import { useAuth } from "@/hooks/useAuth";
+import type { CourseDto } from "@/lib/api/courses";
 import type { ClassDetails, ClassworkEntry } from "@/types";
 import type { SessionDto, AnnouncementDto } from "@/types/session";
 import type { SubmissionDto } from "@/lib/api/submissions";
@@ -28,9 +29,10 @@ import { getSubmissionsRequest } from "@/lib/api/submissions";
 interface ClassPageClientProps {
     title: string;
     details: ClassDetails;
+    course?: CourseDto | null;
 }
 
-export function ClassPageClient({ title, details }: ClassPageClientProps) {
+export function ClassPageClient({ title, details, course }: ClassPageClientProps) {
     const { user } = useAuth();
     const isTeacher = user?.role === "Teacher" || user?.role === "Admin";
 
@@ -221,6 +223,7 @@ export function ClassPageClient({ title, details }: ClassPageClientProps) {
                 <StreamView
                     title={title}
                     details={details}
+                    course={course}
                     nextSession={nextSession}
                     apiAnnouncements={apiAnnouncements}
                     isTeacher={isTeacher}

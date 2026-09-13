@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Info, PenLine, Pin } from "lucide-react";
+import { PenLine, Pin } from "lucide-react";
 import { AnnouncementCard } from "../components/AnnouncementCard";
-import { LiveClassBanner } from "../components/LiveClassBanner";
+import { ClassHeroBanner } from "../components/ClassHeroBanner";
 import { AnnouncementFormModal } from "../components/AnnouncementFormModal";
+import type { CourseDto } from "@/lib/api/courses";
 import type { ClassDetails } from "@/types";
 import type { SessionDto, AnnouncementDto } from "@/types/session";
 import { initialOf } from "@/lib/utils/format";
@@ -13,6 +14,7 @@ import { avatarClassFor } from "@/lib/utils/theme";
 interface StreamViewProps {
     title: string;
     details: ClassDetails;
+    course?: CourseDto | null;
     nextSession: SessionDto | null;
     apiAnnouncements: AnnouncementDto[];
     isTeacher: boolean;
@@ -26,6 +28,7 @@ interface StreamViewProps {
 export function StreamView({
     title,
     details,
+    course,
     nextSession,
     apiAnnouncements,
     isTeacher,
@@ -36,42 +39,13 @@ export function StreamView({
 
     return (
         <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-8">
-            <div
-                className="relative h-60 overflow-hidden rounded-xl sm:h-64"
-                style={{ backgroundColor: details.bannerColor }}
-            >
-                <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-y-0 right-8 flex items-center gap-4 opacity-90"
-                >
-                    <span className="text-6xl -rotate-12">✏️</span>
-                    <span className="text-8xl rotate-6">{details.bannerEmoji}</span>
-                </div>
-                <div className="absolute left-6 right-44 top-7">
-                    <h1 className="truncate text-3xl font-medium text-white sm:text-4xl">
-                        {title}
-                    </h1>
-                    {details.session && (
-                        <p className="mt-3 truncate text-base text-white/90 sm:text-lg">
-                            {details.session}
-                        </p>
-                    )}
-                </div>
-                <button
-                    type="button"
-                    aria-label="Class information"
-                    className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60"
-                >
-                    <Info className="h-6 w-6" />
-                </button>
-            </div>
-
-            <div className="mt-5">
-                <LiveClassBanner
-                    nextSession={nextSession}
-                    isEnrolled
-                />
-            </div>
+            <ClassHeroBanner
+                title={title}
+                details={details}
+                course={course}
+                nextSession={nextSession}
+                isTeacher={isTeacher}
+            />
 
             <div className="mt-6 flex flex-col gap-6 lg:flex-row">
                 <div className="w-full shrink-0 lg:w-[300px]">
