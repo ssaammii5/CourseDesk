@@ -14,6 +14,7 @@ import {
     Trash2,
     type LucideIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { ClassworkEntry } from "@/types";
 
 const KIND_ICONS: Record<NonNullable<ClassworkEntry["kind"]>, LucideIcon> = {
@@ -32,6 +33,7 @@ interface TeacherClassworkViewProps {
     onCreate: () => void;
     onEdit: (entry: ClassworkEntry) => void;
     onDelete: (entry: ClassworkEntry) => void;
+    courseId?: number;
 }
 
 export function TeacherClassworkView({
@@ -39,7 +41,9 @@ export function TeacherClassworkView({
     onCreate,
     onEdit,
     onDelete,
+    courseId,
 }: TeacherClassworkViewProps) {
+    const router = useRouter();
     const [collapsedTopics, setCollapsedTopics] = useState<ReadonlySet<string>>(new Set());
     const [menuFor, setMenuFor] = useState<number | null>(null);
 
@@ -129,13 +133,31 @@ export function TeacherClassworkView({
                                         </span>
                                         <button
                                             type="button"
-                                            onClick={() => onEdit(entry)}
+                                            onClick={() => {
+                                                if (courseId && entry.kind !== "material" && entry.status !== "Draft") {
+                                                    router.push(`/class/${courseId}/assignments/${entry.id}`);
+                                                } else {
+                                                    onEdit(entry);
+                                                }
+                                            }}
                                             title={entry.title}
-                                            className="min-w-0 flex-1 truncate text-left text-[15px] text-gray-900 hover:text-[#1a73e8]"
+                                            className="min-w-0 flex-1 truncate text-left text-[15px] font-medium text-gray-900 hover:text-[#1a73e8]"
                                         >
                                             {entry.title}
                                         </button>
-                                        <span className="shrink-0 text-[15px] text-gray-800">{rightLabel(entry)}</span>
+                                        <span className="shrink-0 text-[14px] text-gray-600">{rightLabel(entry)}</span>
+
+                                        {/* Quick Review action for assignments */}
+                                        {courseId && entry.kind !== "material" && entry.status !== "Draft" && (
+                                            <button
+                                                type="button"
+                                                onClick={() => router.push(`/class/${courseId}/assignments/${entry.id}`)}
+                                                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-[#1a73e8] hover:bg-blue-50/50 hover:text-[#1a73e8] transition-colors"
+                                            >
+                                                Review work
+                                            </button>
+                                        )}
+
                                         {/* Kebab menu */}
                                         <div className="relative shrink-0">
                                             <button
@@ -149,7 +171,20 @@ export function TeacherClassworkView({
                                             {menuFor === entry.id && (
                                                 <>
                                                     <div className="fixed inset-0 z-10" onClick={() => setMenuFor(null)} />
-                                                    <div className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                                                    <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                                                        {courseId && entry.kind !== "material" && entry.status !== "Draft" && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setMenuFor(null);
+                                                                    router.push(`/class/${courseId}/assignments/${entry.id}`);
+                                                                }}
+                                                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-[#1a73e8] hover:bg-blue-50 font-medium"
+                                                            >
+                                                                <ClipboardList className="h-4 w-4 text-[#1a73e8]" />
+                                                                Review student work
+                                                            </button>
+                                                        )}
                                                         <button
                                                             type="button"
                                                             onClick={() => {

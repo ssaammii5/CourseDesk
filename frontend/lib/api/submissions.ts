@@ -45,6 +45,8 @@ export interface SubmissionDto {
     maxMarks: number;
     attachments: SubmissionAttachmentDto[];
     activities: SubmissionActivityDto[];
+    privateNote?: string;
+    externalUrl?: string | null;
 }
 
 export interface GradeSubmissionPayload {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { AssignmentDetailView } from "@/features/class";
+import { AssignmentDetailView, TeacherAssignmentView } from "@/features/class";
 import { getAssignmentRequest, type AssignmentDto } from "@/lib/api/assignments";
 import { getMySubmissionsRequest } from "@/lib/api/submissions";
 import { useAuth } from "@/hooks";
@@ -43,7 +43,14 @@ async function buildDetail(dto: AssignmentDto, isStudent: boolean): Promise<Assi
         points: dto.maxMarks,
         dueLabel: formatDue(dto.deadlineUtc),
         description: dto.description,
-        attachments: [],
+        attachments: (dto.attachments ?? []).map((att) => ({
+            id: att.id,
+            title: att.fileName,
+            fileType: att.fileType,
+            thumbClass: "bg-blue-600",
+            url: att.url ?? undefined,
+            kind: "file",
+        })),
         submission: {
             status: submissionStatus,
             attachments: [],
@@ -53,43 +60,43 @@ async function buildDetail(dto: AssignmentDto, isStudent: boolean): Promise<Assi
 }
 
 interface StudentAssignmentDetailClientProps {
+    courseId: number;
     assignmentId: number;
 }
 
-export function StudentAssignmentDetailClient({ assignmentId }: StudentAssignmentDetailClientProps) {
+export function StudentAssignmentDetailClient({ courseId, assignmentId }: StudentAssignmentDetailClientProps) {
     const { user } = useAuth();
     const isStudent = user?.role === "Student";
 
+    const [assignmentDto, setAssignmentDto] = useState<AssignmentDto | null>(null);
     const [detail, setDetail] = useState<AssignmentDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [notFoundFlag, setNotFoundFlag] = useState(false);
 
-    useEffect(() => {
-        let cancelled = false;
-
-        const load = async () => {
-            try {
-                const dto = await getAssignmentRequest(assignmentId);
-                const mapped = await buildDetail(dto, isStudent);
-                if (!cancelled) setDetail(mapped);
-            } catch {
-                if (!cancelled) setNotFoundFlag(true);
-            } finally {
-                if (!cancelled) setLoading(false);
+    const loadData = useCallback(async () => {
+        try {
+            const dto = await getAssignmentRequest(assignmentId);
+            setAssignmentDto(dto);
+            if (isStudent) {
+                const mapped = await buildDetail(dto, true);
+                setDetail(mapped);
             }
-        };
-
-        void load();
-        return () => {
-            cancelled = true;
-        };
+        } catch {
+            setNotFoundFlag(true);
+        } finally {
+            setLoading(false);
+        }
     }, [assignmentId, isStudent]);
+
+    useEffect(() => {
+        void loadData();
+    }, [loadData]);
 
     if (notFoundFlag) {
         notFound();
     }
 
-    if (loading || !detail) {
+    if (loading || (!isStudent && !assignmentDto) || (isStudent && !detail)) {
         return (
             <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
@@ -97,5 +104,15 @@ export function StudentAssignmentDetailClient({ assignmentId }: StudentAssignmen
         );
     }
 
-    return <AssignmentDetailView detail={detail} />;
+    if (!isStudent && assignmentDto) {
+        return (
+            <TeacherAssignmentView
+                assignment={assignmentDto}
+                courseId={courseId}
+                onRefresh={loadData}
+            />
+        );
+    }
+
+    return detail ? <AssignmentDetailView detail={detail} /> : null;
 }

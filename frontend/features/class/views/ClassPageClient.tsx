@@ -243,6 +243,7 @@ export function ClassPageClient({ title, details }: ClassPageClientProps) {
                         onCreate={openCreate}
                         onEdit={openEdit}
                         onDelete={handleDelete}
+                        courseId={details.courseId}
                     />
                 ) : (
                     <ClassworkView items={classwork} courseId={details.courseId} />

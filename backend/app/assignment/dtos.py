@@ -26,6 +26,16 @@ class AssignmentUpdateSchema(CamelModel):
     submission_formats: str = "file_upload"
 
 
+class AssignmentAttachmentResponseSchema(CamelModel):
+    id: int
+    file_name: str
+    file_type: str
+    file_size: str
+    uploaded_at_utc: datetime
+    kind: str
+    url: str | None = None
+
+
 class AssignmentResponseSchema(CamelModel):
     id: int
     course_id: int
@@ -53,13 +63,4 @@ class AssignmentResponseSchema(CamelModel):
     # ── NEW ──
     session_id: int | None = None
     submission_formats: str = "file_upload"
-
-
-class AssignmentAttachmentResponseSchema(CamelModel):
-    id: int
-    file_name: str
-    file_type: str
-    file_size: str
-    uploaded_at_utc: datetime
-    kind: str
-    url: str | None = None
+    attachments: list[AssignmentAttachmentResponseSchema] = []

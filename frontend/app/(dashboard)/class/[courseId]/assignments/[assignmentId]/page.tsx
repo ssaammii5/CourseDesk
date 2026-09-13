@@ -5,6 +5,11 @@ interface AssignmentPageProps {
 }
 
 export default async function AssignmentPage({ params }: AssignmentPageProps) {
-    const { assignmentId } = await params;
-    return <StudentAssignmentDetailClient assignmentId={Number(assignmentId)} />;
+    const { courseId, assignmentId } = await params;
+    return (
+        <StudentAssignmentDetailClient
+            courseId={Number(courseId)}
+            assignmentId={Number(assignmentId)}
+        />
+    );
 }

@@ -53,6 +53,10 @@ def serialize_assignment(
         # ── NEW ──
         session_id=assignment.session_id,
         submission_formats=assignment.submission_formats,
+        attachments=[
+            AssignmentAttachmentResponseSchema.model_validate(att)
+            for att in (assignment.attachments or [])
+        ],
     )
 
 
@@ -62,6 +66,7 @@ def _assignment_stmt():
         selectinload(AssignmentModel.course).selectinload(CourseModel.students),
         selectinload(AssignmentModel.created_by),
         selectinload(AssignmentModel.submissions),
+        selectinload(AssignmentModel.attachments),
     )
 
 

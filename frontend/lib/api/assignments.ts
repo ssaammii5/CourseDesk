@@ -24,6 +24,7 @@ export interface AssignmentDto {
     assignedCount?: number;
     studentCount?: number;
     mySubmissionStatus: string | null; // "Assigned" | "Submitted" | "Graded" (students only)
+    attachments?: AssignmentAttachmentDto[];
 }
 
 export interface CreateAssignmentPayload {
