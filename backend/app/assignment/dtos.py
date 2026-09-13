@@ -11,6 +11,8 @@ class AssignmentSchema(CamelModel):
     kind: str = "Assignment"
     deadline_utc: datetime
     max_marks: int = 100
+    session_id: int | None = None
+    submission_formats: str = "file_upload"
 
 
 class AssignmentUpdateSchema(CamelModel):
@@ -20,6 +22,8 @@ class AssignmentUpdateSchema(CamelModel):
     kind: str = "Assignment"
     deadline_utc: datetime
     max_marks: int = 100
+    session_id: int | None = None
+    submission_formats: str = "file_upload"
 
 
 class AssignmentResponseSchema(CamelModel):
@@ -42,6 +46,9 @@ class AssignmentResponseSchema(CamelModel):
     created_at_utc: datetime
     submission_count: int = 0
     my_submission_status: str | None = None
+    # ── NEW ──
+    session_id: int | None = None
+    submission_formats: str = "file_upload"
 
 
 class AssignmentAttachmentResponseSchema(CamelModel):

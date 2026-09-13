@@ -10,6 +10,12 @@ class CourseSchema(CamelModel):
     is_active: bool = True
     teacher_ids: list[int] = []
     student_ids: list[int] = []
+    # ── NEW ──
+    meeting_provider: str = ""
+    meeting_url: str | None = None
+    meeting_id: str = ""
+    meeting_passcode: str = ""
+    schedule_notes: str = ""
 
 
 class CourseResponseSchema(CamelModel):
@@ -26,6 +32,12 @@ class CourseResponseSchema(CamelModel):
     teacher_names: list[str] = []
     student_ids: list[int] = []
     student_count: int = 0
+    # ── NEW ──
+    meeting_provider: str = ""
+    meeting_url: str | None = None
+    meeting_id: str = ""
+    meeting_passcode: str = ""
+    schedule_notes: str = ""
 
 
 class CoursePersonSchema(CamelModel):

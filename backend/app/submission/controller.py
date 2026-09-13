@@ -85,6 +85,7 @@ def submit_assignment(
 ) -> SubmissionResponseSchema:
     if user.role != "Student":
         raise HTTPException(403, detail="Only students can submit work")
+
     assignment = db.scalar(
         select(AssignmentModel).where(AssignmentModel.id == body.assignment_id)
     )
@@ -92,6 +93,7 @@ def submit_assignment(
         raise HTTPException(404, detail="Assignment id is incorrect")
     if assignment.status != "Published":
         raise HTTPException(400, detail="Assignment is not published")
+
     now = datetime.now(UTC)
     submission = db.scalar(
         select(SubmissionModel).where(
@@ -100,17 +102,26 @@ def submit_assignment(
         )
     )
     is_new = submission is None
+
     if submission is None:
         submission = SubmissionModel(
             assignment_id=assignment.id, student_id=user.id
         )
         db.add(submission)
+
     submission.answer = body.answer
     submission.status = "Submitted"
     submission.submitted_at_utc = now
-    submission.is_late = assignment.deadline_utc is not None and now > assignment.deadline_utc
+    submission.is_late = (
+        assignment.deadline_utc is not None and now > assignment.deadline_utc
+    )
+    # ── NEW ──
+    submission.private_note = body.private_note
+    submission.external_url = body.external_url
+
     db.add(submission)
     db.flush()
+
     db.add(
         SubmissionActivityModel(
             submission_id=submission.id,
@@ -148,11 +159,13 @@ def grade_submission(
         raise HTTPException(403, detail="You cannot grade this submission")
     if not submission.submitted_at_utc:
         raise HTTPException(400, detail="Cannot grade work that has not been submitted")
+
     assignment = submission.assignment
     if body.marks < 0 or body.marks > assignment.max_marks:
         raise HTTPException(
             400, detail=f"Marks must be between 0 and {assignment.max_marks}"
         )
+
     submission.status = "Graded"
     submission.marks = body.marks
     submission.feedback = body.feedback
@@ -160,6 +173,7 @@ def grade_submission(
     submission.graded_at_utc = datetime.now(UTC)
     db.add(submission)
     db.flush()
+
     db.add(
         SubmissionActivityModel(
             submission_id=submission.id,
@@ -195,6 +209,7 @@ def add_submission_attachment(
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_modify_submission(user, submission):
         raise HTTPException(403, detail="You cannot modify this submission")
+
     if link_url:
         attachment = SubmissionAttachmentModel(
             submission_id=submission.id,
@@ -216,6 +231,7 @@ def add_submission_attachment(
         )
     else:
         raise HTTPException(400, detail="No file or link provided")
+
     db.add(attachment)
     db.commit()
     db.refresh(attachment)
@@ -230,8 +246,10 @@ def delete_submission_attachment(
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_modify_submission(user, submission):
         raise HTTPException(403, detail="You cannot modify this submission")
+
     attachment = db.get(SubmissionAttachmentModel, attachment_id)
-    if not attachment or attachment.submission_id != submission.id:
+    if not attachment or attachment.submission_id != submission_id:
         raise HTTPException(404, detail="Attachment id is incorrect")
+
     db.delete(attachment)
     db.commit()

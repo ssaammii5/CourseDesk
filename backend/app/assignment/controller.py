@@ -40,6 +40,9 @@ def serialize_assignment(
         created_at_utc=assignment.created_at_utc,
         submission_count=len([s for s in assignment.submissions if s.submitted_at_utc]),
         my_submission_status=my_status,
+        # ── NEW ──
+        session_id=assignment.session_id,
+        submission_formats=assignment.submission_formats,
     )
 
 
@@ -97,6 +100,7 @@ def get_course_assignments(
     )
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
+
     stmt = _assignment_stmt().where(AssignmentModel.course_id == course_id)
     if user.role == "Student":
         if not any(s.id == user.id for s in course.students):
@@ -105,6 +109,7 @@ def get_course_assignments(
     elif user.role == "Teacher":
         if not any(t.id == user.id for t in course.teachers):
             raise HTTPException(403, detail="You do not teach this course")
+
     assignments = db.scalars(stmt).all()
     return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
 
@@ -155,6 +160,7 @@ def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> A
         raise HTTPException(404, detail="Course id is incorrect")
     if not _can_manage_course(user, course):
         raise HTTPException(403, detail="You cannot create assignments in this course")
+
     assignment = AssignmentModel(
         course_id=course.id,
         title=body.title,
@@ -165,6 +171,9 @@ def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> A
         max_marks=body.max_marks,
         status="Draft",
         created_by_id=user.id,
+        # ── NEW ──
+        session_id=body.session_id,
+        submission_formats=body.submission_formats,
     )
     db.add(assignment)
     db.commit()
@@ -182,6 +191,8 @@ def update_assignment(
     assignment.kind = body.kind
     assignment.deadline_utc = body.deadline_utc
     assignment.max_marks = body.max_marks
+    assignment.session_id = body.session_id
+    assignment.submission_formats = body.submission_formats
     db.add(assignment)
     db.commit()
 
@@ -197,6 +208,7 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
     assignment.status = "Published"
     db.add(assignment)
     db.flush()
+
     course = db.scalar(
         select(CourseModel)
         .options(selectinload(CourseModel.students))
@@ -240,6 +252,7 @@ def add_attachment(
     link_title: str | None,
 ) -> AssignmentAttachmentResponseSchema:
     assignment = _get_manageable_assignment(assignment_id, user, db)
+
     if link_url:
         attachment = AssignmentAttachmentModel(
             assignment_id=assignment.id,
@@ -261,6 +274,7 @@ def add_attachment(
         )
     else:
         raise HTTPException(400, detail="No file or link provided")
+
     db.add(attachment)
     db.commit()
     db.refresh(attachment)

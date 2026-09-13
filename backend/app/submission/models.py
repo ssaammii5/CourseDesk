@@ -18,7 +18,8 @@ class SubmissionModel(Base):
         ForeignKey("user_table.id", ondelete="CASCADE"), index=True
     )
     answer: Mapped[str] = mapped_column(Text, default="")
-    status: Mapped[str] = mapped_column(default="Draft")  # Draft | Submitted | Graded
+    status: Mapped[str] = mapped_column(default="Draft")
+    # Draft | Submitted | Graded
     marks: Mapped[Optional[int]] = mapped_column(default=None)
     feedback: Mapped[Optional[str]] = mapped_column(Text, default=None)
     submitted_at_utc: Mapped[Optional[datetime]] = mapped_column(
@@ -34,6 +35,11 @@ class SubmissionModel(Base):
         DateTime(timezone=True), default=None
     )
     is_late: Mapped[bool] = mapped_column(default=False)
+
+    # ── NEW ──
+    private_note: Mapped[str] = mapped_column(Text, default="")
+    external_url: Mapped[Optional[str]] = mapped_column(default=None)
+    # GitHub / Figma / live-preview link
 
     assignment: Mapped["AssignmentModel"] = relationship(back_populates="submissions")  # type: ignore[name-defined]  # noqa: F821
     student: Mapped["UserModel"] = relationship(foreign_keys=[student_id])  # type: ignore[name-defined]  # noqa: F821
@@ -59,7 +65,7 @@ class SubmissionAttachmentModel(Base):
     uploaded_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
-    kind: Mapped[str] = mapped_column(default="file")  # file | link
+    kind: Mapped[str] = mapped_column(default="file")
     url: Mapped[Optional[str]] = mapped_column(default=None)
 
     submission: Mapped["SubmissionModel"] = relationship(back_populates="attachments")

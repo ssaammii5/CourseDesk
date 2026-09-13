@@ -6,6 +6,9 @@ from app.utils.dto import CamelModel
 class SubmitAssignmentSchema(CamelModel):
     assignment_id: int
     answer: str = ""
+    # ── NEW ──
+    private_note: str = ""
+    external_url: str | None = None
 
 
 class GradeSubmissionSchema(CamelModel):
@@ -58,15 +61,19 @@ class SubmissionResponseSchema(CamelModel):
     max_marks: int
     attachments: list[SubmissionAttachmentResponseSchema] = []
     activities: list[SubmissionActivityResponseSchema] = []
+    # ── NEW ──
+    private_note: str = ""
+    external_url: str | None = None
 
 
 def serialize_submission(submission) -> "SubmissionResponseSchema":
-    from app.submission.models import SubmissionModel  # noqa: F401  (typing aid)
+    from app.submission.models import SubmissionModel  # noqa: F401
 
     assignment = submission.assignment
     course = assignment.course if assignment else None
     student = submission.student
     details = student.student_details if student else None
+
     return SubmissionResponseSchema(
         id=submission.id,
         assignment_id=submission.assignment_id,
@@ -101,4 +108,7 @@ def serialize_submission(submission) -> "SubmissionResponseSchema":
             SubmissionActivityResponseSchema.model_validate(x)
             for x in submission.activities
         ],
+        # ── NEW ──
+        private_note=submission.private_note,
+        external_url=submission.external_url,
     )

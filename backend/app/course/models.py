@@ -1,4 +1,6 @@
-from sqlalchemy import Column, ForeignKey, Table
+from typing import Optional
+
+from sqlalchemy import Column, ForeignKey, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.user.models import UserModel
@@ -30,6 +32,15 @@ class CourseModel(Base):
     session: Mapped[str] = mapped_column(default="")
     is_active: Mapped[bool] = mapped_column(default=True)
 
+    # ── NEW: Live-class / meeting configuration ──
+    meeting_provider: Mapped[str] = mapped_column(default="")
+    # zoom | meet | teams | other
+    meeting_url: Mapped[Optional[str]] = mapped_column(default=None)
+    meeting_id: Mapped[str] = mapped_column(default="")
+    meeting_passcode: Mapped[str] = mapped_column(default="")
+    schedule_notes: Mapped[str] = mapped_column(Text, default="")
+    # e.g. "Every Monday & Wednesday, 7:00 PM – 9:00 PM (GMT+6)"
+
     teachers: Mapped[list["UserModel"]] = relationship(
         secondary=course_teacher_table, backref="teaching_courses"
     )
@@ -37,5 +48,11 @@ class CourseModel(Base):
         secondary=course_student_table, backref="enrolled_courses"
     )
     assignments: Mapped[list["AssignmentModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="course", cascade="all, delete-orphan"
+    )
+    sessions: Mapped[list["SessionModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="course", cascade="all, delete-orphan"
+    )
+    announcements: Mapped[list["AnnouncementModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         back_populates="course", cascade="all, delete-orphan"
     )

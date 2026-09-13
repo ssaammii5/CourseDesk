@@ -29,6 +29,12 @@ def serialize_course(course: CourseModel) -> CourseResponseSchema:
         teacher_names=[t.name for t in teachers],
         student_ids=sorted(s.id for s in course.students),
         student_count=len(course.students),
+        # ── NEW ──
+        meeting_provider=course.meeting_provider,
+        meeting_url=course.meeting_url,
+        meeting_id=course.meeting_id,
+        meeting_passcode=course.meeting_passcode,
+        schedule_notes=course.schedule_notes,
     )
 
 
@@ -97,6 +103,11 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
         department=body.department,
         session=body.session,
         is_active=body.is_active,
+        meeting_provider=body.meeting_provider,
+        meeting_url=body.meeting_url,
+        meeting_id=body.meeting_id,
+        meeting_passcode=body.meeting_passcode,
+        schedule_notes=body.schedule_notes,
     )
     course.teachers = _fetch_users(body.teacher_ids, db)
     course.students = _fetch_users(body.student_ids, db)
@@ -115,6 +126,11 @@ def update_course(course_id: int, body: CourseSchema, db: Session) -> CourseResp
     course.department = body.department
     course.session = body.session
     course.is_active = body.is_active
+    course.meeting_provider = body.meeting_provider
+    course.meeting_url = body.meeting_url
+    course.meeting_id = body.meeting_id
+    course.meeting_passcode = body.meeting_passcode
+    course.schedule_notes = body.schedule_notes
     course.teachers = _fetch_users(body.teacher_ids, db)
     course.students = _fetch_users(body.student_ids, db)
     db.add(course)

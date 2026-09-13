@@ -14,19 +14,30 @@ class AssignmentModel(Base):
     course_id: Mapped[int] = mapped_column(
         ForeignKey("course_table.id", ondelete="CASCADE"), index=True
     )
+    # ── NEW: link assignment to a session ──
+    session_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("session_table.id", ondelete="SET NULL"), default=None, index=True
+    )
     title: Mapped[str] = mapped_column()
     description: Mapped[str] = mapped_column(Text, default="")
     topic: Mapped[str] = mapped_column(default="")
-    kind: Mapped[str] = mapped_column(default="Assignment")  # Assignment | Material | Quiz
+    kind: Mapped[str] = mapped_column(default="Assignment")
+    # Assignment | Material | Quiz | Recording
     deadline_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     max_marks: Mapped[int] = mapped_column(default=100)
-    status: Mapped[str] = mapped_column(default="Draft")  # Draft | Published | Archived
+    status: Mapped[str] = mapped_column(default="Draft")
+    # Draft | Published | Archived
     created_by_id: Mapped[int] = mapped_column(ForeignKey("user_table.id"))
     created_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
+    # ── NEW: submission format criteria ──
+    submission_formats: Mapped[str] = mapped_column(default="file_upload")
+    # comma-separated: file_upload, github_link, live_url, figma_link, text
+
     course: Mapped["CourseModel"] = relationship(back_populates="assignments")  # type: ignore[name-defined]  # noqa: F821
+    session: Mapped[Optional["SessionModel"]] = relationship(back_populates="assignments")  # type: ignore[name-defined]  # noqa: F821
     created_by: Mapped["UserModel"] = relationship()  # type: ignore[name-defined]  # noqa: F821
     attachments: Mapped[list["AssignmentAttachmentModel"]] = relationship(
         back_populates="assignment", cascade="all, delete-orphan"
@@ -49,7 +60,8 @@ class AssignmentAttachmentModel(Base):
     uploaded_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
-    kind: Mapped[str] = mapped_column(default="file")  # file | link
+    kind: Mapped[str] = mapped_column(default="file")
+    # file | link | video
     url: Mapped[Optional[str]] = mapped_column(default=None)
 
     assignment: Mapped["AssignmentModel"] = relationship(back_populates="attachments")
