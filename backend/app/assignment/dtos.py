@@ -45,6 +45,10 @@ class AssignmentResponseSchema(CamelModel):
     created_by_name: str | None = None
     created_at_utc: datetime
     submission_count: int = 0
+    turned_in_count: int = 0
+    graded_count: int = 0
+    assigned_count: int = 0
+    student_count: int = 0
     my_submission_status: str | None = None
     # ── NEW ──
     session_id: int | None = None

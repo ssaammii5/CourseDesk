@@ -7,3 +7,5 @@ export * from "./submissions";
 export * from "./academics";
 export * from "./appSettings";
 export * from "./dashboard";
+export * from "./sessions";
+export * from "./announcements";

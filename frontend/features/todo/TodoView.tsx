@@ -1,170 +1,544 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronDown, ClipboardList } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    todoData,
-    todoTabs,
-    type TodoTabId,
-    type TodoTask,
-} from "@/lib/todoData";
+    Check,
+    ChevronDown,
+    ClipboardCheck,
+    ClipboardList,
+    ExternalLink,
+    FolderCheck,
+    RotateCcw,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { getAssignmentsRequest, type AssignmentDto } from "@/lib/api/assignments";
 
-const ICON_TONES: Record<string, string> = {
-    gray: "bg-gray-200 text-gray-700",
-    blue: "bg-[#d7e3fd] text-[#174ea6]",
-    green: "bg-[#ceead6] text-[#137333]",
-};
+const REVIEWED_STORAGE_KEY = "coursedesk.teacher.reviewed_assignments.v1";
 
-const DUE_TONES: Record<string, string> = {
-    green: "text-[#137333]",
-    red: "text-[#c5221f]",
-    gray: "text-gray-600",
-    default: "text-gray-800",
-};
+function readReviewedStore(): number[] {
+    if (typeof window === "undefined") return [];
+    try {
+        const raw = window.localStorage.getItem(REVIEWED_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
 
-/* All sections start collapsed */
-function initialOpen(tab: TodoTabId): Record<string, boolean> {
-    const map: Record<string, boolean> = {};
-    for (const s of todoData[tab]) map[s.id] = false;
-    return map;
+function writeReviewedStore(ids: number[]) {
+    try {
+        window.localStorage.setItem(REVIEWED_STORAGE_KEY, JSON.stringify(ids));
+    } catch {
+        /* ignore */
+    }
+}
+
+type TeacherTab = "to-review" | "reviewed";
+type StudentTab = "assigned" | "missing" | "done";
+
+type TimeSectionId = "no-due" | "earlier" | "this-week" | "next-week" | "later";
+
+interface TimeSection {
+    id: TimeSectionId;
+    label: string;
+    assignments: AssignmentDto[];
+}
+
+function categorizeByDueDate(assignments: AssignmentDto[]): TimeSection[] {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const endOfWeek = startOfToday + (7 - now.getDay()) * 86400_000;
+    const endOfNextWeek = endOfWeek + 7 * 86400_000;
+
+    const noDue: AssignmentDto[] = [];
+    const earlier: AssignmentDto[] = [];
+    const thisWeek: AssignmentDto[] = [];
+    const nextWeek: AssignmentDto[] = [];
+    const later: AssignmentDto[] = [];
+
+    for (const a of assignments) {
+        if (!a.deadlineUtc) {
+            noDue.push(a);
+            continue;
+        }
+        const time = new Date(a.deadlineUtc).getTime();
+        if (time < startOfToday) {
+            earlier.push(a);
+        } else if (time <= endOfWeek) {
+            thisWeek.push(a);
+        } else if (time <= endOfNextWeek) {
+            nextWeek.push(a);
+        } else {
+            later.push(a);
+        }
+    }
+
+    return [
+        { id: "no-due", label: "No due date", assignments: noDue },
+        { id: "this-week", label: "This week", assignments: thisWeek },
+        { id: "next-week", label: "Next week", assignments: nextWeek },
+        { id: "later", label: "Later", assignments: later },
+        { id: "earlier", label: "Earlier / Past due", assignments: earlier },
+    ];
+}
+
+function formatDueLabel(iso?: string | null): { text: string; tone: "default" | "green" | "red" } {
+    if (!iso) return { text: "No due date", tone: "default" };
+    const date = new Date(iso);
+    const now = new Date();
+    const isPast = date.getTime() < now.getTime();
+    const formatted = date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+    return {
+        text: `Due ${formatted}`,
+        tone: isPast ? "red" : "green",
+    };
 }
 
 export function TodoView() {
-    const [tab, setTab] = useState<TodoTabId>("assigned");
+    const router = useRouter();
+    const { user } = useAuth();
+    const isTeacher = user?.role === "Teacher" || user?.role === "Admin";
+
+    const [teacherTab, setTeacherTab] = useState<TeacherTab>("to-review");
+    const [studentTab, setStudentTab] = useState<StudentTab>("assigned");
     const [classFilter, setClassFilter] = useState("all");
-    const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
-        initialOpen("assigned"),
+    const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [reviewedIds, setReviewedIds] = useState<number[]>([]);
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+        "no-due": true,
+        "this-week": true,
+        "next-week": true,
+        later: true,
+        earlier: false,
+    });
+
+    useEffect(() => {
+        setReviewedIds(readReviewedStore());
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        getAssignmentsRequest()
+            .then((data) => {
+                if (!cancelled) setAssignments(data);
+            })
+            .catch(() => {
+                if (!cancelled) setAssignments([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const toggleReviewed = useCallback(
+        (id: number, e: React.MouseEvent) => {
+            e.stopPropagation();
+            setReviewedIds((prev) => {
+                const next = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
+                writeReviewedStore(next);
+                return next;
+            });
+        },
+        [],
     );
-
-    const sections = todoData[tab];
-
-    const classOptions = useMemo(
-        () => Array.from(new Set(sections.flatMap((s) => s.tasks.map((t) => t.courseName)))),
-        [sections],
-    );
-
-    const visibleSections = sections.map((s) => ({
-        ...s,
-        tasks: classFilter === "all" ? s.tasks : s.tasks.filter((t) => t.courseName === classFilter),
-    }));
-
-    const switchTab = (next: TodoTabId) => {
-        setTab(next);
-        setClassFilter("all");
-        setOpenSections(initialOpen(next)); // collapsed again on every tab switch
-    };
 
     const toggleSection = (id: string) =>
         setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
 
+    // Course options for filter dropdown
+    const classOptions = useMemo(() => {
+        const set = new Set<string>();
+        for (const a of assignments) {
+            if (a.courseName) set.add(a.courseName);
+        }
+        return Array.from(set);
+    }, [assignments]);
+
+    // Filter assignments by selected course
+    const filteredAssignments = useMemo(() => {
+        if (classFilter === "all") return assignments;
+        return assignments.filter((a) => a.courseName === classFilter);
+    }, [assignments, classFilter]);
+
+    // Split assignments for teacher: To Review vs Reviewed
+    const teacherToReview = useMemo(
+        () => filteredAssignments.filter((a) => !reviewedIds.includes(a.id)),
+        [filteredAssignments, reviewedIds],
+    );
+    const teacherReviewed = useMemo(
+        () => filteredAssignments.filter((a) => reviewedIds.includes(a.id)),
+        [filteredAssignments, reviewedIds],
+    );
+
+    // Split assignments for student: Assigned vs Missing vs Done
+    const studentAssigned = useMemo(() => {
+        const now = Date.now();
+        return filteredAssignments.filter(
+            (a) =>
+                a.mySubmissionStatus !== "Submitted" &&
+                a.mySubmissionStatus !== "Graded" &&
+                (!a.deadlineUtc || new Date(a.deadlineUtc).getTime() >= now),
+        );
+    }, [filteredAssignments]);
+
+    const studentMissing = useMemo(() => {
+        const now = Date.now();
+        return filteredAssignments.filter(
+            (a) =>
+                a.mySubmissionStatus !== "Submitted" &&
+                a.mySubmissionStatus !== "Graded" &&
+                a.deadlineUtc &&
+                new Date(a.deadlineUtc).getTime() < now,
+        );
+    }, [filteredAssignments]);
+
+    const studentDone = useMemo(() => {
+        return filteredAssignments.filter(
+            (a) => a.mySubmissionStatus === "Submitted" || a.mySubmissionStatus === "Graded",
+        );
+    }, [filteredAssignments]);
+
+    const activeList = isTeacher
+        ? teacherTab === "to-review"
+            ? teacherToReview
+            : teacherReviewed
+        : studentTab === "assigned"
+            ? studentAssigned
+            : studentTab === "missing"
+                ? studentMissing
+                : studentDone;
+
+    const sections = useMemo(() => categorizeByDueDate(activeList), [activeList]);
+
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-white">
-            {/* Tabs */}
+        <div className="min-h-[calc(100vh-4rem)] bg-white pb-16">
+            {/* Top Navigation Tabs */}
             <div className="sticky top-16 z-30 border-b border-gray-200 bg-white">
-                <nav className="flex gap-8 px-4 sm:gap-12 sm:px-8">
-                    {todoTabs.map((t) => (
-                        <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => switchTab(t.id)}
-                            className={`relative cursor-pointer py-4 text-sm font-medium transition-colors ${tab === t.id ? "text-[#1a73e8]" : "text-gray-600 hover:text-gray-900"
-                                }`}
-                        >
-                            {t.label}
-                            {tab === t.id && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
-                            )}
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
-            <div className="mx-auto w-full max-w-[1000px] px-4 py-8 sm:px-8">
-                {/* Class filter */}
-                <div className="relative w-full max-w-[380px] rounded border border-gray-500/70 focus-within:border-[#1a73e8] focus-within:ring-1 focus-within:ring-[#1a73e8]">
-                    <select
-                        value={classFilter}
-                        onChange={(e) => setClassFilter(e.target.value)}
-                        className="w-full appearance-none bg-transparent px-4 py-4 text-[15px] text-gray-900 focus:outline-none"
-                    >
-                        <option value="all">All classes</option>
-                        {classOptions.map((c) => (
-                            <option key={c} value={c}>
-                                {c}
-                            </option>
-                        ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-800" />
-                </div>
-
-                {/* Due-date sections */}
-                <div className="mt-6">
-                    {visibleSections.map((s) => {
-                        const count = s.tasks.length;
-                        const open = !!openSections[s.id];
-                        return (
-                            <section key={s.id}>
+                <div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 sm:px-8">
+                    <nav className="flex gap-6 sm:gap-10">
+                        {isTeacher ? (
+                            <>
                                 <button
                                     type="button"
-                                    onClick={() => toggleSection(s.id)}
-                                    className="group flex w-full cursor-pointer items-center justify-between py-4"
+                                    onClick={() => setTeacherTab("to-review")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${teacherTab === "to-review"
+                                        ? "text-[#1a73e8]"
+                                        : "text-gray-600 hover:text-gray-900"
+                                        }`}
                                 >
-                                    <span className="text-[22px] text-gray-900">{s.label}</span>
-                                    <span className="flex items-center gap-4">
-                                        <span
-                                            className={`text-sm font-medium ${count > 0 ? "text-[#1a73e8]" : "text-gray-600"
-                                                }`}
-                                        >
-                                            {count}
-                                        </span>
-                                        <span className="relative">
-                                            <ChevronDown
-                                                className={`h-5 w-5 transition-transform ${open ? "rotate-180" : ""} ${count > 0 ? "text-gray-800" : "text-gray-400"
-                                                    }`}
-                                            />
-                                            {/* Hover tooltip: Expand / Collapse */}
-                                            <span className="pointer-events-none absolute bottom-full right-0 z-20 mb-1.5 whitespace-nowrap rounded bg-[#3c4043] px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
-                                                {open ? "Collapse" : "Expand"}
-                                            </span>
-                                        </span>
+                                    <ClipboardList className="h-4 w-4" />
+                                    To review
+                                    <span
+                                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${teacherTab === "to-review"
+                                            ? "bg-[#e8f0fe] text-[#174ea6]"
+                                            : "bg-gray-100 text-gray-600"
+                                            }`}
+                                    >
+                                        {teacherToReview.length}
                                     </span>
+                                    {teacherTab === "to-review" && (
+                                        <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                                    )}
                                 </button>
-
-                                {open && count > 0 && (
-                                    <div>
-                                        {s.tasks.map((task) => (
-                                            <TodoRow key={task.id} task={task} />
-                                        ))}
-                                    </div>
-                                )}
-                            </section>
-                        );
-                    })}
+                                <button
+                                    type="button"
+                                    onClick={() => setTeacherTab("reviewed")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${teacherTab === "reviewed"
+                                        ? "text-[#1a73e8]"
+                                        : "text-gray-600 hover:text-gray-900"
+                                        }`}
+                                >
+                                    <FolderCheck className="h-4 w-4" />
+                                    Reviewed
+                                    <span
+                                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${teacherTab === "reviewed"
+                                            ? "bg-[#e8f0fe] text-[#174ea6]"
+                                            : "bg-gray-100 text-gray-600"
+                                            }`}
+                                    >
+                                        {teacherReviewed.length}
+                                    </span>
+                                    {teacherTab === "reviewed" && (
+                                        <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                                    )}
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setStudentTab("assigned")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${studentTab === "assigned"
+                                        ? "text-[#1a73e8]"
+                                        : "text-gray-600 hover:text-gray-900"
+                                        }`}
+                                >
+                                    Assigned
+                                    <span className="rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-semibold text-[#174ea6]">
+                                        {studentAssigned.length}
+                                    </span>
+                                    {studentTab === "assigned" && (
+                                        <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStudentTab("missing")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${studentTab === "missing"
+                                        ? "text-[#c5221f]"
+                                        : "text-gray-600 hover:text-gray-900"
+                                        }`}
+                                >
+                                    Missing
+                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-[#c5221f]">
+                                        {studentMissing.length}
+                                    </span>
+                                    {studentTab === "missing" && (
+                                        <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#c5221f]" />
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStudentTab("done")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${studentTab === "done"
+                                        ? "text-[#137333]"
+                                        : "text-gray-600 hover:text-gray-900"
+                                        }`}
+                                >
+                                    Done
+                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-[#137333]">
+                                        {studentDone.length}
+                                    </span>
+                                    {studentTab === "done" && (
+                                        <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#137333]" />
+                                    )}
+                                </button>
+                            </>
+                        )}
+                    </nav>
                 </div>
             </div>
-        </div>
-    );
-}
 
-function TodoRow({ task }: { task: TodoTask }) {
-    const iconTone = ICON_TONES[task.iconTone ?? "gray"];
-    const dueTone = DUE_TONES[task.dueTone ?? "default"];
-    return (
-        <div className="flex items-center justify-between gap-6 border-b border-gray-200 py-4">
-            <div className="flex min-w-0 items-center gap-5">
-                <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconTone}`}
-                >
-                    <ClipboardList className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                    <p className="truncate text-[15px] font-medium text-gray-900">{task.title}</p>
-                    <p className="truncate text-sm text-gray-600">{task.courseName}</p>
+            <div className="mx-auto w-full max-w-[1100px] px-4 py-8 sm:px-8">
+                {/* Header & Course Filter */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-semibold text-gray-900">
+                            {isTeacher ? "To-review" : "To-do"}
+                        </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            {isTeacher
+                                ? "Review student submissions, manage deadlines, and track grading progress across your courses."
+                                : "Keep track of your assigned coursework, upcoming deadlines, and grades."}
+                        </p>
+                    </div>
+
+                    <div className="relative w-full sm:max-w-xs">
+                        <select
+                            value={classFilter}
+                            onChange={(e) => setClassFilter(e.target.value)}
+                            className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-9 text-sm font-medium text-gray-800 shadow-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                        >
+                            <option value="all">All classes</option>
+                            {classOptions.map((c) => (
+                                <option key={c} value={c}>
+                                    {c}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    </div>
                 </div>
-            </div>
-            <div className="shrink-0 text-right">
-                {task.dueLabel && <p className={`text-sm font-medium ${dueTone}`}>{task.dueLabel}</p>}
-                {task.note && <p className="mt-0.5 text-xs italic text-gray-600">{task.note}</p>}
+
+                {/* Content */}
+                {loading ? (
+                    <div className="flex h-64 items-center justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
+                    </div>
+                ) : activeList.length === 0 ? (
+                    <div className="mt-12 rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center">
+                        <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-3 text-lg font-medium text-gray-900">
+                            {isTeacher
+                                ? teacherTab === "to-review"
+                                    ? "All caught up! No coursework needs review."
+                                    : "No assignments marked as reviewed yet."
+                                : "Woohoo, no work due!"}
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                            {isTeacher
+                                ? "When students submit assignments, they will appear here ready for grading."
+                                : "Check back later when instructors post new assignments."}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="mt-8 space-y-4">
+                        {sections.map((section) => {
+                            if (section.assignments.length === 0) return null;
+                            const count = section.assignments.length;
+                            const isOpen = openSections[section.id] ?? true;
+
+                            return (
+                                <section
+                                    key={section.id}
+                                    className="overflow-hidden rounded-xl border border-gray-200 bg-white"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleSection(section.id)}
+                                        className="flex w-full cursor-pointer items-center justify-between border-b border-gray-100 bg-gray-50/70 px-5 py-3.5 text-left transition-colors hover:bg-gray-100/70"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-base font-semibold text-gray-800">
+                                                {section.label}
+                                            </span>
+                                            <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-700">
+                                                {count}
+                                            </span>
+                                        </div>
+                                        <ChevronDown
+                                            className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""
+                                                }`}
+                                        />
+                                    </button>
+
+                                    {isOpen && (
+                                        <div className="divide-y divide-gray-100">
+                                            {section.assignments.map((assignment) => {
+                                                const due = formatDueLabel(assignment.deadlineUtc);
+                                                const isReviewed = reviewedIds.includes(assignment.id);
+
+                                                return (
+                                                    <div
+                                                        key={assignment.id}
+                                                        onClick={() =>
+                                                            router.push(
+                                                                `/class/${assignment.courseId}/assignments/${assignment.id}`,
+                                                            )
+                                                        }
+                                                        className="group flex cursor-pointer flex-col gap-4 p-5 transition-colors hover:bg-blue-50/30 sm:flex-row sm:items-center sm:justify-between"
+                                                    >
+                                                        {/* Left info */}
+                                                        <div className="flex min-w-0 items-start gap-4">
+                                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
+                                                                <ClipboardList className="h-5 w-5" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <h4 className="truncate text-base font-semibold text-gray-900 group-hover:text-[#1a73e8]">
+                                                                    {assignment.title}
+                                                                </h4>
+                                                                <p className="mt-0.5 truncate text-xs text-gray-500">
+                                                                    {assignment.courseName ?? "Course"}
+                                                                    {assignment.session && ` • ${assignment.session}`}
+                                                                    {assignment.topic && ` • ${assignment.topic}`}
+                                                                </p>
+                                                                <span
+                                                                    className={`mt-1.5 inline-block text-xs font-medium ${due.tone === "red"
+                                                                        ? "text-[#c5221f]"
+                                                                        : due.tone === "green"
+                                                                            ? "text-[#137333]"
+                                                                            : "text-gray-500"
+                                                                        }`}
+                                                                >
+                                                                    {due.text}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Right metrics / actions */}
+                                                        <div className="flex shrink-0 flex-wrap items-center gap-3 sm:gap-6">
+                                                            {isTeacher ? (
+                                                                <>
+                                                                    <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2 text-xs">
+                                                                        <div className="text-center">
+                                                                            <span className="block text-sm font-bold text-[#1a73e8]">
+                                                                                {assignment.turnedInCount ??
+                                                                                    assignment.submissionCount}
+                                                                            </span>
+                                                                            <span className="text-gray-500">Turned in</span>
+                                                                        </div>
+                                                                        <div className="h-6 w-px bg-gray-200" />
+                                                                        <div className="text-center">
+                                                                            <span className="block text-sm font-bold text-gray-700">
+                                                                                {assignment.assignedCount ?? 0}
+                                                                            </span>
+                                                                            <span className="text-gray-500">Assigned</span>
+                                                                        </div>
+                                                                        <div className="h-6 w-px bg-gray-200" />
+                                                                        <div className="text-center">
+                                                                            <span className="block text-sm font-bold text-[#137333]">
+                                                                                {assignment.gradedCount ?? 0}
+                                                                            </span>
+                                                                            <span className="text-gray-500">Graded</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => toggleReviewed(assignment.id, e)}
+                                                                        title={
+                                                                            isReviewed
+                                                                                ? "Move to To-review"
+                                                                                : "Mark as reviewed"
+                                                                        }
+                                                                        className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${isReviewed
+                                                                            ? "border border-gray-300 text-gray-700 hover:bg-gray-100"
+                                                                            : "bg-[#e8f0fe] text-[#174ea6] hover:bg-[#d2e3fc]"
+                                                                            }`}
+                                                                    >
+                                                                        {isReviewed ? (
+                                                                            <>
+                                                                                <RotateCcw className="h-3.5 w-3.5" />
+                                                                                Move to To-review
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Check className="h-3.5 w-3.5" />
+                                                                                Mark reviewed
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2 text-xs">
+                                                                    <span
+                                                                        className={`rounded-full px-3 py-1 font-medium ${assignment.mySubmissionStatus === "Graded"
+                                                                            ? "bg-green-100 text-[#137333]"
+                                                                            : assignment.mySubmissionStatus === "Submitted"
+                                                                                ? "bg-blue-100 text-[#174ea6]"
+                                                                                : "bg-gray-100 text-gray-700"
+                                                                            }`}
+                                                                    >
+                                                                        {assignment.mySubmissionStatus ?? "Assigned"}
+                                                                    </span>
+                                                                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </section>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     );

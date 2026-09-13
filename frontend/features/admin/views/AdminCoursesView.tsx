@@ -27,6 +27,11 @@ function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
         studentIds: dto.studentIds,
         session: dto.session,
         isActive: dto.isActive,
+        meetingProvider: dto.meetingProvider,
+        meetingUrl: dto.meetingUrl,
+        meetingId: dto.meetingId,
+        meetingPasscode: dto.meetingPasscode,
+        scheduleNotes: dto.scheduleNotes,
     };
 }
 
@@ -116,6 +121,11 @@ export function AdminCoursesView() {
                 isActive: data.isActive,
                 teacherIds: data.teacherIds,
                 studentIds: data.studentIds,
+                meetingProvider: data.meetingProvider ?? "",
+                meetingUrl: data.meetingUrl ?? null,
+                meetingId: data.meetingId ?? "",
+                meetingPasscode: data.meetingPasscode ?? "",
+                scheduleNotes: data.scheduleNotes ?? "",
             };
             if (editingCourse) {
                 await updateCourseRequest(editingCourse.id, payload);

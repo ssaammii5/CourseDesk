@@ -20,6 +20,12 @@ def serialize_assignment(
     assignment: AssignmentModel, my_status: str | None = None
 ) -> AssignmentResponseSchema:
     course = assignment.course
+    subs = assignment.submissions or []
+    turned_in = len([s for s in subs if s.submitted_at_utc and s.status != "Graded"])
+    graded = len([s for s in subs if s.status == "Graded"])
+    total_students = len(course.students) if course and course.students else 0
+    assigned = max(0, total_students - turned_in - graded)
+
     return AssignmentResponseSchema(
         id=assignment.id,
         course_id=assignment.course_id,
@@ -38,7 +44,11 @@ def serialize_assignment(
         created_by_id=assignment.created_by_id,
         created_by_name=assignment.created_by.name if assignment.created_by else None,
         created_at_utc=assignment.created_at_utc,
-        submission_count=len([s for s in assignment.submissions if s.submitted_at_utc]),
+        submission_count=len([s for s in subs if s.submitted_at_utc]),
+        turned_in_count=turned_in,
+        graded_count=graded,
+        assigned_count=assigned,
+        student_count=total_students,
         my_submission_status=my_status,
         # ── NEW ──
         session_id=assignment.session_id,

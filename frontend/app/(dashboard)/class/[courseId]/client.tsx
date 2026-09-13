@@ -4,29 +4,41 @@ import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { ClassPageClient } from "@/features/class";
 import { getCourseRequest, getCoursePeopleRequest } from "@/lib/api/courses";
-import { getCourseAssignmentsRequest, type AssignmentDto } from "@/lib/api/assignments";
+import {
+    getCourseAssignmentsRequest,
+    type AssignmentDto,
+} from "@/lib/api/assignments";
 import { emojiFor, headerColorFor, avatarClassFor } from "@/lib/utils";
 import { useAuth } from "@/hooks";
 import type { ClassDetails, ClassPerson, ClassworkEntry } from "@/types";
 
 function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return new Date(iso).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
 }
 
 function formatDue(iso: string): string {
     const d = new Date(iso);
     const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const time = d.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+    });
     return `${date}, ${time}`;
 }
 
-function mapAssignmentToClasswork(dto: AssignmentDto, isStudent: boolean): ClassworkEntry {
+function mapAssignmentToClasswork(
+    dto: AssignmentDto,
+    isStudent: boolean,
+): ClassworkEntry {
     const status: ClassworkEntry["status"] = isStudent
         ? ((dto.mySubmissionStatus as ClassworkEntry["status"]) ?? "Assigned")
         : dto.status === "Draft"
             ? "Draft"
             : "Assigned";
-
     return {
         id: dto.id,
         title: dto.title,
@@ -46,7 +58,6 @@ interface ClassDataClientProps {
 export function ClassDataClient({ courseId }: ClassDataClientProps) {
     const { user } = useAuth();
     const isStudent = user?.role === "Student";
-
     const [title, setTitle] = useState("");
     const [details, setDetails] = useState<ClassDetails | null>(null);
     const [loading, setLoading] = useState(true);
@@ -54,7 +65,6 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
 
     useEffect(() => {
         let cancelled = false;
-
         const load = async () => {
             try {
                 const [course, assignments, people] = await Promise.all([
@@ -62,13 +72,11 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
                     getCourseAssignmentsRequest(courseId),
                     getCoursePeopleRequest(courseId),
                 ]);
-
                 if (cancelled) return;
 
                 const classwork: ClassworkEntry[] = assignments.map((a) =>
                     mapAssignmentToClasswork(a, isStudent),
                 );
-
                 const peopleList: ClassPerson[] = [
                     ...people.teachers.map((t) => ({
                         id: t.id,
@@ -90,7 +98,6 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
                     session: course.session || course.subject || undefined,
                     bannerColor: headerColorFor(courseId),
                     bannerEmoji: emojiFor(courseId),
-                    // Announcements are not modeled in the backend yet (deferred).
                     announcements: [],
                     classwork,
                     people: peopleList,
@@ -101,7 +108,6 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
                 if (!cancelled) setLoading(false);
             }
         };
-
         void load();
         return () => {
             cancelled = true;

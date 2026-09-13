@@ -5,3 +5,4 @@ export * from "./assignment";
 export * from "./submission";
 export * from "./todo";
 export * from "./calendar";
+export * from "./session";

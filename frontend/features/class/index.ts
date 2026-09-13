@@ -1,12 +1,13 @@
-// Components
 export * from "./components/AnnouncementCard";
+export * from "./components/AnnouncementFormModal";
 export * from "./components/ClassTabs";
-
-// Views
+export * from "./components/LiveClassBanner";
+export * from "./components/SessionCard";
 export * from "./views/AssignmentCreateView";
 export * from "./views/AssignmentDetailView";
 export * from "./views/ClassPageClient";
 export * from "./views/ClassworkView";
+export * from "./views/CurriculumView";
 export * from "./views/GradesView";
 export * from "./views/PeopleView";
 export * from "./views/StreamView";

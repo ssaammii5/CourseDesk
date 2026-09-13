@@ -3,3 +3,4 @@ export * from "./DataTable";
 export * from "./FormFields";
 export * from "./IconButton";
 export * from "./StatusBadge";
+export * from "./VideoPlayer";

@@ -4,6 +4,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.utils.db import Base, engine
+from app.utils.settings import settings
+
+# Ensure all SQLAlchemy models are registered in the declarative registry
+import app.academic.models  # noqa: F401
+import app.announcement.models  # noqa: F401
+import app.assignment.models  # noqa: F401
+import app.auth.models  # noqa: F401
+import app.course.models  # noqa: F401
+import app.session.models  # noqa: F401
+import app.setting.models  # noqa: F401
+import app.submission.models  # noqa: F401
+import app.user.models  # noqa: F401
+
 from app.academic.router import academic_routes
 from app.announcement.router import announcement_routes
 from app.assignment.router import assignment_routes
@@ -14,8 +28,6 @@ from app.session.router import session_routes
 from app.setting.router import setting_routes
 from app.submission.router import submission_routes
 from app.user.router import user_routes
-from app.utils.db import Base, engine
-from app.utils.settings import settings
 
 Base.metadata.create_all(engine)
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

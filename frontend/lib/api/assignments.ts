@@ -19,6 +19,10 @@ export interface AssignmentDto {
     createdByName: string | null;
     createdAtUtc: string;
     submissionCount: number;
+    turnedInCount?: number;
+    gradedCount?: number;
+    assignedCount?: number;
+    studentCount?: number;
     mySubmissionStatus: string | null; // "Assigned" | "Submitted" | "Graded" (students only)
 }
 

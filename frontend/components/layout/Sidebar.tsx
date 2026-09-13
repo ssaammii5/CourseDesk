@@ -148,7 +148,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                     {!isAdmin && (
                         <>
                             <NavItem open={open} active={pathname.startsWith("/calendar")} href="/calendar" icon={<CalendarDays className="h-6 w-6" />} label="Calendar" />
-                            <NavItem open={open} active={pathname.startsWith("/todo")} href="/todo" icon={<ListTodo className="h-6 w-6" />} label="To-do" />
+                            <NavItem open={open} active={pathname.startsWith("/todo")} href="/todo" icon={<ListTodo className="h-6 w-6" />} label={user?.role === "Teacher" ? "To-review" : "To-do"} />
 
                             {open && <div className="my-2 h-px bg-gray-300/70" />}
 

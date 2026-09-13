@@ -96,6 +96,12 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     const [loadingData, setLoadingData] = useState(false);
     const lastAppliedGroupFilter = useRef<string>("");
 
+    const [meetingProvider, setMeetingProvider] = useState("");
+    const [meetingUrl, setMeetingUrl] = useState("");
+    const [meetingId, setMeetingId] = useState("");
+    const [meetingPasscode, setMeetingPasscode] = useState("");
+    const [scheduleNotes, setScheduleNotes] = useState("");
+
     // Fetch teachers/students, programs, departments, semesters, and courses when modal opens.
     useEffect(() => {
         if (!open) return;
@@ -289,6 +295,13 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
             setManualStudentSearch("");
             setManualStudentResults([]);
             setShowManualResults(false);
+
+            setMeetingProvider(course?.meetingProvider ?? "");
+            setMeetingUrl(course?.meetingUrl ?? "");
+            setMeetingId(course?.meetingId ?? "");
+            setMeetingPasscode(course?.meetingPasscode ?? "");
+            setScheduleNotes(course?.scheduleNotes ?? "");
+
             lastAppliedGroupFilter.current = "";
             if (course?.studentIds && course.studentIds.length > 0 && allStudents.length > 0) {
                 const { groups, manual } = buildGroupsFromStudentIds(course.studentIds);
@@ -413,6 +426,11 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
             studentIds: getAllStudentIds(),
             session,
             isActive,
+            meetingProvider,
+            meetingUrl: meetingUrl || null,
+            meetingId,
+            meetingPasscode,
+            scheduleNotes,
         });
     };
 
@@ -581,6 +599,78 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
                     <section>
                         <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                            Live Class Configuration
+                        </h3>
+                        <div className="grid gap-5 md:grid-cols-2">
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                    Meeting Provider
+                                </label>
+                                <select
+                                    value={meetingProvider}
+                                    onChange={(e) => setMeetingProvider(e.target.value)}
+                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                >
+                                    <option value="">Select provider</option>
+                                    <option value="zoom">Zoom</option>
+                                    <option value="meet">Google Meet</option>
+                                    <option value="teams">Microsoft Teams</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                    Meeting URL
+                                </label>
+                                <input
+                                    type="url"
+                                    value={meetingUrl}
+                                    onChange={(e) => setMeetingUrl(e.target.value)}
+                                    placeholder="https://zoom.us/j/123456789"
+                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                    Meeting ID
+                                </label>
+                                <input
+                                    type="text"
+                                    value={meetingId}
+                                    onChange={(e) => setMeetingId(e.target.value)}
+                                    placeholder="e.g., 123 456 7890"
+                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                    Passcode
+                                </label>
+                                <input
+                                    type="text"
+                                    value={meetingPasscode}
+                                    onChange={(e) => setMeetingPasscode(e.target.value)}
+                                    placeholder="e.g., abc123"
+                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                    Schedule Notes
+                                </label>
+                                <input
+                                    type="text"
+                                    value={scheduleNotes}
+                                    onChange={(e) => setScheduleNotes(e.target.value)}
+                                    placeholder="e.g., Every Monday & Wednesday, 7:00 PM – 9:00 PM (GMT+6)"
+                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900">
                             Assigned Instructors
                             {teacherIds.length > 0 && (
                                 <span className="ml-2 rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-medium text-[#174ea6]">
@@ -642,7 +732,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             </button>
                                         </span>
                                     ) : null;
-                                    })}
+                                })}
                             </div>
                         )}
                     </section>

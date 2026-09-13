@@ -130,7 +130,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 {isTodo && (
                     <span className="flex min-w-0 items-center">
                         <ChevronRight className="mx-1 h-5 w-5 shrink-0 text-gray-500" />
-                        <span className="truncate text-[15px] font-medium text-gray-800">To-do</span>
+                        <span className="truncate text-[15px] font-medium text-gray-800">
+                            {user?.role === "Teacher" ? "To-review" : "To-do"}
+                        </span>
                     </span>
                 )}
                 {isCalendar && (
