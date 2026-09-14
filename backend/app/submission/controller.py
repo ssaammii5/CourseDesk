@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.assignment.models import AssignmentModel
 from app.course.models import CourseModel
 from app.submission.dtos import (
+    DraftSubmissionSchema,
     GradeSubmissionSchema,
     SubmissionAttachmentResponseSchema,
     SubmissionResponseSchema,
@@ -285,3 +286,77 @@ def delete_submission_attachment(
 
     db.delete(attachment)
     db.commit()
+
+
+def get_or_create_draft_submission(
+    assignment_id: int, user: UserModel, db: Session
+) -> SubmissionResponseSchema:
+    if user.role != "Student":
+        raise HTTPException(403, detail="Only students can create draft submissions")
+
+    assignment = db.scalar(
+        select(AssignmentModel)
+        .options(selectinload(AssignmentModel.course).selectinload(CourseModel.students))
+        .where(AssignmentModel.id == assignment_id)
+    )
+    if not assignment:
+        raise HTTPException(404, detail="Assignment id is incorrect")
+
+    if assignment.course and not any(s.id == user.id for s in assignment.course.students):
+        raise HTTPException(403, detail="You are not enrolled in this course")
+
+    submission = db.scalar(
+        _submission_stmt().where(
+            SubmissionModel.assignment_id == assignment.id,
+            SubmissionModel.student_id == user.id,
+        )
+    )
+    if submission is None:
+        submission = SubmissionModel(
+            assignment_id=assignment.id,
+            student_id=user.id,
+            status="Draft",
+            answer="",
+        )
+        db.add(submission)
+        db.flush()
+        db.add(
+            SubmissionActivityModel(
+                submission_id=submission.id,
+                action="Started draft",
+                actor_name=user.name,
+            )
+        )
+        db.commit()
+        db.refresh(submission)
+        submission = db.scalar(
+            _submission_stmt().where(SubmissionModel.id == submission.id)
+        )
+
+    return serialize_submission(submission)
+
+
+def unsubmit_assignment(
+    submission_id: int, user: UserModel, db: Session
+) -> SubmissionResponseSchema:
+    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    if not submission:
+        raise HTTPException(404, detail="Submission id is incorrect")
+    if user.role != "Admin" and submission.student_id != user.id:
+        raise HTTPException(403, detail="You cannot unsubmit this submission")
+    if submission.status == "Graded":
+        raise HTTPException(400, detail="Cannot unsubmit work that has already been graded")
+
+    submission.status = "Draft"
+    submission.submitted_at_utc = None
+    db.add(submission)
+    db.add(
+        SubmissionActivityModel(
+            submission_id=submission.id,
+            action="Unsubmitted assignment",
+            actor_name=user.name,
+        )
+    )
+    db.commit()
+    db.refresh(submission)
+    return serialize_submission(submission)

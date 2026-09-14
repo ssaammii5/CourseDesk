@@ -3,6 +3,10 @@ from datetime import datetime
 from app.utils.dto import CamelModel
 
 
+class DraftSubmissionSchema(CamelModel):
+    assignment_id: int
+
+
 class SubmitAssignmentSchema(CamelModel):
     assignment_id: int
     answer: str = ""

@@ -21,14 +21,25 @@ function formatDue(iso: string): string {
 
 async function buildDetail(dto: AssignmentDto, isStudent: boolean): Promise<AssignmentDetail> {
     let submissionStatus: AssignmentDetail["submission"]["status"] = "Assigned";
+    let submissionId: number | undefined = undefined;
+    let submissionAttachments: AssignmentDetail["submission"]["attachments"] = [];
 
     if (isStudent) {
         try {
             const mySubs = await getMySubmissionsRequest();
             const mine = mySubs.find((s) => s.assignmentId === dto.id);
             if (mine) {
+                submissionId = mine.id;
                 submissionStatus =
                     mine.status === "Graded" ? "Graded" : mine.status === "Submitted" ? "Turned in" : "Assigned";
+                submissionAttachments = (mine.attachments ?? []).map((att) => ({
+                    id: att.id,
+                    title: att.fileName,
+                    fileType: att.fileType,
+                    thumbClass: "bg-gray-100",
+                    url: att.url ?? undefined,
+                    kind: (att.kind === "link" ? "link" : "file") as "file" | "link",
+                }));
             }
         } catch {
             // Fall back to "Assigned" if submissions can't be loaded.
@@ -52,8 +63,9 @@ async function buildDetail(dto: AssignmentDto, isStudent: boolean): Promise<Assi
             kind: "file",
         })),
         submission: {
+            id: submissionId,
             status: submissionStatus,
-            attachments: [],
+            attachments: submissionAttachments,
         },
         privateCommentTarget: dto.createdByName ?? "Teacher",
     };
@@ -114,5 +126,5 @@ export function StudentAssignmentDetailClient({ courseId, assignmentId }: Studen
         );
     }
 
-    return detail ? <AssignmentDetailView detail={detail} /> : null;
+    return detail ? <AssignmentDetailView detail={detail} onRefresh={loadData} /> : null;
 }

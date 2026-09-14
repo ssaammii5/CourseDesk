@@ -16,13 +16,20 @@ import {
     X,
 } from "lucide-react";
 import { IconButton } from "@/components/ui";
-import { submitAssignmentRequest, uploadSubmissionAttachmentRequest } from "@/lib/api/submissions";
+import {
+    deleteSubmissionAttachmentRequest,
+    getOrCreateDraftSubmissionRequest,
+    submitAssignmentRequest,
+    unsubmitSubmissionRequest,
+    uploadSubmissionAttachmentRequest,
+} from "@/lib/api/submissions";
 import { API_URL } from "@/lib/api/client";
 import type { AssignmentDetail } from "@/types";
 
 interface AssignmentDetailViewProps {
     detail: AssignmentDetail;
     readOnly?: boolean;
+    onRefresh?: () => void;
 }
 
 interface AssignmentAttachment {
@@ -53,12 +60,14 @@ function cardEmoji(a: AssignmentAttachment): string {
     return "📄";
 }
 
-export function AssignmentDetailView({ detail, readOnly = false }: AssignmentDetailViewProps) {
-    const initiallyTurnedIn = detail.submission.status === "Turned in";
+export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: AssignmentDetailViewProps) {
+    const initiallyTurnedIn = detail.submission.status === "Turned in" || detail.submission.status === "Submitted";
     const [status, setStatus] = useState<WorkStatus>(initiallyTurnedIn ? "Turned in" : "Assigned");
+    const [submissionId, setSubmissionId] = useState<number | undefined>(detail.submission.id);
     const [attachments, setAttachments] = useState<AssignmentAttachment[]>(
-        initiallyTurnedIn ? detail.submission.attachments : [],
+        detail.submission.attachments ?? []
     );
+    const [uploading, setUploading] = useState(false);
     const [addMenuOpen, setAddMenuOpen] = useState(false);
     const [turnInOpen, setTurnInOpen] = useState(false);
     const [unsubmitOpen, setUnsubmitOpen] = useState(false);
@@ -66,29 +75,60 @@ export function AssignmentDetailView({ detail, readOnly = false }: AssignmentDet
     const [linkValue, setLinkValue] = useState("");
     const [linkTouched, setLinkTouched] = useState(false);
     const [viewerAttachment, setViewerAttachment] = useState<AssignmentAttachment | null>(null);
-    const linkIdRef = useRef(1000);
-    const fileIdRef = useRef(2000);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const turnedIn = status === "Turned in";
     const linkValid = isValidLink(linkValue);
     const linkError = linkTouched && !linkValid;
+
+    useEffect(() => {
+        const isTurned = detail.submission.status === "Turned in" || detail.submission.status === "Submitted";
+        setStatus(isTurned ? "Turned in" : "Assigned");
+        setSubmissionId(detail.submission.id);
+        setAttachments(detail.submission.attachments ?? []);
+    }, [detail.submission]);
+
+    const getEnsuredSubmissionId = async (): Promise<number> => {
+        if (submissionId) return submissionId;
+        const draft = await getOrCreateDraftSubmissionRequest({ assignmentId: detail.id });
+        setSubmissionId(draft.id);
+        return draft.id;
+    };
 
     const openFilePicker = () => {
         setAddMenuOpen(false);
         fileInputRef.current?.click();
     };
 
-    const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files ?? []);
         if (files.length === 0) return;
-        setAttachments((prev) => [
-            ...prev,
-            ...files.map((f) => ({
-                id: fileIdRef.current++, title: f.name, fileType: (extOf(f.name) || "file").toUpperCase(),
-                thumbClass: "bg-gray-100", url: URL.createObjectURL(f), kind: "file" as const, file: f, // Store file
-            })),
-        ]);
         e.target.value = "";
+        setUploading(true);
+
+        try {
+            const subId = await getEnsuredSubmissionId();
+            for (const f of files) {
+                const fd = new FormData();
+                fd.append("file", f);
+                const created = await uploadSubmissionAttachmentRequest(subId, fd);
+                setAttachments((prev) => [
+                    ...prev,
+                    {
+                        id: created.id,
+                        title: created.fileName,
+                        fileType: created.fileType || (extOf(created.fileName) || "file").toUpperCase(),
+                        thumbClass: "bg-gray-100",
+                        url: created.url ?? undefined,
+                        kind: "file",
+                    },
+                ]);
+            }
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            console.error("Failed to upload draft file", err);
+        } finally {
+            setUploading(false);
+        }
     };
 
     const openLinkDialog = () => {
@@ -100,30 +140,48 @@ export function AssignmentDetailView({ detail, readOnly = false }: AssignmentDet
 
     const closeLinkDialog = () => setLinkDialogOpen(false);
 
-    const confirmAddLink = () => {
+    const confirmAddLink = async () => {
         if (!linkValid) return;
         const typed = linkValue.trim();
         const normalized = /^https?:\/\//.test(typed) ? typed : `https://${typed}`;
-        setAttachments((prev) => [
-            ...prev,
-            {
-                id: linkIdRef.current++,
-                title: typed,
-                fileType: "Link",
-                thumbClass: "bg-gray-100",
-                url: normalized,
-                kind: "link",
-            },
-        ]);
         setLinkDialogOpen(false);
+        setUploading(true);
+
+        try {
+            const subId = await getEnsuredSubmissionId();
+            const fd = new FormData();
+            fd.append("linkUrl", normalized);
+            fd.append("linkTitle", typed);
+            const created = await uploadSubmissionAttachmentRequest(subId, fd);
+            setAttachments((prev) => [
+                ...prev,
+                {
+                    id: created.id,
+                    title: created.fileName,
+                    fileType: "Link",
+                    thumbClass: "bg-gray-100",
+                    url: created.url ?? normalized,
+                    kind: "link",
+                },
+            ]);
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            console.error("Failed to add draft link", err);
+        } finally {
+            setUploading(false);
+        }
     };
 
-    const removeAttachment = (id: number) => {
-        setAttachments((prev) => {
-            const target = prev.find((a) => a.id === id);
-            if (target?.url?.startsWith("blob:")) URL.revokeObjectURL(target.url);
-            return prev.filter((a) => a.id !== id);
-        });
+    const removeAttachment = async (id: number) => {
+        setAttachments((prev) => prev.filter((a) => a.id !== id));
+        if (submissionId) {
+            try {
+                await deleteSubmissionAttachmentRequest(submissionId, id);
+                if (onRefresh) onRefresh();
+            } catch (err) {
+                console.error("Failed to delete attachment from server", err);
+            }
+        }
     };
 
     const handlePrimary = () => {
@@ -135,32 +193,40 @@ export function AssignmentDetailView({ detail, readOnly = false }: AssignmentDet
         setTurnInOpen(false);
         setStatus("Turned in");
         try {
-            // 1. Submit the assignment
-            const res = await submitAssignmentRequest({ assignmentId: detail.id, answer: "Submitted via file attachment" });
-            const submissionId = res.id;
-
-            // 2. Upload attachments
-            for (const att of attachments) {
-                const fd = new FormData();
-                if (att.kind === "file" && att.file) {
-                    fd.append("file", att.file);
-                } else if (att.kind === "link" && att.url) {
-                    fd.append("linkUrl", att.url);
-                    fd.append("linkTitle", att.title);
-                } else {
-                    continue;
-                }
-                await uploadSubmissionAttachmentRequest(submissionId, fd);
-            }
+            await submitAssignmentRequest({
+                assignmentId: detail.id,
+                answer: "Submitted via file attachment",
+            });
+            if (onRefresh) onRefresh();
         } catch (err) {
             console.error("Submission failed", err);
-            // Optionally revert UI state or show toast
+            setStatus("Assigned");
         }
     };
 
-    const confirmUnsubmit = () => {
+    const confirmUnsubmit = async () => {
         setUnsubmitOpen(false);
         setStatus("Assigned");
+        try {
+            const subId = await getEnsuredSubmissionId();
+            const res = await unsubmitSubmissionRequest(subId);
+            if (res.attachments) {
+                setAttachments(
+                    res.attachments.map((att) => ({
+                        id: att.id,
+                        title: att.fileName,
+                        fileType: att.fileType,
+                        thumbClass: "bg-gray-100",
+                        url: att.url ?? undefined,
+                        kind: (att.kind === "link" ? "link" : "file") as "file" | "link",
+                    }))
+                );
+            }
+            if (onRefresh) onRefresh();
+        } catch (err) {
+            console.error("Unsubmit failed", err);
+            setStatus("Turned in");
+        }
     };
 
     return (
@@ -267,12 +333,20 @@ export function AssignmentDetailView({ detail, readOnly = false }: AssignmentDet
                                 </div>
                             )}
 
+                            {uploading && (
+                                <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-[#1a73e8]">
+                                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
+                                    <span>Saving to draft...</span>
+                                </div>
+                            )}
+
                             {!turnedIn && (
                                 <div className="relative mt-4">
                                     <button
                                         type="button"
+                                        disabled={uploading}
                                         onClick={() => setAddMenuOpen((v) => !v)}
-                                        className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-gray-400/80 py-2 text-sm font-medium text-[#1a73e8] hover:bg-white/70"
+                                        className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-gray-400/80 py-2 text-sm font-medium text-[#1a73e8] hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         <Plus className="h-4 w-4" />
                                         Add or create
@@ -305,13 +379,14 @@ export function AssignmentDetailView({ detail, readOnly = false }: AssignmentDet
 
                             <button
                                 type="button"
+                                disabled={uploading}
                                 onClick={turnedIn ? () => setUnsubmitOpen(true) : handlePrimary}
-                                className={`mt-4 w-full cursor-pointer rounded-full py-2.5 text-sm font-medium transition-colors ${turnedIn
+                                className={`mt-4 w-full cursor-pointer rounded-full py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${turnedIn
                                     ? "border border-gray-400/80 text-[#1a73e8] hover:bg-white/70"
                                     : "bg-[#1a63d8] text-white hover:bg-[#1554b5]"
                                     }`}
                             >
-                                {turnedIn ? "Unsubmit" : attachments.length > 0 ? "Turn in" : "Mark as done"}
+                                {uploading ? "Saving..." : turnedIn ? "Unsubmit" : attachments.length > 0 ? "Turn in" : "Mark as done"}
                             </button>
                             {!turnedIn && (
                                 <p className="mt-4 text-center text-xs italic text-gray-700">

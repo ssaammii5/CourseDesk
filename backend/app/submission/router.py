@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, Form, UploadFile, status
 
 from app.submission import controller
 from app.submission.dtos import (
+    DraftSubmissionSchema,
     GradeSubmissionSchema,
     SubmissionAttachmentResponseSchema,
     SubmissionResponseSchema,
@@ -23,6 +24,11 @@ def get_my_submissions(db: DbSession, user: IsAuthenticated):
     return controller.get_my_submissions(user, db)
 
 
+@submission_routes.post("/draft", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
+def get_or_create_draft(body: DraftSubmissionSchema, db: DbSession, user: IsAuthenticated):
+    return controller.get_or_create_draft_submission(body.assignment_id, user, db)
+
+
 @submission_routes.post("", response_model=SubmissionResponseSchema, status_code=status.HTTP_201_CREATED)
 def submit_assignment(body: SubmitAssignmentSchema, db: DbSession, user: IsAuthenticated):
     return controller.submit_assignment(body, user, db)
@@ -38,6 +44,11 @@ def grade_submission(
     submission_id: int, body: GradeSubmissionSchema, db: DbSession, user: IsAdminOrTeacher
 ):
     return controller.grade_submission(submission_id, body, user, db)
+
+
+@submission_routes.post("/{submission_id}/unsubmit", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
+def unsubmit_submission(submission_id: int, db: DbSession, user: IsAuthenticated):
+    return controller.unsubmit_assignment(submission_id, user, db)
 
 
 @submission_routes.post("/{submission_id}/attachments", response_model=SubmissionAttachmentResponseSchema, status_code=status.HTTP_201_CREATED)

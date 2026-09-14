@@ -101,3 +101,20 @@ export function uploadSubmissionAttachmentRequest(submissionId: number, formData
 export function deleteSubmissionAttachmentRequest(submissionId: number, attachmentId: number): Promise<void> {
     return apiFetch<void>(`/api/submissions/${submissionId}/attachments/${attachmentId}`, { method: "DELETE" });
 }
+
+export interface DraftSubmissionPayload {
+    assignmentId: number;
+}
+
+export function getOrCreateDraftSubmissionRequest(payload: DraftSubmissionPayload): Promise<SubmissionDto> {
+    return apiFetch<SubmissionDto>("/api/submissions/draft", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export function unsubmitSubmissionRequest(submissionId: number): Promise<SubmissionDto> {
+    return apiFetch<SubmissionDto>(`/api/submissions/${submissionId}/unsubmit`, {
+        method: "POST",
+    });
+}
