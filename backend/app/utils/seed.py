@@ -163,7 +163,7 @@ def seed_notifications(db) -> None:
             title="New announcement in CIT-6105: Information Security",
             message="Welcome to the semester! Please check the syllabus and lab schedule.",
             kind="announcement",
-            link=f"/class/{sec_id}/announcements",
+            link=f"/class/{sec_id}",
             is_read=True,
             created_at_utc=now,
         ),

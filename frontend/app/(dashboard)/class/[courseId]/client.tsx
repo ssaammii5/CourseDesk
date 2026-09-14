@@ -11,6 +11,7 @@ import {
 import { emojiFor, headerColorFor, avatarClassFor } from "@/lib/utils";
 import { useAuth } from "@/hooks";
 import type { ClassDetails, ClassPerson, ClassworkEntry } from "@/types";
+import type { ClassTab } from "@/features/class/components/ClassTabs";
 
 function formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString("en-US", {
@@ -53,9 +54,10 @@ function mapAssignmentToClasswork(
 
 interface ClassDataClientProps {
     courseId: number;
+    initialTab?: ClassTab;
 }
 
-export function ClassDataClient({ courseId }: ClassDataClientProps) {
+export function ClassDataClient({ courseId, initialTab }: ClassDataClientProps) {
     const { user } = useAuth();
     const isStudent = user?.role === "Student";
     const [title, setTitle] = useState("");
@@ -128,5 +130,5 @@ export function ClassDataClient({ courseId }: ClassDataClientProps) {
         );
     }
 
-    return <ClassPageClient title={title} details={details} course={course} />;
+    return <ClassPageClient title={title} details={details} course={course} initialTab={initialTab} />;
 }

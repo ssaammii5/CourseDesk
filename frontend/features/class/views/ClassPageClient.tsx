@@ -30,13 +30,32 @@ interface ClassPageClientProps {
     title: string;
     details: ClassDetails;
     course?: CourseDto | null;
+    initialTab?: ClassTab;
 }
 
-export function ClassPageClient({ title, details, course }: ClassPageClientProps) {
+const VALID_TABS: ClassTab[] = ["stream", "curriculum", "classwork", "people", "grades"];
+
+export function ClassPageClient({ title, details, course, initialTab }: ClassPageClientProps) {
     const { user } = useAuth();
     const isTeacher = user?.role === "Teacher" || user?.role === "Admin";
 
-    const [tab, setTab] = useState<ClassTab>("stream");
+    const [tab, setTab] = useState<ClassTab>(() => {
+        if (initialTab && VALID_TABS.includes(initialTab)) {
+            if (initialTab === "grades" && !isTeacher) return "classwork";
+            return initialTab;
+        }
+        return "stream";
+    });
+
+    useEffect(() => {
+        if (initialTab && VALID_TABS.includes(initialTab)) {
+            if (initialTab === "grades" && !isTeacher) {
+                setTab("classwork");
+            } else {
+                setTab(initialTab);
+            }
+        }
+    }, [initialTab, isTeacher]);
     const [classwork, setClasswork] = useState<ClassworkEntry[]>(details.classwork);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editing, setEditing] = useState<ClassworkEntry | null>(null);
@@ -215,9 +234,22 @@ export function ClassPageClient({ title, details, course }: ClassPageClientProps
             />
         );
 
+    const handleTabChange = (nextTab: ClassTab) => {
+        setTab(nextTab);
+        if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            if (nextTab === "stream") {
+                url.searchParams.delete("tab");
+            } else {
+                url.searchParams.set("tab", nextTab);
+            }
+            window.history.replaceState(null, "", url.toString());
+        }
+    };
+
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-white pb-10">
-            <ClassTabs tab={tab} onTabChange={setTab} isTeacher={isTeacher} />
+            <ClassTabs tab={tab} onTabChange={handleTabChange} isTeacher={isTeacher} />
 
             {tab === "stream" && (
                 <StreamView

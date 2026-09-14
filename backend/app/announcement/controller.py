@@ -116,7 +116,7 @@ def create_announcement(
             title=f"New announcement in {course.name}",
             message=preview,
             kind="announcement",
-            link=f"/class/{body.course_id}/announcements",
+            link=f"/class/{body.course_id}",
         )
 
     db.commit()
