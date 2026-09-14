@@ -22,6 +22,9 @@ class AnnouncementModel(Base):
     created_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
+    updated_at_utc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
 
     course: Mapped["CourseModel"] = relationship(back_populates="announcements")  # type: ignore[name-defined]  # noqa: F821
     author: Mapped["UserModel"] = relationship()  # type: ignore[name-defined]  # noqa: F821

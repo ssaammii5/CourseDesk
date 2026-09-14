@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -22,6 +24,7 @@ def _serialize(a: AnnouncementModel) -> AnnouncementResponseSchema:
         body=a.body,
         is_pinned=a.is_pinned,
         created_at_utc=a.created_at_utc,
+        updated_at_utc=a.updated_at_utc,
     )
 
 
@@ -171,6 +174,7 @@ def update_announcement(
     update_data = body.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(announcement, field, value)
+    announcement.updated_at_utc = datetime.now(UTC)
 
     db.add(announcement)
     db.commit()

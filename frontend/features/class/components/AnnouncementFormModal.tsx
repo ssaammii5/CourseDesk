@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pin, X } from "lucide-react";
+import { Pin, Trash2, X } from "lucide-react";
 
 interface AnnouncementFormModalProps {
     open: boolean;
@@ -13,6 +13,7 @@ interface AnnouncementFormModalProps {
     } | null;
     onClose: () => void;
     onSubmit: (data: { title: string; body: string; isPinned: boolean }) => void;
+    onDelete?: () => void;
 }
 
 export function AnnouncementFormModal({
@@ -20,6 +21,7 @@ export function AnnouncementFormModal({
     initialData,
     onClose,
     onSubmit,
+    onDelete,
 }: AnnouncementFormModalProps) {
     const [title, setTitle] = useState("");
     const [body, setBody] = useState("");
@@ -83,21 +85,35 @@ export function AnnouncementFormModal({
                     </label>
                 </div>
 
-                <div className="mt-6 flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
-                    >
-                        {initialData ? "Save" : "Post"}
-                    </button>
+                <div className="mt-6 flex items-center justify-between">
+                    <div>
+                        {initialData && onDelete && (
+                            <button
+                                type="button"
+                                onClick={onDelete}
+                                className="flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
+                        >
+                            {initialData ? "Save" : "Post"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -25,3 +25,4 @@ class AnnouncementResponseSchema(CamelModel):
     body: str
     is_pinned: bool
     created_at_utc: datetime
+    updated_at_utc: datetime | None = None

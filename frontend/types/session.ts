@@ -86,6 +86,7 @@ export interface AnnouncementDto {
     body: string;
     isPinned: boolean;
     createdAtUtc: string;
+    updatedAtUtc?: string | null;
 }
 
 export interface CreateAnnouncementPayload {

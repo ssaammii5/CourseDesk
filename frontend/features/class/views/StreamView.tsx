@@ -31,6 +31,46 @@ interface StreamViewProps {
     onTogglePin?: (id: number, isPinned: boolean) => void;
 }
 
+function formatAnnouncementTime(
+    createdAtIso: string,
+    updatedAtIso?: string | null
+): { original: string; updated?: string } {
+    const createdDate = new Date(createdAtIso);
+    const original =
+        createdDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        }) +
+        ", " +
+        createdDate.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+        });
+
+    if (!updatedAtIso) {
+        return { original };
+    }
+
+    const updatedDate = new Date(updatedAtIso);
+    if (Math.abs(updatedDate.getTime() - createdDate.getTime()) > 5000) {
+        const updated =
+            updatedDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            }) +
+            ", " +
+            updatedDate.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+            });
+        return { original, updated };
+    }
+
+    return { original };
+}
+
 export function StreamView({
     title,
     details,
@@ -102,114 +142,119 @@ export function StreamView({
                                 </p>
                             )}
 
-                        {apiAnnouncements.map((a) => (
-                            <div key={a.id} className="relative overflow-hidden rounded-lg bg-[#f1f3f4]">
-                                {a.isPinned && (
-                                    <div className="flex items-center gap-1.5 bg-[#fef7e0] px-4 py-1.5 text-xs font-semibold text-[#b06000]">
-                                        <Pin className="h-3.5 w-3.5 fill-current" />
-                                        <span>Pinned announcement</span>
-                                    </div>
-                                )}
-                                <div className="p-4 sm:p-5">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <span
-                                                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium text-white ${avatarClassFor(a.authorId)}`}
-                                            >
-                                                {initialOf(a.authorName)}
-                                            </span>
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-900">
-                                                    {a.authorName ?? "Instructor"}
-                                                </p>
-                                                <p className="text-xs text-gray-600">
-                                                    {new Date(a.createdAtUtc).toLocaleDateString("en-US", {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                        year: "numeric",
-                                                    })}
-                                                </p>
+                        {apiAnnouncements.map((a) => {
+                            const timeInfo = formatAnnouncementTime(a.createdAtUtc, a.updatedAtUtc);
+                            return (
+                                <div key={a.id} className="relative rounded-lg bg-[#f1f3f4]">
+                                    {a.isPinned && (
+                                        <div className="flex items-center gap-1.5 rounded-t-lg bg-[#fef7e0] px-4 py-1.5 text-xs font-semibold text-[#b06000]">
+                                            <Pin className="h-3.5 w-3.5 fill-current" />
+                                            <span>Pinned announcement</span>
+                                        </div>
+                                    )}
+                                    <div className="p-4 sm:p-5">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span
+                                                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium text-white ${avatarClassFor(a.authorId)}`}
+                                                >
+                                                    {initialOf(a.authorName)}
+                                                </span>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">
+                                                        {a.authorName ?? "Instructor"}
+                                                    </p>
+                                                    <p className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600">
+                                                        <span>{timeInfo.original}</span>
+                                                        {timeInfo.updated && (
+                                                            <span className="font-medium text-gray-500 italic">
+                                                                (updated {timeInfo.updated})
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                </div>
                                             </div>
+
+                                            {isTeacher && (
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        title="Announcement options"
+                                                        aria-label="Announcement options"
+                                                        onClick={() => setOpenMenuId(openMenuId === a.id ? null : a.id)}
+                                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-900"
+                                                    >
+                                                        <EllipsisVertical className="h-4 w-4" />
+                                                    </button>
+                                                    {openMenuId === a.id && (
+                                                        <>
+                                                            <div
+                                                                className="fixed inset-0 z-20"
+                                                                onClick={() => setOpenMenuId(null)}
+                                                            />
+                                                            <div className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        onTogglePin?.(a.id, a.isPinned);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                                                >
+                                                                    {a.isPinned ? (
+                                                                        <>
+                                                                            <PinOff className="h-4 w-4 text-gray-500" />
+                                                                            <span>Unpin</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Pin className="h-4 w-4 text-gray-500" />
+                                                                            <span>Pin to top</span>
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setEditingAnnouncement(a);
+                                                                        setAnnouncementModalOpen(true);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                                                >
+                                                                    <Pencil className="h-4 w-4 text-gray-500" />
+                                                                    <span>Edit</span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setDeletingAnnouncement(a);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                                    <span>Delete</span>
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {isTeacher && (
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    aria-label="Announcement options"
-                                                    onClick={() => setOpenMenuId(openMenuId === a.id ? null : a.id)}
-                                                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-gray-500 hover:bg-gray-200"
-                                                >
-                                                    <EllipsisVertical className="h-4 w-4" />
-                                                </button>
-                                                {openMenuId === a.id && (
-                                                    <>
-                                                        <div
-                                                            className="fixed inset-0 z-20"
-                                                            onClick={() => setOpenMenuId(null)}
-                                                        />
-                                                        <div className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    onTogglePin?.(a.id, a.isPinned);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                                className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                                            >
-                                                                {a.isPinned ? (
-                                                                    <>
-                                                                        <PinOff className="h-4 w-4 text-gray-500" />
-                                                                        <span>Unpin</span>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <Pin className="h-4 w-4 text-gray-500" />
-                                                                        <span>Pin to top</span>
-                                                                    </>
-                                                                )}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setEditingAnnouncement(a);
-                                                                    setAnnouncementModalOpen(true);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                                className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                                            >
-                                                                <Pencil className="h-4 w-4 text-gray-500" />
-                                                                <span>Edit</span>
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setDeletingAnnouncement(a);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                                className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                                                            >
-                                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                                                <span>Delete</span>
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
+                                        {a.title && (
+                                            <h4 className="mt-3 text-sm font-semibold text-gray-900">
+                                                {a.title}
+                                            </h4>
                                         )}
+                                        <p className="mt-2 whitespace-pre-line text-sm text-gray-800">
+                                            {a.body}
+                                        </p>
                                     </div>
-
-                                    {a.title && (
-                                        <h4 className="mt-3 text-sm font-semibold text-gray-900">
-                                            {a.title}
-                                        </h4>
-                                    )}
-                                    <p className="mt-2 whitespace-pre-line text-sm text-gray-800">
-                                        {a.body}
-                                    </p>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
 
                         {details.announcements.map((a) => (
                             <AnnouncementCard
@@ -238,6 +283,16 @@ export function StreamView({
                     setAnnouncementModalOpen(false);
                     setEditingAnnouncement(null);
                 }}
+                onDelete={
+                    editingAnnouncement
+                        ? () => {
+                              const target = editingAnnouncement;
+                              setAnnouncementModalOpen(false);
+                              setEditingAnnouncement(null);
+                              setDeletingAnnouncement(target);
+                          }
+                        : undefined
+                }
             />
 
             {deletingAnnouncement && (
