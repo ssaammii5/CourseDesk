@@ -12,7 +12,6 @@ import {
     HelpCircle,
     Video,
     Clock,
-    Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getAssignmentsRequest, type AssignmentDto } from "@/lib/api/assignments";
@@ -231,15 +230,6 @@ export function CalendarView() {
             : `${fmtShort(weekStart)}, ${weekStart.getFullYear()} – ${fmtShort(weekEnd)}, ${weekEnd.getFullYear()}`;
     }, [viewMode, currentDate, weekStart, weekEnd]);
 
-    // Next upcoming event for quick shortcut
-    const nextUpcomingEvent = useMemo(() => {
-        const nowTime = today.getTime();
-        const future = filteredEvents
-            .filter((e) => e.date.getTime() >= nowTime)
-            .sort((a, b) => a.date.getTime() - b.date.getTime());
-        return future[0] ?? null;
-    }, [filteredEvents, today]);
-
     const handlePrev = () => {
         if (viewMode === "week") {
             setCurrentDate((d) => addDays(d, -7));
@@ -258,10 +248,6 @@ export function CalendarView() {
 
     const handleToday = () => {
         setCurrentDate(new Date());
-    };
-
-    const jumpToDate = (d: Date) => {
-        setCurrentDate(d);
     };
 
     const renderEventIcon = (kind: CalendarEventItem["kind"]) => {
@@ -360,35 +346,6 @@ export function CalendarView() {
                         </div>
                     </div>
                 </div>
-
-                {/* ---------- Next Upcoming Due Date Banner ---------- */}
-                {nextUpcomingEvent && !weekHasEvents && viewMode === "week" && (
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50/80 to-indigo-50/50 px-4 py-3 text-sm text-blue-900 shadow-2xs">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-[#1a73e8]">
-                                <Sparkles className="h-4 w-4" />
-                            </span>
-                            <span className="truncate">
-                                Upcoming assignment:{" "}
-                                <strong className="font-semibold">{nextUpcomingEvent.title}</strong> in{" "}
-                                {nextUpcomingEvent.courseName} (due{" "}
-                                {nextUpcomingEvent.date.toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                })}{" "}
-                                at {nextUpcomingEvent.time})
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => jumpToDate(nextUpcomingEvent.date)}
-                            className="cursor-pointer rounded-lg bg-white px-3 py-1 text-xs font-semibold text-[#1a73e8] shadow-xs border border-blue-200 hover:bg-blue-50 transition-colors"
-                        >
-                            View in calendar →
-                        </button>
-                    </div>
-                )}
 
                 {/* ---------- Loading State ---------- */}
                 {loading && (
