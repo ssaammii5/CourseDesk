@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pin, X } from "lucide-react";
 
 interface AnnouncementFormModalProps {
     open: boolean;
+    initialData?: {
+        id?: number;
+        title: string;
+        body: string;
+        isPinned: boolean;
+    } | null;
     onClose: () => void;
     onSubmit: (data: { title: string; body: string; isPinned: boolean }) => void;
 }
 
 export function AnnouncementFormModal({
     open,
+    initialData,
     onClose,
     onSubmit,
 }: AnnouncementFormModalProps) {
@@ -18,21 +25,28 @@ export function AnnouncementFormModal({
     const [body, setBody] = useState("");
     const [isPinned, setIsPinned] = useState(false);
 
+    useEffect(() => {
+        if (open) {
+            setTitle(initialData?.title ?? "");
+            setBody(initialData?.body ?? "");
+            setIsPinned(initialData?.isPinned ?? false);
+        }
+    }, [open, initialData]);
+
     if (!open) return null;
 
     const handleSubmit = () => {
         if (!body.trim() && !title.trim()) return;
         onSubmit({ title: title.trim(), body: body.trim(), isPinned });
-        setTitle("");
-        setBody("");
-        setIsPinned(false);
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">New Announcement</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                        {initialData ? "Edit Announcement" : "New Announcement"}
+                    </h2>
                     <button
                         type="button"
                         onClick={onClose}
@@ -82,7 +96,7 @@ export function AnnouncementFormModal({
                         onClick={handleSubmit}
                         className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
                     >
-                        Post
+                        {initialData ? "Save" : "Post"}
                     </button>
                 </div>
             </div>

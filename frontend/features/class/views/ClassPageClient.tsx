@@ -23,6 +23,8 @@ import { getCourseSessionsRequest } from "@/lib/api/sessions";
 import {
     getCourseAnnouncementsRequest,
     createAnnouncementRequest,
+    updateAnnouncementRequest,
+    deleteAnnouncementRequest,
 } from "@/lib/api/announcements";
 import { getSubmissionsRequest } from "@/lib/api/submissions";
 
@@ -31,6 +33,15 @@ interface ClassPageClientProps {
     details: ClassDetails;
     course?: CourseDto | null;
     initialTab?: ClassTab;
+}
+
+function sortAnnouncements(list: AnnouncementDto[]): AnnouncementDto[] {
+    return [...list].sort((a, b) => {
+        if (a.isPinned !== b.isPinned) {
+            return a.isPinned ? -1 : 1;
+        }
+        return new Date(b.createdAtUtc).getTime() - new Date(a.createdAtUtc).getTime();
+    });
 }
 
 const VALID_TABS: ClassTab[] = ["stream", "curriculum", "classwork", "people", "grades"];
@@ -96,7 +107,7 @@ export function ClassPageClient({ title, details, course, initialTab }: ClassPag
         let cancelled = false;
         getCourseAnnouncementsRequest(details.courseId)
             .then((data) => {
-                if (!cancelled) setApiAnnouncements(data);
+                if (!cancelled) setApiAnnouncements(sortAnnouncements(data));
             })
             .catch(() => { });
         return () => {
@@ -153,12 +164,58 @@ export function ClassPageClient({ title, details, course, initialTab }: ClassPag
                     body: data.body,
                     isPinned: data.isPinned,
                 });
-                setApiAnnouncements((prev) => [created, ...prev]);
+                setApiAnnouncements((prev) => sortAnnouncements([created, ...prev]));
             } catch (err) {
                 console.error("Failed to post announcement", err);
             }
         },
         [details.courseId],
+    );
+
+    const handleUpdateAnnouncement = useCallback(
+        async (id: number, data: { title: string; body: string; isPinned: boolean }) => {
+            try {
+                const updated = await updateAnnouncementRequest(id, {
+                    title: data.title,
+                    body: data.body,
+                    isPinned: data.isPinned,
+                });
+                setApiAnnouncements((prev) =>
+                    sortAnnouncements(prev.map((a) => (a.id === id ? updated : a)))
+                );
+            } catch (err) {
+                console.error("Failed to update announcement", err);
+            }
+        },
+        [],
+    );
+
+    const handleDeleteAnnouncement = useCallback(
+        async (id: number) => {
+            try {
+                await deleteAnnouncementRequest(id);
+                setApiAnnouncements((prev) => prev.filter((a) => a.id !== id));
+            } catch (err) {
+                console.error("Failed to delete announcement", err);
+            }
+        },
+        [],
+    );
+
+    const handleTogglePin = useCallback(
+        async (id: number, currentPinned: boolean) => {
+            try {
+                const updated = await updateAnnouncementRequest(id, {
+                    isPinned: !currentPinned,
+                });
+                setApiAnnouncements((prev) =>
+                    sortAnnouncements(prev.map((a) => (a.id === id ? updated : a)))
+                );
+            } catch (err) {
+                console.error("Failed to toggle pin", err);
+            }
+        },
+        [],
     );
 
     const handleSubmit = async (
@@ -260,6 +317,9 @@ export function ClassPageClient({ title, details, course, initialTab }: ClassPag
                     apiAnnouncements={apiAnnouncements}
                     isTeacher={isTeacher}
                     onPostAnnouncement={isTeacher ? handlePostAnnouncement : undefined}
+                    onUpdateAnnouncement={isTeacher ? handleUpdateAnnouncement : undefined}
+                    onDeleteAnnouncement={isTeacher ? handleDeleteAnnouncement : undefined}
+                    onTogglePin={isTeacher ? handleTogglePin : undefined}
                 />
             )}
 

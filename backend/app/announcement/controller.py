@@ -164,7 +164,8 @@ def update_announcement(
         .options(selectinload(CourseModel.teachers))
         .where(CourseModel.id == announcement.course_id)
     )
-    if not course or not _can_manage_course(user, course):
+    can_manage = (course and _can_manage_course(user, course)) or (announcement.author_id == user.id)
+    if not can_manage:
         raise HTTPException(403, detail="You cannot edit this announcement")
 
     update_data = body.model_dump(exclude_unset=True)
@@ -188,7 +189,8 @@ def delete_announcement(
         .options(selectinload(CourseModel.teachers))
         .where(CourseModel.id == announcement.course_id)
     )
-    if not course or not _can_manage_course(user, course):
+    can_manage = (course and _can_manage_course(user, course)) or (announcement.author_id == user.id)
+    if not can_manage:
         raise HTTPException(403, detail="You cannot delete this announcement")
 
     db.delete(announcement)
