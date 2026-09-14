@@ -112,6 +112,29 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
     course.teachers = _fetch_users(body.teacher_ids, db)
     course.students = _fetch_users(body.student_ids, db)
     db.add(course)
+    db.flush()
+
+    from app.notification.controller import create_notifications_bulk
+
+    if body.student_ids:
+        create_notifications_bulk(
+            db=db,
+            user_ids=body.student_ids,
+            title=f"Enrolled in {course.name}",
+            message=f"You have been enrolled in {course.name} ({course.subject})",
+            kind="system",
+            link=f"/class/{course.id}",
+        )
+    if body.teacher_ids:
+        create_notifications_bulk(
+            db=db,
+            user_ids=body.teacher_ids,
+            title=f"Assigned to teach {course.name}",
+            message=f"You are assigned as an instructor for {course.name}",
+            kind="system",
+            link=f"/class/{course.id}",
+        )
+
     db.commit()
     return get_one_course(course.id, db)
 

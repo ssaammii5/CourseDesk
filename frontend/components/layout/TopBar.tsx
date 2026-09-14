@@ -1,18 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     Bell,
     CalendarDays,
+    CheckCheck,
     ChevronRight,
+    ClipboardCheck,
     ClipboardList,
     GraduationCap,
+    Info,
     Layers,
     LogOut,
+    Megaphone,
     Menu,
     MessageSquare,
     Settings,
     Star,
+    Video,
     X,
     type LucideIcon,
 } from "lucide-react";
@@ -20,7 +25,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { IconButton } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
-import { ROLE_STYLES } from "@/types";
+import {
+    clearAllNotificationsRequest,
+    getNotificationsRequest,
+    markAllNotificationsReadRequest,
+    markNotificationReadRequest,
+} from "@/lib/api";
+import { ROLE_STYLES, type NotificationItem, type NotificationKind } from "@/types";
 import { homeClasses, sidebarClasses } from "@/lib/mock-data";
 import { initialOf } from "@/lib/utils/format";
 
@@ -28,29 +39,29 @@ interface TopBarProps {
     onMenuClick: () => void;
 }
 
-interface NotificationItem {
-    id: number;
-    kind: "assignment" | "comment" | "due" | "grade";
-    title: string;
-    time: string;
-}
-
 const NOTIFICATION_META: Record<
-    NotificationItem["kind"],
+    NotificationKind,
     { icon: LucideIcon; classes: string }
 > = {
     assignment: { icon: ClipboardList, classes: "bg-[#d7e3fd] text-[#174ea6]" },
-    comment: { icon: MessageSquare, classes: "bg-[#ceead6] text-[#137333]" },
-    due: { icon: CalendarDays, classes: "bg-[#fef7e0] text-[#b06000]" },
     grade: { icon: Star, classes: "bg-[#fce8e6] text-[#c5221f]" },
+    announcement: { icon: Megaphone, classes: "bg-[#ceead6] text-[#137333]" },
+    submission: { icon: ClipboardCheck, classes: "bg-[#ede7f6] text-[#5e35b1]" },
+    due: { icon: CalendarDays, classes: "bg-[#fef7e0] text-[#b06000]" },
+    session: { icon: Video, classes: "bg-[#e0f2f1] text-[#00796b]" },
+    system: { icon: Info, classes: "bg-[#e8eaed] text-[#3c4043]" },
 };
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-    { id: 1, kind: "assignment", title: "New assignment: CIT-6105 Research Assignment", time: "2 hours ago" },
-    { id: 2, kind: "comment", title: "Md. Mahbubur Rahman commented on your submission", time: "6 hours ago" },
-    { id: 3, kind: "due", title: "Lab 1 - Substitution Cipher is due tomorrow at 11:59 PM", time: "1 day ago" },
-    { id: 4, kind: "grade", title: "Quiz 1 - Classical Ciphers graded: 9/10", time: "2 days ago" },
-];
+function formatRelativeTime(isoString?: string): string {
+    if (!isoString) return "";
+    const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+    if (isNaN(diff) || diff < 0) return "Just now";
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 172800) return "Yesterday";
+    return `${Math.floor(diff / 86400)}d ago`;
+}
 
 export function TopBar({ onMenuClick }: TopBarProps) {
     const pathname = usePathname();
@@ -58,7 +69,30 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const { user, logout } = useAuth();
     const [accountOpen, setAccountOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
-    const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [unreadCount, setUnreadCount] = useState<number>(0);
+
+    const loadNotifications = useCallback(async () => {
+        if (!user) return;
+        try {
+            const res = await getNotificationsRequest();
+            setNotifications(res.items);
+            setUnreadCount(res.unreadCount);
+        } catch {
+            // ignore network issues gracefully
+        }
+    }, [user]);
+
+    useEffect(() => {
+        loadNotifications();
+        const interval = setInterval(loadNotifications, 30000);
+        const onFocus = () => loadNotifications();
+        window.addEventListener("focus", onFocus);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("focus", onFocus);
+        };
+    }, [loadNotifications]);
 
     const classMatch = pathname.match(/^\/class\/(\d+)/);
     const classCourse = classMatch
@@ -82,7 +116,52 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const isAdminPage = isTeachers || isStudents || isCourses || isAcademics || isAssignments || isSubmissions || isAppSettings;
 
     const toggleAccount = () => { setNotifOpen(false); setAccountOpen((v) => !v); };
-    const toggleNotif = () => { setAccountOpen(false); setNotifOpen((v) => !v); };
+    const toggleNotif = () => {
+        setAccountOpen(false);
+        setNotifOpen((v) => {
+            const next = !v;
+            if (next) loadNotifications();
+            return next;
+        });
+    };
+
+    const handleNotificationClick = async (n: NotificationItem) => {
+        if (!n.isRead) {
+            setNotifications((prev) =>
+                prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item))
+            );
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+            try {
+                await markNotificationReadRequest(n.id);
+            } catch {
+                // ignore
+            }
+        }
+        setNotifOpen(false);
+        if (n.link) {
+            router.push(n.link);
+        }
+    };
+
+    const handleClearAll = async () => {
+        setNotifications([]);
+        setUnreadCount(0);
+        try {
+            await clearAllNotificationsRequest();
+        } catch {
+            loadNotifications();
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+        try {
+            await markAllNotificationsReadRequest();
+        } catch {
+            loadNotifications();
+        }
+    };
 
     const handleLogout = async () => {
         setAccountOpen(false);
@@ -98,65 +177,47 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     return (
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white px-3 sm:px-4">
             {/* Left side */}
-            <div className="flex min-w-0 items-center gap-1">
-                <IconButton label="Open menu" onClick={onMenuClick}>
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                <IconButton label="Main menu" onClick={onMenuClick}>
                     <Menu className="h-6 w-6" />
                 </IconButton>
-                <Link href="/" className="ml-1 flex shrink-0 items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-sm shadow-blue-500/20">
-                        <Layers className="h-5 w-5 text-white" />
+
+                <Link href="/" className="flex shrink-0 items-center gap-2">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-sm">
+                        <GraduationCap className="h-5 w-5" />
                     </span>
-                    <span className="text-[21px] font-semibold tracking-tight text-gray-900 max-sm:hidden">
-                        Course<span className="text-blue-600">Desk</span>
+                    <span className="text-xl font-normal tracking-tight text-gray-800 hover:text-gray-900">
+                        CourseDesk
                     </span>
                 </Link>
 
-                {/* Class breadcrumb */}
                 {classCourse && (
-                    <Link
-                        href={`/class/${classCourse.id}`}
-                        title={classCourse.name}
-                        className="flex min-w-0 items-center rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-gray-900/5"
-                    >
-                        <ChevronRight className="mx-1 h-5 w-5 shrink-0 text-gray-500" />
-                        <span className="min-w-0">
-                            <span className="block truncate text-[15px] font-medium text-gray-800">{classCourse.name}</span>
-                            {classSub && <span className="block truncate text-xs text-gray-600">{classSub}</span>}
+                    <span className="flex min-w-0 items-center gap-1 text-sm text-gray-700">
+                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-600" />
+                        <span className="truncate font-medium text-gray-800">
+                            {classCourse.name}
                         </span>
-                    </Link>
+                        {classSub && (
+                            <span className="hidden truncate text-xs text-gray-600 sm:inline">
+                                ({classSub})
+                            </span>
+                        )}
+                    </span>
                 )}
 
-                {/* Page breadcrumbs */}
-                {isTodo && (
-                    <span className="flex min-w-0 items-center">
-                        <ChevronRight className="mx-1 h-5 w-5 shrink-0 text-gray-500" />
-                        <span className="truncate text-[15px] font-medium text-gray-800">
-                            {user?.role === "Teacher" ? "To-review" : "To-do"}
-                        </span>
-                    </span>
-                )}
-                {isCalendar && (
-                    <span className="flex min-w-0 items-center">
-                        <ChevronRight className="mx-1 h-5 w-5 shrink-0 text-gray-500" />
-                        <span className="truncate text-[15px] font-medium text-gray-800">Calendar</span>
-                    </span>
-                )}
-                {isSettings && (
-                    <span className="flex min-w-0 items-center">
-                        <ChevronRight className="mx-1 h-5 w-5 shrink-0 text-gray-500" />
-                        <span className="truncate text-[15px] font-medium text-gray-800">Settings</span>
-                    </span>
-                )}
-                {isAdminPage && (
-                    <span className="flex min-w-0 items-center">
-                        <ChevronRight className="mx-1 h-5 w-5 shrink-0 text-gray-500" />
-                        <span className="truncate text-[15px] font-medium text-gray-800">
-                            {isTeachers && "Manage Instructors"}
-                            {isStudents && "Manage Learners"}
-                            {isCourses && "Manage Courses"}
-                            {isAcademics && "Categories & Tracks"}
-                            {isAssignments && "All Assignments"}
-                            {isSubmissions && "All Submissions"}
+                {!classCourse && (isTodo || isCalendar || isSettings || isAdminPage) && (
+                    <span className="flex min-w-0 items-center gap-1 text-sm text-gray-700">
+                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-600" />
+                        <span className="truncate font-medium text-gray-800">
+                            {isTodo && "To-do"}
+                            {isCalendar && "Calendar"}
+                            {isSettings && "Settings"}
+                            {isTeachers && "Teachers"}
+                            {isStudents && "Students"}
+                            {isCourses && "Courses"}
+                            {isAcademics && "Academic"}
+                            {isAssignments && "Assignments"}
+                            {isSubmissions && "Submissions"}
                             {isAppSettings && "App Settings"}
                         </span>
                     </span>
@@ -174,51 +235,88 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                         className={`relative z-50 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-900/10 ${notifOpen ? "bg-gray-900/10" : ""}`}
                     >
                         <Bell className="h-6 w-6" />
-                        {notifications.length > 0 && (
-                            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#d93025] px-1 text-[10px] font-medium text-white">
-                                {notifications.length}
+                        {unreadCount > 0 && (
+                            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#d93025] px-1 text-[10px] font-semibold text-white shadow-sm">
+                                {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                         )}
                     </button>
                     {notifOpen && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-                            <div className="absolute right-0 top-full z-50 mt-2 w-[380px] overflow-hidden rounded-2xl bg-[#e9eef4] shadow-xl max-sm:fixed max-sm:inset-x-2 max-sm:top-[4.5rem] max-sm:mt-0 max-sm:w-auto">
-                                <div className="flex items-center justify-between px-5 py-4">
-                                    <span className="text-base font-medium text-gray-900">Notifications</span>
-                                    <button
-                                        type="button"
-                                        disabled={notifications.length === 0}
-                                        onClick={() => setNotifications([])}
-                                        className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline disabled:cursor-default disabled:text-gray-500 disabled:no-underline"
-                                    >
-                                        Clear all
-                                    </button>
+                            <div className="absolute right-0 top-full z-50 mt-2 w-[400px] overflow-hidden rounded-2xl bg-[#e9eef4] shadow-xl max-sm:fixed max-sm:inset-x-2 max-sm:top-[4.5rem] max-sm:mt-0 max-sm:w-auto">
+                                <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-300/60 bg-white/70 backdrop-blur-sm">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-base font-semibold text-gray-900">Notifications</span>
+                                        {unreadCount > 0 && (
+                                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-[#1a73e8]">
+                                                {unreadCount} new
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {unreadCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleMarkAllRead}
+                                                className="cursor-pointer text-xs font-medium text-[#1a73e8] hover:underline"
+                                            >
+                                                Mark all read
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            disabled={notifications.length === 0}
+                                            onClick={handleClearAll}
+                                            className="cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-900 disabled:cursor-default disabled:text-gray-400 disabled:no-underline"
+                                        >
+                                            Clear all
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="max-h-[420px] overflow-y-auto border-t border-gray-300/60 max-sm:max-h-[min(26.25rem,calc(100dvh-9rem))]">
+                                <div className="max-h-[420px] overflow-y-auto max-sm:max-h-[min(26.25rem,calc(100dvh-9rem))]">
                                     {notifications.length === 0 ? (
-                                        <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-                                            <Bell className="h-8 w-8 text-gray-400" />
-                                            <p className="text-sm text-gray-600">No new notifications</p>
+                                        <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200/70 text-gray-400">
+                                                <Bell className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-800">No notifications</p>
+                                                <p className="mt-0.5 text-xs text-gray-500">You're all caught up!</p>
+                                            </div>
                                         </div>
                                     ) : (
                                         <ul className="divide-y divide-gray-300/50">
                                             {notifications.map((n) => {
-                                                const meta = NOTIFICATION_META[n.kind];
+                                                const meta = NOTIFICATION_META[n.kind] || NOTIFICATION_META.system;
                                                 const Icon = meta.icon;
                                                 return (
                                                     <li key={n.id}>
                                                         <button
                                                             type="button"
-                                                            onClick={() => setNotifOpen(false)}
-                                                            className="flex w-full cursor-pointer items-start gap-4 px-5 py-4 text-left hover:bg-gray-900/5"
+                                                            onClick={() => handleNotificationClick(n)}
+                                                            className={`flex w-full cursor-pointer items-start gap-3.5 px-5 py-3.5 text-left transition-colors hover:bg-gray-900/5 ${!n.isRead ? "bg-white/50" : ""}`}
                                                         >
-                                                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${meta.classes}`}>
-                                                                <Icon className="h-5 w-5" />
+                                                            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${meta.classes}`}>
+                                                                <Icon className="h-4 w-4" />
                                                             </span>
-                                                            <span className="min-w-0">
-                                                                <span className="block text-sm leading-5 text-gray-900">{n.title}</span>
-                                                                <span className="mt-1 block text-xs text-gray-600">{n.time}</span>
+                                                            <span className="min-w-0 flex-1">
+                                                                <span className="flex items-start justify-between gap-2">
+                                                                    <span className={`block text-sm leading-snug ${!n.isRead ? "font-semibold text-gray-900" : "font-medium text-gray-800"}`}>
+                                                                        {n.title}
+                                                                    </span>
+                                                                    {!n.isRead && (
+                                                                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#1a73e8]" />
+                                                                    )}
+                                                                </span>
+                                                                {n.message && (
+                                                                    <span className="mt-0.5 line-clamp-2 block text-xs text-gray-600">
+                                                                        {n.message}
+                                                                    </span>
+                                                                )}
+                                                                <span className="mt-1 block text-[11px] text-gray-400">
+                                                                    {formatRelativeTime(n.createdAtUtc)}
+                                                                </span>
                                                             </span>
                                                         </button>
                                                     </li>

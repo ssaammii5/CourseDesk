@@ -9,3 +9,4 @@ export * from "./appSettings";
 export * from "./dashboard";
 export * from "./sessions";
 export * from "./announcements";
+export * from "./notifications";

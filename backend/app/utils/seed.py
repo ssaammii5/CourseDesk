@@ -7,6 +7,16 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 
+import app.academic.models  # noqa: F401
+import app.announcement.models  # noqa: F401
+import app.assignment.models  # noqa: F401
+import app.auth.models  # noqa: F401
+import app.course.models  # noqa: F401
+import app.notification.models  # noqa: F401
+import app.session.models  # noqa: F401
+import app.setting.models  # noqa: F401
+import app.submission.models  # noqa: F401
+import app.user.models  # noqa: F401
 from app.academic.controller import (
     create_department,
     create_program,
@@ -102,12 +112,145 @@ def _email_id(db, email: str) -> int:
     return user.id
 
 
+def seed_notifications(db) -> None:
+    from app.notification.models import NotificationModel
+    from app.course.models import CourseModel
+
+    if db.scalar(select(NotificationModel).limit(1)):
+        return
+
+    print("Seeding demo notifications…")
+    now = datetime.now(UTC)
+    security_course = db.scalar(select(CourseModel).where(CourseModel.name.like("%Information Security%")))
+    sec_id = security_course.id if security_course else 1
+
+    samiur_id = _email_id(db, "samiur@eclassroompro.com")
+    ratin_id = _email_id(db, "ratin@eclassroompro.com")
+    mahbubur_id = _email_id(db, "mahbubur@eclassroompro.com")
+    admin_id = _email_id(db, ADMIN["email"])
+
+    notifications = [
+        # Student Samiur
+        NotificationModel(
+            user_id=samiur_id,
+            title="New assignment: CIT-6105 Research Assignment",
+            message="Posted in CIT-6105: Information Security • Due Dec 16, 2026",
+            kind="assignment",
+            link=f"/class/{sec_id}/classwork",
+            is_read=False,
+            created_at_utc=now,
+        ),
+        NotificationModel(
+            user_id=samiur_id,
+            title="Graded: Quiz 1 - Classical Ciphers",
+            message="Score: 9/10 • Feedback: Excellent understanding.",
+            kind="grade",
+            link=f"/class/{sec_id}/classwork",
+            is_read=False,
+            created_at_utc=now,
+        ),
+        NotificationModel(
+            user_id=samiur_id,
+            title="Due soon: Lab 1 - Substitution Cipher",
+            message="Due tomorrow at 11:59 PM. Submit your work before the deadline!",
+            kind="due",
+            link=f"/class/{sec_id}/classwork",
+            is_read=False,
+            created_at_utc=now,
+        ),
+        NotificationModel(
+            user_id=samiur_id,
+            title="New announcement in CIT-6105: Information Security",
+            message="Welcome to the semester! Please check the syllabus and lab schedule.",
+            kind="announcement",
+            link=f"/class/{sec_id}/announcements",
+            is_read=True,
+            created_at_utc=now,
+        ),
+
+        # Student Ratin
+        NotificationModel(
+            user_id=ratin_id,
+            title="New assignment: CIT-6105 Research Assignment",
+            message="Posted in CIT-6105: Information Security • Due Dec 16, 2026",
+            kind="assignment",
+            link=f"/class/{sec_id}/classwork",
+            is_read=False,
+            created_at_utc=now,
+        ),
+        NotificationModel(
+            user_id=ratin_id,
+            title="Graded: Lab 1 - Substitution Cipher",
+            message="Score: 42/50 • Feedback: Well done. Consider adding more test cases.",
+            kind="grade",
+            link=f"/class/{sec_id}/classwork",
+            is_read=False,
+            created_at_utc=now,
+        ),
+
+        # Teacher Mahbubur
+        NotificationModel(
+            user_id=mahbubur_id,
+            title="New submission: Lab 1 - Substitution Cipher",
+            message="Md. Samiur Rahman submitted work in CIT-6105: Information Security",
+            kind="submission",
+            link=f"/class/{sec_id}/submissions",
+            is_read=False,
+            created_at_utc=now,
+        ),
+        NotificationModel(
+            user_id=mahbubur_id,
+            title="New submission: Lab 1 - Substitution Cipher",
+            message="Habibur Rahman Khan Ratin submitted work in CIT-6105: Information Security",
+            kind="submission",
+            link=f"/class/{sec_id}/submissions",
+            is_read=False,
+            created_at_utc=now,
+        ),
+        NotificationModel(
+            user_id=mahbubur_id,
+            title="New submission: Quiz 1 - Classical Ciphers",
+            message="Md. Samiur Rahman submitted work in CIT-6105: Information Security",
+            kind="submission",
+            link=f"/class/{sec_id}/submissions",
+            is_read=True,
+            created_at_utc=now,
+        ),
+
+        # Admin
+        NotificationModel(
+            user_id=admin_id,
+            title="System initialized: CourseDesk LMS ready",
+            message="Database initialized with academic departments, sessions, and sample courses.",
+            kind="system",
+            link="/courses",
+            is_read=False,
+            created_at_utc=now,
+        ),
+        NotificationModel(
+            user_id=admin_id,
+            title="Course created: CIT-6105: Information Security",
+            message="Instructor: Prof. Md. Mahbubur Rahman • 4 Students Enrolled",
+            kind="system",
+            link=f"/class/{sec_id}",
+            is_read=True,
+            created_at_utc=now,
+        ),
+    ]
+
+    for n in notifications:
+        db.add(n)
+    db.commit()
+    print("Demo notifications seeded successfully.")
+
+
 def seed() -> None:
     Base.metadata.create_all(engine)
     db = LocalSession()
     try:
         if db.scalar(select(UserModel).where(UserModel.email == ADMIN["email"])):
-            print("Database already seeded — skipping.")
+            print("Database already seeded — checking notifications…")
+            seed_notifications(db)
             return
 
         print("Seeding academics…")
@@ -324,6 +467,8 @@ def seed() -> None:
             ), samiur, db,
         )
         grade_submission(s4.id, GradeSubmissionSchema(marks=9, feedback="Excellent understanding."), mahbubur, db)
+
+        seed_notifications(db)
 
         print("\n✅ Seed complete. Login credentials:")
         print(f"   Admin   → {ADMIN['email']} / {ADMIN['password']}")

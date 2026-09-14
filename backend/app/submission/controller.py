@@ -136,6 +136,25 @@ def submit_assignment(
             actor_name=user.name,
         )
     )
+
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.teachers))
+        .where(CourseModel.id == assignment.course_id)
+    )
+    teacher_ids = [t.id for t in course.teachers] if course and course.teachers else []
+    if teacher_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        create_notifications_bulk(
+            db=db,
+            user_ids=teacher_ids,
+            title=f"New submission: {assignment.title}",
+            message=f"{user.name} submitted work in {course.name if course else ''}",
+            kind="submission",
+            link=f"/class/{assignment.course_id}/submissions",
+        )
+
     db.commit()
     return get_submission(submission.id, user, db)
 
@@ -181,6 +200,19 @@ def grade_submission(
             actor_name=user.name,
         )
     )
+
+    from app.notification.controller import create_notification
+
+    fb = f" • Feedback: {body.feedback}" if body.feedback else ""
+    create_notification(
+        db=db,
+        user_id=submission.student_id,
+        title=f"Graded: {assignment.title}",
+        message=f"Score: {body.marks}/{assignment.max_marks}{fb}",
+        kind="grade",
+        link=f"/class/{assignment.course_id}/classwork",
+    )
+
     db.commit()
     return get_submission(submission_id, user, db)
 

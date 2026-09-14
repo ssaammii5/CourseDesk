@@ -80,7 +80,10 @@ def create_announcement(
 ) -> AnnouncementResponseSchema:
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(
+            selectinload(CourseModel.teachers),
+            selectinload(CourseModel.students),
+        )
         .where(CourseModel.id == body.course_id)
     )
     if not course:
@@ -96,6 +99,26 @@ def create_announcement(
         is_pinned=body.is_pinned,
     )
     db.add(announcement)
+    db.flush()
+
+    recipient_ids = [
+        s.id for s in (course.students or []) if s.id != user.id
+    ] + [
+        t.id for t in (course.teachers or []) if t.id != user.id
+    ]
+    if recipient_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        preview = body.title or (body.body[:80] + ("..." if len(body.body) > 80 else ""))
+        create_notifications_bulk(
+            db=db,
+            user_ids=recipient_ids,
+            title=f"New announcement in {course.name}",
+            message=preview,
+            kind="announcement",
+            link=f"/class/{body.course_id}/announcements",
+        )
+
     db.commit()
     db.refresh(announcement)
     return get_announcement(announcement.id, user, db)

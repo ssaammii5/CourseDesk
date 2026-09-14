@@ -131,7 +131,10 @@ def create_session(
 ) -> SessionResponseSchema:
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(
+            selectinload(CourseModel.teachers),
+            selectinload(CourseModel.students),
+        )
         .where(CourseModel.id == body.course_id)
     )
     if not course:
@@ -157,6 +160,27 @@ def create_session(
         status=body.status,
     )
     db.add(session)
+    db.flush()
+
+    student_ids = [s.id for s in (course.students or [])]
+    if student_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        sched_str = (
+            session.scheduled_at_utc.strftime("%b %d at %I:%M %p")
+            if session.scheduled_at_utc
+            else ""
+        )
+        msg = f"{session.title} in {course.name}" + (f" • {sched_str}" if sched_str else "")
+        create_notifications_bulk(
+            db=db,
+            user_ids=student_ids,
+            title=f"New class session: {session.title}",
+            message=msg,
+            kind="session",
+            link=f"/class/{body.course_id}/curriculum",
+        )
+
     db.commit()
     db.refresh(session)
     return get_session(session.id, user, db)

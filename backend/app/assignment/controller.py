@@ -236,13 +236,33 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
             )
         ).all()
     )
-    for student in course.students if course else []:
-        if student.id not in existing_ids:
+    student_ids = [student.id for student in (course.students if course else [])]
+    for s_id in student_ids:
+        if s_id not in existing_ids:
             db.add(
                 SubmissionModel(
-                    assignment_id=assignment.id, student_id=student.id, status="Draft"
+                    assignment_id=assignment.id, student_id=s_id, status="Draft"
                 )
             )
+
+    if student_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        deadline_str = (
+            assignment.deadline_utc.strftime("%b %d, %Y at %I:%M %p")
+            if assignment.deadline_utc
+            else ""
+        )
+        msg = f"Posted in {course.name}" + (f" • Due {deadline_str}" if deadline_str else "")
+        create_notifications_bulk(
+            db=db,
+            user_ids=student_ids,
+            title=f"New assignment: {assignment.title}",
+            message=msg,
+            kind="assignment",
+            link=f"/class/{assignment.course_id}/classwork",
+        )
+
     db.commit()
 
 

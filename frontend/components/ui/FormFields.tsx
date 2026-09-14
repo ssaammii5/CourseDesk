@@ -148,16 +148,23 @@ export function PasswordField({
 
 export function ToggleRow({
     label,
+    description,
     enabled,
     onChange,
 }: {
     label: string;
+    description?: string;
     enabled: boolean;
     onChange: (v: boolean) => void;
 }) {
     return (
-        <div className="flex items-center justify-between border-b border-gray-100 py-5 last:border-b-0">
-            <span className="text-sm text-gray-900">{label}</span>
+        <div className="flex items-center justify-between border-b border-gray-100 py-4 last:border-b-0">
+            <div className="pr-4">
+                <span className="block text-sm font-medium text-gray-900">{label}</span>
+                {description && (
+                    <span className="block text-xs text-gray-500 mt-0.5">{description}</span>
+                )}
+            </div>
             <button
                 type="button"
                 role="switch"
