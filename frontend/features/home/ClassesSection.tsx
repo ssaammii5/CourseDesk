@@ -83,22 +83,28 @@ export function ClassesSection() {
     // Fetch the user's courses, then restore the persisted layout.
     useEffect(() => {
         let cancelled = false;
-        getMyCoursesRequest()
-            .then((dtos) => {
-                if (cancelled) return;
-                const mapped = dtos.map(mapCourseToHomeClass);
-                setHomeClasses(mapped);
-                setLayout(loadLayout(mapped.map((c) => c.id)));
-                setHydrated(true);
-            })
-            .catch(() => {
-                if (!cancelled) {
-                    setHomeClasses([]);
+        const load = () => {
+            getMyCoursesRequest()
+                .then((dtos) => {
+                    if (cancelled) return;
+                    const mapped = dtos.map(mapCourseToHomeClass);
+                    setHomeClasses(mapped);
+                    setLayout(loadLayout(mapped.map((c) => c.id)));
                     setHydrated(true);
-                }
-            });
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        setHomeClasses([]);
+                        setHydrated(true);
+                    }
+                });
+        };
+
+        load();
+        window.addEventListener("coursedesk:courses-updated", load);
         return () => {
             cancelled = true;
+            window.removeEventListener("coursedesk:courses-updated", load);
         };
     }, []);
 

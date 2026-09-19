@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
     BookOpen,
@@ -58,9 +58,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
     const { user } = useAuth();
     const isAdmin = user?.role === "Admin";
 
-    // Load the signed-in user's courses for the "Enrolled" section (students/teachers).
-    useEffect(() => {
-        if (isAdmin) return;
+    // Load courses for sidebar (all courses for Admin, enrolled/teaching for students/teachers).
+    const loadCourses = useCallback(() => {
         let cancelled = false;
         getMyCoursesRequest()
             .then((dtos) => {
@@ -72,7 +71,23 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
         return () => {
             cancelled = true;
         };
-    }, [isAdmin]);
+    }, []);
+
+    useEffect(() => {
+        const cleanup = loadCourses();
+
+        const handleCourseUpdate = () => {
+            loadCourses();
+        };
+
+        window.addEventListener("coursedesk:courses-updated", handleCourseUpdate);
+        window.addEventListener("focus", handleCourseUpdate);
+        return () => {
+            cleanup();
+            window.removeEventListener("coursedesk:courses-updated", handleCourseUpdate);
+            window.removeEventListener("focus", handleCourseUpdate);
+        };
+    }, [loadCourses, user?.id, user?.role, isAdmin]);
 
     useEffect(() => {
         if (prevPathname.current === pathname) return;
@@ -110,6 +125,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
         : open
             ? "max-lg:fixed max-lg:left-0 max-lg:top-16 max-lg:z-30 max-lg:h-[calc(100dvh-4rem)] max-lg:max-w-[85vw] max-lg:translate-x-0 max-lg:bg-[#eef1f4] max-lg:shadow-xl"
             : "max-lg:fixed max-lg:left-0 max-lg:top-16 max-lg:z-30 max-lg:h-[calc(100dvh-4rem)] max-lg:w-[300px] max-lg:max-w-[85vw] max-lg:-translate-x-full max-lg:invisible max-lg:pointer-events-none max-lg:bg-[#eef1f4]";
+
+    const sectionTitle = isAdmin ? "All Courses" : user?.role === "Teacher" ? "Teaching" : "My Courses";
 
     return (
         <>
@@ -149,7 +166,11 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                         <>
                             <NavItem open={open} active={pathname.startsWith("/calendar")} href="/calendar" icon={<CalendarDays className="h-6 w-6" />} label="Calendar" />
                             <NavItem open={open} active={pathname.startsWith("/todo")} href="/todo" icon={<ListTodo className="h-6 w-6" />} label={user?.role === "Teacher" ? "To-review" : "To-do"} />
+                        </>
+                    )}
 
+                    {enrolledClasses.length > 0 && (
+                        <>
                             {open && <div className="my-2 h-px bg-gray-300/70" />}
 
                             {open ? (
@@ -160,7 +181,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                                 >
                                     <span className="flex items-center gap-4">
                                         <BookOpen className="h-6 w-6 text-gray-600" />
-                                        My Courses
+                                        {sectionTitle}
                                     </span>
                                     <ChevronUp
                                         className={`h-5 w-5 text-gray-600 transition-transform ${enrolledOpen ? "" : "rotate-180"}`}
@@ -169,8 +190,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                             ) : (
                                 <button
                                     type="button"
-                                    title="My Courses"
-                                    aria-label="My Courses"
+                                    title={sectionTitle}
+                                    aria-label={sectionTitle}
                                     onClick={onExpand}
                                     className="my-2 flex h-11 w-full items-center justify-center rounded-full text-gray-700 hover:bg-gray-900/5"
                                 >
@@ -184,7 +205,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                                         <Link
                                             key={c.id}
                                             href={`/class/${c.id}`}
-                                            className="flex items-center gap-3 rounded-full py-2 pl-4 pr-4 hover:bg-gray-900/5"
+                                            className={`flex items-center gap-3 rounded-full py-2 pl-4 pr-4 hover:bg-gray-900/5 ${pathname.startsWith(`/class/${c.id}`) ? "bg-[#cfe8fc] font-medium text-gray-900" : ""}`}
                                         >
                                             <span
                                                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium ${c.avatarClass}`}

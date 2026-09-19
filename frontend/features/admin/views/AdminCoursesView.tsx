@@ -135,6 +135,9 @@ export function AdminCoursesView() {
             setModalOpen(false);
             setEditingCourse(null);
             await loadCourses();
+            if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("coursedesk:courses-updated"));
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save course.");
         }
@@ -147,6 +150,9 @@ export function AdminCoursesView() {
             await deleteCourseRequest(deleteTarget.id);
             setDeleteTarget(null);
             await loadCourses();
+            if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("coursedesk:courses-updated"));
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to delete course.");
             setDeleteTarget(null);

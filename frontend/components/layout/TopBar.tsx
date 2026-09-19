@@ -32,7 +32,7 @@ import {
     markNotificationReadRequest,
 } from "@/lib/api";
 import { ROLE_STYLES, type NotificationItem, type NotificationKind } from "@/types";
-import { homeClasses, sidebarClasses } from "@/lib/mock-data";
+import { getCourseRequest } from "@/lib/api/courses";
 import { initialOf } from "@/lib/utils/format";
 
 interface TopBarProps {
@@ -95,13 +95,41 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     }, [loadNotifications]);
 
     const classMatch = pathname.match(/^\/class\/(\d+)/);
-    const classCourse = classMatch
-        ? homeClasses.find((c) => c.id === Number(classMatch[1])) ??
-        sidebarClasses.find((c) => c.id === Number(classMatch[1]))
-        : undefined;
-    const classSub = classCourse
-        ? "subject" in classCourse ? classCourse.subject : classCourse.sub
-        : undefined;
+    const classCourseId = classMatch ? Number(classMatch[1]) : null;
+    const [classCourse, setClassCourse] = useState<{ id: number; name: string; sub?: string } | null>(null);
+
+    useEffect(() => {
+        if (!classCourseId) {
+            setClassCourse(null);
+            return;
+        }
+
+        let cancelled = false;
+        const fetchCourse = () => {
+            getCourseRequest(classCourseId)
+                .then((dto) => {
+                    if (!cancelled) {
+                        setClassCourse({
+                            id: dto.id,
+                            name: dto.name,
+                            sub: dto.session || dto.subject || undefined,
+                        });
+                    }
+                })
+                .catch(() => {
+                    if (!cancelled) setClassCourse(null);
+                });
+        };
+
+        fetchCourse();
+        window.addEventListener("coursedesk:courses-updated", fetchCourse);
+        return () => {
+            cancelled = true;
+            window.removeEventListener("coursedesk:courses-updated", fetchCourse);
+        };
+    }, [classCourseId]);
+
+    const classSub = classCourse?.sub;
 
     const isTodo = pathname.startsWith("/todo");
     const isCalendar = pathname.startsWith("/calendar");
