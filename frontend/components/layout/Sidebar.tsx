@@ -58,8 +58,12 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
     const { user } = useAuth();
     const isAdmin = user?.role === "Admin";
 
-    // Load courses for sidebar (all courses for Admin, enrolled/teaching for students/teachers).
+    // Load courses for sidebar (enrolled/teaching for students/teachers; admin manages courses via /courses).
     const loadCourses = useCallback(() => {
+        if (isAdmin) {
+            setEnrolledClasses([]);
+            return () => {};
+        }
         let cancelled = false;
         getMyCoursesRequest()
             .then((dtos) => {
@@ -71,7 +75,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [isAdmin]);
 
     useEffect(() => {
         const cleanup = loadCourses();
@@ -126,7 +130,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
             ? "max-lg:fixed max-lg:left-0 max-lg:top-16 max-lg:z-30 max-lg:h-[calc(100dvh-4rem)] max-lg:max-w-[85vw] max-lg:translate-x-0 max-lg:bg-[#eef1f4] max-lg:shadow-xl"
             : "max-lg:fixed max-lg:left-0 max-lg:top-16 max-lg:z-30 max-lg:h-[calc(100dvh-4rem)] max-lg:w-[300px] max-lg:max-w-[85vw] max-lg:-translate-x-full max-lg:invisible max-lg:pointer-events-none max-lg:bg-[#eef1f4]";
 
-    const sectionTitle = isAdmin ? "All Courses" : user?.role === "Teacher" ? "Teaching" : "My Courses";
+    const sectionTitle = user?.role === "Teacher" ? "Teaching" : "My Courses";
 
     return (
         <>
@@ -169,7 +173,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                         </>
                     )}
 
-                    {enrolledClasses.length > 0 && (
+                    {!isAdmin && enrolledClasses.length > 0 && (
                         <>
                             {open && <div className="my-2 h-px bg-gray-300/70" />}
 
