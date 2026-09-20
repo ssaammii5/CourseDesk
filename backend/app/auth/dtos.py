@@ -10,6 +10,12 @@ class LoginSchema(CamelModel):
     password: str
 
 
+class SignupSchema(CamelModel):
+    name: str
+    email: EmailStr
+    password: str
+
+
 class RefreshSchema(CamelModel):
     refresh_token: str
 
@@ -32,6 +38,15 @@ class RefreshResponseSchema(CamelModel):
     email: str | None = None
     name: str | None = None
     role: str | None = None
+
+
+class SignupResponseSchema(CamelModel):
+    id: int
+    name: str
+    email: str
+    role: str
+    is_active: bool
+    created_at_utc: datetime
 
 
 from app.user.dtos import StudentDetailsSchema, TeacherDetailsSchema

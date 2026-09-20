@@ -21,10 +21,27 @@ export interface MeResponse {
     teacherDetails?: TeacherDetails;
 }
 
+export interface SignupResponse {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+    createdAtUtc: string;
+}
+
 export function loginRequest(email: string, password: string): Promise<LoginResponse> {
     return apiFetch<LoginResponse>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
+        auth: false,
+    });
+}
+
+export function signupRequest(name: string, email: string, password: string): Promise<SignupResponse> {
+    return apiFetch<SignupResponse>("/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ name, email, password }),
         auth: false,
     });
 }

@@ -7,6 +7,8 @@ from app.auth.dtos import (
     MeResponseSchema,
     RefreshResponseSchema,
     RefreshSchema,
+    SignupResponseSchema,
+    SignupSchema,
 )
 from app.user.controller import serialize_user
 from app.utils.db import get_db
@@ -15,17 +17,38 @@ from app.utils.helpers import DbSession, IsAuthenticated
 auth_routes = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-@auth_routes.post("/login", response_model=LoginResponseSchema, status_code=status.HTTP_200_OK)
+@auth_routes.post(
+    "/login",
+    response_model=LoginResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
 def login(body: LoginSchema, db: DbSession):
     return controller.login_user(body, db)
 
 
-@auth_routes.get("/me", response_model=MeResponseSchema, status_code=status.HTTP_200_OK)
+@auth_routes.post(
+    "/signup",
+    response_model=SignupResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+)
+def signup(body: SignupSchema, db: DbSession):
+    return controller.signup_user(body, db)
+
+
+@auth_routes.get(
+    "/me",
+    response_model=MeResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
 def me(user: IsAuthenticated):
     return serialize_user(user)
 
 
-@auth_routes.post("/refresh", response_model=RefreshResponseSchema, status_code=status.HTTP_200_OK)
+@auth_routes.post(
+    "/refresh",
+    response_model=RefreshResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
 def refresh(body: RefreshSchema, db: DbSession):
     return controller.refresh_tokens(body.refresh_token, db)
 

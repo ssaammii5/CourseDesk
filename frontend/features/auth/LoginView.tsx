@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Layers, Loader2, Lock, Mail } from "lucide-react";
@@ -40,7 +39,6 @@ export function LoginView() {
         const next = validate();
         setErrors(next);
         if (Object.keys(next).length > 0) return;
-
         setLoading(true);
         setFormError(null);
         try {
@@ -96,7 +94,6 @@ export function LoginView() {
                     </p>
                 </div>
             </div>
-
             {/* ---------- Right: full-height form panel ---------- */}
             <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-white px-6 py-12 sm:px-12 lg:px-16 xl:px-24">
                 {/* Decorative corner sphere */}
@@ -107,7 +104,6 @@ export function LoginView() {
                 <div className="relative mx-auto w-full max-w-md">
                     <h2 className="text-3xl font-semibold text-gray-900">Sign in</h2>
                     <p className="mt-2 text-sm text-gray-600">to continue to CourseDesk</p>
-
                     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
                         {/* Email */}
                         <div>
@@ -132,7 +128,6 @@ export function LoginView() {
                                 <span className="mt-1 block text-sm text-[#c5221f]">{errors.email}</span>
                             )}
                         </div>
-
                         {/* Password */}
                         <div>
                             <label
@@ -163,14 +158,12 @@ export function LoginView() {
                                 <span className="mt-1 block text-sm text-[#c5221f]">{errors.password}</span>
                             )}
                         </div>
-
                         {/* Form-level error (real auth) */}
                         {formError && (
                             <p className="rounded-md bg-[#fce8e6] px-4 py-2.5 text-sm text-[#c5221f]">
                                 {formError}
                             </p>
                         )}
-
                         {/* Remember / forgot */}
                         <div className="flex items-center justify-between">
                             <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
@@ -189,7 +182,6 @@ export function LoginView() {
                                 Forgot Password?
                             </Link>
                         </div>
-
                         {/* Submit */}
                         <button
                             type="submit"
@@ -200,7 +192,15 @@ export function LoginView() {
                             {loading ? "Signing in…" : "Sign in"}
                         </button>
                     </form>
-
+                    {/* Sign up link */}
+                    <div className="mt-6 text-center">
+                        <p className="text-sm text-gray-600">
+                            Don&apos;t have an account?{" "}
+                            <Link href="/signup" className="font-medium text-[#1a73e8] hover:underline">
+                                Create account
+                            </Link>
+                        </p>
+                    </div>
                     {/* Legal */}
                     <div className="mt-10 flex items-center justify-center gap-2 text-xs text-gray-700">
                         <a href="#" className="hover:underline">
