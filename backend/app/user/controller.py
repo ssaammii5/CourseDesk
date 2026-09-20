@@ -1,3 +1,6 @@
+import secrets
+from datetime import UTC, datetime, timedelta
+
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -99,11 +102,25 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
     is_user = db.scalar(select(UserModel).where(UserModel.email == body.email))
     if is_user:
         raise HTTPException(400, detail="Email address already exists")
+
+    raw_invite_token: str | None = None
+    if body.password:
+        hash_pass = get_password_hash(body.password)
+        invite_token_hash = None
+        invite_expires = None
+    else:
+        raw_invite_token = secrets.token_urlsafe(48)
+        invite_expires = datetime.now(UTC) + timedelta(days=7)
+        invite_token_hash = get_password_hash(raw_invite_token)
+        hash_pass = "!UNSET_INVITED_USER"
+
     new_user = UserModel(
         name=body.name,
         email=body.email,
-        hash_password=get_password_hash(body.password),
+        hash_password=hash_pass,
         role=body.role,
+        invite_token=invite_token_hash,
+        invite_expires_at_utc=invite_expires,
     )
     db.add(new_user)
     db.flush()
@@ -112,7 +129,10 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
     if body.instructor_details:
         db.add(_build_instructor_details(new_user.id, body.instructor_details))
     db.commit()
-    return get_one_user(new_user.id, db)
+    res = get_one_user(new_user.id, db)
+    if raw_invite_token:
+        res.invite_token = raw_invite_token
+    return res
 
 
 def get_one_user(user_id: int, db: Session) -> UserResponseSchema:

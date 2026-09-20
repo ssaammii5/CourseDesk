@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
     BookOpen,
+    Check,
+    Copy,
     Mail,
     Pencil,
     Plus,
@@ -94,6 +96,8 @@ export function AdminInstructorsView() {
     const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [inviteNotification, setInviteNotification] = useState<{ email: string; link: string } | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const loadUsers = async () => {
         try {
@@ -243,20 +247,23 @@ export function AdminInstructorsView() {
                     instructorDetails,
                     teacherDetails: instructorDetails,
                 });
+                setSuccessMessage(`Instructor "${data.name}" updated successfully.`);
+                window.setTimeout(() => setSuccessMessage(null), 6000);
             } else {
-                const password = "Instructor@123";
-                await createUserRequest({
+                const response = await createUserRequest({
                     name: data.name,
                     email: data.email,
-                    password,
                     role: "Instructor",
                     instructorDetails,
                     teacherDetails: instructorDetails,
                 });
-                setSuccessMessage(
-                    `Instructor "${data.name}" created successfully. Credentials: ${data.email} / ${password}`
-                );
-                window.setTimeout(() => setSuccessMessage(null), 6000);
+                const inviteLink = `${window.location.origin}/set-password?token=${response.inviteToken}&email=${encodeURIComponent(data.email)}`;
+                setInviteNotification({
+                    email: data.email,
+                    link: inviteLink,
+                });
+                setCopied(false);
+                window.setTimeout(() => setInviteNotification(null), 10000);
             }
 
             setModalOpen(false);
@@ -368,6 +375,51 @@ export function AdminInstructorsView() {
 
     return (
         <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
+            {/* Invitation Banner */}
+            {inviteNotification && (
+                <div className="fixed inset-x-0 top-20 z-50 flex justify-center px-4">
+                    <div className="flex max-w-3xl flex-col gap-2 rounded-lg bg-[#e6f4ea] p-4 shadow-lg border border-[#ceead6] sm:flex-row sm:items-center sm:gap-3">
+                        <div className="flex items-center gap-2 shrink-0">
+                            <Mail className="h-5 w-5 shrink-0 text-[#137333]" />
+                            <span className="text-sm font-medium text-[#137333]">
+                                Invitation sent to {inviteNotification.email}. Share this link:
+                            </span>
+                        </div>
+                        <div className="flex flex-1 items-center gap-1.5 min-w-0">
+                            <input
+                                type="text"
+                                readOnly
+                                value={inviteNotification.link}
+                                className="w-full min-w-0 rounded border border-[#a8dab5] bg-white px-2.5 py-1 text-xs text-gray-800 select-all focus:outline-none focus:ring-1 focus:ring-[#137333]"
+                            />
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(inviteNotification.link);
+                                        setCopied(true);
+                                        setTimeout(() => setCopied(false), 2500);
+                                    } catch {
+                                        // fallback
+                                    }
+                                }}
+                                className="flex shrink-0 cursor-pointer items-center gap-1 rounded bg-[#137333] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#0e5826] transition-colors"
+                            >
+                                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                <span>{copied ? "Copied" : "Copy"}</span>
+                            </button>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setInviteNotification(null)}
+                            className="self-end sm:self-center cursor-pointer rounded p-1 text-[#137333] hover:bg-[#ceead6]"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Success Banner */}
             {successMessage && (
                 <div className="fixed inset-x-0 top-20 z-50 flex justify-center px-4">

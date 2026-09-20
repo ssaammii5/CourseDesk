@@ -20,6 +20,15 @@ class RefreshSchema(CamelModel):
     refresh_token: str
 
 
+class SetPasswordSchema(CamelModel):
+    token: str
+    password: str
+
+
+class SetPasswordResponseSchema(CamelModel):
+    message: str = "Password set successfully"
+
+
 class LoginResponseSchema(CamelModel):
     token: str
     access_token: str

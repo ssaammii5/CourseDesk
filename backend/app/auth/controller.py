@@ -1,3 +1,4 @@
+import re
 import secrets
 from datetime import UTC, datetime, timedelta
 
@@ -6,7 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.dtos import LoginSchema, SignupSchema
+from app.auth.dtos import LoginSchema, SetPasswordSchema, SignupSchema
 from app.auth.models import RefreshTokenModel
 from app.user.models import LearnerDetailsModel, UserModel
 from app.utils.helpers import get_password_hash, verify_password
@@ -139,3 +140,52 @@ def logout_user(user: UserModel, db: Session) -> None:
         token.revoked = True
         db.add(token)
     db.commit()
+
+
+def validate_password_strength(password: str) -> None:
+    if (
+        len(password) < 8
+        or not re.search(r"[A-Z]", password)
+        or not re.search(r"\d", password)
+        or not re.search(r"[!@#$%^&*()_+\-=[\]{};':\"\\|,.<>/?]", password)
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="Password must be at least 8 characters long, contain an uppercase letter, a number, and a special character",
+        )
+
+
+def set_password_via_token(body: SetPasswordSchema, db: Session) -> dict:
+    validate_password_strength(body.password)
+
+    if not body.token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired invitation token",
+        )
+
+    candidates = db.scalars(
+        select(UserModel).where(
+            UserModel.invite_token.is_not(None),
+            UserModel.invite_expires_at_utc > datetime.now(UTC),
+        )
+    ).all()
+
+    user = None
+    for candidate in candidates:
+        if candidate.invite_token and verify_password(body.token, candidate.invite_token):
+            user = candidate
+            break
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired invitation token",
+        )
+
+    user.hash_password = get_password_hash(body.password)
+    user.invite_token = None
+    user.invite_expires_at_utc = None
+    db.commit()
+
+    return {"message": "Password set successfully"}

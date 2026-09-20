@@ -21,7 +21,12 @@ def get_password_hash(password: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return password_hash.verify(plain_password, hashed_password)
+    if not hashed_password or hashed_password.startswith("!"):
+        return False
+    try:
+        return password_hash.verify(plain_password, hashed_password)
+    except Exception:
+        return False
 
 
 DbSession = Annotated[Session, Depends(get_db)]

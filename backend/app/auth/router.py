@@ -7,6 +7,8 @@ from app.auth.dtos import (
     MeResponseSchema,
     RefreshResponseSchema,
     RefreshSchema,
+    SetPasswordResponseSchema,
+    SetPasswordSchema,
     SignupResponseSchema,
     SignupSchema,
 )
@@ -56,3 +58,12 @@ def refresh(body: RefreshSchema, db: DbSession):
 @auth_routes.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(db: DbSession, user: IsAuthenticated):
     return controller.logout_user(user, db)
+
+
+@auth_routes.post(
+    "/set-password",
+    response_model=SetPasswordResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def set_password(body: SetPasswordSchema, db: DbSession):
+    return controller.set_password_via_token(body, db)

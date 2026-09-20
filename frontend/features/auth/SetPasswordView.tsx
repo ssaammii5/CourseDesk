@@ -1,14 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Check, Eye, EyeOff, Layers, Loader2, Lock } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { setPasswordRequest } from "@/lib/api/users";
 
 function SetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const email = searchParams.get("email") ?? "user@coursedesk.com";
+    const token = searchParams.get("token") ?? "";
+    const email = searchParams.get("email") ?? "";
 
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,6 +21,18 @@ function SetPasswordForm() {
     const [success, setSuccess] = useState(false);
     const [countdown, setCountdown] = useState(5);
 
+    useEffect(() => {
+        if (!success) return;
+        if (countdown <= 0) {
+            router.push("/");
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            setCountdown((prev) => prev - 1);
+        }, 1000);
+        return () => window.clearTimeout(timer);
+    }, [success, countdown, router]);
+
     const requirements = [
         { label: "At least 8 characters", ok: newPassword.length >= 8 },
         { label: "At least one uppercase letter", ok: /[A-Z]/.test(newPassword) },
@@ -27,8 +41,11 @@ function SetPasswordForm() {
     ];
     const allRequirementsMet = requirements.every((r) => r.ok);
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        if (!token) {
+            return setPassError("Missing invitation token. Please check your invitation link.");
+        }
         if (!allRequirementsMet) {
             return setPassError("Password doesn't meet all requirements yet.");
         }
@@ -37,20 +54,18 @@ function SetPasswordForm() {
         }
         setPassError(null);
         setLoading(true);
-        window.setTimeout(() => {
-            setLoading(false);
+        try {
+            await setPasswordRequest(token, newPassword);
             setSuccess(true);
-            const timer = window.setInterval(() => {
-                setCountdown((c) => {
-                    if (c <= 1) {
-                        window.clearInterval(timer);
-                        router.push("/");
-                        return 0;
-                    }
-                    return c - 1;
-                });
-            }, 1000);
-        }, 900);
+        } catch (err) {
+            setPassError(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to set password. The link may have expired or is invalid."
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (success) {
@@ -108,9 +123,17 @@ function SetPasswordForm() {
                 <span aria-hidden className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle_at_35%_30%,#7db2ff,#0a3d8f_72%)]" />
                 <div className="relative mx-auto w-full max-w-md">
                     <h2 className="text-3xl font-semibold text-gray-900">Create your password</h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Account: <span className="font-medium text-gray-900">{email}</span>
-                    </p>
+                    {email && (
+                        <p className="mt-2 text-sm text-gray-600">
+                            Account: <span className="font-medium text-gray-900">{email}</span>
+                        </p>
+                    )}
+
+                    {!token && (
+                        <div className="mt-4 rounded-lg bg-[#fce8e6] px-4 py-3 text-sm text-[#c5221f]">
+                            Missing invitation token. Please make sure you used the full link provided in your invitation.
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
                         {/* New Password */}

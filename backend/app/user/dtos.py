@@ -42,7 +42,7 @@ TeacherDetailsSchema = InstructorDetailsSchema
 class UserSchema(CamelModel):
     name: str
     email: EmailStr
-    password: str
+    password: str | None = None
     role: str = "Learner"
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
@@ -65,5 +65,6 @@ class UserResponseSchema(CamelModel):
     role: str
     is_active: bool
     created_at_utc: datetime
+    invite_token: str | None = None
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None

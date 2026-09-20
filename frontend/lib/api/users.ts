@@ -40,6 +40,7 @@ export interface UserDto {
     role: string;
     isActive: boolean;
     createdAtUtc: string;
+    inviteToken?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;
@@ -49,7 +50,7 @@ export interface UserDto {
 export interface CreateUserPayload {
     name: string;
     email: string;
-    password: string;
+    password?: string;
     role: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
@@ -89,4 +90,16 @@ export function updateUserRequest(id: number, payload: UpdateUserPayload): Promi
 
 export function deleteUserRequest(id: number): Promise<void> {
     return apiFetch<void>(`/api/users/${id}`, { method: "DELETE" });
+}
+
+export interface SetPasswordResponse {
+    message: string;
+}
+
+export function setPasswordRequest(token: string, password: string): Promise<SetPasswordResponse> {
+    return apiFetch<SetPasswordResponse>("/api/auth/set-password", {
+        method: "POST",
+        body: JSON.stringify({ token, password }),
+        auth: false,
+    });
 }

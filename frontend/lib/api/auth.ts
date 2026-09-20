@@ -53,5 +53,7 @@ export function getMeRequest(): Promise<MeResponse> {
 }
 
 export function logoutRequest(): Promise<void> {
-    return apiFetch<void>("/api/auth/logout", { method: "POST" });
+    return apiFetch<void>(`/api/auth/logout`, { method: "POST" });
 }
+
+export { setPasswordRequest, type SetPasswordResponse } from "./users";

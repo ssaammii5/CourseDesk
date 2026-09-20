@@ -19,6 +19,10 @@ class UserModel(Base):
     created_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
+    invite_token: Mapped[Optional[str]] = mapped_column(unique=True, index=True, nullable=True)
+    invite_expires_at_utc: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     learner_details: Mapped[Optional["LearnerDetailsModel"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
