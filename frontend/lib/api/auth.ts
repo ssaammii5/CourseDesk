@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { StudentDetails, TeacherDetails } from "./users";
+import type { InstructorDetails, LearnerDetails } from "./users";
 
 export interface LoginResponse {
     token: string;
@@ -17,8 +17,10 @@ export interface MeResponse {
     email: string;
     role: string;
     isActive?: boolean;
-    studentDetails?: StudentDetails;
-    teacherDetails?: TeacherDetails;
+    learnerDetails?: LearnerDetails;
+    instructorDetails?: InstructorDetails;
+    studentDetails?: LearnerDetails;
+    teacherDetails?: InstructorDetails;
 }
 
 export interface SignupResponse {

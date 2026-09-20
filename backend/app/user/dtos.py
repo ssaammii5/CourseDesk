@@ -13,13 +13,13 @@ class UserAddressSchema(CamelModel):
     country: str = ""
 
 
-class StudentDetailsSchema(CamelModel):
+class LearnerDetailsSchema(CamelModel):
     fathers_name: str = ""
     mothers_name: str = ""
     date_of_birth: str = ""
     mobile: str = ""
     nationality: str = ""
-    student_id: str = ""
+    learner_id: str = ""
     reg_no: str = ""
     department: str = ""
     current_program: str = "Undergraduate"
@@ -28,19 +28,24 @@ class StudentDetailsSchema(CamelModel):
     address: UserAddressSchema = UserAddressSchema()
 
 
-class TeacherDetailsSchema(CamelModel):
-    teacher_id: str = ""
+class InstructorDetailsSchema(CamelModel):
+    instructor_id: str = ""
     designation: str = ""
     department: str = ""
+
+
+# Backwards compatibility aliases
+StudentDetailsSchema = LearnerDetailsSchema
+TeacherDetailsSchema = InstructorDetailsSchema
 
 
 class UserSchema(CamelModel):
     name: str
     email: EmailStr
     password: str
-    role: str = "Student"
-    student_details: StudentDetailsSchema | None = None
-    teacher_details: TeacherDetailsSchema | None = None
+    role: str = "Learner"
+    learner_details: LearnerDetailsSchema | None = None
+    instructor_details: InstructorDetailsSchema | None = None
 
 
 class UserUpdateSchema(CamelModel):
@@ -49,8 +54,8 @@ class UserUpdateSchema(CamelModel):
     role: str
     is_active: bool = True
     password: str | None = None
-    student_details: StudentDetailsSchema | None = None
-    teacher_details: TeacherDetailsSchema | None = None
+    learner_details: LearnerDetailsSchema | None = None
+    instructor_details: InstructorDetailsSchema | None = None
 
 
 class UserResponseSchema(CamelModel):
@@ -60,5 +65,5 @@ class UserResponseSchema(CamelModel):
     role: str
     is_active: bool
     created_at_utc: datetime
-    student_details: StudentDetailsSchema | None = None
-    teacher_details: TeacherDetailsSchema | None = None
+    learner_details: LearnerDetailsSchema | None = None
+    instructor_details: InstructorDetailsSchema | None = None

@@ -79,7 +79,7 @@ export function CalendarView() {
 
     const [viewMode, setViewMode] = useState<"week" | "month">("week");
     const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
-    const [classFilter, setClassFilter] = useState<string>("all");
+    const [courseFilter, setCourseFilter] = useState<string>("all");
 
     const [courses, setCourses] = useState<CourseDto[]>([]);
     const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
@@ -133,9 +133,7 @@ export function CalendarView() {
 
             const cName = a.courseName || courseMap.get(a.courseId) || "Course";
             const kindLower = (a.kind || "assignment").toLowerCase();
-            const link = isAdmin
-                ? `/class/${a.courseId}/assignments/${a.id}`
-                : `/class/${a.courseId}/assignments/${a.id}`;
+            const link = `/course/${a.courseId}/assignments/${a.id}`;
 
             items.push({
                 id: `assignment-${a.id}`,
@@ -166,7 +164,7 @@ export function CalendarView() {
                 date: d,
                 time: formatEventTime(d),
                 kind: "session",
-                link: `/class/${s.courseId}?tab=curriculum`,
+                link: `/course/${s.courseId}?tab=curriculum`,
                 status: s.status,
             });
         }
@@ -176,10 +174,10 @@ export function CalendarView() {
 
     // Filter events by selected course
     const filteredEvents = useMemo(() => {
-        if (classFilter === "all") return events;
-        const filterCourseId = Number(classFilter);
+        if (courseFilter === "all") return events;
+        const filterCourseId = Number(courseFilter);
         return events.filter((e) => e.courseId === filterCourseId);
-    }, [events, classFilter]);
+    }, [events, courseFilter]);
 
     const eventsForDay = (day: Date) =>
         filteredEvents.filter((e) => sameDay(e.date, day));
@@ -271,12 +269,12 @@ export function CalendarView() {
                     {/* Class filter */}
                     <div className="relative w-full max-w-[360px] rounded-xl border border-gray-300 bg-white shadow-2xs focus-within:border-[#1a73e8] focus-within:ring-2 focus-within:ring-blue-100">
                         <select
-                            value={classFilter}
-                            onChange={(e) => setClassFilter(e.target.value)}
-                            aria-label="Filter by class"
+                            value={courseFilter}
+                            onChange={(e) => setCourseFilter(e.target.value)}
+                            aria-label="Filter by course"
                             className="w-full appearance-none bg-transparent px-4 py-3 pr-10 text-sm font-medium text-gray-800 focus:outline-none"
                         >
-                            <option value="all">All classes</option>
+                            <option value="all">All courses</option>
                             {courses.map((c) => (
                                 <option key={c.id} value={c.id}>
                                     {c.name}

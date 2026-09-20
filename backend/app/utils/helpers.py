@@ -50,8 +50,8 @@ def is_authenticated(request: Request, db: DbSession) -> UserModel:
         user = db.scalar(
             select(UserModel)
             .options(
-                selectinload(UserModel.student_details),
-                selectinload(UserModel.teacher_details),
+                selectinload(UserModel.learner_details),
+                selectinload(UserModel.instructor_details),
             )
             .where(UserModel.id == user_id)
         )
@@ -76,19 +76,20 @@ def is_admin(user: Annotated[UserModel, Depends(is_authenticated)]) -> UserModel
     return user
 
 
-def is_admin_or_teacher(
+def is_admin_or_instructor(
     user: Annotated[UserModel, Depends(is_authenticated)],
 ) -> UserModel:
-    if user.role not in ("Admin", "Teacher"):
+    if user.role not in ("Admin", "Instructor"):
         raise HTTPException(
-            status.HTTP_403_FORBIDDEN, detail="Teacher access required"
+            status.HTTP_403_FORBIDDEN, detail="Instructor access required"
         )
     return user
 
 
 IsAuthenticated = Annotated[UserModel, Depends(is_authenticated)]
 IsAdmin = Annotated[UserModel, Depends(is_admin)]
-IsAdminOrTeacher = Annotated[UserModel, Depends(is_admin_or_teacher)]
+IsAdminOrInstructor = Annotated[UserModel, Depends(is_admin_or_instructor)]
+IsAdminOrTeacher = IsAdminOrInstructor
 
 
 def human_readable_size(num_bytes: int) -> str:

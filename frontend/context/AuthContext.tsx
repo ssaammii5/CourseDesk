@@ -34,18 +34,24 @@ function toCurrentUser(source: {
     name: string;
     email: string;
     role: string;
+    learnerDetails?: CurrentUser["learnerDetails"];
+    instructorDetails?: CurrentUser["instructorDetails"];
     studentDetails?: CurrentUser["studentDetails"];
     teacherDetails?: CurrentUser["teacherDetails"];
 }): CurrentUser {
     const role = mapRole(source.role);
+    const learnerDetails = source.learnerDetails || source.studentDetails;
+    const instructorDetails = source.instructorDetails || source.teacherDetails;
     return {
         id: source.id,
         name: source.name,
         email: source.email,
         role,
         avatarClass: avatarClassFor(role),
-        studentDetails: source.studentDetails,
-        teacherDetails: source.teacherDetails,
+        learnerDetails,
+        instructorDetails,
+        studentDetails: learnerDetails,
+        teacherDetails: instructorDetails,
     };
 }
 

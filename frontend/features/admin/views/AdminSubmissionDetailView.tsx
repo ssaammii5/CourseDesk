@@ -76,10 +76,11 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
     const displayStatus = notSubmitted ? "Pending" : submission.status;
     const maxMarks = submission.maxMarks;
 
-    const studentEmail = submission.studentEmail ?? "—";
-    const studentAcademicId = submission.studentAcademicId ?? "—";
-    const studentDepartment = submission.studentDepartment ?? "—";
-    const studentProgram = submission.studentProgram ?? "—";
+    const learnerEmail = submission.learnerEmail ?? submission.studentEmail ?? "—";
+    const learnerAcademicId = submission.learnerAcademicId ?? submission.studentAcademicId ?? "—";
+    const learnerDepartment = submission.learnerDepartment ?? submission.studentDepartment ?? "—";
+    const learnerProgram = submission.learnerProgram ?? submission.studentProgram ?? "—";
+    const learnerName = submission.learnerName ?? submission.studentName ?? "Unknown Learner";
     const courseSession = submission.session ?? "—";
 
     const answer = submission.answer;
@@ -125,14 +126,14 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                 <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-4">
                         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#7b1fa2] text-xl font-medium text-white">
-                            {initialOf(submission.studentName)}
+                            {initialOf(learnerName)}
                         </span>
                         <div className="min-w-0">
                             <h1 className="truncate text-2xl font-semibold text-gray-900 sm:text-3xl">
                                 {submission.assignmentTitle}
                             </h1>
                             <p className="mt-1 text-sm text-gray-600">
-                                Submitted by <span className="font-medium text-gray-900">{submission.studentName}</span>
+                                Submitted by <span className="font-medium text-gray-900">{learnerName}</span>
                                 <span className="mx-2">•</span>
                                 {submission.courseName}
                             </p>
@@ -153,16 +154,16 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                 <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
                     {/* Left column */}
                     <div className="min-w-0 space-y-6">
-                        {/* Student answer */}
+                        {/* Learner answer */}
                         <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
                             <div className="flex items-center gap-2 border-b border-gray-200 bg-[#f8f9fa] px-6 py-4">
                                 <FileText className="h-5 w-5 text-gray-600" />
-                                <h2 className="text-lg font-medium text-gray-900">Student Answer</h2>
+                                <h2 className="text-lg font-medium text-gray-900">Learner Answer</h2>
                             </div>
                             <div className="px-6 py-5">
                                 {notSubmitted ? (
                                     <p className="text-sm italic text-gray-500">
-                                        This student has not submitted any work yet.
+                                        This learner has not submitted any work yet.
                                     </p>
                                 ) : answer ? (
                                     <p className="whitespace-pre-line text-sm leading-6 text-gray-800">{answer}</p>
@@ -232,7 +233,7 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                             <h2 className="text-lg font-medium text-gray-900">Grading</h2>
                             {notSubmitted ? (
                                 <p className="mt-3 text-sm text-gray-600">
-                                    Waiting for the student to submit before grading.
+                                    Waiting for the learner to submit before grading.
                                 </p>
                             ) : isGraded ? (
                                 <>
@@ -293,23 +294,23 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                             </dl>
                         </section>
 
-                        {/* Student info */}
+                        {/* Learner info */}
                         <section className="rounded-xl border border-gray-200 bg-white p-6">
-                            <h2 className="text-lg font-medium text-gray-900">Student Info</h2>
+                            <h2 className="text-lg font-medium text-gray-900">Learner Info</h2>
                             <dl className="mt-4 space-y-3 text-sm">
-                                <InfoRow icon={<UserRound className="h-4 w-4" />} label="Name" value={submission.studentName ?? "—"} />
-                                <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={studentEmail} />
-                                <InfoRow icon={<ClipboardList className="h-4 w-4" />} label="Student ID" value={studentAcademicId} />
-                                <InfoRow icon={<Building2 className="h-4 w-4" />} label="Department" value={studentDepartment} />
-                                <InfoRow icon={<GraduationCap className="h-4 w-4" />} label="Program" value={studentProgram} />
+                                <InfoRow icon={<UserRound className="h-4 w-4" />} label="Name" value={learnerName} />
+                                <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={learnerEmail} />
+                                <InfoRow icon={<ClipboardList className="h-4 w-4" />} label="Learner ID" value={learnerAcademicId} />
+                                <InfoRow icon={<Building2 className="h-4 w-4" />} label="Department" value={learnerDepartment} />
+                                <InfoRow icon={<GraduationCap className="h-4 w-4" />} label="Program" value={learnerProgram} />
                             </dl>
-                            {submission.studentEmail && (
+                            {(submission.learnerEmail || submission.studentEmail) && (
                                 <a
-                                    href={`mailto:${submission.studentEmail}`}
+                                    href={`mailto:${submission.learnerEmail || submission.studentEmail}`}
                                     className="mt-5 flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-400 px-5 py-2.5 text-sm font-medium text-[#1a73e8] hover:bg-blue-50"
                                 >
                                     <Mail className="h-4 w-4" />
-                                    Contact Student
+                                    Contact Learner
                                 </a>
                             )}
                         </section>

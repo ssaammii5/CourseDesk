@@ -22,8 +22,9 @@ export interface AssignmentDto {
     turnedInCount?: number;
     gradedCount?: number;
     assignedCount?: number;
+    learnerCount?: number;
     studentCount?: number;
-    mySubmissionStatus: string | null; // "Assigned" | "Submitted" | "Graded" (students only)
+    mySubmissionStatus: string | null; // "Assigned" | "Submitted" | "Graded" (learners only)
     attachments?: AssignmentAttachmentDto[];
 }
 

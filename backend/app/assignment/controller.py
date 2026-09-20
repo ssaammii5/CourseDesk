@@ -23,8 +23,8 @@ def serialize_assignment(
     subs = assignment.submissions or []
     turned_in = len([s for s in subs if s.submitted_at_utc and s.status != "Graded"])
     graded = len([s for s in subs if s.status == "Graded"])
-    total_students = len(course.students) if course and course.students else 0
-    assigned = max(0, total_students - turned_in - graded)
+    total_learners = len(course.learners) if course and course.learners else 0
+    assigned = max(0, total_learners - turned_in - graded)
 
     return AssignmentResponseSchema(
         id=assignment.id,
@@ -48,7 +48,8 @@ def serialize_assignment(
         turned_in_count=turned_in,
         graded_count=graded,
         assigned_count=assigned,
-        student_count=total_students,
+        learner_count=total_learners,
+        student_count=total_learners,
         my_submission_status=my_status,
         # ── NEW ──
         session_id=assignment.session_id,
@@ -62,8 +63,8 @@ def serialize_assignment(
 
 def _assignment_stmt():
     return select(AssignmentModel).options(
-        selectinload(AssignmentModel.course).selectinload(CourseModel.teachers),
-        selectinload(AssignmentModel.course).selectinload(CourseModel.students),
+        selectinload(AssignmentModel.course).selectinload(CourseModel.instructors),
+        selectinload(AssignmentModel.course).selectinload(CourseModel.learners),
         selectinload(AssignmentModel.created_by),
         selectinload(AssignmentModel.submissions),
         selectinload(AssignmentModel.attachments),
@@ -73,15 +74,15 @@ def _assignment_stmt():
 def _can_manage_course(user: UserModel, course: CourseModel) -> bool:
     if user.role == "Admin":
         return True
-    if user.role == "Teacher":
-        return any(t.id == user.id for t in course.teachers)
+    if user.role == "Instructor":
+        return any(t.id == user.id for t in course.instructors)
     return False
 
 
 def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str | None:
-    if user.role != "Student":
+    if user.role != "Learner":
         return None
-    mine = next((s for s in assignment.submissions if s.student_id == user.id), None)
+    mine = next((s for s in assignment.submissions if s.learner_id == user.id), None)
     if not mine or not mine.submitted_at_utc:
         return "Assigned"
     return "Graded" if mine.status == "Graded" else "Submitted"
@@ -91,14 +92,14 @@ def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSche
     stmt = _assignment_stmt()
     if user.role == "Admin":
         assignments = db.scalars(stmt).all()
-    elif user.role == "Teacher":
+    elif user.role == "Instructor":
         assignments = db.scalars(
-            stmt.where(CourseModel.teachers.any(UserModel.id == user.id))
+            stmt.where(CourseModel.instructors.any(UserModel.id == user.id))
         ).all()
     else:
         assignments = db.scalars(
             stmt.where(
-                CourseModel.students.any(UserModel.id == user.id),
+                CourseModel.learners.any(UserModel.id == user.id),
                 AssignmentModel.status == "Published",
             )
         ).all()
@@ -110,19 +111,19 @@ def get_course_assignments(
 ) -> list[AssignmentResponseSchema]:
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers), selectinload(CourseModel.students))
+        .options(selectinload(CourseModel.instructors), selectinload(CourseModel.learners))
         .where(CourseModel.id == course_id)
     )
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
 
     stmt = _assignment_stmt().where(AssignmentModel.course_id == course_id)
-    if user.role == "Student":
-        if not any(s.id == user.id for s in course.students):
+    if user.role == "Learner":
+        if not any(s.id == user.id for s in course.learners):
             raise HTTPException(403, detail="You are not enrolled in this course")
         stmt = stmt.where(AssignmentModel.status == "Published")
-    elif user.role == "Teacher":
-        if not any(t.id == user.id for t in course.teachers):
+    elif user.role == "Instructor":
+        if not any(t.id == user.id for t in course.instructors):
             raise HTTPException(403, detail="You do not teach this course")
 
     assignments = db.scalars(stmt).all()
@@ -133,12 +134,12 @@ def _check_assignment_visible(assignment: AssignmentModel, user: UserModel) -> N
     if user.role == "Admin":
         return
     course = assignment.course
-    if user.role == "Teacher" and any(t.id == user.id for t in course.teachers):
+    if user.role == "Instructor" and any(t.id == user.id for t in course.instructors):
         return
     if (
-        user.role == "Student"
+        user.role == "Learner"
         and assignment.status == "Published"
-        and any(s.id == user.id for s in course.students)
+        and any(s.id == user.id for s in course.learners)
     ):
         return
     raise HTTPException(403, detail="You don't have access to this assignment")
@@ -168,7 +169,7 @@ def _get_manageable_assignment(
 def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> AssignmentModel:
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == body.course_id)
     )
     if not course:
@@ -226,26 +227,26 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.students))
+        .options(selectinload(CourseModel.learners))
         .where(CourseModel.id == assignment.course_id)
     )
     existing_ids = set(
         db.scalars(
-            select(SubmissionModel.student_id).where(
+            select(SubmissionModel.learner_id).where(
                 SubmissionModel.assignment_id == assignment.id
             )
         ).all()
     )
-    student_ids = [student.id for student in (course.students if course else [])]
-    for s_id in student_ids:
-        if s_id not in existing_ids:
+    learner_ids = [learner.id for learner in (course.learners if course else [])]
+    for l_id in learner_ids:
+        if l_id not in existing_ids:
             db.add(
                 SubmissionModel(
-                    assignment_id=assignment.id, student_id=s_id, status="Draft"
+                    assignment_id=assignment.id, learner_id=l_id, status="Draft"
                 )
             )
 
-    if student_ids:
+    if learner_ids:
         from app.notification.controller import create_notifications_bulk
 
         deadline_str = (
@@ -256,11 +257,11 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
         msg = f"Posted in {course.name}" + (f" • Due {deadline_str}" if deadline_str else "")
         create_notifications_bulk(
             db=db,
-            user_ids=student_ids,
+            user_ids=learner_ids,
             title=f"New assignment: {assignment.title}",
             message=msg,
             kind="assignment",
-            link=f"/class/{assignment.course_id}/classwork",
+            link=f"/course/{assignment.course_id}/coursework",
         )
 
     db.commit()

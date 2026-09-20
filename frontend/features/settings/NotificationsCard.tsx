@@ -117,7 +117,7 @@ export function NotificationsCard() {
                             />
                             <ToggleRow
                                 label="Submissions & Grading"
-                                description="Get notified when your work is graded, or when students submit assignments to your course."
+                                description="Get notified when your work is graded, or when learners submit assignments to your course."
                                 enabled={prefs.gradeNotifications}
                                 onChange={(val) => updateField("gradeNotifications", val)}
                             />

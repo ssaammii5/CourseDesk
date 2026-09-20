@@ -1,47 +1,54 @@
-export interface StudentAddress {
+export interface LearnerAddress {
     street: string;
     city: string;
     state: string;
     zip: string;
     country: string;
 }
+export type StudentAddress = LearnerAddress;
 
-export type StudentProgramType =
+export type LearnerProgramType =
     | "Undergraduate"
     | "Postgraduate"
     | "Post Graduate Diploma"
     | "M.Phil"
     | "PhD";
+export type StudentProgramType = LearnerProgramType;
 
-export interface StudentDetails {
+export interface LearnerDetails {
     fathersName: string;
     mothersName: string;
     dateOfBirth: string;
     mobile: string;
     nationality: string;
-    studentId: string;
+    learnerId?: string;
+    studentId?: string;
     regNo: string;
     department: string;
-    currentProgram: StudentProgramType;
+    currentProgram: LearnerProgramType;
     session: string;
     semesterSession: string;
-    address: StudentAddress;
+    address: LearnerAddress;
 }
+export type StudentDetails = LearnerDetails;
 
-export type TeacherDesignation =
+export type InstructorDesignation =
     | "Professor"
     | "Associate Professor"
     | "Assistant Professor"
     | "Senior Lecturer"
     | "Lecturer";
+export type TeacherDesignation = InstructorDesignation;
 
-export interface TeacherDetails {
-    teacherId: string;
-    designation: TeacherDesignation;
+export interface InstructorDetails {
+    instructorId?: string;
+    teacherId?: string;
+    designation: InstructorDesignation;
     department: string;
 }
+export type TeacherDetails = InstructorDetails;
 
-export const TEACHER_DEPARTMENTS = [
+export const INSTRUCTOR_DEPARTMENTS = [
     "Software Engineering",
     "AI & Data Science",
     "Cloud & DevOps",
@@ -51,6 +58,7 @@ export const TEACHER_DEPARTMENTS = [
     "Mobile Development",
     "Business & Leadership",
 ] as const;
+export const TEACHER_DEPARTMENTS = INSTRUCTOR_DEPARTMENTS;
 
 // ===== TAXONOMY DATA (Categories, Tracks, Cohorts) =====
 export interface AcademicProgram {
@@ -102,11 +110,13 @@ export interface AdminUser {
     id: number;
     name: string;
     email: string;
-    role: "Admin" | "Teacher" | "Student";
+    role: "Admin" | "Instructor" | "Learner" | "Teacher" | "Student";
     isActive: boolean;
     createdAt: string;
-    studentDetails?: StudentDetails;
-    teacherDetails?: TeacherDetails;
+    learnerDetails?: LearnerDetails;
+    instructorDetails?: InstructorDetails;
+    studentDetails?: LearnerDetails;
+    teacherDetails?: InstructorDetails;
 }
 
 /* ─── Course Catalog: structured by program + department ─── */
@@ -158,14 +168,15 @@ export const AVAILABLE_SESSIONS: string[] = [
     "July-December/2026",
 ];
 
-/* ─── AdminCourse Interface ─── */
 export interface AdminCourse {
     id: number;
     name: string;
     program: string;
     department: string;
-    teacherIds: number[];
-    studentIds: number[];
+    instructorIds?: number[];
+    learnerIds?: number[];
+    teacherIds?: number[];
+    studentIds?: number[];
     session: string;
     isActive: boolean;
 }
@@ -194,8 +205,10 @@ export interface AdminSubmission {
     assignmentTitle: string;
     courseId: number;
     courseName: string;
-    studentId: number;
-    studentName: string;
+    learnerId?: number;
+    learnerName?: string;
+    studentId?: number;
+    studentName?: string;
     status: "Submitted" | "Graded" | "Pending";
     marks: number | null;
     feedback: string | null;
@@ -348,11 +361,15 @@ export const appSettings: AppSetting[] = [
 ];
 
 export function getAdminStats() {
+    const instructors = adminUsers.filter((u) => u.role === "Instructor" || u.role === "Teacher").length;
+    const learners = adminUsers.filter((u) => u.role === "Learner" || u.role === "Student").length;
     return {
         totalUsers: adminUsers.length,
         activeUsers: adminUsers.filter((u) => u.isActive).length,
-        totalTeachers: adminUsers.filter((u) => u.role === "Teacher").length,
-        totalStudents: adminUsers.filter((u) => u.role === "Student").length,
+        totalInstructors: instructors,
+        totalLearners: learners,
+        totalTeachers: instructors,
+        totalStudents: learners,
         totalCourses: adminCourses.length,
         activeCourses: adminCourses.filter((c) => c.isActive).length,
         totalAssignments: adminAssignments.length,

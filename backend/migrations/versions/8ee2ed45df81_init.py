@@ -87,14 +87,14 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_assignment_table_course_id'), 'assignment_table', ['course_id'], unique=False)
-    op.create_table('course_student_table',
+    op.create_table('course_learner_table',
     sa.Column('course_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['course_id'], ['course_table.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['user_table.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('course_id', 'user_id')
     )
-    op.create_table('course_teacher_table',
+    op.create_table('course_instructor_table',
     sa.Column('course_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['course_id'], ['course_table.id'], ondelete='CASCADE'),
@@ -113,7 +113,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_refresh_token_table_token'), 'refresh_token_table', ['token'], unique=True)
     op.create_index(op.f('ix_refresh_token_table_user_id'), 'refresh_token_table', ['user_id'], unique=False)
-    op.create_table('student_details_table',
+    op.create_table('learner_details_table',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('fathers_name', sa.String(), nullable=False),
@@ -121,7 +121,7 @@ def upgrade() -> None:
     sa.Column('date_of_birth', sa.String(), nullable=False),
     sa.Column('mobile', sa.String(), nullable=False),
     sa.Column('nationality', sa.String(), nullable=False),
-    sa.Column('student_id', sa.String(), nullable=False),
+    sa.Column('learner_id', sa.String(), nullable=False),
     sa.Column('reg_no', sa.String(), nullable=False),
     sa.Column('department', sa.String(), nullable=False),
     sa.Column('current_program', sa.String(), nullable=False),
@@ -136,18 +136,18 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
     )
-    op.create_index(op.f('ix_student_details_table_student_id'), 'student_details_table', ['student_id'], unique=False)
-    op.create_table('teacher_details_table',
+    op.create_index(op.f('ix_learner_details_table_learner_id'), 'learner_details_table', ['learner_id'], unique=False)
+    op.create_table('instructor_details_table',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('teacher_id', sa.String(), nullable=False),
+    sa.Column('instructor_id', sa.String(), nullable=False),
     sa.Column('designation', sa.String(), nullable=False),
     sa.Column('department', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user_table.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
     )
-    op.create_index(op.f('ix_teacher_details_table_teacher_id'), 'teacher_details_table', ['teacher_id'], unique=False)
+    op.create_index(op.f('ix_instructor_details_table_instructor_id'), 'instructor_details_table', ['instructor_id'], unique=False)
     op.create_table('assignment_attachment_table',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('assignment_id', sa.Integer(), nullable=False),
@@ -164,7 +164,7 @@ def upgrade() -> None:
     op.create_table('submission_table',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('assignment_id', sa.Integer(), nullable=False),
-    sa.Column('student_id', sa.Integer(), nullable=False),
+    sa.Column('learner_id', sa.Integer(), nullable=False),
     sa.Column('answer', sa.Text(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('marks', sa.Integer(), nullable=True),
@@ -176,11 +176,11 @@ def upgrade() -> None:
     sa.Column('is_late', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['assignment_id'], ['assignment_table.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['graded_by_id'], ['user_table.id'], ),
-    sa.ForeignKeyConstraint(['student_id'], ['user_table.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['learner_id'], ['user_table.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_submission_table_assignment_id'), 'submission_table', ['assignment_id'], unique=False)
-    op.create_index(op.f('ix_submission_table_student_id'), 'submission_table', ['student_id'], unique=False)
+    op.create_index(op.f('ix_submission_table_learner_id'), 'submission_table', ['learner_id'], unique=False)
     op.create_table('submission_activity_table',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('submission_id', sa.Integer(), nullable=False),
@@ -214,20 +214,20 @@ def downgrade() -> None:
     op.drop_table('submission_attachment_table')
     op.drop_index(op.f('ix_submission_activity_table_submission_id'), table_name='submission_activity_table')
     op.drop_table('submission_activity_table')
-    op.drop_index(op.f('ix_submission_table_student_id'), table_name='submission_table')
+    op.drop_index(op.f('ix_submission_table_learner_id'), table_name='submission_table')
     op.drop_index(op.f('ix_submission_table_assignment_id'), table_name='submission_table')
     op.drop_table('submission_table')
     op.drop_index(op.f('ix_assignment_attachment_table_assignment_id'), table_name='assignment_attachment_table')
     op.drop_table('assignment_attachment_table')
-    op.drop_index(op.f('ix_teacher_details_table_teacher_id'), table_name='teacher_details_table')
-    op.drop_table('teacher_details_table')
-    op.drop_index(op.f('ix_student_details_table_student_id'), table_name='student_details_table')
-    op.drop_table('student_details_table')
+    op.drop_index(op.f('ix_instructor_details_table_instructor_id'), table_name='instructor_details_table')
+    op.drop_table('instructor_details_table')
+    op.drop_index(op.f('ix_learner_details_table_learner_id'), table_name='learner_details_table')
+    op.drop_table('learner_details_table')
     op.drop_index(op.f('ix_refresh_token_table_user_id'), table_name='refresh_token_table')
     op.drop_index(op.f('ix_refresh_token_table_token'), table_name='refresh_token_table')
     op.drop_table('refresh_token_table')
-    op.drop_table('course_teacher_table')
-    op.drop_table('course_student_table')
+    op.drop_table('course_instructor_table')
+    op.drop_table('course_learner_table')
     op.drop_index(op.f('ix_assignment_table_course_id'), table_name='assignment_table')
     op.drop_table('assignment_table')
     op.drop_index(op.f('ix_user_table_email'), table_name='user_table')

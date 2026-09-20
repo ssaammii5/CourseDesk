@@ -32,7 +32,7 @@ interface SidebarProps {
     onClose?: () => void;
 }
 
-interface EnrolledClass {
+interface EnrolledCourse {
     id: number;
     name: string;
     sub?: string;
@@ -40,7 +40,7 @@ interface EnrolledClass {
     avatarClass: string;
 }
 
-function mapCourseToEnrolled(c: CourseDto): EnrolledClass {
+function mapCourseToEnrolled(c: CourseDto): EnrolledCourse {
     return {
         id: c.id,
         name: c.name,
@@ -52,25 +52,25 @@ function mapCourseToEnrolled(c: CourseDto): EnrolledClass {
 
 export function Sidebar({ open, mobileReady = true, onExpand, onClose }: SidebarProps) {
     const [enrolledOpen, setEnrolledOpen] = useState(true);
-    const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
+    const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
     const pathname = usePathname();
     const prevPathname = useRef(pathname);
     const { user } = useAuth();
     const isAdmin = user?.role === "Admin";
 
-    // Load courses for sidebar (enrolled/teaching for students/teachers; admin manages courses via /courses).
+    // Load courses for sidebar (enrolled/instructing for learners/instructors; admin manages courses via /courses).
     const loadCourses = useCallback(() => {
         if (isAdmin) {
-            setEnrolledClasses([]);
+            setEnrolledCourses([]);
             return () => {};
         }
         let cancelled = false;
         getMyCoursesRequest()
             .then((dtos) => {
-                if (!cancelled) setEnrolledClasses(dtos.map(mapCourseToEnrolled));
+                if (!cancelled) setEnrolledCourses(dtos.map(mapCourseToEnrolled));
             })
             .catch(() => {
-                if (!cancelled) setEnrolledClasses([]);
+                if (!cancelled) setEnrolledCourses([]);
             });
         return () => {
             cancelled = true;
@@ -130,7 +130,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
             ? "max-lg:fixed max-lg:left-0 max-lg:top-16 max-lg:z-30 max-lg:h-[calc(100dvh-4rem)] max-lg:max-w-[85vw] max-lg:translate-x-0 max-lg:bg-[#eef1f4] max-lg:shadow-xl"
             : "max-lg:fixed max-lg:left-0 max-lg:top-16 max-lg:z-30 max-lg:h-[calc(100dvh-4rem)] max-lg:w-[300px] max-lg:max-w-[85vw] max-lg:-translate-x-full max-lg:invisible max-lg:pointer-events-none max-lg:bg-[#eef1f4]";
 
-    const sectionTitle = user?.role === "Teacher" ? "Teaching" : "My Courses";
+    const sectionTitle = user?.role === "Instructor" ? "Instructing" : "My Courses";
 
     return (
         <>
@@ -156,8 +156,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
 
                     {isAdmin && (
                         <>
-                            <NavItem open={open} active={pathname === "/teachers"} href="/teachers" icon={<UserRound className="h-6 w-6" />} label="Instructors" />
-                            <NavItem open={open} active={pathname === "/students"} href="/students" icon={<Users className="h-6 w-6" />} label="Learners" />
+                            <NavItem open={open} active={pathname.startsWith("/instructors") || pathname.startsWith("/teachers")} href="/instructors" icon={<UserRound className="h-6 w-6" />} label="Instructors" />
+                            <NavItem open={open} active={pathname.startsWith("/learners") || pathname.startsWith("/students")} href="/learners" icon={<Users className="h-6 w-6" />} label="Learners" />
                             <NavItem open={open} active={pathname === "/courses"} href="/courses" icon={<BookOpen className="h-6 w-6" />} label="Courses" />
                             <NavItem open={open} active={pathname === "/academics"} href="/academics" icon={<Tag className="h-6 w-6" />} label="Categories & Tracks" />
                             <NavItem open={open} active={pathname === "/assignments"} href="/assignments" icon={<ClipboardList className="h-6 w-6" />} label="Assignments" />
@@ -169,11 +169,11 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                     {!isAdmin && (
                         <>
                             <NavItem open={open} active={pathname.startsWith("/calendar")} href="/calendar" icon={<CalendarDays className="h-6 w-6" />} label="Calendar" />
-                            <NavItem open={open} active={pathname.startsWith("/todo")} href="/todo" icon={<ListTodo className="h-6 w-6" />} label={user?.role === "Teacher" ? "To-review" : "To-do"} />
+                            <NavItem open={open} active={pathname.startsWith("/todo")} href="/todo" icon={<ListTodo className="h-6 w-6" />} label={user?.role === "Instructor" ? "To-review" : "To-do"} />
                         </>
                     )}
 
-                    {!isAdmin && enrolledClasses.length > 0 && (
+                    {!isAdmin && enrolledCourses.length > 0 && (
                         <>
                             {open && <div className="my-2 h-px bg-gray-300/70" />}
 
@@ -205,11 +205,11 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
 
                             {open && enrolledOpen && (
                                 <>
-                                    {enrolledClasses.map((c) => (
+                                    {enrolledCourses.map((c) => (
                                         <Link
                                             key={c.id}
-                                            href={`/class/${c.id}`}
-                                            className={`flex items-center gap-3 rounded-full py-2 pl-4 pr-4 hover:bg-gray-900/5 ${pathname.startsWith(`/class/${c.id}`) ? "bg-[#cfe8fc] font-medium text-gray-900" : ""}`}
+                                            href={`/course/${c.id}`}
+                                            className={`flex items-center gap-3 rounded-full py-2 pl-4 pr-4 hover:bg-gray-900/5 ${pathname.startsWith(`/course/${c.id}`) ? "bg-[#cfe8fc] font-medium text-gray-900" : ""}`}
                                         >
                                             <span
                                                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium ${c.avatarClass}`}

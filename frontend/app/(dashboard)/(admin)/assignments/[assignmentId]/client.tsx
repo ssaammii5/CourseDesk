@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { AssignmentDetailView } from "@/features/class";
+import { AssignmentDetailView } from "@/features/course";
 import { getAssignmentRequest, type AssignmentDto } from "@/lib/api/assignments";
 import type { AssignmentDetail } from "@/lib/assignmentDetails";
 
@@ -10,6 +10,7 @@ function mapDtoToAssignmentDetail(dto: AssignmentDto): AssignmentDetail {
     return {
         id: dto.id,
         title: dto.title,
+        instructorName: dto.createdByName ?? "Unknown",
         teacherName: dto.createdByName ?? "Unknown",
         postedDate: dto.createdAtUtc.split("T")[0],
         points: dto.maxMarks,

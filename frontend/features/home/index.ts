@@ -1,2 +1,2 @@
-export * from "./ClassesSection";
+export * from "./CoursesSection";
 export * from "./DueSoonCard";

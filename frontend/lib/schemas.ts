@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const RoleSchema = z.enum(["Admin", "Teacher", "Student"]);
+export const RoleSchema = z.enum(["Admin", "Instructor", "Learner", "Teacher", "Student"]);
 export type Role = z.infer<typeof RoleSchema>;
 
 export const AssignmentStatusSchema = z.enum(["Draft", "Published", "Archived"]);
@@ -13,9 +13,12 @@ export const CourseSchema = z.object({
     id: z.number().int(),
     name: z.string(),
     subject: z.string(),
-    teacherId: z.number().int().nullable(),
-    teacherName: z.string().nullable(),
-    studentCount: z.number().int().nonnegative(),
+    instructorId: z.number().int().nullable().optional(),
+    instructorName: z.string().nullable().optional(),
+    learnerCount: z.number().int().nonnegative().optional(),
+    teacherId: z.number().int().nullable().optional(),
+    teacherName: z.string().nullable().optional(),
+    studentCount: z.number().int().nonnegative().optional(),
 });
 export type Course = z.infer<typeof CourseSchema>;
 
@@ -38,8 +41,10 @@ export const SubmissionSchema = z.object({
     id: z.number().int(),
     assignmentId: z.number().int(),
     assignmentTitle: z.string().nullable(),
-    studentId: z.number().int(),
-    studentName: z.string().nullable(),
+    learnerId: z.number().int().optional(),
+    learnerName: z.string().nullable().optional(),
+    studentId: z.number().int().optional(),
+    studentName: z.string().nullable().optional(),
     answer: z.string(),
     status: SubmissionStatusSchema,
     marks: z.number().nullable(),
@@ -111,7 +116,8 @@ export type ClassDetails = z.infer<typeof ClassDetailsSchema>;
 export const HomeClassSchema = CourseSchema.extend({
     headerColor: z.string(),
     emoji: z.string(),
-    teacherAvatarClass: z.string(),
+    instructorAvatarClass: z.string().optional(),
+    teacherAvatarClass: z.string().optional(),
 });
 export type HomeClass = z.infer<typeof HomeClassSchema>;
 

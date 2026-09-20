@@ -8,12 +8,13 @@ export interface UserAddress {
     country?: string;
 }
 
-export interface StudentDetails {
+export interface LearnerDetails {
     fathersName?: string;
     mothersName?: string;
     dateOfBirth?: string;
     mobile?: string;
     nationality?: string;
+    learnerId?: string;
     studentId?: string;
     regNo?: string;
     department?: string;
@@ -22,12 +23,15 @@ export interface StudentDetails {
     semesterSession?: string;
     address?: UserAddress;
 }
+export type StudentDetails = LearnerDetails;
 
-export interface TeacherDetails {
+export interface InstructorDetails {
+    instructorId?: string;
     teacherId?: string;
     designation?: string;
     department?: string;
 }
+export type TeacherDetails = InstructorDetails;
 
 export interface UserDto {
     id: number;
@@ -36,8 +40,10 @@ export interface UserDto {
     role: string;
     isActive: boolean;
     createdAtUtc: string;
-    studentDetails?: StudentDetails;
-    teacherDetails?: TeacherDetails;
+    learnerDetails?: LearnerDetails;
+    instructorDetails?: InstructorDetails;
+    studentDetails?: LearnerDetails;
+    teacherDetails?: InstructorDetails;
 }
 
 export interface CreateUserPayload {
@@ -45,8 +51,10 @@ export interface CreateUserPayload {
     email: string;
     password: string;
     role: string;
-    studentDetails?: StudentDetails;
-    teacherDetails?: TeacherDetails;
+    learnerDetails?: LearnerDetails;
+    instructorDetails?: InstructorDetails;
+    studentDetails?: LearnerDetails;
+    teacherDetails?: InstructorDetails;
 }
 
 export interface UpdateUserPayload {
@@ -55,8 +63,10 @@ export interface UpdateUserPayload {
     role: string;
     isActive: boolean;
     password?: string;
-    studentDetails?: StudentDetails;
-    teacherDetails?: TeacherDetails;
+    learnerDetails?: LearnerDetails;
+    instructorDetails?: InstructorDetails;
+    studentDetails?: LearnerDetails;
+    teacherDetails?: InstructorDetails;
 }
 
 export function getUsersRequest(): Promise<UserDto[]> {

@@ -26,12 +26,19 @@ export interface SubmissionDto {
     program: string | null;
     department: string | null;
     session: string | null;
-    studentId: number;
-    studentName: string | null;
-    studentEmail: string | null;
-    studentAcademicId: string | null;
-    studentDepartment: string | null;
-    studentProgram: string | null;
+    learnerId: number;
+    learnerName: string | null;
+    learnerEmail: string | null;
+    learnerAcademicId: string | null;
+    learnerDepartment: string | null;
+    learnerProgram: string | null;
+    // Backward compatibility aliases
+    studentId?: number;
+    studentName?: string | null;
+    studentEmail?: string | null;
+    studentAcademicId?: string | null;
+    studentDepartment?: string | null;
+    studentProgram?: string | null;
     answer: string;
     status: string;
     marks: number | null;
@@ -89,8 +96,6 @@ export function gradeSubmissionRequest(id: number, payload: GradeSubmissionPaylo
     });
 }
 
-
-
 export function uploadSubmissionAttachmentRequest(submissionId: number, formData: FormData): Promise<SubmissionAttachmentDto> {
     return apiFetch<SubmissionAttachmentDto>(`/api/submissions/${submissionId}/attachments`, {
         method: "POST",
@@ -117,4 +122,4 @@ export function unsubmitSubmissionRequest(submissionId: number): Promise<Submiss
     return apiFetch<SubmissionDto>(`/api/submissions/${submissionId}/unsubmit`, {
         method: "POST",
     });
-}
+}

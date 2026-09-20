@@ -135,13 +135,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const isCalendar = pathname.startsWith("/calendar");
     const isSettings = pathname.startsWith("/settings");
     const isAppSettings = pathname === "/app-settings";
-    const isTeachers = pathname === "/teachers";
-    const isStudents = pathname === "/students";
+    const isInstructors = pathname === "/instructors" || pathname === "/teachers";
+    const isLearners = pathname === "/learners" || pathname === "/students";
     const isCourses = pathname === "/courses";
     const isAcademics = pathname === "/academics";
     const isAssignments = pathname === "/assignments";
     const isSubmissions = pathname === "/submissions";
-    const isAdminPage = isTeachers || isStudents || isCourses || isAcademics || isAssignments || isSubmissions || isAppSettings;
+    const isAdminPage = isInstructors || isLearners || isCourses || isAcademics || isAssignments || isSubmissions || isAppSettings;
 
     const toggleAccount = () => { setNotifOpen(false); setAccountOpen((v) => !v); };
     const toggleNotif = () => {
@@ -199,7 +199,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
     const displayName = user?.name ?? "";
     const displayEmail = user?.email ?? "";
-    const displayRole = user?.role ?? "Student";
+    const displayRole = user?.role ?? "Learner";
     const avatarClass = user?.avatarClass ?? "bg-gray-600";
 
     return (
@@ -240,8 +240,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                             {isTodo && "To-do"}
                             {isCalendar && "Calendar"}
                             {isSettings && "Settings"}
-                            {isTeachers && "Teachers"}
-                            {isStudents && "Students"}
+                            {isInstructors && "Instructors"}
+                            {isLearners && "Learners"}
                             {isCourses && "Courses"}
                             {isAcademics && "Academic"}
                             {isAssignments && "Assignments"}

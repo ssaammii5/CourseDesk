@@ -16,7 +16,8 @@ export interface AssignmentSubmission {
 export interface AssignmentDetail {
     id: number;
     title: string;
-    teacherName: string;
+    instructorName: string;
+    teacherName?: string;
     postedDate: string;
     points: number;
     dueLabel: string;
@@ -30,6 +31,7 @@ const assignmentDetails: AssignmentDetail[] = [
     {
         id: 1,
         title: "Final Lab Report make a single file word file",
+        instructorName: "Dr. Md Samsuzzaman Sobuz",
         teacherName: "Dr. Md Samsuzzaman Sobuz",
         postedDate: "Jan 18, 2024",
         points: 100,

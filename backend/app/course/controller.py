@@ -13,8 +13,8 @@ from app.user.models import UserModel
 
 
 def serialize_course(course: CourseModel) -> CourseResponseSchema:
-    teachers = sorted(course.teachers, key=lambda t: t.id)
-    first_teacher = teachers[0] if teachers else None
+    instructors = sorted(course.instructors, key=lambda t: t.id)
+    first_instructor = instructors[0] if instructors else None
     return CourseResponseSchema(
         id=course.id,
         name=course.name,
@@ -23,12 +23,18 @@ def serialize_course(course: CourseModel) -> CourseResponseSchema:
         department=course.department,
         session=course.session,
         is_active=course.is_active,
-        teacher_id=first_teacher.id if first_teacher else None,
-        teacher_name=first_teacher.name if first_teacher else None,
-        teacher_ids=[t.id for t in teachers],
-        teacher_names=[t.name for t in teachers],
-        student_ids=sorted(s.id for s in course.students),
-        student_count=len(course.students),
+        instructor_id=first_instructor.id if first_instructor else None,
+        instructor_name=first_instructor.name if first_instructor else None,
+        instructor_ids=[t.id for t in instructors],
+        instructor_names=[t.name for t in instructors],
+        learner_ids=sorted(s.id for s in course.learners),
+        learner_count=len(course.learners),
+        teacher_id=first_instructor.id if first_instructor else None,
+        teacher_name=first_instructor.name if first_instructor else None,
+        teacher_ids=[t.id for t in instructors],
+        teacher_names=[t.name for t in instructors],
+        student_ids=sorted(s.id for s in course.learners),
+        student_count=len(course.learners),
         # ── NEW ──
         meeting_provider=course.meeting_provider,
         meeting_url=course.meeting_url,
@@ -40,7 +46,7 @@ def serialize_course(course: CourseModel) -> CourseResponseSchema:
 
 def _course_stmt():
     return select(CourseModel).options(
-        selectinload(CourseModel.teachers), selectinload(CourseModel.students)
+        selectinload(CourseModel.instructors), selectinload(CourseModel.learners)
     )
 
 
@@ -53,13 +59,13 @@ def get_my_courses(user: UserModel, db: Session) -> list[CourseResponseSchema]:
     stmt = _course_stmt()
     if user.role == "Admin":
         courses = db.scalars(stmt).all()
-    elif user.role == "Teacher":
+    elif user.role == "Instructor":
         courses = db.scalars(
-            stmt.where(CourseModel.teachers.any(UserModel.id == user.id))
+            stmt.where(CourseModel.instructors.any(UserModel.id == user.id))
         ).all()
     else:
         courses = db.scalars(
-            stmt.where(CourseModel.students.any(UserModel.id == user.id))
+            stmt.where(CourseModel.learners.any(UserModel.id == user.id))
         ).all()
     return [serialize_course(c) for c in courses]
 
@@ -75,15 +81,20 @@ def get_course_people(course_id: int, db: Session) -> CoursePeopleResponseSchema
     course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
-    teachers = [
-        CoursePersonSchema(id=t.id, name=t.name, role="Teacher", email=t.email)
-        for t in course.teachers
+    instructors = [
+        CoursePersonSchema(id=t.id, name=t.name, role="Instructor", email=t.email)
+        for t in course.instructors
     ]
-    students = [
-        CoursePersonSchema(id=s.id, name=s.name, role="Student", email=s.email)
-        for s in course.students
+    learners = [
+        CoursePersonSchema(id=s.id, name=s.name, role="Learner", email=s.email)
+        for s in course.learners
     ]
-    return CoursePeopleResponseSchema(teachers=teachers, students=students)
+    return CoursePeopleResponseSchema(
+        instructors=instructors,
+        learners=learners,
+        teachers=instructors,
+        students=learners,
+    )
 
 
 def _fetch_users(ids: list[int], db: Session) -> list[UserModel]:
@@ -109,30 +120,32 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
         meeting_passcode=body.meeting_passcode,
         schedule_notes=body.schedule_notes,
     )
-    course.teachers = _fetch_users(body.teacher_ids, db)
-    course.students = _fetch_users(body.student_ids, db)
+    inst_ids = body.instructor_ids or body.teacher_ids
+    learn_ids = body.learner_ids or body.student_ids
+    course.instructors = _fetch_users(inst_ids, db)
+    course.learners = _fetch_users(learn_ids, db)
     db.add(course)
     db.flush()
 
     from app.notification.controller import create_notifications_bulk
 
-    if body.student_ids:
+    if learn_ids:
         create_notifications_bulk(
             db=db,
-            user_ids=body.student_ids,
+            user_ids=learn_ids,
             title=f"Enrolled in {course.name}",
             message=f"You have been enrolled in {course.name} ({course.subject})",
             kind="system",
-            link=f"/class/{course.id}",
+            link=f"/course/{course.id}",
         )
-    if body.teacher_ids:
+    if inst_ids:
         create_notifications_bulk(
             db=db,
-            user_ids=body.teacher_ids,
-            title=f"Assigned to teach {course.name}",
+            user_ids=inst_ids,
+            title=f"Assigned to instruct {course.name}",
             message=f"You are assigned as an instructor for {course.name}",
             kind="system",
-            link=f"/class/{course.id}",
+            link=f"/course/{course.id}",
         )
 
     db.commit()
@@ -154,8 +167,8 @@ def update_course(course_id: int, body: CourseSchema, db: Session) -> CourseResp
     course.meeting_id = body.meeting_id
     course.meeting_passcode = body.meeting_passcode
     course.schedule_notes = body.schedule_notes
-    course.teachers = _fetch_users(body.teacher_ids, db)
-    course.students = _fetch_users(body.student_ids, db)
+    course.instructors = _fetch_users(body.instructor_ids or body.teacher_ids, db)
+    course.learners = _fetch_users(body.learner_ids or body.student_ids, db)
     db.add(course)
     db.commit()
     return get_one_course(course_id, db)

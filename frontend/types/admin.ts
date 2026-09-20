@@ -1,12 +1,13 @@
-export interface StudentAddress {
+export interface LearnerAddress {
     street?: string;
     city?: string;
     state?: string;
     zip?: string;
     country?: string;
 }
+export type StudentAddress = LearnerAddress;
 
-export type StudentProgramType =
+export type LearnerProgramType =
     | "Professional Track"
     | "Foundations"
     | "Advanced Mastery"
@@ -18,26 +19,29 @@ export type StudentProgramType =
     | "M.Phil"
     | "PhD"
     | string;
+export type StudentProgramType = LearnerProgramType;
 
-export interface StudentDetails {
+export interface LearnerDetails {
     fathersName?: string;
     mothersName?: string;
     dateOfBirth?: string;
     mobile?: string;
     nationality?: string;
+    learnerId?: string;
     studentId?: string;
     regNo?: string;
     department?: string;
-    currentProgram?: StudentProgramType;
+    currentProgram?: LearnerProgramType;
     session?: string;
     semesterSession?: string;
     headline?: string;
     organization?: string;
     bio?: string;
-    address?: StudentAddress;
+    address?: LearnerAddress;
 }
+export type StudentDetails = LearnerDetails;
 
-export type TeacherDesignation =
+export type InstructorDesignation =
     | "Lead Instructor"
     | "Senior Instructor"
     | "Staff Engineer"
@@ -50,15 +54,18 @@ export type TeacherDesignation =
     | "Senior Lecturer"
     | "Lecturer"
     | string;
+export type TeacherDesignation = InstructorDesignation;
 
-export interface TeacherDetails {
+export interface InstructorDetails {
+    instructorId?: string;
     teacherId?: string;
-    designation?: TeacherDesignation;
+    designation?: InstructorDesignation;
     department?: string;
     headline?: string;
     organization?: string;
     bio?: string;
 }
+export type TeacherDetails = InstructorDetails;
 
 export interface AcademicProgram {
     id: number;
@@ -81,11 +88,13 @@ export interface AdminUser {
     id: number;
     name: string;
     email: string;
-    role: "Admin" | "Teacher" | "Student";
+    role: "Admin" | "Instructor" | "Learner" | "Teacher" | "Student";
     isActive: boolean;
     createdAt: string;
-    studentDetails?: StudentDetails;
-    teacherDetails?: TeacherDetails;
+    learnerDetails?: LearnerDetails;
+    instructorDetails?: InstructorDetails;
+    studentDetails?: LearnerDetails;
+    teacherDetails?: InstructorDetails;
 }
 
 export interface CourseCatalogItem {
@@ -99,8 +108,10 @@ export interface AdminCourse {
     name: string;
     program: string;
     department: string;
-    teacherIds: number[];
-    studentIds: number[];
+    instructorIds: number[];
+    teacherIds?: number[];
+    learnerIds: number[];
+    studentIds?: number[];
     session: string;
     isActive: boolean;
     meetingProvider?: string;
@@ -134,8 +145,10 @@ export interface AdminSubmission {
     assignmentTitle: string;
     courseId: number;
     courseName: string;
-    studentId: number;
-    studentName: string;
+    learnerId: number;
+    learnerName: string;
+    studentId?: number;
+    studentName?: string;
     status: "Submitted" | "Graded" | "Pending";
     marks: number | null;
     feedback: string | null;

@@ -1,6 +1,6 @@
 export * from "./user";
 export * from "./admin";
-export * from "./class";
+export * from "./course";
 export * from "./assignment";
 export * from "./submission";
 export * from "./todo";

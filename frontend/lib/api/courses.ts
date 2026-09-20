@@ -8,12 +8,18 @@ export interface CourseDto {
     department: string;
     session: string;
     isActive: boolean;
-    teacherId: number | null;
-    teacherName: string | null;
-    teacherIds: number[];
-    teacherNames: string[];
-    studentIds: number[];
-    studentCount: number;
+    instructorId?: number | null;
+    instructorName?: string | null;
+    instructorIds?: number[];
+    instructorNames?: string[];
+    learnerIds?: number[];
+    learnerCount?: number;
+    teacherId?: number | null;
+    teacherName?: string | null;
+    teacherIds?: number[];
+    teacherNames?: string[];
+    studentIds?: number[];
+    studentCount?: number;
     meetingProvider: string;
     meetingUrl: string | null;
     meetingId: string;
@@ -28,8 +34,10 @@ export interface CoursePayload {
     department: string;
     session: string;
     isActive: boolean;
-    teacherIds: number[];
-    studentIds: number[];
+    instructorIds?: number[];
+    learnerIds?: number[];
+    teacherIds?: number[];
+    studentIds?: number[];
     meetingProvider?: string;
     meetingUrl?: string | null;
     meetingId?: string;
@@ -45,8 +53,10 @@ export interface CoursePersonDto {
 }
 
 export interface CoursePeopleDto {
-    teachers: CoursePersonDto[];
-    students: CoursePersonDto[];
+    instructors?: CoursePersonDto[];
+    learners?: CoursePersonDto[];
+    teachers?: CoursePersonDto[];
+    students?: CoursePersonDto[];
 }
 
 export function getCoursesRequest(): Promise<CourseDto[]> {
@@ -66,16 +76,26 @@ export function getCoursePeopleRequest(courseId: number): Promise<CoursePeopleDt
 }
 
 export function createCourseRequest(payload: CoursePayload): Promise<CourseDto> {
+    const bodyPayload = {
+        ...payload,
+        instructorIds: payload.instructorIds || payload.teacherIds || [],
+        learnerIds: payload.learnerIds || payload.studentIds || [],
+    };
     return apiFetch<CourseDto>("/api/courses", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(bodyPayload),
     });
 }
 
 export function updateCourseRequest(id: number, payload: CoursePayload): Promise<void> {
+    const bodyPayload = {
+        ...payload,
+        instructorIds: payload.instructorIds || payload.teacherIds || [],
+        learnerIds: payload.learnerIds || payload.studentIds || [],
+    };
     return apiFetch<void>(`/api/courses/${id}`, {
         method: "PUT",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(bodyPayload),
     });
 }
 

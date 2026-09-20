@@ -8,9 +8,12 @@ export interface SubmissionActivity {
 
 export interface SubmissionDetail {
     id: number;
-    studentName: string;
-    studentEmail: string;
-    studentAvatarColor: string;
+    learnerName: string;
+    learnerEmail: string;
+    learnerAvatarColor: string;
+    studentName?: string;
+    studentEmail?: string;
+    studentAvatarColor?: string;
     assignmentTitle: string;
     courseName: string;
     courseId: number;

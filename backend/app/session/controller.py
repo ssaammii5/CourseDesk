@@ -65,17 +65,17 @@ def _session_stmt():
 def _can_manage_course(user: UserModel, course: CourseModel) -> bool:
     if user.role == "Admin":
         return True
-    if user.role == "Teacher":
-        return any(t.id == user.id for t in course.teachers)
+    if user.role == "Instructor":
+        return any(t.id == user.id for t in course.instructors)
     return False
 
 
 def _check_course_access(user: UserModel, course: CourseModel) -> None:
     if user.role == "Admin":
         return
-    if user.role == "Teacher" and any(t.id == user.id for t in course.teachers):
+    if user.role == "Instructor" and any(t.id == user.id for t in course.instructors):
         return
-    if user.role == "Student" and any(s.id == user.id for s in course.students):
+    if user.role == "Learner" and any(s.id == user.id for s in course.learners):
         return
     raise HTTPException(403, detail="You don't have access to this course")
 
@@ -88,8 +88,8 @@ def get_course_sessions(
     course = db.scalar(
         select(CourseModel)
         .options(
-            selectinload(CourseModel.teachers),
-            selectinload(CourseModel.students),
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
         )
         .where(CourseModel.id == course_id)
     )
@@ -115,8 +115,8 @@ def get_session(
     course = db.scalar(
         select(CourseModel)
         .options(
-            selectinload(CourseModel.teachers),
-            selectinload(CourseModel.students),
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
         )
         .where(CourseModel.id == session.course_id)
     )
@@ -132,8 +132,8 @@ def create_session(
     course = db.scalar(
         select(CourseModel)
         .options(
-            selectinload(CourseModel.teachers),
-            selectinload(CourseModel.students),
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
         )
         .where(CourseModel.id == body.course_id)
     )
@@ -162,8 +162,8 @@ def create_session(
     db.add(session)
     db.flush()
 
-    student_ids = [s.id for s in (course.students or [])]
-    if student_ids:
+    learner_ids = [s.id for s in (course.learners or [])]
+    if learner_ids:
         from app.notification.controller import create_notifications_bulk
 
         sched_str = (
@@ -174,11 +174,11 @@ def create_session(
         msg = f"{session.title} in {course.name}" + (f" • {sched_str}" if sched_str else "")
         create_notifications_bulk(
             db=db,
-            user_ids=student_ids,
-            title=f"New class session: {session.title}",
+            user_ids=learner_ids,
+            title=f"New course session: {session.title}",
             message=msg,
             kind="session",
-            link=f"/class/{body.course_id}/curriculum",
+            link=f"/course/{body.course_id}/curriculum",
         )
 
     db.commit()
@@ -195,7 +195,7 @@ def update_session(
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == session.course_id)
     )
     if not course or not _can_manage_course(user, course):
@@ -217,7 +217,7 @@ def delete_session(session_id: int, user: UserModel, db: Session) -> None:
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == session.course_id)
     )
     if not course or not _can_manage_course(user, course):
@@ -245,7 +245,7 @@ def add_material(
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == session.course_id)
     )
     if not course or not _can_manage_course(user, course):
@@ -278,7 +278,7 @@ def delete_material(
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == session.course_id)
     )
     if not course or not _can_manage_course(user, course):
@@ -303,7 +303,7 @@ def add_video_marker(
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == session.course_id)
     )
     if not course or not _can_manage_course(user, course):
@@ -345,8 +345,8 @@ def get_next_session(
     course = db.scalar(
         select(CourseModel)
         .options(
-            selectinload(CourseModel.teachers),
-            selectinload(CourseModel.students),
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
         )
         .where(CourseModel.id == course_id)
     )

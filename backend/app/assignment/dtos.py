@@ -58,6 +58,7 @@ class AssignmentResponseSchema(CamelModel):
     turned_in_count: int = 0
     graded_count: int = 0
     assigned_count: int = 0
+    learner_count: int = 0
     student_count: int = 0
     my_submission_status: str | None = None
     # ── NEW ──

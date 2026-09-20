@@ -17,7 +17,8 @@ export interface AssignmentSubmission {
 export interface AssignmentDetail {
     id: number;
     title: string;
-    teacherName: string;
+    instructorName: string;
+    teacherName?: string;
     postedDate: string;
     points: number;
     dueLabel: string;

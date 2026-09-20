@@ -14,7 +14,7 @@ class SubmissionModel(Base):
     assignment_id: Mapped[int] = mapped_column(
         ForeignKey("assignment_table.id", ondelete="CASCADE"), index=True
     )
-    student_id: Mapped[int] = mapped_column(
+    learner_id: Mapped[int] = mapped_column(
         ForeignKey("user_table.id", ondelete="CASCADE"), index=True
     )
     answer: Mapped[str] = mapped_column(Text, default="")
@@ -42,7 +42,7 @@ class SubmissionModel(Base):
     # GitHub / Figma / live-preview link
 
     assignment: Mapped["AssignmentModel"] = relationship(back_populates="submissions")  # type: ignore[name-defined]  # noqa: F821
-    student: Mapped["UserModel"] = relationship(foreign_keys=[student_id])  # type: ignore[name-defined]  # noqa: F821
+    learner: Mapped["UserModel"] = relationship(foreign_keys=[learner_id])  # type: ignore[name-defined]  # noqa: F821
     graded_by: Mapped[Optional["UserModel"]] = relationship(foreign_keys=[graded_by_id])  # type: ignore[name-defined]  # noqa: F821
     attachments: Mapped[list["SubmissionAttachmentModel"]] = relationship(
         back_populates="submission", cascade="all, delete-orphan"

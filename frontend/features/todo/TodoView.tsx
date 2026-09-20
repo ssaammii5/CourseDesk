@@ -14,12 +14,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { getAssignmentsRequest, type AssignmentDto } from "@/lib/api/assignments";
 
-const REVIEWED_STORAGE_KEY = "coursedesk.teacher.reviewed_assignments.v1";
+const REVIEWED_STORAGE_KEY = "coursedesk.instructor.reviewed_assignments.v1";
 
 function readReviewedStore(): number[] {
     if (typeof window === "undefined") return [];
     try {
-        const raw = window.localStorage.getItem(REVIEWED_STORAGE_KEY);
+        const raw = window.localStorage.getItem(REVIEWED_STORAGE_KEY) || window.localStorage.getItem("coursedesk.teacher.reviewed_assignments.v1");
         if (!raw) return [];
         const parsed = JSON.parse(raw);
         return Array.isArray(parsed) ? parsed : [];
@@ -36,8 +36,8 @@ function writeReviewedStore(ids: number[]) {
     }
 }
 
-type TeacherTab = "to-review" | "reviewed";
-type StudentTab = "assigned" | "missing" | "done";
+type InstructorTab = "to-review" | "reviewed";
+type LearnerTab = "assigned" | "missing" | "done";
 
 type TimeSectionId = "no-due" | "earlier" | "this-week" | "next-week" | "later";
 
@@ -106,11 +106,11 @@ function formatDueLabel(iso?: string | null): { text: string; tone: "default" | 
 export function TodoView() {
     const router = useRouter();
     const { user } = useAuth();
-    const isTeacher = user?.role === "Teacher" || user?.role === "Admin";
+    const isInstructor = user?.role === "Instructor" || user?.role === "Admin";
 
-    const [teacherTab, setTeacherTab] = useState<TeacherTab>("to-review");
-    const [studentTab, setStudentTab] = useState<StudentTab>("assigned");
-    const [classFilter, setClassFilter] = useState("all");
+    const [instructorTab, setInstructorTab] = useState<InstructorTab>("to-review");
+    const [learnerTab, setLearnerTab] = useState<LearnerTab>("assigned");
+    const [courseFilter, setCourseFilter] = useState("all");
     const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [reviewedIds, setReviewedIds] = useState<number[]>([]);
@@ -160,7 +160,7 @@ export function TodoView() {
         setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
 
     // Course options for filter dropdown
-    const classOptions = useMemo(() => {
+    const courseOptions = useMemo(() => {
         const set = new Set<string>();
         for (const a of assignments) {
             if (a.courseName) set.add(a.courseName);
@@ -170,22 +170,22 @@ export function TodoView() {
 
     // Filter assignments by selected course
     const filteredAssignments = useMemo(() => {
-        if (classFilter === "all") return assignments;
-        return assignments.filter((a) => a.courseName === classFilter);
-    }, [assignments, classFilter]);
+        if (courseFilter === "all") return assignments;
+        return assignments.filter((a) => a.courseName === courseFilter);
+    }, [assignments, courseFilter]);
 
-    // Split assignments for teacher: To Review vs Reviewed
-    const teacherToReview = useMemo(
+    // Split assignments for instructor: To Review vs Reviewed
+    const instructorToReview = useMemo(
         () => filteredAssignments.filter((a) => !reviewedIds.includes(a.id)),
         [filteredAssignments, reviewedIds],
     );
-    const teacherReviewed = useMemo(
+    const instructorReviewed = useMemo(
         () => filteredAssignments.filter((a) => reviewedIds.includes(a.id)),
         [filteredAssignments, reviewedIds],
     );
 
-    // Split assignments for student: Assigned vs Missing vs Done
-    const studentAssigned = useMemo(() => {
+    // Split assignments for learner: Assigned vs Missing vs Done
+    const learnerAssigned = useMemo(() => {
         const now = Date.now();
         return filteredAssignments.filter(
             (a) =>
@@ -195,7 +195,7 @@ export function TodoView() {
         );
     }, [filteredAssignments]);
 
-    const studentMissing = useMemo(() => {
+    const learnerMissing = useMemo(() => {
         const now = Date.now();
         return filteredAssignments.filter(
             (a) =>
@@ -206,21 +206,21 @@ export function TodoView() {
         );
     }, [filteredAssignments]);
 
-    const studentDone = useMemo(() => {
+    const learnerDone = useMemo(() => {
         return filteredAssignments.filter(
             (a) => a.mySubmissionStatus === "Submitted" || a.mySubmissionStatus === "Graded",
         );
     }, [filteredAssignments]);
 
-    const activeList = isTeacher
-        ? teacherTab === "to-review"
-            ? teacherToReview
-            : teacherReviewed
-        : studentTab === "assigned"
-            ? studentAssigned
-            : studentTab === "missing"
-                ? studentMissing
-                : studentDone;
+    const activeList = isInstructor
+        ? instructorTab === "to-review"
+            ? instructorToReview
+            : instructorReviewed
+        : learnerTab === "assigned"
+            ? learnerAssigned
+            : learnerTab === "missing"
+                ? learnerMissing
+                : learnerDone;
 
     const sections = useMemo(() => categorizeByDueDate(activeList), [activeList]);
 
@@ -230,12 +230,12 @@ export function TodoView() {
             <div className="sticky top-16 z-30 border-b border-gray-200 bg-white">
                 <div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 sm:px-8">
                     <nav className="flex gap-6 sm:gap-10">
-                        {isTeacher ? (
+                        {isInstructor ? (
                             <>
                                 <button
                                     type="button"
-                                    onClick={() => setTeacherTab("to-review")}
-                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${teacherTab === "to-review"
+                                    onClick={() => setInstructorTab("to-review")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${instructorTab === "to-review"
                                         ? "text-[#1a73e8]"
                                         : "text-gray-600 hover:text-gray-900"
                                         }`}
@@ -243,21 +243,21 @@ export function TodoView() {
                                     <ClipboardList className="h-4 w-4" />
                                     To review
                                     <span
-                                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${teacherTab === "to-review"
+                                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${instructorTab === "to-review"
                                             ? "bg-[#e8f0fe] text-[#174ea6]"
                                             : "bg-gray-100 text-gray-600"
                                             }`}
                                     >
-                                        {teacherToReview.length}
+                                        {instructorToReview.length}
                                     </span>
-                                    {teacherTab === "to-review" && (
+                                    {instructorTab === "to-review" && (
                                         <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
                                     )}
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setTeacherTab("reviewed")}
-                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${teacherTab === "reviewed"
+                                    onClick={() => setInstructorTab("reviewed")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${instructorTab === "reviewed"
                                         ? "text-[#1a73e8]"
                                         : "text-gray-600 hover:text-gray-900"
                                         }`}
@@ -265,14 +265,14 @@ export function TodoView() {
                                     <FolderCheck className="h-4 w-4" />
                                     Reviewed
                                     <span
-                                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${teacherTab === "reviewed"
+                                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${instructorTab === "reviewed"
                                             ? "bg-[#e8f0fe] text-[#174ea6]"
                                             : "bg-gray-100 text-gray-600"
                                             }`}
                                     >
-                                        {teacherReviewed.length}
+                                        {instructorReviewed.length}
                                     </span>
-                                    {teacherTab === "reviewed" && (
+                                    {instructorTab === "reviewed" && (
                                         <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
                                     )}
                                 </button>
@@ -281,49 +281,49 @@ export function TodoView() {
                             <>
                                 <button
                                     type="button"
-                                    onClick={() => setStudentTab("assigned")}
-                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${studentTab === "assigned"
+                                    onClick={() => setLearnerTab("assigned")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${learnerTab === "assigned"
                                         ? "text-[#1a73e8]"
                                         : "text-gray-600 hover:text-gray-900"
                                         }`}
                                 >
                                     Assigned
                                     <span className="rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-semibold text-[#174ea6]">
-                                        {studentAssigned.length}
+                                        {learnerAssigned.length}
                                     </span>
-                                    {studentTab === "assigned" && (
+                                    {learnerTab === "assigned" && (
                                         <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
                                     )}
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setStudentTab("missing")}
-                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${studentTab === "missing"
+                                    onClick={() => setLearnerTab("missing")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${learnerTab === "missing"
                                         ? "text-[#c5221f]"
                                         : "text-gray-600 hover:text-gray-900"
                                         }`}
                                 >
                                     Missing
                                     <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-[#c5221f]">
-                                        {studentMissing.length}
+                                        {learnerMissing.length}
                                     </span>
-                                    {studentTab === "missing" && (
+                                    {learnerTab === "missing" && (
                                         <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#c5221f]" />
                                     )}
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setStudentTab("done")}
-                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${studentTab === "done"
+                                    onClick={() => setLearnerTab("done")}
+                                    className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${learnerTab === "done"
                                         ? "text-[#137333]"
                                         : "text-gray-600 hover:text-gray-900"
                                         }`}
                                 >
                                     Done
                                     <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-[#137333]">
-                                        {studentDone.length}
+                                        {learnerDone.length}
                                     </span>
-                                    {studentTab === "done" && (
+                                    {learnerTab === "done" && (
                                         <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#137333]" />
                                     )}
                                 </button>
@@ -338,23 +338,23 @@ export function TodoView() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-semibold text-gray-900">
-                            {isTeacher ? "To-review" : "To-do"}
+                            {isInstructor ? "To-review" : "To-do"}
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">
-                            {isTeacher
-                                ? "Review student submissions, manage deadlines, and track grading progress across your courses."
+                            {isInstructor
+                                ? "Review learner submissions, manage deadlines, and track grading progress across your courses."
                                 : "Keep track of your assigned coursework, upcoming deadlines, and grades."}
                         </p>
                     </div>
 
                     <div className="relative w-full sm:max-w-xs">
                         <select
-                            value={classFilter}
-                            onChange={(e) => setClassFilter(e.target.value)}
+                            value={courseFilter}
+                            onChange={(e) => setCourseFilter(e.target.value)}
                             className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-9 text-sm font-medium text-gray-800 shadow-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
-                            <option value="all">All classes</option>
-                            {classOptions.map((c) => (
+                            <option value="all">All courses</option>
+                            {courseOptions.map((c) => (
                                 <option key={c} value={c}>
                                     {c}
                                 </option>
@@ -373,15 +373,15 @@ export function TodoView() {
                     <div className="mt-12 rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center">
                         <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
                         <h3 className="mt-3 text-lg font-medium text-gray-900">
-                            {isTeacher
-                                ? teacherTab === "to-review"
+                            {isInstructor
+                                ? instructorTab === "to-review"
                                     ? "All caught up! No coursework needs review."
                                     : "No assignments marked as reviewed yet."
                                 : "Woohoo, no work due!"}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                            {isTeacher
-                                ? "When students submit assignments, they will appear here ready for grading."
+                            {isInstructor
+                                ? "When learners submit assignments, they will appear here ready for grading."
                                 : "Check back later when instructors post new assignments."}
                         </p>
                     </div>
@@ -427,7 +427,7 @@ export function TodoView() {
                                                         key={assignment.id}
                                                         onClick={() =>
                                                             router.push(
-                                                                `/class/${assignment.courseId}/assignments/${assignment.id}`,
+                                                                `/course/${assignment.courseId}/assignments/${assignment.id}`,
                                                             )
                                                         }
                                                         className="group flex cursor-pointer flex-col gap-4 p-5 transition-colors hover:bg-blue-50/30 sm:flex-row sm:items-center sm:justify-between"
@@ -461,7 +461,7 @@ export function TodoView() {
 
                                                         {/* Right metrics / actions */}
                                                         <div className="flex shrink-0 flex-wrap items-center gap-3 sm:gap-6">
-                                                            {isTeacher ? (
+                                                            {isInstructor ? (
                                                                 <>
                                                                     <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2 text-xs">
                                                                         <div className="text-center">

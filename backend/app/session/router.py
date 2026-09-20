@@ -9,7 +9,7 @@ from app.session.dtos import (
     VideoMarkerResponseSchema,
 )
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdminOrTeacher, IsAuthenticated
+from app.utils.helpers import DbSession, IsAdminOrInstructor, IsAuthenticated
 
 session_routes = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
@@ -46,7 +46,7 @@ def get_session(session_id: int, db: DbSession, user: IsAuthenticated):
     response_model=SessionResponseSchema,
     status_code=status.HTTP_201_CREATED,
 )
-def create_session(body: SessionSchema, db: DbSession, user: IsAdminOrTeacher):
+def create_session(body: SessionSchema, db: DbSession, user: IsAdminOrInstructor):
     return controller.create_session(body, user, db)
 
 
@@ -56,13 +56,13 @@ def create_session(body: SessionSchema, db: DbSession, user: IsAdminOrTeacher):
     status_code=status.HTTP_200_OK,
 )
 def update_session(
-    session_id: int, body: SessionUpdateSchema, db: DbSession, user: IsAdminOrTeacher
+    session_id: int, body: SessionUpdateSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.update_session(session_id, body, user, db)
 
 
 @session_routes.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_session(session_id: int, db: DbSession, user: IsAdminOrTeacher):
+def delete_session(session_id: int, db: DbSession, user: IsAdminOrInstructor):
     return controller.delete_session(session_id, user, db)
 
 
@@ -76,7 +76,7 @@ def delete_session(session_id: int, db: DbSession, user: IsAdminOrTeacher):
 def add_material(
     session_id: int,
     db: DbSession,
-    user: IsAdminOrTeacher,
+    user: IsAdminOrInstructor,
     title: str = Form(...),
     kind: str = Form(default="link"),
     url: str | None = Form(default=None),
@@ -93,7 +93,7 @@ def add_material(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_material(
-    session_id: int, material_id: int, db: DbSession, user: IsAdminOrTeacher
+    session_id: int, material_id: int, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.delete_material(session_id, material_id, user, db)
 
@@ -108,7 +108,7 @@ def delete_material(
 def add_video_marker(
     session_id: int,
     db: DbSession,
-    user: IsAdminOrTeacher,
+    user: IsAdminOrInstructor,
     timestamp_seconds: int = Form(...),
     label: str = Form(...),
 ):
@@ -120,6 +120,6 @@ def add_video_marker(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_video_marker(
-    session_id: int, marker_id: int, db: DbSession, user: IsAdminOrTeacher
+    session_id: int, marker_id: int, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.delete_video_marker(session_id, marker_id, user, db)

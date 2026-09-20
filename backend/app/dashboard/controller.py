@@ -15,11 +15,15 @@ def get_stats(db: Session) -> DashboardStatsSchema:
             stmt = stmt.where(f)
         return db.scalar(stmt) or 0
 
+    instructors_count = count(UserModel, UserModel.role == "Instructor")
+    learners_count = count(UserModel, UserModel.role == "Learner")
     return DashboardStatsSchema(
         total_users=count(UserModel),
         active_users=count(UserModel, UserModel.is_active.is_(True)),
-        total_teachers=count(UserModel, UserModel.role == "Teacher"),
-        total_students=count(UserModel, UserModel.role == "Student"),
+        total_instructors=instructors_count,
+        total_learners=learners_count,
+        total_teachers=instructors_count,
+        total_students=learners_count,
         total_courses=count(CourseModel),
         active_courses=count(CourseModel, CourseModel.is_active.is_(True)),
         total_assignments=count(AssignmentModel),

@@ -27,8 +27,8 @@ def _submission_stmt():
     return select(SubmissionModel).options(
         selectinload(SubmissionModel.assignment)
         .selectinload(AssignmentModel.course)
-        .selectinload(CourseModel.teachers),
-        selectinload(SubmissionModel.student).selectinload(UserModel.student_details),
+        .selectinload(CourseModel.instructors),
+        selectinload(SubmissionModel.learner).selectinload(UserModel.learner_details),
         selectinload(SubmissionModel.graded_by),
         selectinload(SubmissionModel.attachments),
         selectinload(SubmissionModel.activities),
@@ -39,22 +39,22 @@ def get_submissions(user: UserModel, db: Session) -> list[SubmissionResponseSche
     stmt = _submission_stmt()
     if user.role == "Admin":
         submissions = db.scalars(stmt).all()
-    elif user.role == "Teacher":
+    elif user.role == "Instructor":
         submissions = db.scalars(
-            stmt.where(CourseModel.teachers.any(UserModel.id == user.id))
+            stmt.where(CourseModel.instructors.any(UserModel.id == user.id))
         ).all()
     else:
         submissions = db.scalars(
-            stmt.where(SubmissionModel.student_id == user.id)
+            stmt.where(SubmissionModel.learner_id == user.id)
         ).all()
     return [serialize_submission(s) for s in submissions]
 
 
 def get_my_submissions(user: UserModel, db: Session) -> list[SubmissionResponseSchema]:
-    if user.role != "Student":
+    if user.role != "Learner":
         return []
     submissions = db.scalars(
-        _submission_stmt().where(SubmissionModel.student_id == user.id)
+        _submission_stmt().where(SubmissionModel.learner_id == user.id)
     ).all()
     return [serialize_submission(s) for s in submissions]
 
@@ -62,11 +62,11 @@ def get_my_submissions(user: UserModel, db: Session) -> list[SubmissionResponseS
 def _can_view_submission(user: UserModel, submission: SubmissionModel) -> bool:
     if user.role == "Admin":
         return True
-    if submission.student_id == user.id:
+    if submission.learner_id == user.id:
         return True
-    if user.role == "Teacher":
+    if user.role == "Instructor":
         course = submission.assignment.course
-        return course is not None and any(t.id == user.id for t in course.teachers)
+        return course is not None and any(t.id == user.id for t in course.instructors)
     return False
 
 
@@ -84,8 +84,8 @@ def get_submission(
 def submit_assignment(
     body: SubmitAssignmentSchema, user: UserModel, db: Session
 ) -> SubmissionResponseSchema:
-    if user.role != "Student":
-        raise HTTPException(403, detail="Only students can submit work")
+    if user.role != "Learner":
+        raise HTTPException(403, detail="Only learners can submit work")
 
     assignment = db.scalar(
         select(AssignmentModel).where(AssignmentModel.id == body.assignment_id)
@@ -99,14 +99,14 @@ def submit_assignment(
     submission = db.scalar(
         select(SubmissionModel).where(
             SubmissionModel.assignment_id == assignment.id,
-            SubmissionModel.student_id == user.id,
+            SubmissionModel.learner_id == user.id,
         )
     )
     is_new = submission is None
 
     if submission is None:
         submission = SubmissionModel(
-            assignment_id=assignment.id, student_id=user.id
+            assignment_id=assignment.id, learner_id=user.id
         )
         db.add(submission)
 
@@ -140,20 +140,20 @@ def submit_assignment(
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == assignment.course_id)
     )
-    teacher_ids = [t.id for t in course.teachers] if course and course.teachers else []
-    if teacher_ids:
+    instructor_ids = [t.id for t in course.instructors] if course and course.instructors else []
+    if instructor_ids:
         from app.notification.controller import create_notifications_bulk
 
         create_notifications_bulk(
             db=db,
-            user_ids=teacher_ids,
+            user_ids=instructor_ids,
             title=f"New submission: {assignment.title}",
             message=f"{user.name} submitted work in {course.name if course else ''}",
             kind="submission",
-            link=f"/class/{assignment.course_id}/submissions",
+            link=f"/course/{assignment.course_id}/submissions",
         )
 
     db.commit()
@@ -163,9 +163,9 @@ def submit_assignment(
 def _can_grade(user: UserModel, submission: SubmissionModel) -> bool:
     if user.role == "Admin":
         return True
-    if user.role == "Teacher":
+    if user.role == "Instructor":
         course = submission.assignment.course
-        return course is not None and any(t.id == user.id for t in course.teachers)
+        return course is not None and any(t.id == user.id for t in course.instructors)
     return False
 
 
@@ -207,11 +207,11 @@ def grade_submission(
     fb = f" • Feedback: {body.feedback}" if body.feedback else ""
     create_notification(
         db=db,
-        user_id=submission.student_id,
+        user_id=submission.learner_id,
         title=f"Graded: {assignment.title}",
         message=f"Score: {body.marks}/{assignment.max_marks}{fb}",
         kind="grade",
-        link=f"/class/{assignment.course_id}/classwork",
+        link=f"/course/{assignment.course_id}/coursework",
     )
 
     db.commit()
@@ -221,11 +221,11 @@ def grade_submission(
 def _can_modify_submission(user: UserModel, submission: SubmissionModel) -> bool:
     if user.role == "Admin":
         return True
-    if submission.student_id == user.id:
+    if submission.learner_id == user.id:
         return True
-    if user.role == "Teacher":
+    if user.role == "Instructor":
         course = submission.assignment.course
-        return course is not None and any(t.id == user.id for t in course.teachers)
+        return course is not None and any(t.id == user.id for t in course.instructors)
     return False
 
 
@@ -241,34 +241,40 @@ def add_submission_attachment(
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_modify_submission(user, submission):
-        raise HTTPException(403, detail="You cannot modify this submission")
+        raise HTTPException(403, detail="You cannot edit this submission")
+    if submission.status == "Graded":
+        raise HTTPException(400, detail="Cannot edit a submission that has already been graded")
 
+    now = datetime.now(UTC)
     if link_url:
+        parsed_title = (link_title or "").strip() or link_url
         attachment = SubmissionAttachmentModel(
-            submission_id=submission.id,
-            file_name=link_title or link_url,
-            file_type="Link",
-            file_size="—",
+            submission_id=submission_id,
+            file_name=parsed_title,
+            file_type="link",
+            file_size="0 B",
             kind="link",
             url=link_url,
+            uploaded_at_utc=now,
         )
-    elif file is not None:
-        url, file_type, file_size = save_upload_file(file, f"submissions/{submission.id}")
+    elif file:
+        file_path, file_size_str, file_mime = _save_upload(file, f"submissions/{submission_id}")
         attachment = SubmissionAttachmentModel(
-            submission_id=submission.id,
-            file_name=file.filename or "file",
-            file_type=file_type,
-            file_size=file_size,
+            submission_id=submission_id,
+            file_name=file.filename or "attachment",
+            file_type=file_mime,
+            file_size=file_size_str,
             kind="file",
-            url=url,
+            url=file_path,
+            uploaded_at_utc=now,
         )
     else:
-        raise HTTPException(400, detail="No file or link provided")
+        raise HTTPException(400, detail="Must provide either a file or a link")
 
     db.add(attachment)
     db.commit()
     db.refresh(attachment)
-    return SubmissionAttachmentResponseSchema.model_validate(attachment)
+    return serialize_attachment(attachment)
 
 
 def delete_submission_attachment(
@@ -278,7 +284,9 @@ def delete_submission_attachment(
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_modify_submission(user, submission):
-        raise HTTPException(403, detail="You cannot modify this submission")
+        raise HTTPException(403, detail="You cannot edit this submission")
+    if submission.status == "Graded":
+        raise HTTPException(400, detail="Cannot edit a submission that has already been graded")
 
     attachment = db.get(SubmissionAttachmentModel, attachment_id)
     if not attachment or attachment.submission_id != submission_id:
@@ -291,30 +299,30 @@ def delete_submission_attachment(
 def get_or_create_draft_submission(
     assignment_id: int, user: UserModel, db: Session
 ) -> SubmissionResponseSchema:
-    if user.role != "Student":
-        raise HTTPException(403, detail="Only students can create draft submissions")
+    if user.role != "Learner":
+        raise HTTPException(403, detail="Only learners can create draft submissions")
 
     assignment = db.scalar(
         select(AssignmentModel)
-        .options(selectinload(AssignmentModel.course).selectinload(CourseModel.students))
+        .options(selectinload(AssignmentModel.course).selectinload(CourseModel.learners))
         .where(AssignmentModel.id == assignment_id)
     )
     if not assignment:
         raise HTTPException(404, detail="Assignment id is incorrect")
 
-    if assignment.course and not any(s.id == user.id for s in assignment.course.students):
+    if assignment.course and not any(s.id == user.id for s in assignment.course.learners):
         raise HTTPException(403, detail="You are not enrolled in this course")
 
     submission = db.scalar(
         _submission_stmt().where(
             SubmissionModel.assignment_id == assignment.id,
-            SubmissionModel.student_id == user.id,
+            SubmissionModel.learner_id == user.id,
         )
     )
     if submission is None:
         submission = SubmissionModel(
             assignment_id=assignment.id,
-            student_id=user.id,
+            learner_id=user.id,
             status="Draft",
             answer="",
         )
@@ -342,7 +350,7 @@ def unsubmit_assignment(
     submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
-    if user.role != "Admin" and submission.student_id != user.id:
+    if user.role != "Admin" and submission.learner_id != user.id:
         raise HTTPException(403, detail="You cannot unsubmit this submission")
     if submission.status == "Graded":
         raise HTTPException(400, detail="Cannot unsubmit work that has already been graded")

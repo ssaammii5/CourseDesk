@@ -39,7 +39,7 @@ export function AdminDashboardView() {
     const router = useRouter();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [userCounts, setUserCounts] = useState<{ total: number; teachers: number; students: number } | null>(null);
+    const [userCounts, setUserCounts] = useState<{ total: number; instructors: number; learners: number } | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -55,8 +55,8 @@ export function AdminDashboardView() {
                     setStats(dashboardStats);
                     setUserCounts({
                         total: allUsers.length,
-                        teachers: allUsers.filter((u) => u.role === "Teacher").length,
-                        students: allUsers.filter((u) => u.role === "Student").length,
+                        instructors: allUsers.filter((u) => u.role === "Instructor" || u.role === "Teacher").length,
+                        learners: allUsers.filter((u) => u.role === "Learner" || u.role === "Student").length,
                     });
                 }
             } catch (err) {
@@ -92,11 +92,11 @@ export function AdminDashboardView() {
 
     // Use real user counts from /api/users for the user distribution section
     const totalUsers = userCounts.total;
-    const totalTeachers = userCounts.teachers;
-    const totalStudents = userCounts.students;
+    const totalInstructors = userCounts.instructors;
+    const totalLearners = userCounts.learners;
 
-    const teacherPct = totalUsers > 0 ? (totalTeachers / totalUsers) * 100 : 0;
-    const studentPct = totalUsers > 0 ? (totalStudents / totalUsers) * 100 : 0;
+    const instructorPct = totalUsers > 0 ? (totalInstructors / totalUsers) * 100 : 0;
+    const learnerPct = totalUsers > 0 ? (totalLearners / totalUsers) * 100 : 0;
 
     // Fall back to dashboard stats for course/assignment/submission counts
     const fallbackStats = getAdminStats();
@@ -114,15 +114,15 @@ export function AdminDashboardView() {
                     icon={<UserRound className="h-6 w-6 text-[#174ea6]" />}
                     iconBg="bg-[#d7e3fd]"
                     label="Instructors"
-                    value={totalTeachers}
-                    onClick={() => router.push("/teachers")}
+                    value={totalInstructors}
+                    onClick={() => router.push("/instructors")}
                 />
                 <StatCard
                     icon={<Users className="h-6 w-6 text-[#137333]" />}
                     iconBg="bg-[#ceead6]"
                     label="Learners"
-                    value={totalStudents}
-                    onClick={() => router.push("/students")}
+                    value={totalLearners}
+                    onClick={() => router.push("/learners")}
                 />
                 <StatCard
                     icon={<BookOpen className="h-6 w-6 text-[#b06000]" />}
@@ -158,23 +158,23 @@ export function AdminDashboardView() {
                     <div className="mt-4 space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-700">Instructors</span>
-                            <span className="text-sm font-semibold text-gray-900">{totalTeachers}</span>
+                            <span className="text-sm font-semibold text-gray-900">{totalInstructors}</span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-gray-200">
                             <div
                                 className="h-2 rounded-full bg-[#1a73e8]"
-                                style={{ width: `${teacherPct}%` }}
+                                style={{ width: `${instructorPct}%` }}
                             />
                         </div>
 
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-700">Learners</span>
-                            <span className="text-sm font-semibold text-gray-900">{totalStudents}</span>
+                            <span className="text-sm font-semibold text-gray-900">{totalLearners}</span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-gray-200">
                             <div
                                 className="h-2 rounded-full bg-[#188038]"
-                                style={{ width: `${studentPct}%` }}
+                                style={{ width: `${learnerPct}%` }}
                             />
                         </div>
                     </div>

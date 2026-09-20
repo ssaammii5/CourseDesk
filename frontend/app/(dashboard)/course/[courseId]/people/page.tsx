@@ -1,0 +1,10 @@
+import { redirect } from "next/navigation";
+
+interface PeoplePageProps {
+    params: Promise<{ courseId: string }>;
+}
+
+export default async function PeoplePage({ params }: PeoplePageProps) {
+    const { courseId } = await params;
+    redirect(`/course/${courseId}?tab=people`);
+}

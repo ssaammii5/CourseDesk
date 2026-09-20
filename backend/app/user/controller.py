@@ -5,28 +5,28 @@ from sqlalchemy.orm import Session, selectinload
 from app.assignment.models import AssignmentModel
 from app.submission.models import SubmissionModel
 from app.user.dtos import (
-    StudentDetailsSchema,
-    TeacherDetailsSchema,
+    InstructorDetailsSchema,
+    LearnerDetailsSchema,
     UserAddressSchema,
     UserResponseSchema,
     UserSchema,
     UserUpdateSchema,
 )
-from app.user.models import StudentDetailsModel, TeacherDetailsModel, UserModel
+from app.user.models import InstructorDetailsModel, LearnerDetailsModel, UserModel
 from app.utils.helpers import get_password_hash
 
 
 def serialize_user(user: UserModel) -> UserResponseSchema:
-    student_details: StudentDetailsSchema | None = None
-    if user.student_details:
-        d = user.student_details
-        student_details = StudentDetailsSchema(
+    learner_details: LearnerDetailsSchema | None = None
+    if user.learner_details:
+        d = user.learner_details
+        learner_details = LearnerDetailsSchema(
             fathers_name=d.fathers_name,
             mothers_name=d.mothers_name,
             date_of_birth=d.date_of_birth,
             mobile=d.mobile,
             nationality=d.nationality,
-            student_id=d.student_id,
+            learner_id=d.learner_id,
             reg_no=d.reg_no,
             department=d.department,
             current_program=d.current_program,
@@ -36,11 +36,11 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
                 street=d.street, city=d.city, state=d.state, zip=d.zip, country=d.country
             ),
         )
-    teacher_details: TeacherDetailsSchema | None = None
-    if user.teacher_details:
-        t = user.teacher_details
-        teacher_details = TeacherDetailsSchema(
-            teacher_id=t.teacher_id, designation=t.designation, department=t.department
+    instructor_details: InstructorDetailsSchema | None = None
+    if user.instructor_details:
+        t = user.instructor_details
+        instructor_details = InstructorDetailsSchema(
+            instructor_id=t.instructor_id, designation=t.designation, department=t.department
         )
     return UserResponseSchema(
         id=user.id,
@@ -49,30 +49,30 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
         role=user.role,
         is_active=user.is_active,
         created_at_utc=user.created_at_utc,
-        student_details=student_details,
-        teacher_details=teacher_details,
+        learner_details=learner_details,
+        instructor_details=instructor_details,
     )
 
 
 def get_users(db: Session) -> list[UserResponseSchema]:
     users = db.scalars(
         select(UserModel).options(
-            selectinload(UserModel.student_details),
-            selectinload(UserModel.teacher_details),
+            selectinload(UserModel.learner_details),
+            selectinload(UserModel.instructor_details),
         )
     ).all()
     return [serialize_user(u) for u in users]
 
 
-def _build_student_details(user_id: int, data: StudentDetailsSchema) -> StudentDetailsModel:
-    return StudentDetailsModel(
+def _build_learner_details(user_id: int, data: LearnerDetailsSchema) -> LearnerDetailsModel:
+    return LearnerDetailsModel(
         user_id=user_id,
         fathers_name=data.fathers_name,
         mothers_name=data.mothers_name,
         date_of_birth=data.date_of_birth,
         mobile=data.mobile,
         nationality=data.nationality,
-        student_id=data.student_id,
+        learner_id=data.learner_id,
         reg_no=data.reg_no,
         department=data.department,
         current_program=data.current_program,
@@ -86,10 +86,10 @@ def _build_student_details(user_id: int, data: StudentDetailsSchema) -> StudentD
     )
 
 
-def _build_teacher_details(user_id: int, data: TeacherDetailsSchema) -> TeacherDetailsModel:
-    return TeacherDetailsModel(
+def _build_instructor_details(user_id: int, data: InstructorDetailsSchema) -> InstructorDetailsModel:
+    return InstructorDetailsModel(
         user_id=user_id,
-        teacher_id=data.teacher_id,
+        instructor_id=data.instructor_id,
         designation=data.designation,
         department=data.department,
     )
@@ -107,10 +107,10 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
     )
     db.add(new_user)
     db.flush()
-    if body.student_details:
-        db.add(_build_student_details(new_user.id, body.student_details))
-    if body.teacher_details:
-        db.add(_build_teacher_details(new_user.id, body.teacher_details))
+    if body.learner_details:
+        db.add(_build_learner_details(new_user.id, body.learner_details))
+    if body.instructor_details:
+        db.add(_build_instructor_details(new_user.id, body.instructor_details))
     db.commit()
     return get_one_user(new_user.id, db)
 
@@ -119,8 +119,8 @@ def get_one_user(user_id: int, db: Session) -> UserResponseSchema:
     user = db.scalar(
         select(UserModel)
         .options(
-            selectinload(UserModel.student_details),
-            selectinload(UserModel.teacher_details),
+            selectinload(UserModel.learner_details),
+            selectinload(UserModel.instructor_details),
         )
         .where(UserModel.id == user_id)
     )
@@ -129,17 +129,17 @@ def get_one_user(user_id: int, db: Session) -> UserResponseSchema:
     return serialize_user(user)
 
 
-def _apply_student_details(
-    user: UserModel, data: StudentDetailsSchema, db: Session
+def _apply_learner_details(
+    user: UserModel, data: LearnerDetailsSchema, db: Session
 ) -> None:
-    if user.student_details:
-        d = user.student_details
+    if user.learner_details:
+        d = user.learner_details
         d.fathers_name = data.fathers_name
         d.mothers_name = data.mothers_name
         d.date_of_birth = data.date_of_birth
         d.mobile = data.mobile
         d.nationality = data.nationality
-        d.student_id = data.student_id
+        d.learner_id = data.learner_id
         d.reg_no = data.reg_no
         d.department = data.department
         d.current_program = data.current_program
@@ -151,26 +151,26 @@ def _apply_student_details(
         d.zip = data.address.zip
         d.country = data.address.country
     else:
-        user.student_details = _build_student_details(user.id, data)
+        user.learner_details = _build_learner_details(user.id, data)
 
 
-def _apply_teacher_details(
-    user: UserModel, data: TeacherDetailsSchema, db: Session
+def _apply_instructor_details(
+    user: UserModel, data: InstructorDetailsSchema, db: Session
 ) -> None:
-    if user.teacher_details:
-        user.teacher_details.teacher_id = data.teacher_id
-        user.teacher_details.designation = data.designation
-        user.teacher_details.department = data.department
+    if user.instructor_details:
+        user.instructor_details.instructor_id = data.instructor_id
+        user.instructor_details.designation = data.designation
+        user.instructor_details.department = data.department
     else:
-        user.teacher_details = _build_teacher_details(user.id, data)
+        user.instructor_details = _build_instructor_details(user.id, data)
 
 
 def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserResponseSchema:
     user = db.scalar(
         select(UserModel)
         .options(
-            selectinload(UserModel.student_details),
-            selectinload(UserModel.teacher_details),
+            selectinload(UserModel.learner_details),
+            selectinload(UserModel.instructor_details),
         )
         .where(UserModel.id == user_id)
     )
@@ -190,10 +190,10 @@ def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserRespon
     user.is_active = body.is_active
     if body.password:
         user.hash_password = get_password_hash(body.password)
-    if body.student_details is not None:
-        _apply_student_details(user, body.student_details, db)
-    if body.teacher_details is not None:
-        _apply_teacher_details(user, body.teacher_details, db)
+    if body.learner_details is not None:
+        _apply_learner_details(user, body.learner_details, db)
+    if body.instructor_details is not None:
+        _apply_instructor_details(user, body.instructor_details, db)
     db.commit()
     return get_one_user(user_id, db)
 
@@ -206,7 +206,7 @@ def delete_user(user_id: int, db: Session) -> None:
         select(AssignmentModel.id).where(AssignmentModel.created_by_id == user_id).limit(1)
     )
     has_submissions = db.scalar(
-        select(SubmissionModel.id).where(SubmissionModel.student_id == user_id).limit(1)
+        select(SubmissionModel.id).where(SubmissionModel.learner_id == user_id).limit(1)
     )
     if has_assignments or has_submissions:
         raise HTTPException(

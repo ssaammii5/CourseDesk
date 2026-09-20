@@ -1,7 +1,7 @@
 export * as adminFeature from "./admin";
 export * as authFeature from "./auth";
 export * as calendarFeature from "./calendar";
-export * as classFeature from "./class";
+export * as courseFeature from "./course";
 export * as homeFeature from "./home";
 export * as settingsFeature from "./settings";
 export * as todoFeature from "./todo";
@@ -10,7 +10,7 @@ export * as todoFeature from "./todo";
 export * from "./admin";
 export * from "./auth";
 export * from "./calendar";
-export * from "./class";
+export * from "./course";
 export * from "./home";
 export * from "./settings";
 export * from "./todo";

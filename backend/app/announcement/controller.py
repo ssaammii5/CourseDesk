@@ -37,17 +37,17 @@ def _announcement_stmt():
 def _can_manage_course(user: UserModel, course: CourseModel) -> bool:
     if user.role == "Admin":
         return True
-    if user.role == "Teacher":
-        return any(t.id == user.id for t in course.teachers)
+    if user.role == "Instructor":
+        return any(t.id == user.id for t in course.instructors)
     return False
 
 
 def _check_course_access(user: UserModel, course: CourseModel) -> None:
     if user.role == "Admin":
         return
-    if user.role == "Teacher" and any(t.id == user.id for t in course.teachers):
+    if user.role == "Instructor" and any(t.id == user.id for t in course.instructors):
         return
-    if user.role == "Student" and any(s.id == user.id for s in course.students):
+    if user.role == "Learner" and any(s.id == user.id for s in course.learners):
         return
     raise HTTPException(403, detail="You don't have access to this course")
 
@@ -58,8 +58,8 @@ def get_course_announcements(
     course = db.scalar(
         select(CourseModel)
         .options(
-            selectinload(CourseModel.teachers),
-            selectinload(CourseModel.students),
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
         )
         .where(CourseModel.id == course_id)
     )
@@ -84,8 +84,8 @@ def create_announcement(
     course = db.scalar(
         select(CourseModel)
         .options(
-            selectinload(CourseModel.teachers),
-            selectinload(CourseModel.students),
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
         )
         .where(CourseModel.id == body.course_id)
     )
@@ -105,9 +105,9 @@ def create_announcement(
     db.flush()
 
     recipient_ids = [
-        s.id for s in (course.students or []) if s.id != user.id
+        s.id for s in (course.learners or []) if s.id != user.id
     ] + [
-        t.id for t in (course.teachers or []) if t.id != user.id
+        t.id for t in (course.instructors or []) if t.id != user.id
     ]
     if recipient_ids:
         from app.notification.controller import create_notifications_bulk
@@ -119,7 +119,7 @@ def create_announcement(
             title=f"New announcement in {course.name}",
             message=preview,
             kind="announcement",
-            link=f"/class/{body.course_id}",
+            link=f"/course/{body.course_id}",
         )
 
     db.commit()
@@ -139,8 +139,8 @@ def get_announcement(
     course = db.scalar(
         select(CourseModel)
         .options(
-            selectinload(CourseModel.teachers),
-            selectinload(CourseModel.students),
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
         )
         .where(CourseModel.id == announcement.course_id)
     )
@@ -164,7 +164,7 @@ def update_announcement(
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == announcement.course_id)
     )
     can_manage = (course and _can_manage_course(user, course)) or (announcement.author_id == user.id)
@@ -190,7 +190,7 @@ def delete_announcement(
 
     course = db.scalar(
         select(CourseModel)
-        .options(selectinload(CourseModel.teachers))
+        .options(selectinload(CourseModel.instructors))
         .where(CourseModel.id == announcement.course_id)
     )
     can_manage = (course and _can_manage_course(user, course)) or (announcement.author_id == user.id)

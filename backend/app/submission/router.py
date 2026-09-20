@@ -9,7 +9,7 @@ from app.submission.dtos import (
     SubmitAssignmentSchema,
 )
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdminOrTeacher, IsAuthenticated
+from app.utils.helpers import DbSession, IsAdminOrInstructor, IsAuthenticated
 
 submission_routes = APIRouter(prefix="/api/submissions", tags=["submissions"])
 
@@ -41,7 +41,7 @@ def get_one_submission(submission_id: int, db: DbSession, user: IsAuthenticated)
 
 @submission_routes.post("/{submission_id}/grade", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
 def grade_submission(
-    submission_id: int, body: GradeSubmissionSchema, db: DbSession, user: IsAdminOrTeacher
+    submission_id: int, body: GradeSubmissionSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.grade_submission(submission_id, body, user, db)
 

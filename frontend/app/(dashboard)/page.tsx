@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks";
 import { AdminDashboardView } from "@/features/admin";
-import { ClassesSection, DueSoonCard } from "@/features/home";
+import { CoursesSection, DueSoonCard } from "@/features/home";
 
 export default function DashboardHomePage() {
     const { user } = useAuth();
@@ -16,7 +16,7 @@ export default function DashboardHomePage() {
         <div className="mx-auto w-full max-w-[1080px] px-4 py-6 sm:px-8">
             <div className="flex flex-col gap-6">
                 <DueSoonCard />
-                <ClassesSection />
+                <CoursesSection />
             </div>
         </div>
     );

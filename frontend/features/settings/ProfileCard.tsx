@@ -21,8 +21,9 @@ interface ProfileCardProps {
 
 function buildStudentProfile(user?: CurrentUser | null, meDto?: MeResponse | null): StudentProfile {
     const name = meDto?.name ?? user?.name ?? "";
-    const sd = meDto?.studentDetails ?? user?.studentDetails;
+    const sd = (meDto as any)?.learnerDetails ?? meDto?.studentDetails ?? (user as any)?.learnerDetails ?? user?.studentDetails;
     const addr = sd?.address;
+    const idVal = (sd as any)?.learnerId ?? sd?.studentId ?? "";
     return {
         fullName: name,
         fathersName: sd?.fathersName ?? "",
@@ -30,7 +31,8 @@ function buildStudentProfile(user?: CurrentUser | null, meDto?: MeResponse | nul
         dateOfBirth: sd?.dateOfBirth ?? "",
         mobile: sd?.mobile ?? "",
         nationality: sd?.nationality ?? "",
-        studentId: sd?.studentId ?? "",
+        learnerId: idVal,
+        studentId: idVal,
         regNo: sd?.regNo ?? "",
         department: sd?.department ?? "",
         currentProgram: (sd?.currentProgram ?? "Undergraduate") as ProgramType,
@@ -127,7 +129,8 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
     const validate = () => {
         const next: Record<string, string> = {};
         if (!form.fullName.trim()) next.fullName = "Full name is required.";
-        if (user?.role === "Student" && !form.studentId.trim()) next.studentId = "Learner ID is required.";
+        const idVal = form.learnerId || form.studentId || "";
+        if (user?.role === "Learner" && !idVal.trim()) next.learnerId = "Learner ID is required.";
         if (!form.permanentAddress.country) next.country = "Country is required.";
         return next;
     };
@@ -191,7 +194,17 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
                         <div>
                             <h3 className="mb-4 text-lg font-semibold text-gray-900">Learning Track &amp; Program</h3>
                             <div className="grid gap-5 md:grid-cols-2">
-                                <Field label="Learner ID" value={form.studentId} onChange={(v) => setField("studentId", v)} required={user?.role === "Student"} disabled={readOnly} error={errors.studentId} />
+                                <Field
+                                    label="Learner ID"
+                                    value={form.learnerId || form.studentId || ""}
+                                    onChange={(v) => {
+                                        setField("learnerId", v);
+                                        setField("studentId", v);
+                                    }}
+                                    required={user?.role === "Learner"}
+                                    disabled={readOnly}
+                                    error={errors.learnerId || errors.studentId}
+                                />
                                 <Field label="Category / Domain" value={form.department} onChange={(v) => setField("department", v)} disabled={readOnly} />
                                 <SelectField label="Learning Track / Level" value={form.currentProgram} onChange={(v) => setField("currentProgram", v as ProgramType)} options={PROGRAM_TYPES} disabled={readOnly} placeholder="Select track type" />
                                 <Field label="Cohort / Schedule" value={form.session || form.semesterSession || ""} onChange={(v) => setField("session", v)} disabled={readOnly} />

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dtos import LoginSchema, SignupSchema
 from app.auth.models import RefreshTokenModel
-from app.user.models import StudentDetailsModel, UserModel
+from app.user.models import LearnerDetailsModel, UserModel
 from app.utils.helpers import get_password_hash, verify_password
 from app.utils.settings import settings
 
@@ -84,12 +84,12 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
         name=body.name,
         email=body.email,
         hash_password=get_password_hash(body.password),
-        role="Student",
+        role="Learner",
     )
     db.add(new_user)
     db.flush()
     db.add(
-        StudentDetailsModel(
+        LearnerDetailsModel(
             user_id=new_user.id,
             current_program="Undergraduate",
         )

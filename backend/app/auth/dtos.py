@@ -49,7 +49,12 @@ class SignupResponseSchema(CamelModel):
     created_at_utc: datetime
 
 
-from app.user.dtos import StudentDetailsSchema, TeacherDetailsSchema
+from app.user.dtos import (
+    InstructorDetailsSchema,
+    LearnerDetailsSchema,
+    StudentDetailsSchema,
+    TeacherDetailsSchema,
+)
 
 
 class MeResponseSchema(CamelModel):
@@ -58,5 +63,7 @@ class MeResponseSchema(CamelModel):
     email: str
     role: str
     is_active: bool = True
+    learner_details: LearnerDetailsSchema | None = None
+    instructor_details: InstructorDetailsSchema | None = None
     student_details: StudentDetailsSchema | None = None
     teacher_details: TeacherDetailsSchema | None = None

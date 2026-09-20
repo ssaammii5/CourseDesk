@@ -18,13 +18,17 @@ import {
 } from "@/lib/api/academics";
 
 function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
+    const iIds = dto.instructorIds ?? dto.teacherIds ?? [];
+    const lIds = dto.learnerIds ?? dto.studentIds ?? [];
     return {
         id: dto.id,
         name: dto.name,
         program: dto.program,
         department: dto.department,
-        teacherIds: dto.teacherIds,
-        studentIds: dto.studentIds,
+        instructorIds: iIds,
+        learnerIds: lIds,
+        teacherIds: iIds,
+        studentIds: lIds,
         session: dto.session,
         isActive: dto.isActive,
         meetingProvider: dto.meetingProvider,
@@ -65,7 +69,7 @@ export function AdminCoursesView() {
             setAcademicDepartments(depts);
             setAcademicSemesters(sems);
             const names: Record<number, string[]> = {};
-            for (const d of dtos) names[d.id] = d.teacherNames;
+            for (const d of dtos) names[d.id] = d.instructorNames ?? d.teacherNames ?? [];
             setCourseNames(names);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load courses.");
@@ -98,10 +102,10 @@ export function AdminCoursesView() {
 
     const filtered = useMemo(() => {
         return courses.filter((c) => {
-            const teacherNames = (courseNames[c.id] ?? []).join(", ");
+            const instructorNames = (courseNames[c.id] ?? []).join(", ");
             const matchSearch =
                 c.name.toLowerCase().includes(search.toLowerCase()) ||
-                teacherNames.toLowerCase().includes(search.toLowerCase());
+                instructorNames.toLowerCase().includes(search.toLowerCase());
             const matchDept = departmentFilter === "all" || c.department === departmentFilter;
             const matchProgram = programFilter === "all" || c.program === programFilter;
             const matchSession = sessionFilter === "all" || c.session === sessionFilter;
@@ -112,6 +116,8 @@ export function AdminCoursesView() {
     const handleSave = async (data: Omit<AdminCourse, "id">) => {
         try {
             setError(null);
+            const instIds = data.instructorIds ?? data.teacherIds ?? [];
+            const lrnIds = data.learnerIds ?? data.studentIds ?? [];
             const payload = {
                 name: data.name,
                 subject: "",
@@ -119,8 +125,10 @@ export function AdminCoursesView() {
                 department: data.department,
                 session: data.session,
                 isActive: data.isActive,
-                teacherIds: data.teacherIds,
-                studentIds: data.studentIds,
+                instructorIds: instIds,
+                learnerIds: lrnIds,
+                teacherIds: instIds,
+                studentIds: lrnIds,
                 meetingProvider: data.meetingProvider ?? "",
                 meetingUrl: data.meetingUrl ?? null,
                 meetingId: data.meetingId ?? "",
@@ -240,7 +248,7 @@ export function AdminCoursesView() {
                         { key: "department", header: "Category" },
                         { key: "program", header: "Track / Level" },
                         {
-                            key: "teachers",
+                            key: "instructors",
                             header: "Instructors",
                             render: (c: AdminCourse) => {
                                 const names = (courseNames[c.id] ?? []).join(", ");
@@ -252,11 +260,11 @@ export function AdminCoursesView() {
                             },
                         },
                         {
-                            key: "students",
+                            key: "learners",
                             header: "Learners",
                             className: "text-center",
                             render: (c: AdminCourse) => (
-                                <span className="text-sm text-gray-900">{c.studentIds.length}</span>
+                                <span className="text-sm text-gray-900">{(c.learnerIds ?? c.studentIds ?? []).length}</span>
                             ),
                         },
                         { key: "session", header: "Cohort / Schedule" },

@@ -35,7 +35,7 @@ from app.setting.dtos import AppSettingSchema
 from app.submission.controller import grade_submission, submit_assignment
 from app.submission.dtos import GradeSubmissionSchema, SubmitAssignmentSchema
 from app.user.controller import create_user
-from app.user.dtos import StudentDetailsSchema, TeacherDetailsSchema, UserSchema
+from app.user.dtos import InstructorDetailsSchema, LearnerDetailsSchema, UserSchema
 from app.user.models import UserModel
 from app.utils.db import Base, LocalSession, engine
 
@@ -77,7 +77,7 @@ SETTINGS = [
     ("allowed_file_types", "pdf,doc,docx,zip,txt", "Comma-separated list of allowed file types", "General"),
     ("email_notifications_enabled", "true", "Enable email notifications for assignments", "Notifications"),
     ("due_date_reminder_hours", "24", "Hours before deadline to send reminder", "Notifications"),
-    ("grade_notification_enabled", "true", "Notify students when graded", "Notifications"),
+    ("grade_notification_enabled", "true", "Notify learners when graded", "Grading"),
     ("max_marks_default", "100", "Default maximum marks for assignments", "Grading"),
     ("allow_late_submission", "false", "Allow submissions after deadline", "Grading"),
     ("late_submission_penalty_percent", "10", "Percentage penalty for late submissions", "Grading"),
@@ -86,7 +86,7 @@ SETTINGS = [
     ("enable_two_factor_auth", "false", "Require 2FA for all users", "Security"),
 ]
 
-TEACHERS = [
+INSTRUCTORS = [
     ("Prof. Dr. Abdul Masud", "abdul@eclassroompro.com", "FAC-1001", "Professor", "CSE"),
     ("Md. Mahbubur Rahman", "mahbubur@eclassroompro.com", "FAC-1002", "Associate Professor", "CSE"),
     ("Farjana Sultana Mim", "farjana@eclassroompro.com", "FAC-1003", "Assistant Professor", "CSE"),
@@ -94,7 +94,7 @@ TEACHERS = [
     ("Dr. Nasreen Akter", "nasreen@eclassroompro.com", "FAC-1005", "Associate Professor", "BBA"),
 ]
 
-STUDENTS = [
+LEARNERS = [
     ("Md. Samiur Rahman", "samiur@eclassroompro.com", "201-15-0000", "CSE", "Postgraduate", "January-June/2024"),
     ("Habibur Rahman Khan Ratin", "ratin@eclassroompro.com", "201-15-0001", "CSE", "Postgraduate", "January-June/2024"),
     ("Iffat Ara Babli", "iffat@eclassroompro.com", "201-15-0002", "CSE", "Postgraduate", "January-June/2024"),
@@ -113,8 +113,8 @@ def _email_id(db, email: str) -> int:
 
 
 def seed_notifications(db) -> None:
-    from app.notification.models import NotificationModel
     from app.course.models import CourseModel
+    from app.notification.models import NotificationModel
 
     if db.scalar(select(NotificationModel).limit(1)):
         return
@@ -130,13 +130,13 @@ def seed_notifications(db) -> None:
     admin_id = _email_id(db, ADMIN["email"])
 
     notifications = [
-        # Student Samiur
+        # Learner Samiur
         NotificationModel(
             user_id=samiur_id,
             title="New assignment: CIT-6105 Research Assignment",
             message="Posted in CIT-6105: Information Security • Due Dec 16, 2026",
             kind="assignment",
-            link=f"/class/{sec_id}/classwork",
+            link=f"/course/{sec_id}/coursework",
             is_read=False,
             created_at_utc=now,
         ),
@@ -145,7 +145,7 @@ def seed_notifications(db) -> None:
             title="Graded: Quiz 1 - Classical Ciphers",
             message="Score: 9/10 • Feedback: Excellent understanding.",
             kind="grade",
-            link=f"/class/{sec_id}/classwork",
+            link=f"/course/{sec_id}/coursework",
             is_read=False,
             created_at_utc=now,
         ),
@@ -154,7 +154,7 @@ def seed_notifications(db) -> None:
             title="Due soon: Lab 1 - Substitution Cipher",
             message="Due tomorrow at 11:59 PM. Submit your work before the deadline!",
             kind="due",
-            link=f"/class/{sec_id}/classwork",
+            link=f"/course/{sec_id}/coursework",
             is_read=False,
             created_at_utc=now,
         ),
@@ -163,18 +163,18 @@ def seed_notifications(db) -> None:
             title="New announcement in CIT-6105: Information Security",
             message="Welcome to the semester! Please check the syllabus and lab schedule.",
             kind="announcement",
-            link=f"/class/{sec_id}",
+            link=f"/course/{sec_id}",
             is_read=True,
             created_at_utc=now,
         ),
 
-        # Student Ratin
+        # Learner Ratin
         NotificationModel(
             user_id=ratin_id,
             title="New assignment: CIT-6105 Research Assignment",
             message="Posted in CIT-6105: Information Security • Due Dec 16, 2026",
             kind="assignment",
-            link=f"/class/{sec_id}/classwork",
+            link=f"/course/{sec_id}/coursework",
             is_read=False,
             created_at_utc=now,
         ),
@@ -183,18 +183,18 @@ def seed_notifications(db) -> None:
             title="Graded: Lab 1 - Substitution Cipher",
             message="Score: 42/50 • Feedback: Well done. Consider adding more test cases.",
             kind="grade",
-            link=f"/class/{sec_id}/classwork",
+            link=f"/course/{sec_id}/coursework",
             is_read=False,
             created_at_utc=now,
         ),
 
-        # Teacher Mahbubur
+        # Instructor Mahbubur
         NotificationModel(
             user_id=mahbubur_id,
             title="New submission: Lab 1 - Substitution Cipher",
             message="Md. Samiur Rahman submitted work in CIT-6105: Information Security",
             kind="submission",
-            link=f"/class/{sec_id}/submissions",
+            link=f"/course/{sec_id}/submissions",
             is_read=False,
             created_at_utc=now,
         ),
@@ -203,7 +203,7 @@ def seed_notifications(db) -> None:
             title="New submission: Lab 1 - Substitution Cipher",
             message="Habibur Rahman Khan Ratin submitted work in CIT-6105: Information Security",
             kind="submission",
-            link=f"/class/{sec_id}/submissions",
+            link=f"/course/{sec_id}/submissions",
             is_read=False,
             created_at_utc=now,
         ),
@@ -212,7 +212,7 @@ def seed_notifications(db) -> None:
             title="New submission: Quiz 1 - Classical Ciphers",
             message="Md. Samiur Rahman submitted work in CIT-6105: Information Security",
             kind="submission",
-            link=f"/class/{sec_id}/submissions",
+            link=f"/course/{sec_id}/submissions",
             is_read=True,
             created_at_utc=now,
         ),
@@ -230,9 +230,9 @@ def seed_notifications(db) -> None:
         NotificationModel(
             user_id=admin_id,
             title="Course created: CIT-6105: Information Security",
-            message="Instructor: Prof. Md. Mahbubur Rahman • 4 Students Enrolled",
+            message="Instructor: Prof. Md. Mahbubur Rahman • 4 Learners Enrolled",
             kind="system",
-            link=f"/class/{sec_id}",
+            link=f"/course/{sec_id}",
             is_read=True,
             created_at_utc=now,
         ),
@@ -245,14 +245,13 @@ def seed_notifications(db) -> None:
 
 
 def seed() -> None:
+    print("Resetting database schema (drop schema cascade & create tables)…")
+    with engine.connect() as conn:
+        conn.execution_options(isolation_level="AUTOCOMMIT")
+        conn.exec_driver_sql("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
     Base.metadata.create_all(engine)
     db = LocalSession()
     try:
-        if db.scalar(select(UserModel).where(UserModel.email == ADMIN["email"])):
-            print("Database already seeded — checking notifications…")
-            seed_notifications(db)
-            return
-
         print("Seeding academics…")
         for name, description in PROGRAMS:
             create_program(ProgramSchema(name=name, description=description), db)
@@ -271,28 +270,28 @@ def seed() -> None:
         create_user(
             UserSchema(name="Admin User", email=ADMIN["email"], password=ADMIN["password"], role="Admin"), db
         )
-        for name, email, teacher_id, designation, department in TEACHERS:
+        for name, email, instructor_id, designation, department in INSTRUCTORS:
             create_user(
                 UserSchema(
                     name=name,
                     email=email,
-                    password="Teacher@123",
-                    role="Teacher",
-                    teacher_details=TeacherDetailsSchema(
-                        teacher_id=teacher_id, designation=designation, department=department
+                    password="Instructor@123",
+                    role="Instructor",
+                    instructor_details=InstructorDetailsSchema(
+                        instructor_id=instructor_id, designation=designation, department=department
                     ),
                 ),
                 db,
             )
-        for name, email, student_id, department, program, semester in STUDENTS:
+        for name, email, learner_id, department, program, semester in LEARNERS:
             create_user(
                 UserSchema(
                     name=name,
                     email=email,
-                    password="Student@123",
-                    role="Student",
-                    student_details=StudentDetailsSchema(
-                        student_id=student_id,
+                    password="Learner@123",
+                    role="Learner",
+                    learner_details=LearnerDetailsSchema(
+                        learner_id=learner_id,
                         department=department,
                         current_program=program,
                         session="2021-2022",
@@ -311,45 +310,45 @@ def seed() -> None:
             CourseSchema(
                 name="CIT-6105: Information Security", program="Postgraduate", department="CSE",
                 session="January-June/2024", is_active=True,
-                teacher_ids=[_email_id(db, "mahbubur@eclassroompro.com")], student_ids=pg_2024,
+                instructor_ids=[_email_id(db, "mahbubur@eclassroompro.com")], learner_ids=pg_2024,
             ), db,
         )
         create_course(
             CourseSchema(
                 name="CIT-6102: Advanced Algorithms", program="Postgraduate", department="CSE",
                 session="January-June/2025", is_active=True,
-                teacher_ids=[_email_id(db, "abdul@eclassroompro.com")], student_ids=pg_2025,
+                instructor_ids=[_email_id(db, "abdul@eclassroompro.com")], learner_ids=pg_2025,
             ), db,
         )
         create_course(
             CourseSchema(
                 name="CIT-5109: Natural Language Processing", program="Postgraduate", department="CSE",
                 session="January-June/2025", is_active=True,
-                teacher_ids=[_email_id(db, "farjana@eclassroompro.com")], student_ids=pg_2025,
+                instructor_ids=[_email_id(db, "farjana@eclassroompro.com")], learner_ids=pg_2025,
             ), db,
         )
         create_course(
             CourseSchema(
                 name="CCE 423: Cryptography and Network Security", program="Undergraduate", department="CSE",
                 session="January-June/2024", is_active=True,
-                teacher_ids=[_email_id(db, "mahbubur@eclassroompro.com")],
-                student_ids=[_email_id(db, e) for e in ("samiur@eclassroompro.com", "ratin@eclassroompro.com", "iffat@eclassroompro.com")],
+                instructor_ids=[_email_id(db, "mahbubur@eclassroompro.com")],
+                learner_ids=[_email_id(db, e) for e in ("samiur@eclassroompro.com", "ratin@eclassroompro.com", "iffat@eclassroompro.com")],
             ), db,
         )
         create_course(
             CourseSchema(
                 name="EEE 301: Circuit Analysis", program="Undergraduate", department="EEE",
                 session="January-June/2024", is_active=True,
-                teacher_ids=[_email_id(db, "rafiqul@eclassroompro.com")],
-                student_ids=[_email_id(db, "dina@eclassroompro.com")],
+                instructor_ids=[_email_id(db, "rafiqul@eclassroompro.com")],
+                learner_ids=[_email_id(db, "dina@eclassroompro.com")],
             ), db,
         )
         create_course(
             CourseSchema(
                 name="BBA 201: Principles of Management", program="Undergraduate", department="BBA",
                 session="January-June/2024", is_active=True,
-                teacher_ids=[_email_id(db, "nasreen@eclassroompro.com")],
-                student_ids=[_email_id(db, "tanvir@eclassroompro.com")],
+                instructor_ids=[_email_id(db, "nasreen@eclassroompro.com")],
+                learner_ids=[_email_id(db, "tanvir@eclassroompro.com")],
             ), db,
         )
 
@@ -358,12 +357,12 @@ def seed() -> None:
             assert course is not None
             return course.id
 
-        def teacher(name: str) -> UserModel:
+        def instructor(name: str) -> UserModel:
             user = db.scalar(select(UserModel).where(UserModel.name == name))
             assert user is not None
             return user
 
-        def student(email: str) -> UserModel:
+        def learner(email: str) -> UserModel:
             user = db.scalar(select(UserModel).where(UserModel.email == email))
             assert user is not None
             return user
@@ -372,8 +371,8 @@ def seed() -> None:
         security = course_id("CIT-6105: Information Security")
         algorithms = course_id("CIT-6102: Advanced Algorithms")
         crypto = course_id("CCE 423: Cryptography and Network Security")
-        mahbubur = teacher("Md. Mahbubur Rahman")
-        abdul = teacher("Prof. Dr. Abdul Masud")
+        mahbubur = instructor("Md. Mahbubur Rahman")
+        abdul = instructor("Prof. Dr. Abdul Masud")
 
         a1 = create_assignment(
             AssignmentSchema(
@@ -433,9 +432,9 @@ def seed() -> None:
         publish_assignment(a6.id, mahbubur, db)
 
         print("Seeding submissions…")
-        samiur = student("samiur@eclassroompro.com")
-        ratin = student("ratin@eclassroompro.com")
-        iffat = student("iffat@eclassroompro.com")
+        samiur = learner("samiur@eclassroompro.com")
+        ratin = learner("ratin@eclassroompro.com")
+        iffat = learner("iffat@eclassroompro.com")
 
         s1 = submit_assignment(
             SubmitAssignmentSchema(
@@ -471,9 +470,9 @@ def seed() -> None:
         seed_notifications(db)
 
         print("\n✅ Seed complete. Login credentials:")
-        print(f"   Admin   → {ADMIN['email']} / {ADMIN['password']}")
-        print("   Teacher → mahbubur@eclassroompro.com / Teacher@123  (also: abdul@, farjana@, rafiqul@, nasreen@)")
-        print("   Student → samiur@eclassroompro.com / Student@123  (also: ratin@, iffat@, partha@, kaium@, sadia@, dina@, tanvir@)")
+        print(f"   Admin      → {ADMIN['email']} / {ADMIN['password']}")
+        print("   Instructor → mahbubur@eclassroompro.com / Instructor@123  (also: abdul@, farjana@, rafiqul@, nasreen@)")
+        print("   Learner    → samiur@eclassroompro.com / Learner@123  (also: ratin@, iffat@, partha@, kaium@, sadia@, dina@, tanvir@)")
     finally:
         db.close()
 

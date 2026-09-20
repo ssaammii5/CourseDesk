@@ -33,8 +33,12 @@ interface SubmissionRow {
     assignmentTitle: string;
     courseId: number;
     courseName: string;
+    learnerId: number;
+    learnerName: string;
+    learnerAcademicId: string;
     studentId: number;
     studentName: string;
+    studentAcademicId: string;
     status: "Submitted" | "Graded" | "Pending";
     marks: number | null;
     feedback: string | null;
@@ -43,19 +47,25 @@ interface SubmissionRow {
     program: string;
     department: string;
     session: string;
-    studentAcademicId: string;
 }
 
 function mapDtoToRow(dto: SubmissionDto): SubmissionRow {
     const submitted = Boolean(dto.submittedAtUtc);
+    const lId = dto.learnerId ?? dto.studentId;
+    const lName = dto.learnerName ?? dto.studentName ?? "Unknown Learner";
+    const lAcadId = dto.learnerAcademicId ?? dto.studentAcademicId ?? "";
     return {
         id: dto.id,
         assignmentId: dto.assignmentId,
         assignmentTitle: dto.assignmentTitle ?? "Unknown Assignment",
         courseId: dto.courseId,
         courseName: dto.courseName ?? "Unknown Course",
-        studentId: dto.studentId,
-        studentName: dto.studentName ?? "Unknown Student",
+        learnerId: lId,
+        learnerName: lName,
+        learnerAcademicId: lAcadId,
+        studentId: lId,
+        studentName: lName,
+        studentAcademicId: lAcadId,
         status: submitted ? (dto.status as "Submitted" | "Graded") : "Pending",
         marks: dto.marks,
         feedback: dto.feedback,
@@ -63,7 +73,6 @@ function mapDtoToRow(dto: SubmissionDto): SubmissionRow {
         program: dto.program ?? "Unknown",
         department: dto.department ?? "Unknown",
         session: dto.session ?? "Unknown",
-        studentAcademicId: dto.studentAcademicId ?? "",
     };
 }
 
@@ -139,10 +148,10 @@ export function AdminSubmissionsView() {
     const filtered = useMemo(() => {
         return submissions.filter((s) => {
             const matchSearch =
-                s.studentName.toLowerCase().includes(search.toLowerCase()) ||
+                (s.learnerName || s.studentName).toLowerCase().includes(search.toLowerCase()) ||
                 s.assignmentTitle.toLowerCase().includes(search.toLowerCase()) ||
                 s.courseName.toLowerCase().includes(search.toLowerCase()) ||
-                s.studentAcademicId.toLowerCase().includes(search.toLowerCase());
+                (s.learnerAcademicId || s.studentAcademicId).toLowerCase().includes(search.toLowerCase());
             const matchProgram = programFilter === "all" || s.program === programFilter;
             const matchDept = departmentFilter === "all" || s.department === departmentFilter;
             const matchSession = sessionFilter === "all" || s.session === sessionFilter;
@@ -166,10 +175,7 @@ export function AdminSubmissionsView() {
     };
 
     const programGroups = useMemo<ProgramGroup[]>(() => {
-        const map = new Map<
-            string,
-            Map<string, Map<string, Map<string, SubmissionRow[]>>>
-        >();
+        const map = new Map<string, Map<string, Map<string, Map<string, SubmissionRow[]>>>>();
 
         for (const s of filtered) {
             if (!map.has(s.program)) map.set(s.program, new Map());
@@ -202,7 +208,7 @@ export function AdminSubmissionsView() {
                                 .map(([courseName, rows]) => ({
                                     courseName,
                                     submissions: rows.sort((a, b) =>
-                                        a.studentName.localeCompare(b.studentName)
+                                        (a.learnerName || a.studentName).localeCompare(b.learnerName || b.studentName)
                                     ),
                                 }));
                             return {
@@ -231,22 +237,25 @@ export function AdminSubmissionsView() {
 
     const columns = [
         {
-            key: "studentId",
+            key: "learnerId",
             header: "Learner ID",
             width: "13%",
             truncate: true,
-            render: (s: SubmissionRow) =>
-                s.studentAcademicId ? (
-                    <span className="text-sm text-gray-900" title={s.studentAcademicId}>{s.studentAcademicId}</span>
+            render: (s: SubmissionRow) => {
+                const idVal = s.learnerAcademicId || s.studentAcademicId;
+                return idVal ? (
+                    <span className="text-sm text-gray-900" title={idVal}>{idVal}</span>
                 ) : (
                     <span className="text-gray-400">—</span>
-                ),
+                );
+            },
         },
         {
-            key: "studentName",
+            key: "learnerName",
             header: "Learner",
             width: "18%",
             truncate: true,
+            render: (s: SubmissionRow) => s.learnerName || s.studentName,
         },
         {
             key: "assignmentTitle",

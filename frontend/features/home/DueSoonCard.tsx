@@ -40,7 +40,7 @@ function formatDueTime(iso?: string | null): string {
 
 export function DueSoonCard() {
     const { user } = useAuth();
-    const isTeacher = user?.role === "Teacher" || user?.role === "Admin";
+    const isInstructor = user?.role === "Instructor" || user?.role === "Admin";
 
     const [collapsed, setCollapsed] = useState(false);
     const [assignments, setAssignments] = useState<DashboardAssignmentItem[]>([]);
@@ -55,8 +55,8 @@ export function DueSoonCard() {
                 const now = Date.now();
 
                 let filtered: AssignmentDto[];
-                if (isTeacher) {
-                    // For teachers: only show items that ACTUALLY have submissions waiting to be graded
+                if (isInstructor) {
+                    // For instructors: only show items that ACTUALLY have submissions waiting to be graded
                     filtered = dtos.filter(
                         (d) =>
                             d.status !== "Draft" &&
@@ -69,7 +69,7 @@ export function DueSoonCard() {
                         return bPending - aPending;
                     });
                 } else {
-                    // For students: show upcoming assignments that haven't been submitted yet
+                    // For learners: show upcoming assignments that haven't been submitted yet
                     filtered = dtos
                         .filter(
                             (d) =>
@@ -116,7 +116,7 @@ export function DueSoonCard() {
         return () => {
             cancelled = true;
         };
-    }, [isTeacher]);
+    }, [isInstructor]);
 
     const remainingCount = Math.max(0, totalCount - assignments.length);
 
@@ -125,9 +125,9 @@ export function DueSoonCard() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-gray-800">
-                        {isTeacher ? "Work to review" : "Due soon"}
+                        {isInstructor ? "Work to review" : "Due soon"}
                     </h2>
-                    {isTeacher && totalCount > 0 && (
+                    {isInstructor && totalCount > 0 && (
                         <span className="rounded-full bg-[#e8f0fe] px-2.5 py-0.5 text-xs font-semibold text-[#174ea6]">
                             {totalCount} needing review
                         </span>
@@ -139,7 +139,7 @@ export function DueSoonCard() {
                         href="/todo"
                         className="text-sm font-medium text-[#1a73e8] hover:underline"
                     >
-                        {isTeacher ? "Open To-review" : "View To-do"}
+                        {isInstructor ? "Open To-review" : "View To-do"}
                     </Link>
                     <IconButton
                         label={collapsed ? "Expand" : "Collapse"}
@@ -160,7 +160,7 @@ export function DueSoonCard() {
                     <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-500">
                         <CheckCircle2 className="h-4 w-4 text-[#137333]" />
                         <span>
-                            {isTeacher
+                            {isInstructor
                                 ? "All caught up — no submissions waiting for review."
                                 : "Woohoo, no work due soon!"}
                         </span>
@@ -180,13 +180,13 @@ export function DueSoonCard() {
                                         </div>
                                         <div className="min-w-0">
                                             <Link
-                                                href={`/class/${a.courseId}/assignments/${a.id}`}
+                                                href={`/course/${a.courseId}/assignments/${a.id}`}
                                                 className="block truncate text-sm font-medium text-gray-900 hover:text-[#1a73e8]"
                                             >
                                                 {a.title}
                                             </Link>
                                             <Link
-                                                href={`/class/${a.courseId}`}
+                                                href={`/course/${a.courseId}`}
                                                 className="block truncate text-xs text-gray-500 hover:text-gray-800 hover:underline"
                                             >
                                                 {a.courseName}
@@ -195,7 +195,7 @@ export function DueSoonCard() {
                                     </div>
 
                                     {/* Right: Review chip + date */}
-                                    {isTeacher ? (
+                                    {isInstructor ? (
                                         <div className="flex shrink-0 items-center gap-3">
                                             <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[#174ea6] border border-blue-100">
                                                 <span className="font-bold">{a.turnedInCount}</span>

@@ -3,8 +3,10 @@ import { apiFetch } from "./client";
 export interface DashboardStats {
     totalUsers: number;
     activeUsers: number;
-    totalTeachers: number;
-    totalStudents: number;
+    totalInstructors: number;
+    totalLearners: number;
+    totalTeachers?: number;
+    totalStudents?: number;
     totalCourses: number;
     activeCourses: number;
     totalAssignments: number;

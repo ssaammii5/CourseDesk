@@ -157,12 +157,12 @@ def _sync_due_reminders(user: UserModel, db: Session) -> None:
         return
 
     added = False
-    if user.role == "Student":
+    if user.role == "Learner":
         upcoming = db.scalars(
             select(AssignmentModel)
             .join(CourseModel, AssignmentModel.course_id == CourseModel.id)
             .where(
-                CourseModel.students.any(UserModel.id == user.id),
+                CourseModel.learners.any(UserModel.id == user.id),
                 AssignmentModel.status == "Published",
                 AssignmentModel.deadline_utc > now,
                 AssignmentModel.deadline_utc <= now + timedelta(days=7),
@@ -172,13 +172,13 @@ def _sync_due_reminders(user: UserModel, db: Session) -> None:
             sub = db.scalar(
                 select(SubmissionModel).where(
                     SubmissionModel.assignment_id == assign.id,
-                    SubmissionModel.student_id == user.id,
+                    SubmissionModel.learner_id == user.id,
                 )
             )
             if sub and sub.status in ("Submitted", "Graded"):
                 continue
 
-            link = f"/class/{assign.course_id}/classwork"
+            link = f"/course/{assign.course_id}/coursework"
             existing = db.scalar(
                 select(NotificationModel).where(
                     NotificationModel.user_id == user.id,

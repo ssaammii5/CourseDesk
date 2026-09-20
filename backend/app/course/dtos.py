@@ -8,6 +8,8 @@ class CourseSchema(CamelModel):
     department: str
     session: str
     is_active: bool = True
+    instructor_ids: list[int] = []
+    learner_ids: list[int] = []
     teacher_ids: list[int] = []
     student_ids: list[int] = []
     # ── NEW ──
@@ -26,6 +28,12 @@ class CourseResponseSchema(CamelModel):
     department: str
     session: str
     is_active: bool
+    instructor_id: int | None = None
+    instructor_name: str | None = None
+    instructor_ids: list[int] = []
+    instructor_names: list[str] = []
+    learner_ids: list[int] = []
+    learner_count: int = 0
     teacher_id: int | None = None
     teacher_name: str | None = None
     teacher_ids: list[int] = []
@@ -48,5 +56,7 @@ class CoursePersonSchema(CamelModel):
 
 
 class CoursePeopleResponseSchema(CamelModel):
+    instructors: list[CoursePersonSchema] = []
+    learners: list[CoursePersonSchema] = []
     teachers: list[CoursePersonSchema] = []
     students: list[CoursePersonSchema] = []

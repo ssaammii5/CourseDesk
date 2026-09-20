@@ -46,6 +46,12 @@ class SubmissionResponseSchema(CamelModel):
     program: str | None = None
     department: str | None = None
     session: str | None = None
+    learner_id: int
+    learner_name: str | None = None
+    learner_email: str | None = None
+    learner_academic_id: str | None = None
+    learner_department: str | None = None
+    learner_program: str | None = None
     student_id: int
     student_name: str | None = None
     student_email: str | None = None
@@ -75,8 +81,8 @@ def serialize_submission(submission) -> "SubmissionResponseSchema":
 
     assignment = submission.assignment
     course = assignment.course if assignment else None
-    student = submission.student
-    details = student.student_details if student else None
+    learner = submission.learner
+    details = learner.learner_details if learner else None
 
     return SubmissionResponseSchema(
         id=submission.id,
@@ -87,10 +93,16 @@ def serialize_submission(submission) -> "SubmissionResponseSchema":
         program=course.program if course else None,
         department=course.department if course else None,
         session=course.session if course else None,
-        student_id=submission.student_id,
-        student_name=student.name if student else None,
-        student_email=student.email if student else None,
-        student_academic_id=details.student_id if details else None,
+        learner_id=submission.learner_id,
+        learner_name=learner.name if learner else None,
+        learner_email=learner.email if learner else None,
+        learner_academic_id=details.learner_id if details else None,
+        learner_department=details.department if details else None,
+        learner_program=details.current_program if details else None,
+        student_id=submission.learner_id,
+        student_name=learner.name if learner else None,
+        student_email=learner.email if learner else None,
+        student_academic_id=details.learner_id if details else None,
         student_department=details.department if details else None,
         student_program=details.current_program if details else None,
         answer=submission.answer,
