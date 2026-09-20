@@ -44,7 +44,7 @@ function SetPasswordForm() {
                 setCountdown((c) => {
                     if (c <= 1) {
                         window.clearInterval(timer);
-                        router.push("/login");
+                        router.push("/");
                         return 0;
                     }
                     return c - 1;
@@ -66,7 +66,7 @@ function SetPasswordForm() {
                     </p>
                     <button
                         type="button"
-                        onClick={() => router.push("/login")}
+                        onClick={() => router.push("/")}
                         className="mt-8 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] px-8 py-3 text-sm font-semibold text-white hover:bg-[#1554b5]"
                     >
                         Go to Sign In

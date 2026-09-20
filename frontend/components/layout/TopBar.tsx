@@ -194,7 +194,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const handleLogout = async () => {
         setAccountOpen(false);
         await logout();
-        router.push("/login");
+        router.push("/");
     };
 
     const displayName = user?.name ?? "";

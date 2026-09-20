@@ -67,7 +67,7 @@ export function ForgotPasswordView() {
     useEffect(() => {
         if (step !== 4) return;
         if (countdown <= 0) {
-            router.push("/login");
+            router.push("/");
             return;
         }
         const t = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
@@ -225,7 +225,7 @@ export function ForgotPasswordView() {
                     {step !== 4 && (
                         <button
                             type="button"
-                            onClick={() => router.push("/login")}
+                            onClick={() => router.push("/")}
                             className="mb-6 flex cursor-pointer items-center gap-2 text-sm font-medium text-[#1a73e8] hover:underline"
                         >
                             <ArrowLeft className="h-4 w-4" />
@@ -489,7 +489,7 @@ export function ForgotPasswordView() {
                             </p>
                             <button
                                 type="button"
-                                onClick={() => router.push("/login")}
+                                onClick={() => router.push("/")}
                                 className={`${PRIMARY_BTN} mt-8`}
                             >
                                 Back to sign in

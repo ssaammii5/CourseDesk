@@ -127,7 +127,7 @@ export function useAuth(): AuthContextValue {
 
 /**
  * Client-side route guard for the dashboard. Renders children only once the
- * user is authenticated; redirects to /login otherwise.
+ * user is authenticated; redirects to / otherwise.
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
     const { status } = useAuth();
@@ -135,7 +135,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (status === "unauthenticated") {
-            router.replace("/login");
+            router.replace("/");
         }
     }, [status, router]);
 

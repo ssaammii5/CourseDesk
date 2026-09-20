@@ -53,7 +53,7 @@ export function SignupView() {
             await signupRequest(name.trim(), email.trim(), password);
             setSuccess(true);
             setTimeout(() => {
-                router.push("/login");
+                router.push("/");
             }, 3000);
         } catch (err) {
             setFormError(
@@ -80,7 +80,7 @@ export function SignupView() {
                     </p>
                     <button
                         type="button"
-                        onClick={() => router.push("/login")}
+                        onClick={() => router.push("/")}
                         className="mt-8 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] px-8 py-3 text-sm font-semibold text-white hover:bg-[#1554b5] transition-colors"
                     >
                         Go to Sign In
@@ -267,7 +267,7 @@ export function SignupView() {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Already have an account?{" "}
-                            <Link href="/login" className="font-medium text-[#1a73e8] hover:underline">
+                            <Link href="/" className="font-medium text-[#1a73e8] hover:underline">
                                 Sign in
                             </Link>
                         </p>
