@@ -25,6 +25,7 @@ import {
 } from "@/lib/api/submissions";
 import { API_URL } from "@/lib/api/client";
 import type { AssignmentDetail } from "@/types";
+import { AssignmentComments } from "../components/AssignmentComments";
 
 interface AssignmentDetailViewProps {
     detail: AssignmentDetail;
@@ -286,17 +287,9 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     )}
 
                     {/* Class comments */}
-                    <div className="mt-12 flex items-center gap-4">
-                        <UsersRound className="h-6 w-6 text-gray-700" />
-                        <span className="text-sm font-medium text-gray-900">Class comments</span>
+                    <div className="mt-12 border-t border-gray-200/80 pt-8">
+                        <AssignmentComments assignmentId={detail.id} isPrivate={false} />
                     </div>
-                    <button
-                        type="button"
-                        className="mt-7 flex cursor-pointer items-center gap-3 text-sm font-medium text-[#1a73e8] hover:underline"
-                    >
-                        <MessageSquare className="h-5 w-5" />
-                        Add comment
-                    </button>
                 </div>
 
                 {/* Right sidebar — hidden in readOnly mode */}
@@ -397,17 +390,11 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
 
                         {/* Private comments */}
                         <section className="rounded-lg bg-[#e9eef4] p-4 sm:p-5">
-                            <div className="flex items-center gap-3">
-                                <UserRound className="h-5 w-5 text-gray-700" />
-                                <span className="text-sm font-medium text-gray-900">Private comments</span>
-                            </div>
-                            <button
-                                type="button"
-                                className="mt-5 flex w-full cursor-pointer items-center gap-3 text-sm font-medium text-[#1a73e8] hover:underline"
-                            >
-                                <MessageSquare className="h-5 w-5 shrink-0" />
-                                <span className="truncate">Add comment to {detail.privateCommentTarget}</span>
-                            </button>
+                            <AssignmentComments
+                                assignmentId={detail.id}
+                                isPrivate={true}
+                                privateCommentTarget={detail.privateCommentTarget}
+                            />
                         </section>
                     </div>
                 )}

@@ -91,6 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
+    useEffect(() => {
+        const onSessionCleared = () => {
+            setUser(null);
+            setStatus("unauthenticated");
+        };
+        window.addEventListener("ecp_session_cleared", onSessionCleared);
+        return () => window.removeEventListener("ecp_session_cleared", onSessionCleared);
+    }, []);
+
     const login = useCallback(async (email: string, password: string) => {
         const response = await loginRequest(email, password);
         const accessToken = response.accessToken || response.token;

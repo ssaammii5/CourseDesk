@@ -23,6 +23,7 @@ function mapDtoToAssignmentDetail(dto: AssignmentDto): AssignmentDetail {
             attachments: [],
         },
         privateCommentTarget: dto.createdByName ?? "Unknown",
+        courseId: dto.courseId,
     };
 }
 

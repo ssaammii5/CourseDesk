@@ -72,6 +72,7 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
             attachments: submissionAttachments,
         },
         privateCommentTarget: creatorName,
+        courseId: dto.courseId,
     };
 }
 

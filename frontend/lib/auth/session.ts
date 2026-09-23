@@ -25,6 +25,7 @@ export function clearSession(): void {
     if (!isBrowser()) return;
     window.localStorage.removeItem(ACCESS_TOKEN_KEY);
     window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+    window.dispatchEvent(new Event("ecp_session_cleared"));
 }
 
 export function hasAccessToken(): boolean {

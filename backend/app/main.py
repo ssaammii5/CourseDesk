@@ -12,6 +12,7 @@ import app.academic.models  # noqa: F401
 import app.announcement.models  # noqa: F401
 import app.assignment.models  # noqa: F401
 import app.auth.models  # noqa: F401
+import app.comment.models  # noqa: F401
 import app.course.models  # noqa: F401
 import app.notification.models  # noqa: F401
 import app.session.models  # noqa: F401
@@ -23,6 +24,7 @@ from app.academic.router import academic_routes
 from app.announcement.router import announcement_routes
 from app.assignment.router import assignment_routes
 from app.auth.router import auth_routes
+from app.comment.router import comment_routes
 from app.course.router import course_routes
 from app.dashboard.router import dashboard_routes
 from app.notification.router import notification_routes
@@ -51,6 +53,7 @@ app.include_router(user_routes)
 app.include_router(academic_routes)
 app.include_router(course_routes)
 app.include_router(assignment_routes)
+app.include_router(comment_routes)
 app.include_router(submission_routes)
 app.include_router(setting_routes)
 app.include_router(dashboard_routes)
@@ -58,6 +61,7 @@ app.include_router(notification_routes)
 # ── NEW ──
 app.include_router(session_routes)
 app.include_router(announcement_routes)
+
 
 
 @app.get("/", tags=["health"])

@@ -42,6 +42,11 @@ async function tryRefreshTokens(): Promise<boolean> {
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
     const { auth = true, headers, body, ...rest } = options;
 
+    if (auth && !getAccessToken() && !getRefreshToken()) {
+        clearSession();
+        throw new ApiError(401, "No authentication token found");
+    }
+
     const buildHeaders = (token: string | null): Headers => {
         const h = new Headers(headers);
         // Don't set Content-Type for FormData, let the browser set it with the correct boundary

@@ -45,6 +45,10 @@ class AssignmentModel(Base):
     submissions: Mapped[list["SubmissionModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         back_populates="assignment", cascade="all, delete-orphan"
     )
+    comments: Mapped[list["CommentModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="assignment", cascade="all, delete-orphan"
+    )
+
 
 
 class AssignmentAttachmentModel(Base):

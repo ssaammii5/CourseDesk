@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Bell,
     CalendarDays,
@@ -35,6 +35,7 @@ import {
 import { ROLE_STYLES, type NotificationItem, type NotificationKind } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
 import { initialOf } from "@/lib/utils/format";
+import { hasAccessToken } from "@/lib/auth/session";
 
 interface TopBarProps {
     onMenuClick: () => void;
@@ -72,9 +73,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [unreadCount, setUnreadCount] = useState<number>(0);
+    const lastFetchRef = useRef<number>(0);
 
-    const loadNotifications = useCallback(async () => {
-        if (!user) return;
+    const loadNotifications = useCallback(async (force = false) => {
+        if (!user || !hasAccessToken()) return;
+        const now = Date.now();
+        if (!force && now - lastFetchRef.current < 60000) return;
+        lastFetchRef.current = now;
         try {
             const res = await getNotificationsRequest();
             setNotifications(res.items);
@@ -85,7 +90,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     }, [user]);
 
     useEffect(() => {
-        loadNotifications();
+        loadNotifications(true);
 
         // Real-time Server-Sent Events stream subscription
         const unsubscribe = subscribeNotificationsStream((newItem) => {
@@ -98,7 +103,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             setUnreadCount((count) => count + (newItem.isRead ? 0 : 1));
         });
 
-        const onFocus = () => loadNotifications();
+        const onFocus = () => loadNotifications(false);
         window.addEventListener("focus", onFocus);
         return () => {
             unsubscribe();

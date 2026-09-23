@@ -27,6 +27,7 @@ import {
 } from "@/lib/api/submissions";
 import { initialOf } from "@/lib/utils/format";
 import { API_URL } from "@/lib/api/client";
+import { AssignmentComments } from "../components/AssignmentComments";
 
 export interface InstructorAssignmentViewProps {
     assignment: AssignmentDto;
@@ -443,6 +444,17 @@ export function InstructorAssignmentView({
                                                         No submission turned in yet.
                                                     </p>
                                                 )}
+
+                                                {/* Private comments with this learner */}
+                                                <div className="mt-4 border-t border-gray-200/80 pt-3">
+                                                    <AssignmentComments
+                                                        assignmentId={assignment.id}
+                                                        isPrivate={true}
+                                                        learnerId={sub.learnerId ?? sub.studentId}
+                                                        privateCommentTarget={sub.learnerName ?? sub.studentName ?? "Learner"}
+                                                        compact
+                                                    />
+                                                </div>
                                             </div>
 
                                             {/* Right: Inline Grading Form */}
@@ -599,6 +611,14 @@ export function InstructorAssignmentView({
                                 </div>
                             </div>
                         )}
+
+                        {/* Class comments */}
+                        <div className="mt-8 border-t border-gray-100 pt-6">
+                            <AssignmentComments
+                                assignmentId={assignment.id}
+                                isPrivate={false}
+                            />
+                        </div>
                     </div>
                 </div>
             )}

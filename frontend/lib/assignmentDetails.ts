@@ -25,6 +25,7 @@ export interface AssignmentDetail {
     attachments: AssignmentAttachment[];
     submission: AssignmentSubmission;
     privateCommentTarget: string;
+    courseId?: number;
 }
 
 const assignmentDetails: AssignmentDetail[] = [
