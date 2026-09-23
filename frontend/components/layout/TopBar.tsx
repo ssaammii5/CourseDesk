@@ -111,7 +111,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         };
     }, [loadNotifications]);
 
-    const classMatch = pathname.match(/^\/class\/(\d+)/);
+    const classMatch = pathname.match(/^\/(?:course|class)\/(\d+)/);
     const classCourseId = classMatch ? Number(classMatch[1]) : null;
     const [classCourse, setClassCourse] = useState<{ id: number; name: string; sub?: string } | null>(null);
 

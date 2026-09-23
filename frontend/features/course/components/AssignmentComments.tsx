@@ -86,6 +86,7 @@ export function AssignmentComments({
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const commentsContainerRef = useRef<HTMLDivElement>(null);
     const uniqueInputId = useId();
 
     const loadComments = useCallback(async () => {
@@ -107,6 +108,13 @@ export function AssignmentComments({
     useEffect(() => {
         void loadComments();
     }, [loadComments]);
+
+    // Auto-scroll to the bottom of the conversation when new comments load or are posted
+    useEffect(() => {
+        if (comments.length > 0 && commentsContainerRef.current) {
+            commentsContainerRef.current.scrollTop = commentsContainerRef.current.scrollHeight;
+        }
+    }, [comments.length]);
 
     const handleSubmit = async () => {
         const trimmed = text.trim();
@@ -200,7 +208,16 @@ export function AssignmentComments({
                         : "No class comments yet. Start a discussion with your class."}
                 </div>
             ) : (
-                <div className={`space-y-3 ${compact ? "max-h-64 overflow-y-auto pr-1" : ""}`}>
+                <div
+                    ref={commentsContainerRef}
+                    className={`space-y-2.5 ${
+                        isPrivate
+                            ? "max-h-64 sm:max-h-80 overflow-y-auto overscroll-contain pr-1.5 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]"
+                            : compact
+                            ? "max-h-60 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]"
+                            : ""
+                    }`}
+                >
                     {comments.map((c) => {
                         const isAuthor = user?.id === c.userId;
                         const isInstructor = c.userRole === "Instructor" || c.userRole === "Teacher";
@@ -210,7 +227,13 @@ export function AssignmentComments({
                         return (
                             <div
                                 key={c.id}
-                                className={`group flex gap-3 rounded-lg transition-colors ${compact ? "p-2 hover:bg-gray-100/60" : "p-2.5 hover:bg-gray-50/80"}`}
+                                className={`group flex gap-3 rounded-lg transition-colors ${
+                                    isPrivate
+                                        ? "bg-white/85 p-2.5 border border-gray-200/70 shadow-2xs hover:bg-white"
+                                        : compact
+                                        ? "p-2 hover:bg-gray-100/60"
+                                        : "p-2.5 hover:bg-gray-50/80"
+                                }`}
                             >
                                 <div
                                     className={`flex shrink-0 items-center justify-center rounded-full font-medium ${compact ? "h-7 w-7 text-xs" : "h-8 w-8 text-xs"} ${getAvatarColor(c.userName || "User")}`}
