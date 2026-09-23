@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import {
+    ArrowRight,
     Check,
     ChevronDown,
     ClipboardList,
@@ -11,6 +12,7 @@ import {
     EyeOff,
     GripVertical,
     Pencil,
+    Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -63,8 +65,8 @@ function mapCourseToHomeCourse(c: CourseDto): HomeCourse {
         c.instructorNames && c.instructorNames.length > 0
             ? c.instructorNames
             : c.teacherNames && c.teacherNames.length > 0
-            ? c.teacherNames
-            : [c.instructorName, c.teacherName];
+                ? c.teacherNames
+                : [c.instructorName, c.teacherName];
 
     const uniqueNames = Array.from(
         new Set(rawNames.map((n) => n?.trim()).filter((n): n is string => Boolean(n)))
@@ -342,103 +344,190 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
 
+    const instructors =
+        course.instructorNames && course.instructorNames.length > 0
+            ? course.instructorNames
+            : course.teacherNames && course.teacherNames.length > 0
+                ? course.teacherNames
+                : (course.instructorName ?? course.teacherName ?? "No instructor assigned")
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+
+    const instructorText = instructors.join(", ") || "No instructor assigned";
+    const studentTotal = course.studentCount ?? course.learnerCount ?? 0;
+
+    const avatarBgColors = [
+        course.instructorAvatarClass ?? "bg-blue-600",
+        "bg-indigo-600",
+        "bg-purple-600",
+        "bg-emerald-600",
+        "bg-amber-600",
+    ];
+
     return (
         <article
-            className={`group/card relative rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md ${isHidden ? "opacity-80" : ""
+            className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl ${isHidden ? "opacity-75 grayscale-[0.2]" : ""
                 }${canDrag ? " cursor-grab active:cursor-grabbing" : ""}`}
         >
-            <Link href={`/course/${course.id}`} draggable={false} className="block" title={course.name}>
-                <div
-                    className="relative h-28 rounded-t-lg px-4 pt-4"
-                    style={{ backgroundColor: course.headerColor }}
+            {/* Header Banner */}
+            <div
+                className="relative flex h-28 flex-col justify-between overflow-hidden px-5 py-3.5"
+                style={{
+                    background: `linear-gradient(135deg, ${course.headerColor} 0%, ${course.headerColor}e6 100%)`,
+                }}
+            >
+                {/* Decorative ambient orb */}
+                <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/10 blur-xl" />
+
+                {/* Watermark emoji */}
+                <span
+                    aria-hidden
+                    className="pointer-events-none absolute -bottom-1 right-3 select-none text-5xl opacity-20 transition-transform duration-300 group-hover/card:scale-110"
                 >
-                    <span aria-hidden className="absolute right-3 top-3 rotate-12 text-5xl opacity-90">
-                        {course.emoji}
+                    {course.emoji}
+                </span>
+
+                {/* Top Row: Tag / Category & Menu */}
+                <div className="relative z-10 flex items-center justify-between">
+                    <span className="inline-flex max-w-[200px] truncate items-center rounded-full border border-white/20 bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-white backdrop-blur-md">
+                        {course.subject || "Course"}
                     </span>
-                    <span className="block truncate pr-10 text-xl font-medium text-white hover:underline">
-                        {course.name}
-                    </span>
-                    {course.subject && (
-                        <p className="mt-1 truncate text-sm font-medium text-white/90">{course.subject}</p>
-                    )}
-                    <p
-                        className="mt-1 truncate text-xs text-white/90"
-                        title={course.instructorName ?? course.teacherName ?? "No instructor assigned"}
-                    >
-                        {course.instructorName ?? course.teacherName ?? "No instructor assigned"}
-                    </p>
-                    <span
-                        title={course.instructorName ?? course.teacherName ?? undefined}
-                        className={`absolute -bottom-7 right-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-md ${course.instructorAvatarClass ?? course.teacherAvatarClass}`}
-                    >
-                        {initialOf(
-                            course.instructorNames?.[0] ??
-                            course.teacherNames?.[0] ??
-                            course.instructorName ??
-                            course.teacherName
+
+                    <div className="relative">
+                        <button
+                            type="button"
+                            aria-label="More options"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setMenuOpen((v) => !v);
+                            }}
+                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm transition-all hover:bg-black/35 hover:scale-105 active:scale-95"
+                        >
+                            <EllipsisVertical className="h-4 w-4" />
+                        </button>
+                        {menuOpen && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-30"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setMenuOpen(false);
+                                    }}
+                                />
+                                <div className="absolute right-0 top-full z-40 mt-1.5 w-44 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setMenuOpen(false);
+                                            onToggleHide();
+                                        }}
+                                        className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                                    >
+                                        {isHidden ? (
+                                            <Eye className="h-4 w-4 text-slate-500" />
+                                        ) : (
+                                            <EyeOff className="h-4 w-4 text-slate-500" />
+                                        )}
+                                        {isHidden ? "Unhide course" : "Hide course"}
+                                    </button>
+                                </div>
+                            </>
                         )}
-                        {((course.instructorNames?.length ?? 0) > 1 || (course.teacherNames?.length ?? 0) > 1) && (
+                    </div>
+                </div>
+
+                {/* Drag to reorder indicator */}
+                {canDrag && (
+                    <div className="pointer-events-none relative z-10 inline-flex w-fit items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+                        <GripVertical className="h-3 w-3" />
+                        Drag to reorder
+                    </div>
+                )}
+            </div>
+
+            {/* Card Body */}
+            <div className="flex flex-1 flex-col justify-between gap-4 p-5">
+                <div>
+                    <Link
+                        href={`/course/${course.id}`}
+                        draggable={false}
+                        className="group/title block"
+                        title={course.name}
+                    >
+                        <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover/title:text-blue-600">
+                            {course.name}
+                        </h3>
+                    </Link>
+                </div>
+
+                {/* Instructor Row */}
+                <div className="flex items-center gap-3">
+                    <div className="flex -space-x-2 overflow-hidden shrink-0">
+                        {instructors.slice(0, 3).map((name, idx) => (
                             <span
-                                className="absolute -bottom-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1 text-[10px] font-bold text-white shadow ring-2 ring-white"
-                                title={`${(course.instructorNames ?? course.teacherNames)?.length} instructors: ${(course.instructorNames ?? course.teacherNames)?.join(", ")}`}
+                                key={idx}
+                                title={name}
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-white shadow-sm ${avatarBgColors[idx % avatarBgColors.length]
+                                    }`}
                             >
-                                +{((course.instructorNames ?? course.teacherNames)?.length ?? 1) - 1}
+                                {initialOf(name)}
+                            </span>
+                        ))}
+                        {instructors.length > 3 && (
+                            <span
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700 ring-2 ring-white shadow-sm"
+                                title={instructors.slice(3).join(", ")}
+                            >
+                                +{instructors.length - 3}
                             </span>
                         )}
-                    </span>
-                    {canDrag && (
-                        <span className="pointer-events-none absolute bottom-2 left-3 flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 text-[11px] font-medium text-white">
-                            <GripVertical className="h-3.5 w-3.5" />
-                            Drag to reorder
-                        </span>
-                    )}
-                </div>
-                <div className="h-24" />
-            </Link>
-
-            <div className="flex items-center justify-center gap-8 rounded-b-lg border-t border-gray-200 py-2 text-gray-600">
-                <div className="group relative">
-                    <button
-                        type="button"
-                        aria-label="View your work"
-                        onClick={() => router.push(`/course/${course.id}/work`)}
-                        className="cursor-pointer rounded p-2 hover:bg-gray-900/5"
-                    >
-                        <ClipboardList className="h-5 w-5" />
-                    </button>
-                    <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-[#3c4043] px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
-                        View your work
-                    </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
+                            {instructors.length > 1 ? "Instructors" : "Instructor"}
+                        </p>
+                        <p className="truncate text-xs font-medium text-slate-700" title={instructorText}>
+                            {instructorText}
+                        </p>
+                    </div>
                 </div>
 
-                <div className="relative">
-                    <button
-                        type="button"
-                        aria-label="More options"
-                        onClick={() => setMenuOpen((v) => !v)}
-                        className={`rounded p-2 hover:bg-gray-900/5 ${menuOpen ? "bg-gray-900/10" : ""}`}
-                    >
-                        <EllipsisVertical className="h-5 w-5" />
-                    </button>
-                    {menuOpen && (
-                        <>
-                            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                            <div className="absolute bottom-full right-0 z-20 mb-2 w-48 rounded-lg bg-[#e9eef4] py-2 shadow-lg">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setMenuOpen(false);
-                                        onToggleHide();
-                                    }}
-                                    className="flex w-full cursor-pointer items-center gap-3 px-5 py-3 text-left text-sm text-gray-900 hover:bg-gray-900/5"
-                                >
-                                    {isHidden ? <Eye className="h-4 w-4 text-gray-700" /> : <EyeOff className="h-4 w-4 text-gray-700" />}
-                                    {isHidden ? "Unhide course" : "Hide course"}
-                                </button>
-                            </div>
-                        </>
-                    )}
+                {/* Meta Stats Row */}
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-600">
+                        <Users className="h-3.5 w-3.5 text-slate-400" />
+                        {studentTotal.toLocaleString()} {studentTotal === 1 ? "student" : "students"}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Active
+                    </span>
                 </div>
+            </div>
+
+            {/* Card Footer Actions */}
+            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+                <button
+                    type="button"
+                    aria-label="View work"
+                    onClick={() => router.push(`/course/${course.id}/work`)}
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                    <ClipboardList className="h-3.5 w-3.5 text-slate-500" />
+                    View Work
+                </button>
+                <Link
+                    href={`/course/${course.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow"
+                >
+                    Enter Course
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/card:translate-x-0.5" />
+                </Link>
             </div>
         </article>
     );
