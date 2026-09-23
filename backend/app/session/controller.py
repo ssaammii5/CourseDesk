@@ -178,7 +178,7 @@ def create_session(
             title=f"New course session: {session.title}",
             message=msg,
             kind="session",
-            link=f"/course/{body.course_id}/curriculum",
+            link=f"/course/{body.course_id}?tab=curriculum",
         )
 
     db.commit()

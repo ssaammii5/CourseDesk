@@ -203,7 +203,7 @@ def _sync_due_reminders(user: UserModel, db: Session) -> None:
             if sub and sub.status in ("Submitted", "Graded"):
                 continue
 
-            link = f"/course/{assign.course_id}/coursework"
+            link = f"/course/{assign.course_id}/assignments/{assign.id}"
             existing = db.scalar(
                 select(NotificationModel).where(
                     NotificationModel.user_id == user.id,

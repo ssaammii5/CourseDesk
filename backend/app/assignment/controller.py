@@ -261,7 +261,7 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
             title=f"New assignment: {assignment.title}",
             message=msg,
             kind="assignment",
-            link=f"/course/{assignment.course_id}/coursework",
+            link=f"/course/{assignment.course_id}/assignments/{assignment.id}",
         )
 
     db.commit()

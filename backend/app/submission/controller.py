@@ -153,7 +153,7 @@ def submit_assignment(
             title=f"New submission: {assignment.title}",
             message=f"{user.name} submitted work in {course.name if course else ''}",
             kind="submission",
-            link=f"/course/{assignment.course_id}/submissions",
+            link=f"/course/{assignment.course_id}/assignments/{assignment.id}",
         )
 
     db.commit()
@@ -211,7 +211,7 @@ def grade_submission(
         title=f"Graded: {assignment.title}",
         message=f"Score: {body.marks}/{assignment.max_marks}{fb}",
         kind="grade",
-        link=f"/course/{assignment.course_id}/coursework",
+        link=f"/course/{assignment.course_id}/assignments/{assignment.id}",
     )
 
     db.commit()

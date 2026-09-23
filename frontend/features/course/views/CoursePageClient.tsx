@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CourseTabs, type CourseTab, type ClassTab } from "../components/CourseTabs";
 import { CourseworkView } from "./CourseworkView";
 import { CurriculumView } from "./CurriculumView";
@@ -51,24 +52,31 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     const { user } = useAuth();
     const isInstructor = user?.role === "Instructor" || (user?.role as string) === "Teacher" || user?.role === "Admin";
     const isTeacher = isInstructor;
+    const searchParams = useSearchParams();
+    const queryTab = searchParams ? (searchParams.get("tab") as CourseTab | null) : null;
 
     const [tab, setTab] = useState<CourseTab>(() => {
-        if (initialTab && VALID_TABS.includes(initialTab)) {
-            if (initialTab === "grades" && !isInstructor) return "coursework";
-            return initialTab;
+        const startTab = queryTab || initialTab;
+        if (startTab && VALID_TABS.includes(startTab)) {
+            if (startTab === "grades" && !isInstructor) return "coursework";
+            return startTab;
         }
         return "stream";
     });
 
     useEffect(() => {
-        if (initialTab && VALID_TABS.includes(initialTab)) {
-            if (initialTab === "grades" && !isInstructor) {
+        const currentQuery = searchParams?.get("tab") as CourseTab | null;
+        const targetTab = currentQuery || initialTab;
+        if (targetTab && VALID_TABS.includes(targetTab)) {
+            if (targetTab === "grades" && !isInstructor) {
                 setTab("coursework");
             } else {
-                setTab(initialTab);
+                setTab(targetTab);
             }
+        } else if (!currentQuery && !initialTab) {
+            setTab("stream");
         }
-    }, [initialTab, isInstructor]);
+    }, [searchParams, initialTab, isInstructor]);
     const [classwork, setClasswork] = useState<ClassworkEntry[]>(details.classwork);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editing, setEditing] = useState<ClassworkEntry | null>(null);
