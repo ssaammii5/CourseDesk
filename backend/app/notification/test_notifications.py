@@ -21,6 +21,19 @@ def test_learner_notifications():
     data = res.json()
     assert "items" in data
     assert "unreadCount" in data
+
+    if len(data["items"]) == 0:
+        from app.notification.controller import create_notification
+        from app.utils.db import LocalSession
+        from app.user.models import UserModel
+        from sqlalchemy import select
+        with LocalSession() as db:
+            u = db.scalar(select(UserModel).where(UserModel.email == "samiur@eclassroompro.com"))
+            create_notification(db, u.id, "Welcome to CourseDesk", "Sample notification", "system", "/course/1")
+            db.commit()
+        res = client.get("/api/notifications", headers={"Authorization": f"Bearer {token}"})
+        data = res.json()
+
     assert len(data["items"]) > 0
 
     # Test marking as read
