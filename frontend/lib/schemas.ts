@@ -15,9 +15,13 @@ export const CourseSchema = z.object({
     subject: z.string(),
     instructorId: z.number().int().nullable().optional(),
     instructorName: z.string().nullable().optional(),
+    instructorIds: z.array(z.number().int()).optional(),
+    instructorNames: z.array(z.string()).optional(),
     learnerCount: z.number().int().nonnegative().optional(),
     teacherId: z.number().int().nullable().optional(),
     teacherName: z.string().nullable().optional(),
+    teacherIds: z.array(z.number().int()).optional(),
+    teacherNames: z.array(z.string()).optional(),
     studentCount: z.number().int().nonnegative().optional(),
 });
 export type Course = z.infer<typeof CourseSchema>;

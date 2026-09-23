@@ -59,14 +59,31 @@ function loadLayout(ids: number[]): CoursesLayout {
 }
 
 function mapCourseToHomeCourse(c: CourseDto): HomeCourse {
+    const rawNames =
+        c.instructorNames && c.instructorNames.length > 0
+            ? c.instructorNames
+            : c.teacherNames && c.teacherNames.length > 0
+            ? c.teacherNames
+            : [c.instructorName, c.teacherName];
+
+    const uniqueNames = Array.from(
+        new Set(rawNames.map((n) => n?.trim()).filter((n): n is string => Boolean(n)))
+    );
+
+    const displayName = uniqueNames.length > 0 ? uniqueNames.join(", ") : "No instructor assigned";
+
     return {
         id: c.id,
         name: c.name,
         subject: c.subject || c.program,
         instructorId: c.instructorId ?? c.teacherId ?? 0,
-        instructorName: c.instructorName ?? c.teacherName ?? "No instructor assigned",
+        instructorName: displayName,
+        instructorIds: c.instructorIds ?? c.teacherIds ?? [],
+        instructorNames: uniqueNames,
         teacherId: c.teacherId ?? c.instructorId ?? 0,
-        teacherName: c.teacherName ?? c.instructorName ?? "No instructor assigned",
+        teacherName: displayName,
+        teacherIds: c.teacherIds ?? c.instructorIds ?? [],
+        teacherNames: uniqueNames,
         learnerCount: c.learnerCount ?? c.studentCount,
         studentCount: c.studentCount ?? c.learnerCount,
         headerColor: headerColorFor(c.id),
@@ -344,13 +361,30 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                     {course.subject && (
                         <p className="mt-1 truncate text-sm font-medium text-white/90">{course.subject}</p>
                     )}
-                    <p className="mt-1 truncate text-xs text-white/90">
+                    <p
+                        className="mt-1 truncate text-xs text-white/90"
+                        title={course.instructorName ?? course.teacherName ?? "No instructor assigned"}
+                    >
                         {course.instructorName ?? course.teacherName ?? "No instructor assigned"}
                     </p>
                     <span
-                        className={`absolute -bottom-7 right-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white ${course.instructorAvatarClass ?? course.teacherAvatarClass}`}
+                        title={course.instructorName ?? course.teacherName ?? undefined}
+                        className={`absolute -bottom-7 right-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-md ${course.instructorAvatarClass ?? course.teacherAvatarClass}`}
                     >
-                        {initialOf(course.instructorName ?? course.teacherName)}
+                        {initialOf(
+                            course.instructorNames?.[0] ??
+                            course.teacherNames?.[0] ??
+                            course.instructorName ??
+                            course.teacherName
+                        )}
+                        {((course.instructorNames?.length ?? 0) > 1 || (course.teacherNames?.length ?? 0) > 1) && (
+                            <span
+                                className="absolute -bottom-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1 text-[10px] font-bold text-white shadow ring-2 ring-white"
+                                title={`${(course.instructorNames ?? course.teacherNames)?.length} instructors: ${(course.instructorNames ?? course.teacherNames)?.join(", ")}`}
+                            >
+                                +{((course.instructorNames ?? course.teacherNames)?.length ?? 1) - 1}
+                            </span>
+                        )}
                     </span>
                     {canDrag && (
                         <span className="pointer-events-none absolute bottom-2 left-3 flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 text-[11px] font-medium text-white">
