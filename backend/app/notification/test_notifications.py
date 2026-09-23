@@ -131,6 +131,46 @@ def test_event_triggers():
     assert len(ann_notifs) > 0, "Learner did not receive announcement notification"
 
 
+def test_sse_stream():
+    from app.notification.broadcaster import notification_broadcaster
+
+    # 1. Unauthorized request without token
+    res_unauth = client.get("/api/notifications/stream")
+    assert res_unauth.status_code == 401
+
+    # 2. Invalid token
+    res_bad = client.get("/api/notifications/stream?token=invalid.jwt.token")
+    assert res_bad.status_code == 401
+
+    # 3. Test Broadcaster Pub/Sub & strict user isolation
+    user_a_id = 9988
+    user_b_id = 9989
+
+    queue_a = notification_broadcaster.connect(user_a_id)
+    queue_b = notification_broadcaster.connect(user_b_id)
+
+    assert notification_broadcaster.get_subscriber_count(user_a_id) == 1
+    assert notification_broadcaster.get_subscriber_count(user_b_id) == 1
+
+    # Publish to User A
+    event_a = {"id": 101, "title": "Assignment Due", "kind": "assignment"}
+    notification_broadcaster.publish(user_a_id, event_a)
+
+    # User A must receive it
+    assert not queue_a.empty()
+    received = queue_a.get_nowait()
+    assert received["title"] == "Assignment Due"
+
+    # User B must NOT receive User A's notification (User isolation / IDOR check)
+    assert queue_b.empty(), "User B should not receive User A's notification"
+
+    # Cleanup
+    notification_broadcaster.disconnect(user_a_id, queue_a)
+    notification_broadcaster.disconnect(user_b_id, queue_b)
+    assert notification_broadcaster.get_subscriber_count(user_a_id) == 0
+    assert notification_broadcaster.get_subscriber_count(user_b_id) == 0
+
+
 if __name__ == "__main__":
     print("Running test_learner_notifications...")
     test_learner_notifications()
@@ -160,4 +200,9 @@ if __name__ == "__main__":
     test_event_triggers()
     print("✓ test_event_triggers passed")
 
+    print("Running test_sse_stream...")
+    test_sse_stream()
+    print("✓ test_sse_stream passed")
+
     print("\n✅ All notification test suites passed successfully!")
+

@@ -95,6 +95,18 @@ def create_notification(
         created_at_utc=datetime.now(UTC),
     )
     db.add(notification)
+    db.flush()
+
+    try:
+        from app.notification.broadcaster import notification_broadcaster
+
+        payload = NotificationResponseSchema.model_validate(
+            notification
+        ).model_dump(mode="json", by_alias=True)
+        notification_broadcaster.publish(user_id, payload)
+    except Exception:
+        pass
+
     return notification
 
 
@@ -136,6 +148,19 @@ def create_notifications_bulk(
         )
         db.add(notif)
         created.append(notif)
+
+    if created:
+        db.flush()
+        try:
+            from app.notification.broadcaster import notification_broadcaster
+
+            for notif in created:
+                payload = NotificationResponseSchema.model_validate(
+                    notif
+                ).model_dump(mode="json", by_alias=True)
+                notification_broadcaster.publish(notif.user_id, payload)
+        except Exception:
+            pass
 
     return created
 

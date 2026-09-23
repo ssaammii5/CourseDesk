@@ -30,6 +30,7 @@ import {
     getNotificationsRequest,
     markAllNotificationsReadRequest,
     markNotificationReadRequest,
+    subscribeNotificationsStream,
 } from "@/lib/api";
 import { ROLE_STYLES, type NotificationItem, type NotificationKind } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
@@ -85,11 +86,22 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
     useEffect(() => {
         loadNotifications();
-        const interval = setInterval(loadNotifications, 30000);
+
+        // Real-time Server-Sent Events stream subscription
+        const unsubscribe = subscribeNotificationsStream((newItem) => {
+            setNotifications((prev) => {
+                if (prev.some((n) => n.id === newItem.id)) {
+                    return prev;
+                }
+                return [newItem, ...prev];
+            });
+            setUnreadCount((count) => count + (newItem.isRead ? 0 : 1));
+        });
+
         const onFocus = () => loadNotifications();
         window.addEventListener("focus", onFocus);
         return () => {
-            clearInterval(interval);
+            unsubscribe();
             window.removeEventListener("focus", onFocus);
         };
     }, [loadNotifications]);
