@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import {
     ArrowRight,
@@ -343,6 +343,20 @@ interface CourseCardProps {
 export function CourseCard({ course, isHidden = false, canDrag = false, onToggleHide }: CourseCardProps) {
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!menuOpen) return;
+        const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        document.addEventListener("pointerdown", handleOutsideClick);
+        return () => {
+            document.removeEventListener("pointerdown", handleOutsideClick);
+        };
+    }, [menuOpen]);
 
     const instructors =
         course.instructorNames && course.instructorNames.length > 0
@@ -367,8 +381,17 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
 
     return (
         <article
-            className={`group/card relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl ${isHidden ? "opacity-75 grayscale-[0.2]" : ""
-                }${canDrag ? " cursor-grab active:cursor-grabbing" : ""}`}
+            onClick={() => {
+                if (canDrag) return;
+                if (menuOpen) {
+                    setMenuOpen(false);
+                    return;
+                }
+                router.push(`/course/${course.id}`);
+            }}
+            className={`group/card relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 ${
+                menuOpen ? "shadow-md" : "hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl"
+            } ${isHidden ? "opacity-75 grayscale-[0.2]" : ""}${canDrag ? " cursor-grab active:cursor-grabbing" : ""}`}
         >
             {/* Header Banner */}
             <div
@@ -394,7 +417,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                         {course.subject || "Course"}
                     </span>
 
-                    <div className="relative">
+                    <div ref={menuRef} className="relative z-20" onClick={(e) => e.stopPropagation()}>
                         <button
                             type="button"
                             aria-label="More options"
@@ -408,35 +431,25 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                             <EllipsisVertical className="h-4 w-4" />
                         </button>
                         {menuOpen && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-30"
+                            <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl">
+                                <button
+                                    type="button"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         setMenuOpen(false);
+                                        onToggleHide();
                                     }}
-                                />
-                                <div className="absolute right-0 top-full z-40 mt-1.5 w-44 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setMenuOpen(false);
-                                            onToggleHide();
-                                        }}
-                                        className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
-                                    >
-                                        {isHidden ? (
-                                            <Eye className="h-4 w-4 text-slate-500" />
-                                        ) : (
-                                            <EyeOff className="h-4 w-4 text-slate-500" />
-                                        )}
-                                        {isHidden ? "Unhide course" : "Hide course"}
-                                    </button>
-                                </div>
-                            </>
+                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                                >
+                                    {isHidden ? (
+                                        <Eye className="h-4 w-4 text-slate-500" />
+                                    ) : (
+                                        <EyeOff className="h-4 w-4 text-slate-500" />
+                                    )}
+                                    {isHidden ? "Unhide course" : "Hide course"}
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -456,6 +469,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                     <Link
                         href={`/course/${course.id}`}
                         draggable={false}
+                        onClick={(e) => e.stopPropagation()}
                         className="group/title block"
                         title={course.name}
                     >
@@ -515,7 +529,10 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                 <button
                     type="button"
                     aria-label="View work"
-                    onClick={() => router.push(`/course/${course.id}/work`)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/course/${course.id}/work`);
+                    }}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 hover:text-slate-900"
                 >
                     <ClipboardList className="h-3.5 w-3.5 text-slate-500" />
@@ -523,6 +540,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                 </button>
                 <Link
                     href={`/course/${course.id}`}
+                    onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow"
                 >
                     Enter Course
