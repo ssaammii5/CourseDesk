@@ -174,7 +174,11 @@ export function StreamFeedCard({
     const attachments = !isApi && announcement.attachments ? announcement.attachments : [];
 
     const { relative, exact } = formatRelativeTime(dateString);
-    const updatedRelative = updatedAtUtc ? formatRelativeTime(updatedAtUtc).relative : null;
+    const { relative: updatedRelative, exact: updatedExact } = formatRelativeTime(updatedAtUtc);
+    const isEdited = Boolean(
+        updatedAtUtc &&
+        (!dateString || Math.abs(new Date(updatedAtUtc).getTime() - new Date(dateString).getTime()) > 1000)
+    );
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -222,14 +226,23 @@ export function StreamFeedCard({
                                 )}
                             </div>
 
-                            <p className="flex flex-wrap items-center gap-1 text-[11.5px] text-slate-500 dark:text-slate-400">
+                            <p className="flex flex-wrap items-center gap-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
                                 <span title={exact} className="cursor-help hover:underline">
                                     {relative}
                                 </span>
-                                {updatedRelative && (
-                                    <span className="text-slate-400 dark:text-slate-500 italic">
-                                        (edited)
-                                    </span>
+                                {isEdited && (
+                                    <>
+                                        <span className="text-slate-300 dark:text-slate-600">•</span>
+                                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500">
+                                            <span>edited</span>
+                                            <span
+                                                title={`Edited ${updatedExact}`}
+                                                className="cursor-help hover:underline text-slate-500 dark:text-slate-400"
+                                            >
+                                                {updatedRelative}
+                                            </span>
+                                        </span>
+                                    </>
                                 )}
                             </p>
                         </div>
