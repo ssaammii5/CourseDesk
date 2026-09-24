@@ -1139,18 +1139,6 @@ export function CurriculumView({
                                     })
                                 )}
                             </div>
-
-                            {/* Sidebar Footer Hint */}
-                            <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 text-center">
-                                <button
-                                    type="button"
-                                    onClick={() => setChatOpen(true)}
-                                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline cursor-pointer"
-                                >
-                                    <MessageCircle className="h-3.5 w-3.5" />
-                                    Have a question about this playlist?
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
