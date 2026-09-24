@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import {
-    Check,
-    Copy,
     EllipsisVertical,
     ExternalLink,
     FileText,
     Pencil,
     Pin,
     PinOff,
-    Share2,
     Trash2,
 } from "lucide-react";
 import { initialOf } from "@/lib/utils/format";
@@ -181,14 +178,6 @@ export function StreamFeedCard({
     );
 
     const [menuOpen, setMenuOpen] = useState(false);
-    const [copied, setCopied] = useState(false);
-
-    const handleCopyText = () => {
-        const textToCopy = `${title ? `${title}\n\n` : ""}${body}`;
-        navigator.clipboard.writeText(textToCopy);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
 
     return (
         <article
@@ -249,30 +238,17 @@ export function StreamFeedCard({
                     </div>
 
                     {/* Actions Menu */}
-                    <div className="flex items-center gap-1">
-                        <button
-                            type="button"
-                            onClick={handleCopyText}
-                            title="Copy announcement content"
-                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                        >
-                            {copied ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-500" />
-                            ) : (
-                                <Copy className="h-3.5 w-3.5" />
-                            )}
-                        </button>
-
-                        {canManage && isApi && (
+                    {canManage && isApi && (
+                        <div className="flex items-center gap-1">
                             <div className="relative">
-                                <button
-                                    type="button"
-                                    onClick={() => setMenuOpen(!menuOpen)}
-                                    title="More options"
-                                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                                >
-                                    <EllipsisVertical className="h-3.5 w-3.5" />
-                                </button>
+                            <button
+                                type="button"
+                                onClick={() => setMenuOpen(!menuOpen)}
+                                title="More options"
+                                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                            >
+                                <EllipsisVertical className="h-3.5 w-3.5" />
+                            </button>
 
                                 {menuOpen && (
                                     <>
@@ -335,8 +311,8 @@ export function StreamFeedCard({
                                     </>
                                 )}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Content Section */}
