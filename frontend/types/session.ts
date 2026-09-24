@@ -77,6 +77,17 @@ export interface UpdateSessionPayload {
     status?: string;
 }
 
+export interface AnnouncementCommentDto {
+    id: number;
+    announcementId: number;
+    userId: number;
+    userName: string | null;
+    userRole: string | null;
+    content: string;
+    createdAtUtc: string;
+    updatedAtUtc?: string | null;
+}
+
 export interface AnnouncementDto {
     id: number;
     courseId: number;
@@ -87,7 +98,9 @@ export interface AnnouncementDto {
     isPinned: boolean;
     createdAtUtc: string;
     updatedAtUtc?: string | null;
+    comments?: AnnouncementCommentDto[];
 }
+
 
 export interface CreateAnnouncementPayload {
     courseId: number;

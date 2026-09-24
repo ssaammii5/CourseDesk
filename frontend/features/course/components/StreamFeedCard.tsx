@@ -14,6 +14,7 @@ import { initialOf } from "@/lib/utils/format";
 import { avatarClassFor } from "@/lib/utils/theme";
 import type { AnnouncementDto } from "@/types/session";
 import type { Announcement } from "@/types";
+import { AnnouncementComments } from "./AnnouncementComments";
 
 interface StreamFeedCardProps {
     announcement: AnnouncementDto | (Announcement & { isPinned?: boolean });
@@ -349,6 +350,14 @@ export function StreamFeedCard({
                     </div>
                 )}
             </div>
+
+            {/* Comments below announcement card */}
+            <AnnouncementComments
+                announcementId={announcement.id}
+                initialComments={isApi ? (announcement as AnnouncementDto).comments : []}
+                isApi={isApi}
+                canManage={canManage}
+            />
         </article>
     );
 }

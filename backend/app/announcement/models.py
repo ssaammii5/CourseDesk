@@ -28,3 +28,32 @@ class AnnouncementModel(Base):
 
     course: Mapped["CourseModel"] = relationship(back_populates="announcements")  # type: ignore[name-defined]  # noqa: F821
     author: Mapped["UserModel"] = relationship()  # type: ignore[name-defined]  # noqa: F821
+    comments: Mapped[list["AnnouncementCommentModel"]] = relationship(
+        back_populates="announcement",
+        cascade="all, delete-orphan",
+        order_by="AnnouncementCommentModel.created_at_utc.asc()",
+    )
+
+
+class AnnouncementCommentModel(Base):
+    """Comments on course announcements."""
+
+    __tablename__: str = "announcement_comment_table"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    announcement_id: Mapped[int] = mapped_column(
+        ForeignKey("announcement_table.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_table.id", ondelete="CASCADE"), index=True
+    )
+    content: Mapped[str] = mapped_column(Text)
+    created_at_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at_utc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
+
+    announcement: Mapped["AnnouncementModel"] = relationship(back_populates="comments")
+    author: Mapped["UserModel"] = relationship(foreign_keys=[user_id])  # type: ignore[name-defined]  # noqa: F821

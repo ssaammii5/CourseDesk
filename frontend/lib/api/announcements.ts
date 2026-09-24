@@ -1,5 +1,6 @@
 import { apiFetch } from "./client";
 import type {
+    AnnouncementCommentDto,
     AnnouncementDto,
     CreateAnnouncementPayload,
     UpdateAnnouncementPayload,
@@ -34,4 +35,28 @@ export function updateAnnouncementRequest(
 
 export function deleteAnnouncementRequest(announcementId: number): Promise<void> {
     return apiFetch<void>(`/api/announcements/${announcementId}`, { method: "DELETE" });
+}
+
+export function getAnnouncementCommentsRequest(
+    announcementId: number,
+): Promise<AnnouncementCommentDto[]> {
+    return apiFetch<AnnouncementCommentDto[]>(`/api/announcements/${announcementId}/comments`, {
+        method: "GET",
+    });
+}
+
+export function createAnnouncementCommentRequest(
+    announcementId: number,
+    content: string,
+): Promise<AnnouncementCommentDto> {
+    return apiFetch<AnnouncementCommentDto>(`/api/announcements/${announcementId}/comments`, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+    });
+}
+
+export function deleteAnnouncementCommentRequest(commentId: number): Promise<void> {
+    return apiFetch<void>(`/api/announcements/comments/${commentId}`, {
+        method: "DELETE",
+    });
 }

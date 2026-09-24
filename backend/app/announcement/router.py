@@ -2,9 +2,11 @@ from fastapi import APIRouter, status
 
 from app.announcement import controller
 from app.announcement.dtos import (
+    AnnouncementCommentResponseSchema,
     AnnouncementResponseSchema,
     AnnouncementSchema,
     AnnouncementUpdateSchema,
+    CreateAnnouncementCommentSchema,
 )
 from app.utils.db import get_db
 from app.utils.helpers import DbSession, IsAdminOrTeacher, IsAuthenticated
@@ -59,3 +61,34 @@ def update_announcement(
 )
 def delete_announcement(announcement_id: int, db: DbSession, user: IsAdminOrTeacher):
     return controller.delete_announcement(announcement_id, user, db)
+
+
+@announcement_routes.get(
+    "/{announcement_id}/comments",
+    response_model=list[AnnouncementCommentResponseSchema],
+    status_code=status.HTTP_200_OK,
+)
+def get_announcement_comments(announcement_id: int, db: DbSession, user: IsAuthenticated):
+    return controller.get_announcement_comments(announcement_id, user, db)
+
+
+@announcement_routes.post(
+    "/{announcement_id}/comments",
+    response_model=AnnouncementCommentResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_announcement_comment(
+    announcement_id: int,
+    body: CreateAnnouncementCommentSchema,
+    db: DbSession,
+    user: IsAuthenticated,
+):
+    return controller.create_announcement_comment(announcement_id, body, user, db)
+
+
+@announcement_routes.delete(
+    "/comments/{comment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_announcement_comment(comment_id: int, db: DbSession, user: IsAuthenticated):
+    return controller.delete_announcement_comment(comment_id, user, db)

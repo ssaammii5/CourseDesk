@@ -16,6 +16,21 @@ class AnnouncementUpdateSchema(CamelModel):
     is_pinned: bool | None = None
 
 
+class CreateAnnouncementCommentSchema(CamelModel):
+    content: str
+
+
+class AnnouncementCommentResponseSchema(CamelModel):
+    id: int
+    announcement_id: int
+    user_id: int
+    user_name: str | None = None
+    user_role: str | None = None
+    content: str
+    created_at_utc: datetime
+    updated_at_utc: datetime | None = None
+
+
 class AnnouncementResponseSchema(CamelModel):
     id: int
     course_id: int
@@ -26,3 +41,4 @@ class AnnouncementResponseSchema(CamelModel):
     is_pinned: bool
     created_at_utc: datetime
     updated_at_utc: datetime | None = None
+    comments: list[AnnouncementCommentResponseSchema] = []

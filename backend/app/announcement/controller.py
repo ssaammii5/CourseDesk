@@ -5,13 +5,28 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.announcement.dtos import (
+    AnnouncementCommentResponseSchema,
     AnnouncementResponseSchema,
     AnnouncementSchema,
     AnnouncementUpdateSchema,
+    CreateAnnouncementCommentSchema,
 )
-from app.announcement.models import AnnouncementModel
+from app.announcement.models import AnnouncementCommentModel, AnnouncementModel
 from app.course.models import CourseModel
 from app.user.models import UserModel
+
+
+def _serialize_comment(c: AnnouncementCommentModel) -> AnnouncementCommentResponseSchema:
+    return AnnouncementCommentResponseSchema(
+        id=c.id,
+        announcement_id=c.announcement_id,
+        user_id=c.user_id,
+        user_name=c.author.name if c.author else None,
+        user_role=c.author.role if c.author else None,
+        content=c.content,
+        created_at_utc=c.created_at_utc,
+        updated_at_utc=c.updated_at_utc,
+    )
 
 
 def _serialize(a: AnnouncementModel) -> AnnouncementResponseSchema:
@@ -25,12 +40,14 @@ def _serialize(a: AnnouncementModel) -> AnnouncementResponseSchema:
         is_pinned=a.is_pinned,
         created_at_utc=a.created_at_utc,
         updated_at_utc=a.updated_at_utc,
+        comments=[_serialize_comment(c) for c in (a.comments or [])],
     )
 
 
 def _announcement_stmt():
     return select(AnnouncementModel).options(
         selectinload(AnnouncementModel.author),
+        selectinload(AnnouncementModel.comments).selectinload(AnnouncementCommentModel.author),
     )
 
 
@@ -198,4 +215,134 @@ def delete_announcement(
         raise HTTPException(403, detail="You cannot delete this announcement")
 
     db.delete(announcement)
+    db.commit()
+
+
+def get_announcement_comments(
+    announcement_id: int, user: UserModel, db: Session
+) -> list[AnnouncementCommentResponseSchema]:
+    announcement = db.scalar(
+        select(AnnouncementModel).where(AnnouncementModel.id == announcement_id)
+    )
+    if not announcement:
+        raise HTTPException(404, detail="Announcement not found")
+
+    course = db.scalar(
+        select(CourseModel)
+        .options(
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
+        )
+        .where(CourseModel.id == announcement.course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course not found")
+    _check_course_access(user, course)
+
+    comments = db.scalars(
+        select(AnnouncementCommentModel)
+        .options(selectinload(AnnouncementCommentModel.author))
+        .where(AnnouncementCommentModel.announcement_id == announcement_id)
+        .order_by(AnnouncementCommentModel.created_at_utc.asc())
+    ).all()
+    return [_serialize_comment(c) for c in comments]
+
+
+def create_announcement_comment(
+    announcement_id: int,
+    body: CreateAnnouncementCommentSchema,
+    user: UserModel,
+    db: Session,
+) -> AnnouncementCommentResponseSchema:
+    content = body.content.strip()
+    if not content:
+        raise HTTPException(400, detail="Comment content cannot be empty")
+    if len(content) > 5000:
+        raise HTTPException(400, detail="Comment content cannot exceed 5000 characters")
+
+    announcement = db.scalar(
+        select(AnnouncementModel).where(AnnouncementModel.id == announcement_id)
+    )
+    if not announcement:
+        raise HTTPException(404, detail="Announcement not found")
+
+    course = db.scalar(
+        select(CourseModel)
+        .options(
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
+        )
+        .where(CourseModel.id == announcement.course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course not found")
+    _check_course_access(user, course)
+
+    comment = AnnouncementCommentModel(
+        announcement_id=announcement_id,
+        user_id=user.id,
+        content=content,
+    )
+    db.add(comment)
+    db.flush()
+
+    try:
+        from app.notification.controller import create_notification
+
+        if announcement.author_id != user.id:
+            snippet = content if len(content) <= 80 else f"{content[:80]}…"
+            create_notification(
+                db=db,
+                user_id=announcement.author_id,
+                title=f"New comment on your announcement in {course.name}",
+                message=f"{user.name}: {snippet}",
+                kind="announcement",
+                link=f"/course/{course.id}",
+            )
+    except Exception:
+        pass
+
+    db.commit()
+    db.refresh(comment)
+
+    comment_loaded = db.scalar(
+        select(AnnouncementCommentModel)
+        .options(selectinload(AnnouncementCommentModel.author))
+        .where(AnnouncementCommentModel.id == comment.id)
+    )
+    return _serialize_comment(comment_loaded or comment)
+
+
+def delete_announcement_comment(
+    comment_id: int,
+    user: UserModel,
+    db: Session,
+) -> None:
+    comment = db.scalar(
+        select(AnnouncementCommentModel).where(AnnouncementCommentModel.id == comment_id)
+    )
+    if not comment:
+        raise HTTPException(404, detail="Comment not found")
+
+    announcement = db.scalar(
+        select(AnnouncementModel).where(AnnouncementModel.id == comment.announcement_id)
+    )
+    if not announcement:
+        raise HTTPException(404, detail="Announcement not found")
+
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == announcement.course_id)
+    )
+
+    can_delete = (
+        user.role == "Admin"
+        or comment.user_id == user.id
+        or (course and _can_manage_course(user, course))
+    )
+    if not can_delete:
+        raise HTTPException(403, detail="You cannot delete this comment")
+
+    db.delete(comment)
     db.commit()
