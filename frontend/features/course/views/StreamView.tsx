@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { EllipsisVertical, Pencil, PenLine, Pin, PinOff, Trash2 } from "lucide-react";
-import { AnnouncementCard } from "../components/AnnouncementCard";
-import { CourseHeroBanner } from "../components/CourseHeroBanner";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+    AlertCircle,
+    ArrowDown,
+    Loader2,
+    Megaphone,
+    Pin,
+    Plus,
+    Search,
+    Sparkles,
+    X,
+} from "lucide-react";
+import { StreamHero } from "../components/StreamHero";
+import { StreamComposer } from "../components/StreamComposer";
+import { StreamFeedCard } from "../components/StreamFeedCard";
+import { StreamSidebar } from "../components/StreamSidebar";
 import { AnnouncementFormModal } from "../components/AnnouncementFormModal";
 import type { CourseDto } from "@/lib/api/courses";
 import type { ClassDetails } from "@/types";
 import type { SessionDto, AnnouncementDto } from "@/types/session";
-import { initialOf } from "@/lib/utils/format";
-import { avatarClassFor } from "@/lib/utils/theme";
+import type { CourseTab } from "../components/CourseTabs";
 
 interface StreamViewProps {
     title: string;
@@ -19,6 +30,7 @@ interface StreamViewProps {
     apiAnnouncements: AnnouncementDto[];
     isInstructor?: boolean;
     isTeacher?: boolean;
+    onTabChange?: (tab: CourseTab) => void;
     onPostAnnouncement?: (data: {
         title: string;
         body: string;
@@ -32,36 +44,7 @@ interface StreamViewProps {
     onTogglePin?: (id: number, isPinned: boolean) => void;
 }
 
-function formatAnnouncementTime(
-    createdAtIso: string,
-    updatedAtIso?: string | null
-): { original: string; updated?: string } {
-    const createdDate = new Date(createdAtIso);
-    const original =
-        createdDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        }) +
-        ", " +
-        createdDate.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-        });
-    const updated = updatedAtIso
-        ? new Date(updatedAtIso).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        }) +
-        ", " +
-        new Date(updatedAtIso).toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-        })
-        : undefined;
-    return { original, updated };
-}
+const PAGE_SIZE = 5;
 
 export function StreamView({
     title,
@@ -71,6 +54,7 @@ export function StreamView({
     apiAnnouncements,
     isInstructor,
     isTeacher = false,
+    onTabChange,
     onPostAnnouncement,
     onUpdateAnnouncement,
     onDeleteAnnouncement,
@@ -80,188 +64,286 @@ export function StreamView({
     const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
     const [editingAnnouncement, setEditingAnnouncement] = useState<AnnouncementDto | null>(null);
     const [deletingAnnouncement, setDeletingAnnouncement] = useState<AnnouncementDto | null>(null);
-    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-    const hasDueWork = details.classwork.some((c) => c.status === "Assigned");
+
+    // Stream search state
+    const [searchQuery, setSearchQuery] = useState("");
+
+    // Lazy loading pagination state
+    const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+    // Reset pagination when search query changes
+    useEffect(() => {
+        setVisibleCount(PAGE_SIZE);
+    }, [searchQuery]);
+
+    // Combined announcements
+    const allAnnouncements = useMemo(() => {
+        if (apiAnnouncements.length > 0) {
+            return apiAnnouncements;
+        }
+        return details.announcements || [];
+    }, [apiAnnouncements, details.announcements]);
+
+    // Helper to safely check if announcement is pinned
+    const checkIsPinned = (a: AnnouncementDto | (ClassDetails["announcements"][number] & { isPinned?: boolean })) => {
+        return "isPinned" in a ? Boolean(a.isPinned) : false;
+    };
+
+    // Filter announcements based on searchQuery
+    const filteredAnnouncements = useMemo(() => {
+        let list = [...allAnnouncements];
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            list = list.filter((a) => {
+                const titleText = ("title" in a ? a.title : "") || "";
+                const bodyText = ("body" in a ? a.body : a.text) || "";
+                const authorText = ("authorName" in a ? a.authorName : a.author) || "";
+                return (
+                    titleText.toLowerCase().includes(query) ||
+                    bodyText.toLowerCase().includes(query) ||
+                    authorText.toLowerCase().includes(query)
+                );
+            });
+        }
+
+        return list;
+    }, [allAnnouncements, searchQuery]);
+
+    // Pinned announcements vs normal announcements
+    const pinnedAnnouncements = useMemo(() => {
+        return filteredAnnouncements.filter((a) => checkIsPinned(a));
+    }, [filteredAnnouncements]);
+
+    const regularAnnouncements = useMemo(() => {
+        return filteredAnnouncements.filter((a) => !checkIsPinned(a));
+    }, [filteredAnnouncements]);
+
+    // Lazy loaded slice of regular announcements
+    const visibleRegularAnnouncements = useMemo(() => {
+        return regularAnnouncements.slice(0, visibleCount);
+    }, [regularAnnouncements, visibleCount]);
+
+    const hasMore = visibleCount < regularAnnouncements.length;
+
+    // IntersectionObserver for automatic lazy loading as user scrolls
+    useEffect(() => {
+        if (!hasMore) return;
+        const target = sentinelRef.current;
+        if (!target) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, regularAnnouncements.length));
+                }
+            },
+            {
+                rootMargin: "250px",
+                threshold: 0.1,
+            }
+        );
+
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [hasMore, regularAnnouncements.length]);
+
+    const handleLoadMore = () => {
+        setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, regularAnnouncements.length));
+    };
 
     return (
-        <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-8">
-            <CourseHeroBanner
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-300">
+            {/* 1. Ultra-Modern Command Hero */}
+            <StreamHero
                 title={title}
                 details={details}
                 course={course}
                 nextSession={nextSession}
+                announcementsCount={allAnnouncements.length}
                 isInstructor={canManage}
-                isTeacher={canManage}
+                onNewAnnouncement={() => {
+                    setEditingAnnouncement(null);
+                    setAnnouncementModalOpen(true);
+                }}
             />
 
-            <div className="mt-6 flex flex-col gap-6 lg:flex-row">
-                <div className="w-full shrink-0 lg:w-[300px]">
-                    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-base text-gray-800 dark:text-slate-100 font-medium">Upcoming</h3>
-                        <p className="mt-3 text-sm text-gray-600 dark:text-slate-400">
-                            {hasDueWork
-                                ? "You have work due soon."
-                                : "Woohoo, no work due soon!"}
-                        </p>
-                        <div className="mt-3 text-right">
-                            <a
-                                href="#"
-                                className="text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
-                            >
-                                View all
-                            </a>
-                        </div>
-                    </section>
-                </div>
-
-                <div className="min-w-0 flex-1">
+            {/* 2. Main Two-Column Stream Layout */}
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+                {/* Main Activity Stream (Center / Left) */}
+                <main className="min-w-0 flex-1 space-y-5">
+                    {/* Instructor Modern Composer Bar */}
                     {canManage && (
-                        <button
-                            type="button"
+                        <StreamComposer
+                            authorName={course?.instructorNames?.[0]}
                             onClick={() => {
                                 setEditingAnnouncement(null);
                                 setAnnouncementModalOpen(true);
                             }}
-                            className="flex cursor-pointer items-center gap-3 rounded-full bg-[#cfe8fc] px-5 py-2.5 text-sm font-medium text-[#174ea6] hover:bg-[#b9dcf8] dark:bg-blue-950/80 dark:text-blue-300 dark:hover:bg-blue-900/80"
-                        >
-                            <PenLine className="h-4 w-4" />
-                            New announcement
-                        </button>
+                        />
                     )}
 
-                    <div className="mt-5 space-y-4">
-                        {apiAnnouncements.length === 0 &&
-                            details.announcements.length === 0 && (
-                                <p className="py-8 text-center text-sm text-gray-600 dark:text-slate-400">
-                                    No announcements yet.
-                                </p>
+                    {/* Stream Header & Search Toolbar */}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/80 bg-white/80 p-3 shadow-2xs backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/80">
+                        <div className="flex items-center gap-2 px-1">
+                            <Megaphone className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                Class Announcements
+                            </h2>
+                            <span className="flex h-5 items-center justify-center rounded-full bg-slate-100 px-2 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                {filteredAnnouncements.length}
+                            </span>
+                        </div>
+
+                        {/* Search Input */}
+                        <div className="relative w-full sm:w-72">
+                            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search announcements…"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-8 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery("")}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
                             )}
+                        </div>
+                    </div>
 
-                        {apiAnnouncements.map((a) => {
-                            const timeInfo = formatAnnouncementTime(a.createdAtUtc, a.updatedAtUtc);
-                            return (
-                                <div key={a.id} className="relative rounded-lg bg-[#f1f3f4] dark:border dark:border-slate-800 dark:bg-slate-900">
-                                    {a.isPinned && (
-                                        <div className="flex items-center gap-1.5 rounded-t-lg bg-[#fef7e0] px-4 py-1.5 text-xs font-semibold text-[#b06000] dark:bg-amber-950/50 dark:text-amber-300">
-                                            <Pin className="h-3.5 w-3.5 fill-current" />
-                                            <span>Pinned announcement</span>
-                                        </div>
-                                    )}
-                                    <div className="p-4 sm:p-5">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <span
-                                                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium text-white ${avatarClassFor(a.authorId)}`}
-                                                >
-                                                    {initialOf(a.authorName)}
-                                                </span>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
-                                                        {a.authorName ?? "Instructor"}
-                                                    </p>
-                                                    <p className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600 dark:text-slate-400">
-                                                        <span>{timeInfo.original}</span>
-                                                        {timeInfo.updated && (
-                                                            <span className="font-medium text-gray-500 dark:text-slate-500 italic">
-                                                                (updated {timeInfo.updated})
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {canManage && (
-                                                <div className="relative">
-                                                    <button
-                                                        type="button"
-                                                        title="Announcement options"
-                                                        aria-label="Announcement options"
-                                                        onClick={() => setOpenMenuId(openMenuId === a.id ? null : a.id)}
-                                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                                                    >
-                                                        <EllipsisVertical className="h-4 w-4" />
-                                                    </button>
-                                                    {openMenuId === a.id && (
-                                                        <>
-                                                            <div
-                                                                className="fixed inset-0 z-20"
-                                                                onClick={() => setOpenMenuId(null)}
-                                                            />
-                                                            <div className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        onTogglePin?.(a.id, a.isPinned);
-                                                                        setOpenMenuId(null);
-                                                                    }}
-                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                                                                >
-                                                                    {a.isPinned ? (
-                                                                        <>
-                                                                            <PinOff className="h-4 w-4 text-gray-500 dark:text-slate-400" />
-                                                                            <span>Unpin</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Pin className="h-4 w-4 text-gray-500 dark:text-slate-400" />
-                                                                            <span>Pin to top</span>
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setEditingAnnouncement(a);
-                                                                        setAnnouncementModalOpen(true);
-                                                                        setOpenMenuId(null);
-                                                                    }}
-                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                                                                >
-                                                                    <Pencil className="h-4 w-4 text-gray-500 dark:text-slate-400" />
-                                                                    <span>Edit</span>
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setDeletingAnnouncement(a);
-                                                                        setOpenMenuId(null);
-                                                                    }}
-                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-rose-950/40"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                                                                    <span>Delete</span>
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {a.title && (
-                                            <h4 className="mt-3 text-sm font-semibold text-gray-900 dark:text-slate-100">
-                                                {a.title}
-                                            </h4>
-                                        )}
-                                        <p className="mt-2 whitespace-pre-line text-sm text-gray-800 dark:text-slate-300">
-                                            {a.body}
-                                        </p>
-                                    </div>
+                    {/* Stream Posts Feed */}
+                    <div className="space-y-4">
+                        {/* 1. Pinned Spotlight Section */}
+                        {pinnedAnnouncements.length > 0 && (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 px-1 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                    <Pin className="h-3.5 w-3.5 fill-current" />
+                                    <span>Pinned Broadcasts ({pinnedAnnouncements.length})</span>
                                 </div>
-                            );
-                        })}
+                                {pinnedAnnouncements.map((a) => (
+                                    <StreamFeedCard
+                                        key={a.id}
+                                        announcement={a}
+                                        canManage={canManage}
+                                        onTogglePin={onTogglePin}
+                                        onEdit={(dto) => {
+                                            setEditingAnnouncement(dto);
+                                            setAnnouncementModalOpen(true);
+                                        }}
+                                        onDelete={(dto) => setDeletingAnnouncement(dto)}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
-                        {details.announcements.map((a) => (
-                            <AnnouncementCard
+                        {/* 2. Lazy Loaded Regular Announcements */}
+                        {visibleRegularAnnouncements.map((a) => (
+                            <StreamFeedCard
                                 key={a.id}
                                 announcement={a}
-                                href={`/course/${details.courseId}/assignments/${a.id}`}
+                                canManage={canManage}
+                                onTogglePin={onTogglePin}
+                                onEdit={(dto) => {
+                                    setEditingAnnouncement(dto);
+                                    setAnnouncementModalOpen(true);
+                                }}
+                                onDelete={(dto) => setDeletingAnnouncement(dto)}
                             />
                         ))}
+
+                        {/* Lazy Loading Sentinel & Load More Indicator */}
+                        {hasMore && (
+                            <div
+                                ref={sentinelRef}
+                                className="flex flex-col items-center justify-center py-4"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={handleLoadMore}
+                                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 shadow-2xs hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-all"
+                                >
+                                    <ArrowDown className="h-3.5 w-3.5" />
+                                    <span>
+                                        Load more ({regularAnnouncements.length - visibleCount} remaining)
+                                    </span>
+                                </button>
+                                <span className="mt-1.5 text-[11px] text-slate-400">
+                                    Auto-loads as you scroll
+                                </span>
+                            </div>
+                        )}
+
+                        {/* End of feed indicator when all items are loaded */}
+                        {!hasMore && regularAnnouncements.length > PAGE_SIZE && (
+                            <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
+                                <span>You&apos;ve reached the end of the announcements stream</span>
+                            </div>
+                        )}
+
+                        {/* 3. Empty State */}
+                        {filteredAnnouncements.length === 0 && (
+                            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 py-16 px-6 text-center dark:border-slate-800 dark:bg-slate-900/40">
+                                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-400/10 dark:text-indigo-400">
+                                    <Sparkles className="h-7 w-7" />
+                                </div>
+
+                                <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-slate-100">
+                                    {searchQuery ? "No matching announcements found" : "No announcements yet"}
+                                </h3>
+
+                                <p className="mt-1.5 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+                                    {searchQuery
+                                        ? `No announcements matching "${searchQuery}". Try a different search term.`
+                                        : "This class stream is quiet. Announcements and key updates will appear right here."}
+                                </p>
+
+                                {canManage && !searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditingAnnouncement(null);
+                                            setAnnouncementModalOpen(true);
+                                        }}
+                                        className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        <span>Create First Announcement</span>
+                                    </button>
+                                )}
+
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchQuery("")}
+                                        className="mt-4 text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400 cursor-pointer"
+                                    >
+                                        Clear Search
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
-                </div>
+                </main>
+
+                {/* Right-Hand Sidebar */}
+                <StreamSidebar
+                    courseId={details.courseId}
+                    details={details}
+                    course={course}
+                    nextSession={nextSession}
+                    isInstructor={canManage}
+                    onTabChange={onTabChange}
+                />
             </div>
 
+            {/* Create / Edit Announcement Modal */}
             <AnnouncementFormModal
                 open={announcementModalOpen}
                 initialData={editingAnnouncement}
@@ -290,20 +372,33 @@ export function StreamView({
                 }
             />
 
+            {/* Modern Delete Confirmation Dialog */}
             {deletingAnnouncement && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-                            Delete announcement?
-                        </h3>
-                        <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
-                            This announcement will be permanently deleted. This action cannot be undone.
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs px-4">
+                    <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
+                                <AlertCircle className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                                    Delete announcement?
+                                </h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    This action cannot be undone.
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="mt-3.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                            Are you sure you want to permanently remove this announcement from the class stream? Students will no longer see this broadcast.
                         </p>
-                        <div className="mt-6 flex justify-end gap-3">
+
+                        <div className="mt-6 flex justify-end gap-2.5">
                             <button
                                 type="button"
                                 onClick={() => setDeletingAnnouncement(null)}
-                                className="cursor-pointer rounded-full border border-gray-400 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                                className="cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
                             >
                                 Cancel
                             </button>
@@ -313,9 +408,9 @@ export function StreamView({
                                     onDeleteAnnouncement?.(deletingAnnouncement.id);
                                     setDeletingAnnouncement(null);
                                 }}
-                                className="cursor-pointer rounded-full bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                className="cursor-pointer rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-rose-600/20 hover:bg-rose-500 transition-all active:scale-95"
                             >
-                                Delete
+                                Delete Announcement
                             </button>
                         </div>
                     </div>

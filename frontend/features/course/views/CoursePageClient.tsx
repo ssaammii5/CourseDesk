@@ -331,6 +331,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     apiAnnouncements={apiAnnouncements}
                     isInstructor={isInstructor}
                     isTeacher={isTeacher}
+                    onTabChange={handleTabChange}
                     onPostAnnouncement={isInstructor ? handlePostAnnouncement : undefined}
                     onUpdateAnnouncement={isInstructor ? handleUpdateAnnouncement : undefined}
                     onDeleteAnnouncement={isInstructor ? handleDeleteAnnouncement : undefined}
