@@ -5,16 +5,15 @@ import {
     Bell,
     CalendarDays,
     CheckCheck,
+    ChevronDown,
     ChevronRight,
     ClipboardCheck,
     ClipboardList,
     GraduationCap,
     Info,
-    Layers,
     LogOut,
     Megaphone,
     Menu,
-    MessageSquare,
     Settings,
     Star,
     Video,
@@ -23,7 +22,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { IconButton } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import {
     clearAllNotificationsRequest,
@@ -32,7 +30,7 @@ import {
     markNotificationReadRequest,
     subscribeNotificationsStream,
 } from "@/lib/api";
-import { ROLE_STYLES, type NotificationItem, type NotificationKind } from "@/types";
+import { type NotificationItem, type NotificationKind } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
 import { initialOf } from "@/lib/utils/format";
 import { hasAccessToken } from "@/lib/auth/session";
@@ -45,13 +43,13 @@ const NOTIFICATION_META: Record<
     NotificationKind,
     { icon: LucideIcon; classes: string }
 > = {
-    assignment: { icon: ClipboardList, classes: "bg-[#d7e3fd] text-[#174ea6]" },
-    grade: { icon: Star, classes: "bg-[#fce8e6] text-[#c5221f]" },
-    announcement: { icon: Megaphone, classes: "bg-[#ceead6] text-[#137333]" },
-    submission: { icon: ClipboardCheck, classes: "bg-[#ede7f6] text-[#5e35b1]" },
-    due: { icon: CalendarDays, classes: "bg-[#fef7e0] text-[#b06000]" },
-    session: { icon: Video, classes: "bg-[#e0f2f1] text-[#00796b]" },
-    system: { icon: Info, classes: "bg-[#e8eaed] text-[#3c4043]" },
+    assignment: { icon: ClipboardList, classes: "bg-blue-50 text-blue-600 ring-1 ring-blue-100" },
+    grade: { icon: Star, classes: "bg-amber-50 text-amber-600 ring-1 ring-amber-100" },
+    announcement: { icon: Megaphone, classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100" },
+    submission: { icon: ClipboardCheck, classes: "bg-purple-50 text-purple-600 ring-1 ring-purple-100" },
+    due: { icon: CalendarDays, classes: "bg-rose-50 text-rose-600 ring-1 ring-rose-100" },
+    session: { icon: Video, classes: "bg-teal-50 text-teal-600 ring-1 ring-teal-100" },
+    system: { icon: Info, classes: "bg-slate-100 text-slate-600 ring-1 ring-slate-200" },
 };
 
 function formatRelativeTime(isoString?: string): string {
@@ -74,6 +72,40 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [unreadCount, setUnreadCount] = useState<number>(0);
     const lastFetchRef = useRef<number>(0);
+
+    const notifRef = useRef<HTMLDivElement>(null);
+    const accountRef = useRef<HTMLDivElement>(null);
+
+    // Global click-outside & escape listeners to ensure menus close when clicking anywhere else
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent | TouchEvent) {
+            const target = event.target as Node;
+            if (notifOpen && notifRef.current && !notifRef.current.contains(target)) {
+                setNotifOpen(false);
+            }
+            if (accountOpen && accountRef.current && !accountRef.current.contains(target)) {
+                setAccountOpen(false);
+            }
+        }
+
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                setNotifOpen(false);
+                setAccountOpen(false);
+            }
+        }
+
+        if (notifOpen || accountOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+            document.addEventListener("touchstart", handleClickOutside);
+            document.addEventListener("keydown", handleKeyDown);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("touchstart", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [notifOpen, accountOpen]);
 
     const loadNotifications = useCallback(async (force = false) => {
         if (!user || !hasAccessToken()) return;
@@ -160,7 +192,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const isSubmissions = pathname === "/submissions";
     const isAdminPage = isInstructors || isLearners || isCourses || isAcademics || isAssignments || isSubmissions || isAppSettings;
 
-    const toggleAccount = () => { setNotifOpen(false); setAccountOpen((v) => !v); };
+    const toggleAccount = () => {
+        setNotifOpen(false);
+        setAccountOpen((v) => !v);
+    };
+
     const toggleNotif = () => {
         setAccountOpen(false);
         setNotifOpen((v) => {
@@ -224,227 +260,270 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const displayName = user?.name ?? "";
     const displayEmail = user?.email ?? "";
     const displayRole = user?.role ?? "Learner";
-    const avatarClass = user?.avatarClass ?? "bg-gray-600";
+    const avatarClass = user?.avatarClass ?? "bg-blue-600";
 
     return (
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white px-3 sm:px-4">
-            {/* Left side */}
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                <IconButton label="Main menu" onClick={onMenuClick}>
-                    <Menu className="h-6 w-6" />
-                </IconButton>
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 sm:px-6 backdrop-blur-md transition-all">
+            {/* Left side: Hamburger, Logo, Breadcrumbs */}
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
+                <button
+                    type="button"
+                    onClick={onMenuClick}
+                    aria-label="Toggle navigation menu"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                >
+                    <Menu className="h-5 w-5" />
+                </button>
 
-                <Link href="/" className="flex shrink-0 items-center gap-2">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-sm">
+                <Link href="/" className="group flex shrink-0 items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
                         <GraduationCap className="h-5 w-5" />
                     </span>
-                    <span className="text-xl font-normal tracking-tight text-gray-800 hover:text-gray-900">
+                    <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
                         CourseDesk
                     </span>
                 </Link>
 
+                {/* Breadcrumb Info */}
                 {classCourse && (
-                    <span className="flex min-w-0 items-center gap-1 text-sm text-gray-700">
-                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-600" />
-                        <span className="truncate font-medium text-gray-800">
-                            {classCourse.name}
-                        </span>
-                        {classSub && (
-                            <span className="hidden truncate text-xs text-gray-600 sm:inline">
-                                ({classSub})
+                    <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:pl-2">
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                        <div className="flex items-center gap-1.5 min-w-0 max-w-[160px] sm:max-w-xs md:max-w-md rounded-lg bg-slate-100/80 px-2.5 py-1 border border-slate-200/60">
+                            <span className="truncate text-xs font-semibold text-slate-800">
+                                {classCourse.name}
                             </span>
-                        )}
-                    </span>
+                            {classSub && (
+                                <span className="hidden truncate text-[11px] font-medium text-slate-400 md:inline">
+                                    • {classSub}
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 )}
 
                 {!classCourse && (isTodo || isCalendar || isSettings || isAdminPage) && (
-                    <span className="flex min-w-0 items-center gap-1 text-sm text-gray-700">
-                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-600" />
-                        <span className="truncate font-medium text-gray-800">
+                    <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:pl-2">
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                        <span className="inline-flex items-center rounded-lg bg-slate-100/80 px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-200/60">
                             {isTodo && "To-do"}
                             {isCalendar && "Calendar"}
                             {isSettings && "Settings"}
                             {isInstructors && "Instructors"}
                             {isLearners && "Learners"}
                             {isCourses && "Courses"}
-                            {isAcademics && "Academic"}
+                            {isAcademics && "Categories & Tracks"}
                             {isAssignments && "Assignments"}
                             {isSubmissions && "Submissions"}
                             {isAppSettings && "App Settings"}
                         </span>
-                    </span>
+                    </div>
                 )}
             </div>
 
-            {/* Right side */}
-            <div className="flex shrink-0 items-center gap-1">
-                {/* Notifications */}
-                <div className="relative">
+            {/* Right side: Notifications, User Profile Menu */}
+            <div className="flex shrink-0 items-center gap-2">
+                {/* Notifications Button & Dropdown */}
+                <div ref={notifRef} className="relative">
                     <button
                         type="button"
                         aria-label="Notifications"
                         onClick={toggleNotif}
-                        className={`relative z-50 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-gray-900/10 ${notifOpen ? "bg-gray-900/10" : ""}`}
+                        className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-all ${
+                            notifOpen
+                                ? "bg-slate-100 text-slate-900 ring-1 ring-slate-200"
+                                : "hover:bg-slate-100 hover:text-slate-800"
+                        }`}
                     >
-                        <Bell className="h-6 w-6" />
+                        <Bell className="h-4.5 w-4.5" />
                         {unreadCount > 0 && (
-                            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#d93025] px-1 text-[10px] font-semibold text-white shadow-sm">
+                            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-white">
                                 {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                         )}
                     </button>
+
                     {notifOpen && (
-                        <>
-                            <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-                            <div className="absolute right-0 top-full z-50 mt-2 w-[400px] overflow-hidden rounded-2xl bg-[#e9eef4] shadow-xl max-sm:fixed max-sm:inset-x-2 max-sm:top-[4.5rem] max-sm:mt-0 max-sm:w-auto">
-                                <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-300/60 bg-white/70 backdrop-blur-sm">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-base font-semibold text-gray-900">Notifications</span>
-                                        {unreadCount > 0 && (
-                                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-[#1a73e8]">
-                                                {unreadCount} new
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        {unreadCount > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={handleMarkAllRead}
-                                                className="cursor-pointer text-xs font-medium text-[#1a73e8] hover:underline"
-                                            >
-                                                Mark all read
-                                            </button>
-                                        )}
-                                        <button
-                                            type="button"
-                                            disabled={notifications.length === 0}
-                                            onClick={handleClearAll}
-                                            className="cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-900 disabled:cursor-default disabled:text-gray-400 disabled:no-underline"
-                                        >
-                                            Clear all
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="max-h-[420px] overflow-y-auto max-sm:max-h-[min(26.25rem,calc(100dvh-9rem))]">
-                                    {notifications.length === 0 ? (
-                                        <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200/70 text-gray-400">
-                                                <Bell className="h-6 w-6" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-800">No notifications</p>
-                                                <p className="mt-0.5 text-xs text-gray-500">You're all caught up!</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <ul className="divide-y divide-gray-300/50">
-                                            {notifications.map((n) => {
-                                                const meta = NOTIFICATION_META[n.kind] || NOTIFICATION_META.system;
-                                                const Icon = meta.icon;
-                                                return (
-                                                    <li key={n.id}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleNotificationClick(n)}
-                                                            className={`flex w-full cursor-pointer items-start gap-3.5 px-5 py-3.5 text-left transition-colors hover:bg-gray-900/5 ${!n.isRead ? "bg-white/50" : ""}`}
-                                                        >
-                                                            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${meta.classes}`}>
-                                                                <Icon className="h-4 w-4" />
-                                                            </span>
-                                                            <span className="min-w-0 flex-1">
-                                                                <span className="flex items-start justify-between gap-2">
-                                                                    <span className={`block text-sm leading-snug ${!n.isRead ? "font-semibold text-gray-900" : "font-medium text-gray-800"}`}>
-                                                                        {n.title}
-                                                                    </span>
-                                                                    {!n.isRead && (
-                                                                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#1a73e8]" />
-                                                                    )}
-                                                                </span>
-                                                                {n.message && (
-                                                                    <span className="mt-0.5 line-clamp-2 block text-xs text-gray-600">
-                                                                        {n.message}
-                                                                    </span>
-                                                                )}
-                                                                <span className="mt-1 block text-[11px] text-gray-400">
-                                                                    {formatRelativeTime(n.createdAtUtc)}
-                                                                </span>
-                                                            </span>
-                                                        </button>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
+                        <div className="absolute right-0 top-full z-50 mt-2 w-[400px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200/90 ring-1 ring-black/5 max-sm:fixed max-sm:inset-x-3 max-sm:top-20 max-sm:w-auto animate-in fade-in zoom-in-95 duration-150">
+                            {/* Notification Header */}
+                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50/70">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold text-slate-900">Notifications</span>
+                                    {unreadCount > 0 && (
+                                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600 ring-1 ring-blue-100">
+                                            {unreadCount} new
+                                        </span>
                                     )}
                                 </div>
+                                <div className="flex items-center gap-3">
+                                    {unreadCount > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleMarkAllRead}
+                                            className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                                        >
+                                            <CheckCheck className="h-3.5 w-3.5" />
+                                            Mark read
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        disabled={notifications.length === 0}
+                                        onClick={handleClearAll}
+                                        className="text-xs font-medium text-slate-400 hover:text-slate-700 disabled:opacity-40 disabled:hover:text-slate-400 transition-colors"
+                                    >
+                                        Clear all
+                                    </button>
+                                </div>
                             </div>
-                        </>
+
+                            {/* Notification List */}
+                            <div className="max-h-[400px] overflow-y-auto no-scrollbar">
+                                {notifications.length === 0 ? (
+                                    <div className="flex flex-col items-center gap-2.5 px-6 py-12 text-center">
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                                            <Bell className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-semibold text-slate-800">All caught up!</p>
+                                            <p className="mt-0.5 text-xs text-slate-400">You don't have any unread notifications.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <ul className="divide-y divide-slate-100">
+                                        {notifications.map((n) => {
+                                            const meta = NOTIFICATION_META[n.kind] || NOTIFICATION_META.system;
+                                            const Icon = meta.icon;
+                                            return (
+                                                <li key={n.id}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNotificationClick(n)}
+                                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
+                                                            !n.isRead ? "bg-blue-50/40 hover:bg-blue-50/60" : ""
+                                                        }`}
+                                                    >
+                                                        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${meta.classes}`}>
+                                                            <Icon className="h-4 w-4" />
+                                                        </span>
+                                                        <span className="min-w-0 flex-1">
+                                                            <span className="flex items-start justify-between gap-2">
+                                                                <span className={`block text-xs leading-snug ${!n.isRead ? "font-semibold text-slate-900" : "font-medium text-slate-700"}`}>
+                                                                    {n.title}
+                                                                </span>
+                                                                {!n.isRead && (
+                                                                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+                                                                )}
+                                                            </span>
+                                                            {n.message && (
+                                                                <span className="mt-0.5 line-clamp-2 block text-xs text-slate-500">
+                                                                    {n.message}
+                                                                </span>
+                                                            )}
+                                                            <span className="mt-1 block text-[10px] font-medium text-slate-400">
+                                                                    {formatRelativeTime(n.createdAtUtc)}
+                                                                </span>
+                                                        </span>
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                {/* Account */}
-                <div className="relative ml-2">
+                {/* Account Trigger & Dropdown Menu */}
+                <div ref={accountRef} className="relative">
                     <button
                         type="button"
-                        aria-label="Account"
+                        aria-label="User account menu"
                         onClick={toggleAccount}
-                        className={`relative z-50 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-sm font-medium text-white ring-2 ring-transparent transition-shadow hover:ring-gray-400/60 ${avatarClass}`}
+                        className={`flex items-center gap-2 rounded-xl p-1 sm:pr-2.5 border transition-all duration-150 ${
+                            accountOpen
+                                ? "bg-slate-100 border-slate-300 ring-1 ring-slate-200"
+                                : "border-slate-200/70 bg-white/60 hover:bg-slate-100/80 hover:border-slate-300/70 shadow-xs"
+                        }`}
                     >
-                        {initialOf(displayName)}
+                        <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs ${avatarClass}`}>
+                            {initialOf(displayName)}
+                        </span>
+                        <div className="hidden text-left sm:block">
+                            <p className="max-w-[110px] truncate text-xs font-semibold text-slate-800 leading-tight">
+                                {displayName || "Account"}
+                            </p>
+                            <p className="text-[10px] font-medium text-slate-400 capitalize leading-tight">
+                                {displayRole}
+                            </p>
+                        </div>
+                        <ChevronDown className={`hidden sm:block h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`} />
                     </button>
+
                     {accountOpen && (
-                        <>
-                            <div className="fixed inset-0 z-40" onClick={() => setAccountOpen(false)} />
-                            <div className="absolute right-0 top-full z-50 mt-3 w-[340px] rounded-2xl bg-[#e9eef4] p-5 shadow-xl">
-                                <div className="relative text-center">
-                                    <p className="truncate text-sm text-gray-800">{displayEmail}</p>
-                                    <button
-                                        type="button"
-                                        aria-label="Close"
-                                        onClick={() => setAccountOpen(false)}
-                                        className="absolute -right-1.5 -top-1.5 cursor-pointer rounded-full p-1.5 text-gray-700 hover:bg-gray-900/10"
-                                    >
-                                        <X className="h-5 w-5" />
-                                    </button>
-                                </div>
-                                <div className="mt-5 flex justify-center">
-                                    <span className={`flex h-20 w-20 items-center justify-center rounded-full text-4xl text-white ${avatarClass}`}>
+                        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200/90 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                            {/* User Card Header */}
+                            <div className="border-b border-slate-100 bg-slate-50/60 p-4">
+                                <div className="flex items-center gap-3">
+                                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white shadow-xs ${avatarClass}`}>
                                         {initialOf(displayName)}
                                     </span>
-                                </div>
-                                <p title={displayName} className="mt-4 truncate px-2 text-center text-xl text-gray-900">
-                                    {displayName}
-                                </p>
-                                <div className="mt-2 flex justify-center">
-                                    <span className={`rounded-full px-3.5 py-1 text-xs font-medium ${ROLE_STYLES[displayRole]}`}>
-                                        {displayRole}
-                                    </span>
-                                </div>
-                                <div className="mt-5 grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setAccountOpen(false); router.push("/settings"); }}
-                                        className="flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-500/70 bg-white/70 py-2.5 text-sm font-medium text-[#1a73e8] hover:bg-white"
-                                    >
-                                        <Settings className="h-4 w-4" />
-                                        Settings
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleLogout}
-                                        className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#c5221f] py-2.5 text-sm font-medium text-white hover:bg-[#a31815]"
-                                    >
-                                        <LogOut className="h-4 w-4" />
-                                        Log out
-                                    </button>
-                                </div>
-                                <div className="mt-5 flex items-center justify-center gap-2 text-xs text-gray-700">
-                                    <a href="#" className="hover:underline">Privacy Policy</a>
-                                    <span>•</span>
-                                    <a href="#" className="hover:underline">Terms of Service</a>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
+                                        <p className="truncate text-xs text-slate-500">{displayEmail}</p>
+                                        <div className="mt-1">
+                                            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold border ${
+                                                displayRole === "Admin" ? "bg-rose-50 text-rose-700 border-rose-200/80" :
+                                                displayRole === "Instructor" ? "bg-amber-50 text-amber-700 border-amber-200/80" :
+                                                "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+                                            }`}>
+                                                <span
+                                                    className={`h-1.5 w-1.5 rounded-full ${
+                                                        displayRole === "Admin" ? "bg-rose-500" :
+                                                        displayRole === "Instructor" ? "bg-amber-500" :
+                                                        "bg-emerald-500"
+                                                    }`}
+                                                />
+                                                {displayRole}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </>
+
+                            {/* Menu Links */}
+                            <div className="p-2 space-y-1">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setAccountOpen(false);
+                                        router.push("/settings");
+                                    }}
+                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100/80 transition-colors"
+                                >
+                                    <Settings className="h-4 w-4 text-slate-400" />
+                                    Account Settings
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleLogout}
+                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                                >
+                                    <LogOut className="h-4 w-4 text-rose-500" />
+                                    Sign out
+                                </button>
+                            </div>
+
+                            {/* Footer Links */}
+                            <div className="border-t border-slate-100 bg-slate-50/40 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                                <span>CourseDesk LMS</span>
+                                <div className="flex items-center gap-2">
+                                    <a href="#" className="hover:text-slate-600 transition-colors">Privacy</a>
+                                    <span>•</span>
+                                    <a href="#" className="hover:text-slate-600 transition-colors">Terms</a>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
