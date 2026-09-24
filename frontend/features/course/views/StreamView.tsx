@@ -154,8 +154,8 @@ export function StreamView({
     };
 
     return (
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-300">
-            {/* 1. Ultra-Modern Command Hero */}
+        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 space-y-5 animate-in fade-in duration-300">
+            {/* 1. Ultra-Modern Compact Command Hero */}
             <StreamHero
                 title={title}
                 details={details}
@@ -170,7 +170,7 @@ export function StreamView({
             />
 
             {/* 2. Main Two-Column Stream Layout */}
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
                 {/* Main Activity Stream (Center / Left) */}
                 <main className="min-w-0 flex-1 space-y-5">
                     {/* Instructor Modern Composer Bar */}
