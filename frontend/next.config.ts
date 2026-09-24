@@ -69,6 +69,11 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
+        source: "/course/:courseId/lectures",
+        destination: "/course/:courseId?tab=curriculum",
+        permanent: false,
+      },
+      {
         source: "/course/:courseId/submissions",
         destination: "/course/:courseId?tab=coursework",
         permanent: false,

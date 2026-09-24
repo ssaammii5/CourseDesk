@@ -2,10 +2,10 @@
 
 import {
     Award,
-    Calendar,
     ClipboardList,
     Layers,
     Users,
+    Video,
     type LucideIcon,
 } from "lucide-react";
 
@@ -14,7 +14,7 @@ export type ClassTab = CourseTab;
 
 export const COURSE_TABS: { id: CourseTab; label: string; icon: LucideIcon }[] = [
     { id: "stream", label: "Stream", icon: Layers },
-    { id: "curriculum", label: "Curriculum & Sessions", icon: Calendar },
+    { id: "curriculum", label: "Lectures", icon: Video },
     { id: "coursework", label: "Coursework", icon: ClipboardList },
     { id: "people", label: "People", icon: Users },
 ];

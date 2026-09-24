@@ -224,6 +224,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             let target = n.link;
             target = target.replace(/\/course\/(\d+)\/coursework\/?$/, "/course/$1?tab=coursework");
             target = target.replace(/\/course\/(\d+)\/curriculum\/?$/, "/course/$1?tab=curriculum");
+            target = target.replace(/\/course\/(\d+)\/lectures\/?$/, "/course/$1?tab=curriculum");
             target = target.replace(/\/course\/(\d+)\/submissions\/?$/, "/course/$1?tab=coursework");
             target = target.replace(/\/course\/(\d+)\/people\/?$/, "/course/$1?tab=people");
             target = target.replace(/\/course\/(\d+)\/grades\/?$/, "/course/$1?tab=grades");

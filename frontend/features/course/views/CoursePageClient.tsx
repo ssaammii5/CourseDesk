@@ -53,10 +53,12 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     const isInstructor = user?.role === "Instructor" || (user?.role as string) === "Teacher" || user?.role === "Admin";
     const isTeacher = isInstructor;
     const searchParams = useSearchParams();
-    const queryTab = searchParams ? (searchParams.get("tab") as CourseTab | null) : null;
+    const rawTab = searchParams ? searchParams.get("tab") : null;
+    const queryTab = rawTab === "lectures" ? "curriculum" : (rawTab as CourseTab | null);
 
     const [tab, setTab] = useState<CourseTab>(() => {
-        const startTab = queryTab || initialTab;
+        const startRaw = queryTab || initialTab;
+        const startTab = startRaw === ("lectures" as unknown) ? "curriculum" : startRaw;
         if (startTab && VALID_TABS.includes(startTab)) {
             if (startTab === "grades" && !isInstructor) return "coursework";
             return startTab;
@@ -65,7 +67,8 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     });
 
     useEffect(() => {
-        const currentQuery = searchParams?.get("tab") as CourseTab | null;
+        const raw = searchParams?.get("tab");
+        const currentQuery = raw === "lectures" ? "curriculum" : (raw as CourseTab | null);
         const targetTab = currentQuery || initialTab;
         if (targetTab && VALID_TABS.includes(targetTab)) {
             if (targetTab === "grades" && !isInstructor) {
@@ -340,6 +343,9 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     isInstructor={isInstructor}
                     isTeacher={isTeacher}
                     assignmentStatusMap={assignmentStatusMap}
+                    courseTitle={title}
+                    courseId={details.courseId}
+                    classwork={classwork}
                 />
             )}
 
