@@ -20,6 +20,7 @@ import {
     PlayCircle,
     Search,
     Share2,
+    Sparkles,
     Star,
     Video,
     X,
@@ -362,6 +363,36 @@ export function CurriculumView({
     // Speed and theater state for video
     const [videoSpeed, setVideoSpeed] = useState<number>(1);
     const [theaterMode, setTheaterMode] = useState<boolean>(false);
+
+    // Sidebar search state
+    const [sidebarSearch, setSidebarSearch] = useState("");
+
+    const allExpanded = useMemo(() => {
+        return topicGroups.length > 0 && topicGroups.every((t) => openTopicIds[t.id]);
+    }, [topicGroups, openTopicIds]);
+
+    const toggleExpandAll = () => {
+        const nextState = !allExpanded;
+        const newMap: Record<string, boolean> = {};
+        topicGroups.forEach((t) => {
+            newMap[t.id] = nextState;
+        });
+        setOpenTopicIds(newMap);
+    };
+
+    const filteredTopics = useMemo(() => {
+        if (!sidebarSearch.trim()) return topicGroups;
+        const q = sidebarSearch.toLowerCase();
+        return topicGroups.filter(
+            (t) =>
+                t.title.toLowerCase().includes(q) ||
+                t.sessions.some(
+                    (s) =>
+                        s.title.toLowerCase().includes(q) ||
+                        (s.description && s.description.toLowerCase().includes(q))
+                )
+        );
+    }, [topicGroups, sidebarSearch]);
 
     // Active topic & session
     const currentTopic = topicGroups.find((g) => g.id === selectedTopicId) || topicGroups[0];
@@ -858,117 +889,267 @@ export function CurriculumView({
 
                     {/* Right Column: Preli Class Playlist / Accordion */}
                     <div className="lg:col-span-4 sticky top-20">
-                        <div className="rounded-2xl border border-gray-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
-                            {/* Card Header */}
-                            <div className="p-5 border-b border-gray-100 dark:border-slate-800">
-                                <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">
-                                    Preli Class
-                                </h2>
-                                <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mt-1">
-                                    {totalVideoCount} Video • {totalFileCount} File
-                                </p>
+                        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg shadow-slate-200/40 dark:shadow-none overflow-hidden flex flex-col max-h-[calc(100vh-6.5rem)]">
+                            {/* Card Header with Modern Gradient & Stats */}
+                            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800/90 bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1a73e8] text-white shadow-xs">
+                                            <Sparkles className="h-4 w-4" />
+                                        </span>
+                                        <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                                            Preli Class
+                                        </h2>
+                                    </div>
+                                    <span className="inline-flex items-center rounded-full bg-blue-100/70 dark:bg-blue-950/80 px-2.5 py-0.5 text-[11px] font-semibold text-[#1a73e8] dark:text-blue-300">
+                                        Batch-01
+                                    </span>
+                                </div>
+
+                                {/* Video & File Stats Badges */}
+                                <div className="mt-3 flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-[#1a73e8] dark:text-blue-300 border border-blue-100 dark:border-blue-900/40">
+                                        <Video className="h-3.5 w-3.5" />
+                                        <span>{totalVideoCount} Videos</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40">
+                                        <FileText className="h-3.5 w-3.5" />
+                                        <span>{totalFileCount} Files</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={toggleExpandAll}
+                                        title={allExpanded ? "Collapse All" : "Expand All"}
+                                        className="ml-auto text-[11px] font-medium text-slate-500 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+                                    >
+                                        {allExpanded ? "Collapse All" : "Expand All"}
+                                    </button>
+                                </div>
+
+                                {/* Modern Progress Bar */}
+                                <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                                    <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                                        <span>Course Progress</span>
+                                        <span className="font-semibold text-slate-700 dark:text-slate-300">18% (27/150)</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+                                            style={{ width: "18%" }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Instant Topic Search Input */}
+                                <div className="mt-3.5 relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={sidebarSearch}
+                                        onChange={(e) => setSidebarSearch(e.target.value)}
+                                        placeholder="Search topics or lectures..."
+                                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/70 py-1.5 pl-9 pr-8 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all"
+                                    />
+                                    {sidebarSearch && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSidebarSearch("")}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Accordion Topics List */}
-                            <div className="divide-y divide-gray-100 dark:divide-slate-800/80">
-                                {topicGroups.map((topic) => {
-                                    const isOpen = Boolean(openTopicIds[topic.id]);
-                                    const isCurrentTopic = currentTopic?.id === topic.id;
-                                    const primarySession = topic.sessions[0];
+                            {/* Scrollable Topics & Lectures List */}
+                            <div className="flex-1 overflow-y-auto p-2.5 space-y-2 [scrollbar-width:thin] scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                                {filteredTopics.length === 0 ? (
+                                    <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                                        No topics found matching &quot;{sidebarSearch}&quot;
+                                    </div>
+                                ) : (
+                                    filteredTopics.map((topic, index) => {
+                                        const isOpen = Boolean(openTopicIds[topic.id]);
+                                        const isCurrentTopic = currentTopic?.id === topic.id;
+                                        const primarySession = topic.sessions[0];
+                                        const topicIndexFormatted = String(index + 1).padStart(2, "0");
 
-                                    return (
-                                        <div key={topic.id} className="transition-colors">
-                                            {/* Topic Header Accordion Button */}
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleTopicAccordion(topic.id)}
-                                                className={`flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors ${
+                                        return (
+                                            <div
+                                                key={topic.id}
+                                                className={`rounded-xl border transition-all duration-200 overflow-hidden ${
                                                     isCurrentTopic
-                                                        ? "bg-slate-50/80 dark:bg-slate-800/40"
-                                                        : "hover:bg-gray-50 dark:hover:bg-slate-800/30"
+                                                        ? "border-blue-200/90 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/10 shadow-xs"
+                                                        : "border-slate-100 dark:border-slate-800/70 bg-white dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700"
                                                 }`}
                                             >
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <BookOpen className="h-4 w-4 shrink-0 text-[#1a73e8] dark:text-blue-400" />
-                                                    <span className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">
-                                                        {topic.title}
-                                                    </span>
-                                                </div>
-                                                {isOpen ? (
-                                                    <ChevronDown className="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
-                                                ) : (
-                                                    <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
+                                                {/* Topic Header Accordion Button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleTopicAccordion(topic.id)}
+                                                    className={`group flex w-full cursor-pointer items-center justify-between px-3.5 py-3 text-left transition-colors ${
+                                                        isCurrentTopic
+                                                            ? "bg-blue-50/40 dark:bg-blue-950/20"
+                                                            : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <span
+                                                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                                                                isCurrentTopic
+                                                                    ? "bg-[#1a73e8] text-white shadow-xs"
+                                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-950/70 group-hover:text-[#1a73e8]"
+                                                            }`}
+                                                        >
+                                                            {topicIndexFormatted}
+                                                        </span>
+                                                        <div className="min-w-0">
+                                                            <h3 className="truncate text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#1a73e8] dark:group-hover:text-blue-400 transition-colors">
+                                                                {topic.title}
+                                                            </h3>
+                                                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                                                3 Lessons • {primarySession?.durationMinutes || 45} mins
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                                        <span
+                                                            className={`transform transition-transform duration-200 text-slate-400 dark:text-slate-500 ${
+                                                                isOpen ? "rotate-180 text-[#1a73e8] dark:text-blue-400" : ""
+                                                            }`}
+                                                        >
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        </span>
+                                                    </div>
+                                                </button>
+
+                                                {/* Sub-items (Video, PDF, Question Bank) */}
+                                                {isOpen && primarySession && (
+                                                    <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 space-y-1.5">
+                                                        {/* Sub-item: Video */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleSelectSubItem(topic, primarySession, "video")
+                                                            }
+                                                            className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left transition-all ${
+                                                                isCurrentTopic && selectedSubItem === "video"
+                                                                    ? "bg-blue-50 dark:bg-blue-950/70 text-[#1a73e8] dark:text-blue-300 font-semibold ring-1 ring-[#1a73e8]/30 shadow-xs"
+                                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-medium"
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-2.5">
+                                                                <span
+                                                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                                                                        isCurrentTopic && selectedSubItem === "video"
+                                                                            ? "bg-[#1a73e8] text-white"
+                                                                            : "bg-blue-100/70 dark:bg-blue-950/60 text-[#1a73e8] dark:text-blue-400 group-hover:bg-blue-100"
+                                                                    }`}
+                                                                >
+                                                                    <Video className="h-3.5 w-3.5" />
+                                                                </span>
+                                                                <div>
+                                                                    <p className="text-xs sm:text-sm leading-tight">Video</p>
+                                                                    <p className="text-[10px] text-slate-400 font-normal">
+                                                                        {primarySession?.durationMinutes || 45} mins • HD
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5">
+                                                                {isCurrentTopic && selectedSubItem === "video" && (
+                                                                    <span className="flex h-1.5 w-1.5 rounded-full bg-[#1a73e8] animate-ping" />
+                                                                )}
+                                                                <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                                                            </div>
+                                                        </button>
+
+                                                        {/* Sub-item: PDF */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleSelectSubItem(topic, primarySession, "pdf")
+                                                            }
+                                                            className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left transition-all ${
+                                                                isCurrentTopic && selectedSubItem === "pdf"
+                                                                    ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 font-semibold ring-1 ring-rose-400/30 shadow-xs"
+                                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-medium"
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-2.5">
+                                                                <span
+                                                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                                                                        isCurrentTopic && selectedSubItem === "pdf"
+                                                                            ? "bg-rose-600 text-white"
+                                                                            : "bg-rose-100/70 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 group-hover:bg-rose-100"
+                                                                    }`}
+                                                                >
+                                                                    <FileText className="h-3.5 w-3.5" />
+                                                                </span>
+                                                                <div>
+                                                                    <p className="text-xs sm:text-sm leading-tight">PDF</p>
+                                                                    <p className="text-[10px] text-slate-400 font-normal">
+                                                                        {primarySession?.materials?.[0]?.fileSize || "2.8 MB"} • Notes
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                                                        </button>
+
+                                                        {/* Sub-item: Question Bank */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleSelectSubItem(
+                                                                    topic,
+                                                                    primarySession,
+                                                                    "question-bank"
+                                                                )
+                                                            }
+                                                            className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left transition-all ${
+                                                                isCurrentTopic && selectedSubItem === "question-bank"
+                                                                    ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold ring-1 ring-indigo-400/30 shadow-xs"
+                                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-medium"
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-2.5">
+                                                                <span
+                                                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                                                                        isCurrentTopic && selectedSubItem === "question-bank"
+                                                                            ? "bg-indigo-600 text-white"
+                                                                            : "bg-indigo-100/70 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100"
+                                                                    }`}
+                                                                >
+                                                                    <BookOpen className="h-3.5 w-3.5" />
+                                                                </span>
+                                                                <div>
+                                                                    <p className="text-xs sm:text-sm leading-tight">Question Bank</p>
+                                                                    <p className="text-[10px] text-slate-400 font-normal">
+                                                                        25 Questions • Test
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                                                        </button>
+                                                    </div>
                                                 )}
-                                            </button>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
 
-                                            {/* Sub-items (Video, PDF, Question Bank) */}
-                                            {isOpen && primarySession && (
-                                                <div className="bg-white dark:bg-slate-900/80 px-3 pb-3 pt-1 space-y-1">
-                                                    {/* Sub-item: Video */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleSelectSubItem(topic, primarySession, "video")
-                                                        }
-                                                        className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-left transition-all ${
-                                                            isCurrentTopic && selectedSubItem === "video"
-                                                                ? "bg-blue-50/80 dark:bg-blue-950/40 text-[#1a73e8] dark:text-blue-400 font-semibold"
-                                                                : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 font-medium"
-                                                        }`}
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <Video className="h-4 w-4 shrink-0 text-[#1a73e8] dark:text-blue-400" />
-                                                            <span className="text-sm">Video</span>
-                                                        </div>
-                                                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
-                                                    </button>
-
-                                                    {/* Sub-item: PDF */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleSelectSubItem(topic, primarySession, "pdf")
-                                                        }
-                                                        className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-left transition-all ${
-                                                            isCurrentTopic && selectedSubItem === "pdf"
-                                                                ? "bg-blue-50/80 dark:bg-blue-950/40 text-[#1a73e8] dark:text-blue-400 font-semibold"
-                                                                : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 font-medium"
-                                                        }`}
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <FileText className="h-4 w-4 shrink-0 text-[#1a73e8] dark:text-blue-400" />
-                                                            <span className="text-sm">PDF</span>
-                                                        </div>
-                                                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
-                                                    </button>
-
-                                                    {/* Sub-item: Question Bank */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleSelectSubItem(
-                                                                topic,
-                                                                primarySession,
-                                                                "question-bank"
-                                                            )
-                                                        }
-                                                        className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-left transition-all ${
-                                                            isCurrentTopic && selectedSubItem === "question-bank"
-                                                                ? "bg-blue-50/80 dark:bg-blue-950/40 text-[#1a73e8] dark:text-blue-400 font-semibold"
-                                                                : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 font-medium"
-                                                        }`}
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <BookOpen className="h-4 w-4 shrink-0 text-[#1a73e8] dark:text-blue-400" />
-                                                            <span className="text-sm">Question Bank</span>
-                                                        </div>
-                                                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 dark:text-slate-500" />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                            {/* Sidebar Footer Hint */}
+                            <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 text-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setChatOpen(true)}
+                                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline cursor-pointer"
+                                >
+                                    <MessageCircle className="h-3.5 w-3.5" />
+                                    Have a question about this playlist?
+                                </button>
                             </div>
                         </div>
                     </div>
