@@ -227,7 +227,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const avatarClass = user?.avatarClass ?? "bg-gray-600";
 
     return (
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white px-3 sm:px-4">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white px-3 sm:px-4">
             {/* Left side */}
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <IconButton label="Main menu" onClick={onMenuClick}>
