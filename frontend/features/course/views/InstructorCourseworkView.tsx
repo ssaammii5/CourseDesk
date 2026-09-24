@@ -101,7 +101,7 @@ export function InstructorCourseworkView({
 
             {/* Topics */}
             {groups.length === 0 && (
-                <p className="py-16 text-center text-sm text-gray-600">
+                <p className="py-16 text-center text-sm text-gray-600 dark:text-slate-400">
                     Nothing posted yet. Use Create to add your first assignment.
                 </p>
             )}
@@ -110,26 +110,26 @@ export function InstructorCourseworkView({
                 return (
                     <section key={topic} className="mt-10 px-2 sm:px-10">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-2xl text-gray-900">{topic}</h2>
+                            <h2 className="text-2xl text-gray-900 dark:text-slate-100">{topic}</h2>
                             <button
                                 type="button"
                                 aria-label={collapsed ? `Expand ${topic}` : `Collapse ${topic}`}
                                 onClick={() => toggleTopic(topic)}
-                                className="cursor-pointer rounded-full p-2 text-gray-700 hover:bg-gray-900/5"
+                                className="cursor-pointer rounded-full p-2 text-gray-700 dark:text-slate-300 hover:bg-gray-900/5 dark:hover:bg-slate-800"
                             >
                                 <ChevronUp className={`h-5 w-5 transition-transform ${collapsed ? "rotate-180" : ""}`} />
                             </button>
                         </div>
-                        <div className="mt-3 border-t border-gray-300" />
+                        <div className="mt-3 border-t border-gray-300 dark:border-slate-800" />
                         {!collapsed &&
                             entries.map((entry) => {
                                 const Icon = KIND_ICONS[entry.kind ?? "assignment"] ?? ClipboardList;
                                 return (
                                     <div
                                         key={entry.id}
-                                        className="flex items-center gap-5 border-b border-gray-300 px-2 py-4"
+                                        className="flex items-center gap-5 border-b border-gray-300 dark:border-slate-800 px-2 py-4"
                                     >
-                                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-100 text-pink-700">
+                                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300">
                                             <Icon className="h-5 w-5" />
                                         </span>
                                         <button
@@ -142,18 +142,18 @@ export function InstructorCourseworkView({
                                                 }
                                             }}
                                             title={entry.title}
-                                            className="min-w-0 flex-1 truncate text-left text-[15px] font-medium text-gray-900 hover:text-[#1a73e8]"
+                                            className="min-w-0 flex-1 truncate text-left text-[15px] font-medium text-gray-900 dark:text-slate-200 hover:text-[#1a73e8] dark:hover:text-blue-400"
                                         >
                                             {entry.title}
                                         </button>
-                                        <span className="shrink-0 text-[14px] text-gray-600">{rightLabel(entry)}</span>
+                                        <span className="shrink-0 text-[14px] text-gray-600 dark:text-slate-400">{rightLabel(entry)}</span>
 
                                         {/* Quick Review action for assignments */}
                                         {courseId && entry.kind !== "material" && entry.status !== "Draft" && (
                                             <button
                                                 type="button"
                                                 onClick={() => router.push(`/course/${courseId}/assignments/${entry.id}`)}
-                                                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-[#1a73e8] hover:bg-blue-50/50 hover:text-[#1a73e8] transition-colors"
+                                                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-slate-300 hover:border-[#1a73e8] hover:bg-blue-50/50 dark:hover:bg-slate-700 hover:text-[#1a73e8] dark:hover:text-blue-400 transition-colors"
                                             >
                                                 Review work
                                             </button>
@@ -165,14 +165,14 @@ export function InstructorCourseworkView({
                                                 type="button"
                                                 aria-label={`More options for ${entry.title}`}
                                                 onClick={() => setMenuFor(menuFor === entry.id ? null : entry.id)}
-                                                className="cursor-pointer rounded-full p-2 text-gray-700 hover:bg-gray-900/5"
+                                                className="cursor-pointer rounded-full p-2 text-gray-700 dark:text-slate-300 hover:bg-gray-900/5 dark:hover:bg-slate-800"
                                             >
                                                 <EllipsisVertical className="h-5 w-5" />
                                             </button>
                                             {menuFor === entry.id && (
                                                 <>
                                                     <div className="fixed inset-0 z-10" onClick={() => setMenuFor(null)} />
-                                                    <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                                                    <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-lg">
                                                         {courseId && entry.kind !== "material" && entry.status !== "Draft" && (
                                                             <button
                                                                 type="button"
@@ -180,9 +180,9 @@ export function InstructorCourseworkView({
                                                                     setMenuFor(null);
                                                                     router.push(`/course/${courseId}/assignments/${entry.id}`);
                                                                 }}
-                                                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-[#1a73e8] hover:bg-blue-50 font-medium"
+                                                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 font-medium"
                                                             >
-                                                                <ClipboardList className="h-4 w-4 text-[#1a73e8]" />
+                                                                <ClipboardList className="h-4 w-4 text-[#1a73e8] dark:text-blue-400" />
                                                                 Review learner work
                                                             </button>
                                                         )}
@@ -192,9 +192,9 @@ export function InstructorCourseworkView({
                                                                 setMenuFor(null);
                                                                 onEdit(entry);
                                                             }}
-                                                            className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-50"
+                                                            className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-gray-900 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700"
                                                         >
-                                                            <Pencil className="h-4 w-4 text-gray-600" />
+                                                            <Pencil className="h-4 w-4 text-gray-600 dark:text-slate-400" />
                                                             Edit
                                                         </button>
                                                         <button
@@ -203,7 +203,7 @@ export function InstructorCourseworkView({
                                                                 setMenuFor(null);
                                                                 onDelete(entry);
                                                             }}
-                                                            className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-[#c5221f] hover:bg-red-50"
+                                                            className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                             Delete

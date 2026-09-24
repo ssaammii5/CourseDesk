@@ -217,37 +217,37 @@ export function CoursesSection() {
 
     if (!hydrated) {
         return (
-            <section className="rounded-xl bg-[#f9fafc] px-6 py-5 shadow-sm">
+            <section className="rounded-xl bg-[#f9fafc] dark:bg-slate-900 px-6 py-5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors">
                 <div className="flex justify-center py-10">
-                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#1a73e8] dark:border-blue-400 border-t-transparent" />
                 </div>
             </section>
         );
     }
 
     return (
-        <section className="rounded-xl bg-[#f9fafc] px-6 py-5 shadow-sm">
+        <section className="rounded-xl bg-[#f9fafc] dark:bg-slate-900 px-6 py-5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl text-gray-800">My Courses</h2>
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-slate-100">My Courses</h2>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <div className="relative">
                         <select
                             aria-label="Sort courses"
                             value={layout.sort}
                             onChange={(e) => handleSortChange(e.target.value)}
-                            className="cursor-pointer appearance-none rounded-full border border-gray-400 bg-transparent py-2 pl-4 pr-9 text-sm font-medium text-[#1a73e8] hover:bg-blue-50 focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="cursor-pointer appearance-none rounded-full border border-gray-400 dark:border-slate-700 bg-transparent dark:bg-slate-800 py-2 pl-4 pr-9 text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
-                            <option value="custom">Custom order</option>
-                            <option value="alphabetical">Alphabetical (A–Z)</option>
+                            <option value="custom" className="dark:bg-slate-800 dark:text-slate-100">Custom order</option>
+                            <option value="alphabetical" className="dark:bg-slate-800 dark:text-slate-100">Alphabetical (A–Z)</option>
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1a73e8]" />
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1a73e8] dark:text-blue-400" />
                     </div>
                     <button
                         type="button"
                         onClick={isEditing ? exitEditMode : enterEditMode}
                         className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isEditing
                             ? "border-[#1a63d8] bg-[#1a63d8] text-white hover:bg-[#1554b5]"
-                            : "border-gray-400 text-[#1a73e8] hover:bg-blue-50"
+                            : "border-gray-400 dark:border-slate-700 text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800"
                             }`}
                     >
                         {isEditing ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
@@ -257,8 +257,8 @@ export function CoursesSection() {
             </div>
 
             {isEditing && (
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#e8f0fe] px-4 py-2.5">
-                    <p className="text-sm text-[#174ea6]">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#e8f0fe] dark:bg-blue-950/50 px-4 py-2.5">
+                    <p className="text-sm text-[#174ea6] dark:text-blue-300">
                         {canDrag
                             ? "Edit mode: drag cards to rearrange your courses."
                             : 'Edit mode: switch sorting to "Custom order" to drag cards.'}
@@ -274,7 +274,7 @@ export function CoursesSection() {
             )}
 
             {visibleCourses.length === 0 ? (
-                <p className="py-10 text-center text-sm text-gray-600">
+                <p className="py-10 text-center text-sm text-gray-600 dark:text-slate-400">
                     {homeCourses.length === 0
                         ? "You are not enrolled in any courses."
                         : "All of your courses are hidden. Expand the Hidden courses section below to unhide them."}
@@ -302,22 +302,22 @@ export function CoursesSection() {
             )}
 
             {hiddenCourses.length > 0 && (
-                <div className="mt-6 border-t border-gray-300/60 pt-4">
+                <div className="mt-6 border-t border-gray-300/60 dark:border-slate-800 pt-4">
                     <button
                         type="button"
                         onClick={() => setHiddenOpen((v) => !v)}
                         aria-expanded={hiddenOpen}
-                        className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-2 hover:bg-gray-900/5"
+                        className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-2 hover:bg-gray-900/5 dark:hover:bg-slate-800/60 transition-colors"
                     >
-                        <span className="flex items-center gap-3 text-base font-medium text-gray-800">
-                            <EyeOff className="h-5 w-5 text-gray-600" />
+                        <span className="flex items-center gap-3 text-base font-medium text-gray-800 dark:text-slate-200">
+                            <EyeOff className="h-5 w-5 text-gray-600 dark:text-slate-400" />
                             Hidden courses
-                            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-300/80 px-1.5 text-xs font-semibold text-gray-700">
+                            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-300/80 dark:bg-slate-800 px-1.5 text-xs font-semibold text-gray-700 dark:text-slate-300">
                                 {hiddenCourses.length}
                             </span>
                         </span>
                         <ChevronDown
-                            className={`h-5 w-5 text-gray-700 transition-transform duration-200 ${hiddenOpen ? "rotate-180" : ""}`}
+                            className={`h-5 w-5 text-gray-700 dark:text-slate-400 transition-transform duration-200 ${hiddenOpen ? "rotate-180" : ""}`}
                         />
                     </button>
                     {hiddenOpen && (
@@ -389,8 +389,8 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                 }
                 router.push(`/course/${course.id}`);
             }}
-            className={`group/card relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 ${
-                menuOpen ? "shadow-md" : "hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl"
+            className={`group/card relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all duration-300 ${
+                menuOpen ? "shadow-md" : "hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl"
             } ${isHidden ? "opacity-75 grayscale-[0.2]" : ""}${canDrag ? " cursor-grab active:cursor-grabbing" : ""}`}
         >
             {/* Header Banner */}
@@ -431,7 +431,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                             <EllipsisVertical className="h-4 w-4" />
                         </button>
                         {menuOpen && (
-                            <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl">
+                            <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 shadow-xl">
                                 <button
                                     type="button"
                                     onClick={(e) => {
@@ -440,12 +440,12 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                                         setMenuOpen(false);
                                         onToggleHide();
                                     }}
-                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
                                 >
                                     {isHidden ? (
-                                        <Eye className="h-4 w-4 text-slate-500" />
+                                        <Eye className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                                     ) : (
-                                        <EyeOff className="h-4 w-4 text-slate-500" />
+                                        <EyeOff className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                                     )}
                                     {isHidden ? "Unhide course" : "Hide course"}
                                 </button>
@@ -473,7 +473,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                         className="group/title block"
                         title={course.name}
                     >
-                        <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover/title:text-blue-600">
+                        <h3 className="truncate text-base font-bold text-slate-900 dark:text-white transition-colors group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400">
                             {course.name}
                         </h3>
                     </Link>
@@ -486,7 +486,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                             <span
                                 key={idx}
                                 title={name}
-                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-white shadow-sm ${avatarBgColors[idx % avatarBgColors.length]
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-white dark:ring-slate-900 shadow-sm ${avatarBgColors[idx % avatarBgColors.length]
                                     }`}
                             >
                                 {initialOf(name)}
@@ -494,7 +494,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                         ))}
                         {instructors.length > 3 && (
                             <span
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700 ring-2 ring-white shadow-sm"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 ring-2 ring-white dark:ring-slate-900 shadow-sm"
                                 title={instructors.slice(3).join(", ")}
                             >
                                 +{instructors.length - 3}
@@ -502,22 +502,22 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                         )}
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
                             {instructors.length > 1 ? "Instructors" : "Instructor"}
                         </p>
-                        <p className="truncate text-xs font-medium text-slate-700" title={instructorText}>
+                        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300" title={instructorText}>
                             {instructorText}
                         </p>
                     </div>
                 </div>
 
                 {/* Meta Stats Row */}
-                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-                    <span className="flex items-center gap-1.5 font-medium text-slate-600">
-                        <Users className="h-3.5 w-3.5 text-slate-400" />
+                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
+                        <Users className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                         {studentTotal.toLocaleString()} {studentTotal === 1 ? "learner" : "learners"}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         Active
                     </span>
@@ -525,7 +525,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
             </div>
 
             {/* Card Footer Actions */}
-            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+            <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 px-5 py-3">
                 <button
                     type="button"
                     aria-label="View work"
@@ -533,9 +533,9 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                         e.stopPropagation();
                         router.push(`/course/${course.id}/work`);
                     }}
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 hover:text-slate-900"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
                 >
-                    <ClipboardList className="h-3.5 w-3.5 text-slate-500" />
+                    <ClipboardList className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                     View Work
                 </button>
                 <Link

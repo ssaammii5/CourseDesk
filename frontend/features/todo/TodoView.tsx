@@ -225,9 +225,9 @@ export function TodoView() {
     const sections = useMemo(() => categorizeByDueDate(activeList), [activeList]);
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-white pb-16">
+        <div className="min-h-[calc(100vh-4rem)] bg-white pb-16 dark:bg-slate-950">
             {/* Top Navigation Tabs */}
-            <div className="sticky top-16 z-30 border-b border-gray-200 bg-white">
+            <div className="sticky top-16 z-30 border-b border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-950">
                 <div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 sm:px-8">
                     <nav className="flex gap-6 sm:gap-10">
                         {isInstructor ? (
@@ -237,15 +237,15 @@ export function TodoView() {
                                     onClick={() => setInstructorTab("to-review")}
                                     className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${instructorTab === "to-review"
                                         ? "text-[#1a73e8]"
-                                        : "text-gray-600 hover:text-gray-900"
+                                        : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
                                         }`}
                                 >
                                     <ClipboardList className="h-4 w-4" />
                                     To review
                                     <span
                                         className={`rounded-full px-2 py-0.5 text-xs font-semibold ${instructorTab === "to-review"
-                                            ? "bg-[#e8f0fe] text-[#174ea6]"
-                                            : "bg-gray-100 text-gray-600"
+                                            ? "bg-[#e8f0fe] text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300"
+                                            : "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300"
                                             }`}
                                     >
                                         {instructorToReview.length}
@@ -259,15 +259,15 @@ export function TodoView() {
                                     onClick={() => setInstructorTab("reviewed")}
                                     className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${instructorTab === "reviewed"
                                         ? "text-[#1a73e8]"
-                                        : "text-gray-600 hover:text-gray-900"
+                                        : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
                                         }`}
                                 >
                                     <FolderCheck className="h-4 w-4" />
                                     Reviewed
                                     <span
                                         className={`rounded-full px-2 py-0.5 text-xs font-semibold ${instructorTab === "reviewed"
-                                            ? "bg-[#e8f0fe] text-[#174ea6]"
-                                            : "bg-gray-100 text-gray-600"
+                                            ? "bg-[#e8f0fe] text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300"
+                                            : "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300"
                                             }`}
                                     >
                                         {instructorReviewed.length}
@@ -284,11 +284,11 @@ export function TodoView() {
                                     onClick={() => setLearnerTab("assigned")}
                                     className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${learnerTab === "assigned"
                                         ? "text-[#1a73e8]"
-                                        : "text-gray-600 hover:text-gray-900"
+                                        : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
                                         }`}
                                 >
                                     Assigned
-                                    <span className="rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-semibold text-[#174ea6]">
+                                    <span className="rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-semibold text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300">
                                         {learnerAssigned.length}
                                     </span>
                                     {learnerTab === "assigned" && (
@@ -300,11 +300,11 @@ export function TodoView() {
                                     onClick={() => setLearnerTab("missing")}
                                     className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${learnerTab === "missing"
                                         ? "text-[#c5221f]"
-                                        : "text-gray-600 hover:text-gray-900"
+                                        : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
                                         }`}
                                 >
                                     Missing
-                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-[#c5221f]">
+                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-[#c5221f] dark:bg-rose-950/60 dark:text-rose-300">
                                         {learnerMissing.length}
                                     </span>
                                     {learnerTab === "missing" && (
@@ -316,11 +316,11 @@ export function TodoView() {
                                     onClick={() => setLearnerTab("done")}
                                     className={`relative flex cursor-pointer items-center gap-2 py-4 text-sm font-medium transition-colors ${learnerTab === "done"
                                         ? "text-[#137333]"
-                                        : "text-gray-600 hover:text-gray-900"
+                                        : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
                                         }`}
                                 >
                                     Done
-                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-[#137333]">
+                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-[#137333] dark:bg-emerald-950/60 dark:text-emerald-300">
                                         {learnerDone.length}
                                     </span>
                                     {learnerTab === "done" && (
@@ -337,10 +337,10 @@ export function TodoView() {
                 {/* Header & Course Filter */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">
+                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">
                             {isInstructor ? "To-review" : "To-do"}
                         </h1>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                             {isInstructor
                                 ? "Review learner submissions, manage deadlines, and track grading progress across your courses."
                                 : "Keep track of your assigned coursework, upcoming deadlines, and grades."}
@@ -351,16 +351,16 @@ export function TodoView() {
                         <select
                             value={courseFilter}
                             onChange={(e) => setCourseFilter(e.target.value)}
-                            className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-9 text-sm font-medium text-gray-800 shadow-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-9 text-sm font-medium text-gray-800 shadow-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                         >
                             <option value="all">All courses</option>
                             {courseOptions.map((c) => (
-                                <option key={c} value={c}>
+                                <option key={c} value={c} className="bg-white text-gray-900 dark:bg-slate-900 dark:text-slate-100">
                                     {c}
                                 </option>
                             ))}
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                     </div>
                 </div>
 
@@ -370,16 +370,16 @@ export function TodoView() {
                         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
                     </div>
                 ) : activeList.length === 0 ? (
-                    <div className="mt-12 rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center">
-                        <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-3 text-lg font-medium text-gray-900">
+                    <div className="mt-12 rounded-2xl border border-gray-200 bg-gray-50 py-16 text-center dark:border-slate-800 dark:bg-slate-900">
+                        <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-500" />
+                        <h3 className="mt-3 text-lg font-medium text-gray-900 dark:text-slate-100">
                             {isInstructor
                                 ? instructorTab === "to-review"
                                     ? "All caught up! No coursework needs review."
                                     : "No assignments marked as reviewed yet."
                                 : "Woohoo, no work due!"}
                         </h3>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                             {isInstructor
                                 ? "When learners submit assignments, they will appear here ready for grading."
                                 : "Check back later when instructors post new assignments."}
@@ -395,29 +395,29 @@ export function TodoView() {
                             return (
                                 <section
                                     key={section.id}
-                                    className="overflow-hidden rounded-xl border border-gray-200 bg-white"
+                                    className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                                 >
                                     <button
                                         type="button"
                                         onClick={() => toggleSection(section.id)}
-                                        className="flex w-full cursor-pointer items-center justify-between border-b border-gray-100 bg-gray-50/70 px-5 py-3.5 text-left transition-colors hover:bg-gray-100/70"
+                                        className="flex w-full cursor-pointer items-center justify-between border-b border-gray-100 bg-gray-50/70 px-5 py-3.5 text-left transition-colors hover:bg-gray-100/70 dark:border-slate-800 dark:bg-slate-800/50 dark:hover:bg-slate-800/80"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span className="text-base font-semibold text-gray-800">
+                                            <span className="text-base font-semibold text-gray-800 dark:text-slate-100">
                                                 {section.label}
                                             </span>
-                                            <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-700">
+                                            <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:bg-slate-700 dark:text-slate-300">
                                                 {count}
                                             </span>
                                         </div>
                                         <ChevronDown
-                                            className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""
+                                            className={`h-4 w-4 text-gray-500 dark:text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""
                                                 }`}
                                         />
                                     </button>
 
                                     {isOpen && (
-                                        <div className="divide-y divide-gray-100">
+                                        <div className="divide-y divide-gray-100 dark:divide-slate-800">
                                             {section.assignments.map((assignment) => {
                                                 const due = formatDueLabel(assignment.deadlineUtc);
                                                 const isReviewed = reviewedIds.includes(assignment.id);
@@ -430,28 +430,28 @@ export function TodoView() {
                                                                 `/course/${assignment.courseId}/assignments/${assignment.id}`,
                                                             )
                                                         }
-                                                        className="group flex cursor-pointer flex-col gap-4 p-5 transition-colors hover:bg-blue-50/30 sm:flex-row sm:items-center sm:justify-between"
+                                                        className="group flex cursor-pointer flex-col gap-4 p-5 transition-colors hover:bg-blue-50/30 dark:hover:bg-slate-800/40 sm:flex-row sm:items-center sm:justify-between"
                                                     >
                                                         {/* Left info */}
                                                         <div className="flex min-w-0 items-start gap-4">
-                                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
+                                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8] dark:bg-blue-950/60 dark:text-blue-300">
                                                                 <ClipboardList className="h-5 w-5" />
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <h4 className="truncate text-base font-semibold text-gray-900 group-hover:text-[#1a73e8]">
+                                                                <h4 className="truncate text-base font-semibold text-gray-900 group-hover:text-[#1a73e8] dark:text-slate-100 dark:group-hover:text-blue-400">
                                                                     {assignment.title}
                                                                 </h4>
-                                                                <p className="mt-0.5 truncate text-xs text-gray-500">
+                                                                <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-slate-400">
                                                                     {assignment.courseName ?? "Course"}
                                                                     {assignment.session && ` • ${assignment.session}`}
                                                                     {assignment.topic && ` • ${assignment.topic}`}
                                                                 </p>
                                                                 <span
                                                                     className={`mt-1.5 inline-block text-xs font-medium ${due.tone === "red"
-                                                                        ? "text-[#c5221f]"
+                                                                        ? "text-[#c5221f] dark:text-red-400"
                                                                         : due.tone === "green"
-                                                                            ? "text-[#137333]"
-                                                                            : "text-gray-500"
+                                                                            ? "text-[#137333] dark:text-emerald-400"
+                                                                            : "text-gray-500 dark:text-slate-400"
                                                                         }`}
                                                                 >
                                                                     {due.text}
@@ -463,20 +463,20 @@ export function TodoView() {
                                                         <div className="flex shrink-0 flex-wrap items-center gap-3 sm:gap-6">
                                                             {isInstructor ? (
                                                                 <>
-                                                                    <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2 text-xs">
+                                                                    <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2 text-xs dark:border-slate-800 dark:bg-slate-800/70">
                                                                         <div className="text-center">
-                                                                            <span className="block text-sm font-bold text-[#1a73e8]">
+                                                                            <span className="block text-sm font-bold text-[#1a73e8] dark:text-blue-400">
                                                                                 {assignment.turnedInCount ??
                                                                                     assignment.submissionCount}
                                                                             </span>
-                                                                            <span className="text-gray-500">Turned in</span>
+                                                                            <span className="text-gray-500 dark:text-slate-400">Turned in</span>
                                                                         </div>
-                                                                        <div className="h-6 w-px bg-gray-200" />
+                                                                        <div className="h-6 w-px bg-gray-200 dark:bg-slate-700" />
                                                                         <div className="text-center">
-                                                                            <span className="block text-sm font-bold text-gray-700">
+                                                                            <span className="block text-sm font-bold text-gray-700 dark:text-slate-200">
                                                                                 {assignment.assignedCount ?? 0}
                                                                             </span>
-                                                                            <span className="text-gray-500">Assigned</span>
+                                                                            <span className="text-gray-500 dark:text-slate-400">Assigned</span>
                                                                         </div>
                                                                         <div className="h-6 w-px bg-gray-200" />
                                                                         <div className="text-center">

@@ -178,13 +178,13 @@ export function AdminCoursesView() {
     return (
         <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
             {error && (
-                <div className="mb-4 rounded-lg bg-[#fce8e6] px-5 py-3.5 text-sm text-[#c5221f]">{error}</div>
+                <div className="mb-4 rounded-lg bg-[#fce8e6] dark:bg-red-950/40 px-5 py-3.5 text-sm text-[#c5221f] dark:text-red-400">{error}</div>
             )}
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-semibold text-gray-900">Manage Courses</h1>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Manage Courses</h1>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
                         {courses.length} courses total • {filtered.length} shown
                     </p>
                 </div>
@@ -200,19 +200,19 @@ export function AdminCoursesView() {
 
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="relative max-w-sm flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search courses or instructors..."
-                        className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
                 <select
                     value={departmentFilter}
                     onChange={(e) => setDepartmentFilter(e.target.value)}
-                    className="rounded-md border border-gray-400/80 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                    className="rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                 >
                     <option value="all">All Categories</option>
                     {departmentOptions.map((d) => (
@@ -222,7 +222,7 @@ export function AdminCoursesView() {
                 <select
                     value={programFilter}
                     onChange={(e) => setProgramFilter(e.target.value)}
-                    className="rounded-md border border-gray-400/80 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                    className="rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                 >
                     <option value="all">All Tracks / Levels</option>
                     {programOptions.map((p) => (
@@ -232,7 +232,7 @@ export function AdminCoursesView() {
                 <select
                     value={sessionFilter}
                     onChange={(e) => setSessionFilter(e.target.value)}
-                    className="rounded-md border border-gray-400/80 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                    className="rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                 >
                     <option value="all">All Cohorts / Schedules</option>
                     {sessionOptions.map((s) => (
@@ -253,9 +253,9 @@ export function AdminCoursesView() {
                             render: (c: AdminCourse) => {
                                 const names = (courseNames[c.id] ?? []).join(", ");
                                 return names ? (
-                                    <span className="text-sm text-gray-900" title={names}>{names}</span>
+                                    <span className="text-sm text-gray-900 dark:text-slate-100" title={names}>{names}</span>
                                 ) : (
-                                    <span className="text-sm italic text-gray-500">Not assigned</span>
+                                    <span className="text-sm italic text-gray-500 dark:text-slate-500">Not assigned</span>
                                 );
                             },
                         },
@@ -264,7 +264,7 @@ export function AdminCoursesView() {
                             header: "Learners",
                             className: "text-center",
                             render: (c: AdminCourse) => (
-                                <span className="text-sm text-gray-900">{(c.learnerIds ?? c.studentIds ?? []).length}</span>
+                                <span className="text-sm text-gray-900 dark:text-slate-100">{(c.learnerIds ?? c.studentIds ?? []).length}</span>
                             ),
                         },
                         { key: "session", header: "Cohort / Schedule" },
@@ -279,10 +279,10 @@ export function AdminCoursesView() {
                             className: "text-right",
                             render: (c: AdminCourse) => (
                                 <div className="flex items-center justify-end gap-1">
-                                    <button type="button" title="Edit" onClick={() => { setEditingCourse(c); setModalOpen(true); }} className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100">
+                                    <button type="button" title="Edit" onClick={() => { setEditingCourse(c); setModalOpen(true); }} className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800">
                                         <Pencil className="h-4 w-4" />
                                     </button>
-                                    <button type="button" title="Delete" onClick={() => setDeleteTarget(c)} className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50">
+                                    <button type="button" title="Delete" onClick={() => setDeleteTarget(c)} className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40">
                                         <Trash2 className="h-4 w-4" />
                                     </button>
                                 </div>

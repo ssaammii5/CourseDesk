@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen bg-[#eef1f4] text-gray-900">
+        <div className="min-h-screen bg-[#eef1f4] text-gray-900 dark:bg-slate-950 dark:text-slate-100 transition-colors">
             <TopBar onMenuClick={() => setSidebarOpen((v) => !v)} />
             <div className="flex items-start">
                 <Sidebar

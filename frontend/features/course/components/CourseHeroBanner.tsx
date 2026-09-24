@@ -247,81 +247,81 @@ export function CourseHeroBanner({
             {/* Class Details Modal */}
             {infoOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+                    <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
                         <div className="flex items-start justify-between">
                             <div>
-                                <span className="text-xs font-semibold uppercase tracking-wider text-[#1a73e8]">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-[#1a73e8] dark:text-blue-400">
                                     Class Information
                                 </span>
-                                <h2 className="mt-1 text-lg font-bold text-gray-900">{title}</h2>
+                                <h2 className="mt-1 text-lg font-bold text-gray-900 dark:text-slate-100">{title}</h2>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setInfoOpen(false)}
-                                className="cursor-pointer rounded-full p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                                className="cursor-pointer rounded-full p-1.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200"
                             >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
-                        <div className="mt-5 divide-y divide-gray-100 text-sm">
+                        <div className="mt-5 divide-y divide-gray-100 dark:divide-slate-800 text-sm">
                             {subjectLabel && (
                                 <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500">Subject Code</span>
-                                    <span className="font-semibold text-gray-900">{subjectLabel}</span>
+                                    <span className="text-gray-500 dark:text-slate-400">Subject Code</span>
+                                    <span className="font-semibold text-gray-900 dark:text-slate-100">{subjectLabel}</span>
                                 </div>
                             )}
 
                             {sessionLabel && (
                                 <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500">Session / Cohort</span>
-                                    <span className="font-medium text-gray-900">{sessionLabel}</span>
+                                    <span className="text-gray-500 dark:text-slate-400">Session / Cohort</span>
+                                    <span className="font-medium text-gray-900 dark:text-slate-100">{sessionLabel}</span>
                                 </div>
                             )}
 
                             {course?.program && (
                                 <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500">Program</span>
-                                    <span className="font-medium text-gray-900">{course.program}</span>
+                                    <span className="text-gray-500 dark:text-slate-400">Program</span>
+                                    <span className="font-medium text-gray-900 dark:text-slate-100">{course.program}</span>
                                 </div>
                             )}
 
                             {course?.department && (
                                 <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500">Department</span>
-                                    <span className="font-medium text-gray-900">{course.department}</span>
+                                    <span className="text-gray-500 dark:text-slate-400">Department</span>
+                                    <span className="font-medium text-gray-900 dark:text-slate-100">{course.department}</span>
                                 </div>
                             )}
 
                             <div className="flex justify-between py-2.5">
-                                <span className="text-gray-500">Instructor(s)</span>
-                                <span className="font-medium text-gray-900">
+                                <span className="text-gray-500 dark:text-slate-400">Instructor(s)</span>
+                                <span className="font-medium text-gray-900 dark:text-slate-100">
                                     {(course?.instructorNames || course?.teacherNames)?.join(", ") || primaryInstructor}
                                 </span>
                             </div>
 
                             <div className="flex justify-between py-2.5">
-                                <span className="text-gray-500">Enrolled Learners</span>
-                                <span className="font-medium text-gray-900">{learnerCount} Learners</span>
+                                <span className="text-gray-500 dark:text-slate-400">Enrolled Learners</span>
+                                <span className="font-medium text-gray-900 dark:text-slate-100">{learnerCount} Learners</span>
                             </div>
 
                             {/* Meeting Credentials Section */}
                             {(meetingUrl || meetingId || meetingPasscode) && (
                                 <div className="pt-4 mt-2">
-                                    <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                        <Video className="h-3.5 w-3.5 text-[#1a73e8]" />
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+                                        <Video className="h-3.5 w-3.5 text-[#1a73e8] dark:text-blue-400" />
                                         <span>Virtual Classroom Details</span>
                                     </div>
 
-                                    <div className="mt-2 space-y-2 rounded-xl bg-gray-50 p-3 border border-gray-100">
+                                    <div className="mt-2 space-y-2 rounded-xl bg-gray-50 dark:bg-slate-800/80 p-3 border border-gray-100 dark:border-slate-800">
                                         {meetingUrl && (
                                             <div className="flex items-center justify-between gap-2">
-                                                <span className="text-xs text-gray-500">Room Link</span>
+                                                <span className="text-xs text-gray-500 dark:text-slate-400">Room Link</span>
                                                 <a
                                                     href={meetingUrl}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#1a73e8] hover:underline"
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline"
                                                 >
                                                     Open Link
                                                     <ExternalLink className="h-3 w-3" />
@@ -331,15 +331,15 @@ export function CourseHeroBanner({
 
                                         {meetingId && (
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Meeting ID</span>
+                                                <span className="text-xs text-gray-500 dark:text-slate-400">Meeting ID</span>
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="font-mono text-xs font-semibold text-gray-900">
+                                                    <span className="font-mono text-xs font-semibold text-gray-900 dark:text-slate-100">
                                                         {meetingId}
                                                     </span>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCopyText(meetingId, "id")}
-                                                        className="cursor-pointer p-0.5 text-gray-400 hover:text-gray-600"
+                                                        className="cursor-pointer p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"
                                                         title="Copy Meeting ID"
                                                     >
                                                         {copiedField === "id" ? (
@@ -354,9 +354,9 @@ export function CourseHeroBanner({
 
                                         {meetingPasscode && (
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Passcode</span>
+                                                <span className="text-xs text-gray-500 dark:text-slate-400">Passcode</span>
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="font-mono text-xs font-semibold text-gray-900">
+                                                    <span className="font-mono text-xs font-semibold text-gray-900 dark:text-slate-100">
                                                         {meetingPasscode}
                                                     </span>
                                                     <button
@@ -364,7 +364,7 @@ export function CourseHeroBanner({
                                                         onClick={() =>
                                                             handleCopyText(meetingPasscode, "passcode")
                                                         }
-                                                        className="cursor-pointer p-0.5 text-gray-400 hover:text-gray-600"
+                                                        className="cursor-pointer p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"
                                                         title="Copy Passcode"
                                                     >
                                                         {copiedField === "passcode" ? (
@@ -382,10 +382,10 @@ export function CourseHeroBanner({
 
                             {course?.scheduleNotes && (
                                 <div className="py-2.5">
-                                    <span className="text-xs font-semibold text-gray-500">
+                                    <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
                                         Schedule Notes:
                                     </span>
-                                    <p className="mt-1 text-xs text-gray-700 bg-gray-50 p-2.5 rounded-lg">
+                                    <p className="mt-1 text-xs text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-slate-800 p-2.5 rounded-lg border border-transparent dark:border-slate-700">
                                         {course.scheduleNotes}
                                     </p>
                                 </div>
@@ -396,7 +396,7 @@ export function CourseHeroBanner({
                             <button
                                 type="button"
                                 onClick={() => setInfoOpen(false)}
-                                className="w-full cursor-pointer rounded-xl bg-gray-900 py-2.5 text-center text-sm font-semibold text-white hover:bg-gray-800"
+                                className="w-full cursor-pointer rounded-xl bg-gray-900 dark:bg-blue-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-gray-800 dark:hover:bg-blue-700 transition-colors"
                             >
                                 Close
                             </button>

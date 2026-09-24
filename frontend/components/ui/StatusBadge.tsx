@@ -6,11 +6,11 @@ interface StatusBadgeProps {
 }
 
 const VARIANT_CLASSES: Record<string, string> = {
-    success: "bg-[#e6f4ea] text-[#137333]",
-    warning: "bg-[#fef7e0] text-[#b06000]",
-    danger: "bg-[#fce8e6] text-[#c5221f]",
-    info: "bg-[#e8f0fe] text-[#174ea6]",
-    neutral: "bg-[#e8eaed] text-[#3c4043]",
+    success: "bg-[#e6f4ea] text-[#137333] dark:bg-emerald-950/60 dark:text-emerald-300 dark:border dark:border-emerald-800/40",
+    warning: "bg-[#fef7e0] text-[#b06000] dark:bg-amber-950/60 dark:text-amber-300 dark:border dark:border-amber-800/40",
+    danger: "bg-[#fce8e6] text-[#c5221f] dark:bg-rose-950/60 dark:text-rose-300 dark:border dark:border-rose-800/40",
+    info: "bg-[#e8f0fe] text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300 dark:border dark:border-blue-800/40",
+    neutral: "bg-[#e8eaed] text-[#3c4043] dark:bg-slate-800 dark:text-slate-300 dark:border dark:border-slate-700/50",
 };
 
 function getVariant(status: string): string {

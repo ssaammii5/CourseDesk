@@ -20,19 +20,19 @@ export function SettingsView({
     const isProfileReadOnly = role !== "Admin";
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-white">
+        <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-slate-950">
             <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
-                <h1 className="text-3xl text-gray-900">Account Settings</h1>
-                <p className="mt-1 text-sm text-gray-700">In this section you can see all the information</p>
+                <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Account Settings</h1>
+                <p className="mt-1 text-sm text-gray-700 dark:text-slate-400">In this section you can see all the information</p>
 
-                <div className="mt-6 border-b border-gray-200">
+                <div className="mt-6 border-b border-gray-200 dark:border-slate-800">
                     <nav className="flex gap-8 sm:gap-12">
                         {SETTINGS_TABS.map((t) => (
                             <button
                                 key={t.id}
                                 type="button"
                                 onClick={() => setTab(t.id)}
-                                className={`relative cursor-pointer py-3.5 text-sm font-medium transition-colors ${tab === t.id ? "text-[#1a73e8]" : "text-gray-600 hover:text-gray-900"
+                                className={`relative cursor-pointer py-3.5 text-sm font-medium transition-colors ${tab === t.id ? "text-[#1a73e8]" : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
                                     }`}
                             >
                                 {t.label}

@@ -121,14 +121,14 @@ export function DueSoonCard() {
     const remainingCount = Math.max(0, totalCount - assignments.length);
 
     return (
-        <section className="rounded-xl bg-[#f9fafc] px-6 py-4 shadow-xs border border-gray-200/70">
+        <section className="rounded-xl bg-[#f9fafc] dark:bg-slate-900 px-6 py-4 shadow-xs border border-gray-200/70 dark:border-slate-800 transition-colors">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold text-gray-800">
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">
                         {isInstructor ? "Work to review" : "Due soon"}
                     </h2>
                     {isInstructor && totalCount > 0 && (
-                        <span className="rounded-full bg-[#e8f0fe] px-2.5 py-0.5 text-xs font-semibold text-[#174ea6]">
+                        <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-2.5 py-0.5 text-xs font-semibold text-[#174ea6] dark:text-blue-300">
                             {totalCount} needing review
                         </span>
                     )}
@@ -137,14 +137,14 @@ export function DueSoonCard() {
                 <div className="flex items-center gap-3">
                     <Link
                         href="/todo"
-                        className="text-sm font-medium text-[#1a73e8] hover:underline"
+                        className="text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                     >
                         {isInstructor ? "Open To-review" : "View To-do"}
                     </Link>
                     <IconButton
                         label={collapsed ? "Expand" : "Collapse"}
                         onClick={() => setCollapsed((v) => !v)}
-                        className="h-8 w-8"
+                        className="h-8 w-8 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                         <Minimize2 className="h-4 w-4" />
                     </IconButton>
@@ -153,12 +153,12 @@ export function DueSoonCard() {
 
             {loading ? (
                 <div className="flex justify-center py-5">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1a73e8] dark:border-blue-400 border-t-transparent" />
                 </div>
             ) : !collapsed && (
                 assignments.length === 0 ? (
-                    <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-500">
-                        <CheckCircle2 className="h-4 w-4 text-[#137333]" />
+                    <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-500 dark:text-slate-400">
+                        <CheckCircle2 className="h-4 w-4 text-[#137333] dark:text-emerald-400" />
                         <span>
                             {isInstructor
                                 ? "All caught up — no submissions waiting for review."
@@ -167,7 +167,7 @@ export function DueSoonCard() {
                     </div>
                 ) : (
                     <div className="mt-3">
-                        <ul className="divide-y divide-gray-100">
+                        <ul className="divide-y divide-gray-100 dark:divide-slate-800">
                             {assignments.map((a) => (
                                 <li
                                     key={a.id}
@@ -175,19 +175,19 @@ export function DueSoonCard() {
                                 >
                                     {/* Left: Icon + Title */}
                                     <div className="flex min-w-0 flex-1 items-center gap-3">
-                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e8f0fe] dark:bg-blue-950/60 text-[#1a73e8] dark:text-blue-400">
                                             <ClipboardList className="h-4 w-4" />
                                         </div>
                                         <div className="min-w-0">
                                             <Link
                                                 href={`/course/${a.courseId}/assignments/${a.id}`}
-                                                className="block truncate text-sm font-medium text-gray-900 hover:text-[#1a73e8]"
+                                                className="block truncate text-sm font-medium text-gray-900 dark:text-slate-100 hover:text-[#1a73e8] dark:hover:text-blue-400"
                                             >
                                                 {a.title}
                                             </Link>
                                             <Link
                                                 href={`/course/${a.courseId}`}
-                                                className="block truncate text-xs text-gray-500 hover:text-gray-800 hover:underline"
+                                                className="block truncate text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:underline"
                                             >
                                                 {a.courseName}
                                             </Link>
@@ -197,20 +197,20 @@ export function DueSoonCard() {
                                     {/* Right: Review chip + date */}
                                     {isInstructor ? (
                                         <div className="flex shrink-0 items-center gap-3">
-                                            <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[#174ea6] border border-blue-100">
+                                            <div className="flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-3 py-1 text-xs font-medium text-[#174ea6] dark:text-blue-300 border border-blue-100 dark:border-blue-900/60">
                                                 <span className="font-bold">{a.turnedInCount}</span>
                                                 <span>to grade</span>
                                             </div>
 
-                                            <p className="min-w-[90px] text-right text-xs text-gray-500">
-                                                <span className="block font-medium text-gray-700">{a.dueDate}</span>
+                                            <p className="min-w-[90px] text-right text-xs text-gray-500 dark:text-slate-400">
+                                                <span className="block font-medium text-gray-700 dark:text-slate-300">{a.dueDate}</span>
                                             </p>
                                         </div>
                                     ) : (
-                                        <p className="shrink-0 text-sm text-gray-700 sm:text-right">
+                                        <p className="shrink-0 text-sm text-gray-700 dark:text-slate-300 sm:text-right">
                                             <span className="block text-xs font-medium">{a.dueDate}</span>
                                             {a.dueTime && (
-                                                <span className="block text-xs text-gray-400">{a.dueTime}</span>
+                                                <span className="block text-xs text-gray-400 dark:text-slate-500">{a.dueTime}</span>
                                             )}
                                         </p>
                                     )}

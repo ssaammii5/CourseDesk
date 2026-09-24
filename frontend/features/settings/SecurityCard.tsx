@@ -22,12 +22,12 @@ export function SecurityCard() {
     };
 
     return (
-        <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+        <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
             <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
                 <div>
-                    <h2 className="text-2xl text-gray-900">Security</h2>
-                    <p className="mt-3 text-sm font-semibold text-gray-900">Change password</p>
-                    <p className="mt-1 text-sm text-gray-700">Update your password associated with your account.</p>
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Security</h2>
+                    <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-slate-200">Change password</p>
+                    <p className="mt-1 text-sm text-gray-700 dark:text-slate-400">Update your password associated with your account.</p>
                 </div>
 
                 <div>
@@ -38,8 +38,8 @@ export function SecurityCard() {
                     </div>
 
                     <div className="mt-8 flex items-center justify-end gap-3">
-                        {flash && <span className="text-sm font-medium text-[#188038]">Password updated</span>}
-                        <button type="button" onClick={clear} className="cursor-pointer rounded-full bg-[#cdd7ea] px-6 py-2.5 text-sm font-medium text-gray-900 hover:bg-[#bcc9e2]">
+                        {flash && <span className="text-sm font-medium text-[#188038] dark:text-emerald-400">Password updated</span>}
+                        <button type="button" onClick={clear} className="cursor-pointer rounded-full bg-[#cdd7ea] px-6 py-2.5 text-sm font-medium text-gray-900 hover:bg-[#bcc9e2] dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
                             Discard
                         </button>
                         <button type="button" onClick={save} className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]">

@@ -26,9 +26,9 @@ export function Field({
 }: FieldProps) {
     return (
         <label className="block">
-            <span className="mb-1.5 block text-sm text-gray-800">
+            <span className="mb-1.5 block text-sm text-gray-800 dark:text-slate-200">
                 {label}
-                {required && !disabled && <span className="ml-0.5 text-[#c5221f]">*</span>}
+                {required && !disabled && <span className="ml-0.5 text-[#c5221f] dark:text-red-400">*</span>}
             </span>
             <input
                 type={type}
@@ -36,14 +36,14 @@ export function Field({
                 placeholder={placeholder}
                 disabled={disabled}
                 onChange={(e) => onChange(e.target.value)}
-                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none ${disabled
-                        ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-700"
+                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none transition-colors ${disabled
+                        ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500"
                         : error
-                            ? "border-[#c5221f] bg-white text-gray-900 placeholder:text-gray-600 focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                            : "border-gray-400/80 bg-white text-gray-900 placeholder:text-gray-600 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                            ? "border-[#c5221f] bg-white text-gray-900 placeholder:text-gray-500 focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f] dark:border-red-500 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            : "border-gray-400/80 bg-white text-gray-900 placeholder:text-gray-500 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                     }`}
             />
-            {error && !disabled && <span className="mt-1 block text-sm text-[#c5221f]">{error}</span>}
+            {error && !disabled && <span className="mt-1 block text-sm text-[#c5221f] dark:text-red-400">{error}</span>}
         </label>
     );
 }
@@ -69,28 +69,28 @@ export function SelectField({
 }) {
     return (
         <label className="block">
-            <span className="mb-1.5 block text-sm text-gray-800">
+            <span className="mb-1.5 block text-sm text-gray-800 dark:text-slate-200">
                 {label}
-                {required && !disabled && <span className="ml-0.5 text-[#c5221f]">*</span>}
+                {required && !disabled && <span className="ml-0.5 text-[#c5221f] dark:text-red-400">*</span>}
             </span>
             <span className="relative block">
                 <select
                     value={value}
                     disabled={disabled}
                     onChange={(e) => onChange(e.target.value)}
-                    className={`w-full appearance-none rounded-md border px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none ${disabled
-                            ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-700"
+                    className={`w-full appearance-none rounded-md border px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none transition-colors ${disabled
+                            ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500"
                             : `${error
-                                ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
-                            } bg-white ${value ? "text-gray-900" : "text-gray-600"}`
+                                ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f] dark:border-red-500"
+                                : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
+                            } bg-white dark:bg-slate-900 ${value ? "text-gray-900 dark:text-slate-100" : "text-gray-500 dark:text-slate-500"}`
                         }`}
                 >
                     <option value="" disabled>
                         {placeholder}
                     </option>
                     {options.map((o) => (
-                        <option key={o} value={o}>
+                        <option key={o} value={o} className="bg-white text-gray-900 dark:bg-slate-900 dark:text-slate-100">
                             {o}
                         </option>
                     ))}
@@ -98,7 +98,7 @@ export function SelectField({
                 <svg
                     viewBox="0 0 20 20"
                     fill="currentColor"
-                    className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${disabled ? "text-gray-500" : "text-gray-700"}`}
+                    className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${disabled ? "text-gray-500 dark:text-slate-600" : "text-gray-700 dark:text-slate-400"}`}
                 >
                     <path
                         fillRule="evenodd"
@@ -107,7 +107,7 @@ export function SelectField({
                     />
                 </svg>
             </span>
-            {error && !disabled && <span className="mt-1 block text-sm text-[#c5221f]">{error}</span>}
+            {error && !disabled && <span className="mt-1 block text-sm text-[#c5221f] dark:text-red-400">{error}</span>}
         </label>
     );
 }
@@ -125,19 +125,19 @@ export function PasswordField({
 
     return (
         <label className="block">
-            <span className="mb-1.5 block text-sm text-gray-800">{label}</span>
+            <span className="mb-1.5 block text-sm text-gray-800 dark:text-slate-200">{label}</span>
             <span className="relative block">
                 <input
                     type={show ? "text" : "password"}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 pr-11 text-[15px] text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 pr-11 text-[15px] text-gray-900 placeholder:text-gray-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 <button
                     type="button"
                     aria-label={show ? "Hide password" : "Show password"}
                     onClick={() => setShow((v) => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded p-1.5 text-gray-600 hover:bg-gray-900/5"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded p-1.5 text-gray-600 hover:bg-gray-900/5 dark:text-slate-400 dark:hover:bg-slate-800"
                 >
                     {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -158,11 +158,11 @@ export function ToggleRow({
     onChange: (v: boolean) => void;
 }) {
     return (
-        <div className="flex items-center justify-between border-b border-gray-100 py-4 last:border-b-0">
+        <div className="flex items-center justify-between border-b border-gray-100 py-4 last:border-b-0 dark:border-slate-800">
             <div className="pr-4">
-                <span className="block text-sm font-medium text-gray-900">{label}</span>
+                <span className="block text-sm font-medium text-gray-900 dark:text-slate-100">{label}</span>
                 {description && (
-                    <span className="block text-xs text-gray-500 mt-0.5">{description}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5 dark:text-slate-400">{description}</span>
                 )}
             </div>
             <button
@@ -171,7 +171,7 @@ export function ToggleRow({
                 aria-checked={enabled}
                 aria-label={label}
                 onClick={() => onChange(!enabled)}
-                className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${enabled ? "bg-[#1a73e8]" : "bg-gray-300"
+                className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${enabled ? "bg-[#1a73e8]" : "bg-gray-300 dark:bg-slate-700"
                     }`}
             >
                 <span

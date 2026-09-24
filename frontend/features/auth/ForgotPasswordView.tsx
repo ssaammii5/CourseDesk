@@ -26,7 +26,7 @@ const RESEND_SECONDS = 30;
 const REDIRECT_SECONDS = 10;
 
 const PRIMARY_BTN =
-    "flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1554b5] disabled:cursor-default disabled:opacity-70";
+    "flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1554b5] disabled:cursor-default disabled:opacity-70 dark:bg-blue-600 dark:hover:bg-blue-500";
 
 export function ForgotPasswordView() {
     const router = useRouter();
@@ -173,7 +173,7 @@ export function ForgotPasswordView() {
     };
 
     return (
-        <div className="flex min-h-dvh flex-col bg-white lg:flex-row">
+        <div className="flex min-h-dvh flex-col bg-white lg:flex-row dark:bg-slate-950">
             {/* ---------- Left: full-height brand panel ---------- */}
             <div className="relative overflow-hidden bg-[linear-gradient(135deg,#1a73e8,#0d47a1)] px-8 py-12 text-white sm:px-12 lg:flex lg:w-1/2 lg:flex-col lg:justify-center lg:px-16 lg:py-16 xl:px-24">
                 <span
@@ -215,7 +215,7 @@ export function ForgotPasswordView() {
             </div>
 
             {/* ---------- Right: step panel ---------- */}
-            <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-white px-6 py-12 sm:px-12 lg:px-16 xl:px-24">
+            <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-white px-6 py-12 sm:px-12 lg:px-16 xl:px-24 dark:bg-slate-900">
                 <span
                     aria-hidden
                     className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle_at_35%_30%,#7db2ff,#0a3d8f_72%)]"
@@ -226,7 +226,7 @@ export function ForgotPasswordView() {
                         <button
                             type="button"
                             onClick={() => router.push("/")}
-                            className="mb-6 flex cursor-pointer items-center gap-2 text-sm font-medium text-[#1a73e8] hover:underline"
+                            className="mb-6 flex cursor-pointer items-center gap-2 text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Back to sign in
@@ -243,7 +243,7 @@ export function ForgotPasswordView() {
                                     <Fragment key={s.id}>
                                         {i > 0 && (
                                             <span
-                                                className={`mx-3 h-px flex-1 ${step >= s.id ? "bg-[#1a73e8]" : "bg-gray-300"}`}
+                                                className={`mx-3 h-px flex-1 ${step >= s.id ? "bg-[#1a73e8]" : "bg-gray-300 dark:bg-slate-700"}`}
                                             />
                                         )}
                                         <span className="flex items-center gap-2">
@@ -251,14 +251,14 @@ export function ForgotPasswordView() {
                                                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${done
                                                         ? "bg-[#1a73e8] text-white"
                                                         : current
-                                                            ? "border-2 border-[#1a73e8] text-[#1a73e8]"
-                                                            : "border border-gray-300 text-gray-500"
+                                                            ? "border-2 border-[#1a73e8] text-[#1a73e8] dark:border-blue-400 dark:text-blue-400"
+                                                            : "border border-gray-300 text-gray-500 dark:border-slate-700 dark:text-slate-400"
                                                     }`}
                                             >
                                                 {done ? <Check className="h-4 w-4" /> : s.id}
                                             </span>
                                             <span
-                                                className={`text-sm font-medium ${current || done ? "text-gray-900" : "text-gray-500"}`}
+                                                className={`text-sm font-medium ${current || done ? "text-gray-900 dark:text-slate-100" : "text-gray-500 dark:text-slate-400"}`}
                                             >
                                                 {s.label}
                                             </span>
@@ -273,18 +273,18 @@ export function ForgotPasswordView() {
                     {step === 1 && (
                         <form onSubmit={submitEmail} noValidate className="mt-8 space-y-5">
                             <div>
-                                <h2 className="text-3xl font-semibold text-gray-900">Forgot password?</h2>
-                                <p className="mt-2 text-sm text-gray-600">
+                                <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Forgot password?</h2>
+                                <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
                                     Enter your account email and we&apos;ll send you a 6-digit reset code.
                                 </p>
                             </div>
 
                             <div>
                                 <label
-                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] ${emailError ? "ring-2 ring-[#c5221f]" : ""
+                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${emailError ? "ring-2 ring-[#c5221f]" : ""
                                         }`}
                                 >
-                                    <Mail className="h-5 w-5 shrink-0 text-gray-700" />
+                                    <Mail className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
                                     <input
                                         type="email"
                                         value={email}
@@ -294,7 +294,7 @@ export function ForgotPasswordView() {
                                             setEmail(e.target.value);
                                             setEmailError(null);
                                         }}
-                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none"
+                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
                                     />
                                 </label>
                                 {emailError && (
@@ -313,15 +313,15 @@ export function ForgotPasswordView() {
                     {step === 2 && (
                         <form onSubmit={submitOtp} noValidate className="mt-8 space-y-5">
                             <div>
-                                <h2 className="text-3xl font-semibold text-gray-900">Check your email</h2>
-                                <p className="mt-2 text-sm text-gray-600">
+                                <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Check your email</h2>
+                                <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
                                     We sent a 6-digit code to{" "}
-                                    <span className="font-medium text-gray-900">{email.trim()}</span>.
+                                    <span className="font-medium text-gray-900 dark:text-slate-200">{email.trim()}</span>.
                                 </p>
                             </div>
 
                             {/* Demo inbox (mock era) */}
-                            <p className="rounded-lg bg-[#e8f0fe] px-4 py-2.5 text-sm text-[#174ea6]">
+                            <p className="rounded-lg bg-[#e8f0fe] px-4 py-2.5 text-sm text-[#174ea6] dark:border dark:border-blue-800/40 dark:bg-blue-950/60 dark:text-blue-300">
                                 Demo inbox — your code is{" "}
                                 <span className="font-semibold tracking-widest">{sentCode}</span>
                             </p>
@@ -341,7 +341,7 @@ export function ForgotPasswordView() {
                                             onChange={(e) => handleOtpChange(i, e.target.value)}
                                             onKeyDown={(e) => handleOtpKeyDown(i, e)}
                                             onPaste={handleOtpPaste}
-                                            className={`h-12 w-full max-w-12 rounded-lg border bg-[#e8eaed] text-center text-xl font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1a73e8] ${otpError ? "border-[#c5221f]" : "border-transparent"
+                                            className={`h-12 w-full max-w-12 rounded-lg border bg-[#e8eaed] text-center text-xl font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1a73e8] dark:bg-slate-800 dark:text-slate-100 ${otpError ? "border-[#c5221f]" : "border-transparent dark:border-slate-700"
                                                 }`}
                                         />
                                     ))}
@@ -360,26 +360,26 @@ export function ForgotPasswordView() {
                                 <button
                                     type="button"
                                     onClick={() => setStep(1)}
-                                    className="cursor-pointer font-medium text-[#1a73e8] hover:underline"
+                                    className="cursor-pointer font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                                 >
                                     Use a different email
                                 </button>
                                 {resendIn > 0 ? (
-                                    <span className="text-gray-600">
+                                    <span className="text-gray-600 dark:text-slate-400">
                                         Resend code in 0:{String(resendIn).padStart(2, "0")}
                                     </span>
                                 ) : (
                                     <button
                                         type="button"
                                         onClick={resend}
-                                        className="cursor-pointer font-medium text-[#1a73e8] hover:underline"
+                                        className="cursor-pointer font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                                     >
                                         Resend code
                                     </button>
                                 )}
                             </div>
                             {resent && resendIn > 0 && (
-                                <p className="text-sm text-[#188038]">A new code has been sent.</p>
+                                <p className="text-sm text-[#188038] dark:text-emerald-400">A new code has been sent.</p>
                             )}
                         </form>
                     )}
@@ -388,10 +388,10 @@ export function ForgotPasswordView() {
                     {step === 3 && (
                         <form onSubmit={submitReset} noValidate className="mt-8 space-y-5">
                             <div>
-                                <h2 className="text-3xl font-semibold text-gray-900">
+                                <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">
                                     Create a new password
                                 </h2>
-                                <p className="mt-2 text-sm text-gray-600">
+                                <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
                                     Choose a strong password you haven&apos;t used before.
                                 </p>
                             </div>
@@ -399,10 +399,10 @@ export function ForgotPasswordView() {
                             {/* New password */}
                             <div>
                                 <label
-                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] ${passError ? "ring-2 ring-[#c5221f]" : ""
+                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${passError ? "ring-2 ring-[#c5221f]" : ""
                                         }`}
                                 >
-                                    <Lock className="h-5 w-5 shrink-0 text-gray-700" />
+                                    <Lock className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
                                     <input
                                         type={showNew ? "text" : "password"}
                                         value={newPassword}
@@ -412,13 +412,13 @@ export function ForgotPasswordView() {
                                             setNewPassword(e.target.value);
                                             setPassError(null);
                                         }}
-                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none"
+                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
                                     />
                                     <button
                                         type="button"
                                         aria-label={showNew ? "Hide password" : "Show password"}
                                         onClick={() => setShowNew((v) => !v)}
-                                        className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline"
+                                        className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline dark:text-blue-400"
                                     >
                                         {showNew ? "HIDE" : "SHOW"}
                                     </button>
@@ -428,10 +428,10 @@ export function ForgotPasswordView() {
                             {/* Confirm password */}
                             <div>
                                 <label
-                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] ${passError ? "ring-2 ring-[#c5221f]" : ""
+                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${passError ? "ring-2 ring-[#c5221f]" : ""
                                         }`}
                                 >
-                                    <Lock className="h-5 w-5 shrink-0 text-gray-700" />
+                                    <Lock className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
                                     <input
                                         type={showConfirm ? "text" : "password"}
                                         value={confirmPassword}
@@ -441,13 +441,13 @@ export function ForgotPasswordView() {
                                             setConfirmPassword(e.target.value);
                                             setPassError(null);
                                         }}
-                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none"
+                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
                                     />
                                     <button
                                         type="button"
                                         aria-label={showConfirm ? "Hide password" : "Show password"}
                                         onClick={() => setShowConfirm((v) => !v)}
-                                        className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline"
+                                        className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline dark:text-blue-400"
                                     >
                                         {showConfirm ? "HIDE" : "SHOW"}
                                     </button>
@@ -455,13 +455,13 @@ export function ForgotPasswordView() {
                             </div>
 
                             {/* Live requirements checklist */}
-                            <ul className="space-y-2 rounded-lg bg-[#e8eaed]/60 px-4 py-3">
+                            <ul className="space-y-2 rounded-lg bg-[#e8eaed]/60 px-4 py-3 dark:bg-slate-850/60 dark:bg-slate-800/60">
                                 {requirements.map((r) => (
                                     <li
                                         key={r.label}
-                                        className={`flex items-center gap-2 text-sm ${r.ok ? "text-[#137333]" : "text-gray-600"}`}
+                                        className={`flex items-center gap-2 text-sm ${r.ok ? "text-[#137333] dark:text-emerald-400" : "text-gray-600 dark:text-slate-400"}`}
                                     >
-                                        <Check className={`h-4 w-4 ${r.ok ? "text-[#188038]" : "text-gray-400"}`} />
+                                        <Check className={`h-4 w-4 ${r.ok ? "text-[#188038] dark:text-emerald-400" : "text-gray-400 dark:text-slate-500"}`} />
                                         {r.label}
                                     </li>
                                 ))}
@@ -479,11 +479,11 @@ export function ForgotPasswordView() {
                     {/* ---------- STEP 4: success → back to start ---------- */}
                     {step === 4 && (
                         <div className="flex flex-col items-center py-6 text-center">
-                            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e6f4ea]">
-                                <Check className="h-10 w-10 text-[#188038]" />
+                            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e6f4ea] dark:border dark:border-emerald-800/40 dark:bg-emerald-950/60">
+                                <Check className="h-10 w-10 text-[#188038] dark:text-emerald-400" />
                             </span>
-                            <h2 className="mt-6 text-3xl font-semibold text-gray-900">Password updated</h2>
-                            <p className="mt-3 max-w-sm text-sm leading-6 text-gray-600">
+                            <h2 className="mt-6 text-3xl font-semibold text-gray-900 dark:text-slate-100">Password updated</h2>
+                            <p className="mt-3 max-w-sm text-sm leading-6 text-gray-600 dark:text-slate-400">
                                 Your password has been changed successfully. Use your new password
                                 to sign in to CourseDesk.
                             </p>
@@ -494,7 +494,7 @@ export function ForgotPasswordView() {
                             >
                                 Back to sign in
                             </button>
-                            <p className="mt-4 text-xs text-gray-600">
+                            <p className="mt-4 text-xs text-gray-600 dark:text-slate-400">
                                 Returning to sign in automatically in {countdown}s…
                             </p>
                         </div>

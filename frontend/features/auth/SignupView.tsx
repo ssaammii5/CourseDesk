@@ -67,21 +67,21 @@ export function SignupView() {
 
     if (success) {
         return (
-            <div className="flex min-h-dvh items-center justify-center bg-white px-4">
+            <div className="flex min-h-dvh items-center justify-center bg-white px-4 dark:bg-slate-950">
                 <div className="flex flex-col items-center text-center max-w-md">
-                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e6f4ea]">
-                        <svg className="h-10 w-10 text-[#188038]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e6f4ea] dark:bg-emerald-950/60 dark:border dark:border-emerald-800/40">
+                        <svg className="h-10 w-10 text-[#188038] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                     </span>
-                    <h2 className="mt-6 text-3xl font-semibold text-gray-900">Account created!</h2>
-                    <p className="mt-3 text-sm leading-6 text-gray-600">
+                    <h2 className="mt-6 text-3xl font-semibold text-gray-900 dark:text-slate-100">Account created!</h2>
+                    <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-400">
                         Your account has been created successfully. You can now sign in with your email and password.
                     </p>
                     <button
                         type="button"
                         onClick={() => router.push("/")}
-                        className="mt-8 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] px-8 py-3 text-sm font-semibold text-white hover:bg-[#1554b5] transition-colors"
+                        className="mt-8 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] px-8 py-3 text-sm font-semibold text-white hover:bg-[#1554b5] transition-colors dark:bg-blue-600 dark:hover:bg-blue-500"
                     >
                         Go to Sign In
                     </button>
@@ -91,7 +91,7 @@ export function SignupView() {
     }
 
     return (
-        <div className="flex min-h-dvh flex-col bg-white lg:flex-row">
+        <div className="flex min-h-dvh flex-col bg-white lg:flex-row dark:bg-slate-950">
             {/* ---------- Left: full-height brand panel ---------- */}
             <div className="relative overflow-hidden bg-[linear-gradient(135deg,#1a73e8,#0d47a1)] px-8 py-12 text-white sm:px-12 lg:flex lg:w-1/2 lg:flex-col lg:justify-center lg:px-16 lg:py-16 xl:px-24">
                 {/* Decorative circles / spheres */}
@@ -129,23 +129,23 @@ export function SignupView() {
                 </div>
             </div>
             {/* ---------- Right: full-height form panel ---------- */}
-            <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-white px-6 py-12 sm:px-12 lg:px-16 xl:px-24">
+            <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-white px-6 py-12 sm:px-12 lg:px-16 xl:px-24 dark:bg-slate-900">
                 {/* Decorative corner sphere */}
                 <span
                     aria-hidden
                     className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle_at_35%_30%,#7db2ff,#0a3d8f_72%)]"
                 />
                 <div className="relative mx-auto w-full max-w-md">
-                    <h2 className="text-3xl font-semibold text-gray-900">Create account</h2>
-                    <p className="mt-2 text-sm text-gray-600">to get started with CourseDesk</p>
+                    <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Create account</h2>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">to get started with CourseDesk</p>
                     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
                         {/* Full Name */}
                         <div>
                             <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] ${errors.name ? "ring-2 ring-[#c5221f]" : ""
+                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${errors.name ? "ring-2 ring-[#c5221f]" : ""
                                     }`}
                             >
-                                <User className="h-5 w-5 shrink-0 text-gray-700" />
+                                <User className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
                                 <input
                                     type="text"
                                     value={name}
@@ -155,7 +155,7 @@ export function SignupView() {
                                         setName(e.target.value);
                                         clearError("name");
                                     }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none"
+                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
                                 />
                             </label>
                             {errors.name && (
@@ -165,10 +165,10 @@ export function SignupView() {
                         {/* Email */}
                         <div>
                             <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] ${errors.email ? "ring-2 ring-[#c5221f]" : ""
+                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${errors.email ? "ring-2 ring-[#c5221f]" : ""
                                     }`}
                             >
-                                <Mail className="h-5 w-5 shrink-0 text-gray-700" />
+                                <Mail className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
                                 <input
                                     type="email"
                                     value={email}
@@ -178,7 +178,7 @@ export function SignupView() {
                                         setEmail(e.target.value);
                                         clearError("email");
                                     }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none"
+                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
                                 />
                             </label>
                             {errors.email && (
@@ -188,10 +188,10 @@ export function SignupView() {
                         {/* Password */}
                         <div>
                             <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] ${errors.password ? "ring-2 ring-[#c5221f]" : ""
+                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${errors.password ? "ring-2 ring-[#c5221f]" : ""
                                     }`}
                             >
-                                <Lock className="h-5 w-5 shrink-0 text-gray-700" />
+                                <Lock className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
@@ -201,13 +201,13 @@ export function SignupView() {
                                         setPassword(e.target.value);
                                         clearError("password");
                                     }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none"
+                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
                                 />
                                 <button
                                     type="button"
                                     aria-label={showPassword ? "Hide password" : "Show password"}
                                     onClick={() => setShowPassword((v) => !v)}
-                                    className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline"
+                                    className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline dark:text-blue-400"
                                 >
                                     {showPassword ? "HIDE" : "SHOW"}
                                 </button>
@@ -219,10 +219,10 @@ export function SignupView() {
                         {/* Confirm Password */}
                         <div>
                             <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] ${errors.confirmPassword ? "ring-2 ring-[#c5221f]" : ""
+                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${errors.confirmPassword ? "ring-2 ring-[#c5221f]" : ""
                                     }`}
                             >
-                                <Lock className="h-5 w-5 shrink-0 text-gray-700" />
+                                <Lock className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
                                 <input
                                     type={showConfirmPassword ? "text" : "password"}
                                     value={confirmPassword}
@@ -232,13 +232,13 @@ export function SignupView() {
                                         setConfirmPassword(e.target.value);
                                         clearError("confirmPassword");
                                     }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none"
+                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
                                 />
                                 <button
                                     type="button"
                                     aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                                     onClick={() => setShowConfirmPassword((v) => !v)}
-                                    className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline"
+                                    className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline dark:text-blue-400"
                                 >
                                     {showConfirmPassword ? "HIDE" : "SHOW"}
                                 </button>
@@ -249,7 +249,7 @@ export function SignupView() {
                         </div>
                         {/* Form-level error */}
                         {formError && (
-                            <p className="rounded-md bg-[#fce8e6] px-4 py-2.5 text-sm text-[#c5221f]">
+                            <p className="rounded-md bg-[#fce8e6] px-4 py-2.5 text-sm text-[#c5221f] dark:border dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
                                 {formError}
                             </p>
                         )}
@@ -257,7 +257,7 @@ export function SignupView() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1554b5] disabled:cursor-default disabled:opacity-70"
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1554b5] disabled:cursor-default disabled:opacity-70 dark:bg-blue-600 dark:hover:bg-blue-500"
                         >
                             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                             {loading ? "Creating account…" : "Create account"}
@@ -265,15 +265,15 @@ export function SignupView() {
                     </form>
                     {/* Sign in link */}
                     <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-slate-400">
                             Already have an account?{" "}
-                            <Link href="/" className="font-medium text-[#1a73e8] hover:underline">
+                            <Link href="/" className="font-medium text-[#1a73e8] hover:underline dark:text-blue-400">
                                 Sign in
                             </Link>
                         </p>
                     </div>
                     {/* Legal */}
-                    <div className="mt-10 flex items-center justify-center gap-2 text-xs text-gray-700">
+                    <div className="mt-10 flex items-center justify-center gap-2 text-xs text-gray-700 dark:text-slate-500">
                         <a href="#" className="hover:underline">
                             Privacy Policy
                         </a>

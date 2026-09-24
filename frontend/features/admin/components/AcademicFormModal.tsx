@@ -67,17 +67,17 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
                         {item ? `Edit ${TYPE_LABELS[type]}` : `Add New ${TYPE_LABELS[type]}`}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100"
+                        className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -87,7 +87,7 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                 <div className="mt-6 space-y-5">
                     {type === "semester" ? (
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                 Cohort / Schedule Name <span className="text-[#c5221f]">*</span>
                             </label>
                             <input
@@ -95,23 +95,23 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                                 value={name}
                                 onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
                                 placeholder="e.g., Spring 2025 Cohort or Self-Paced"
-                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none ${errors.name
+                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 dark:text-slate-100 ${errors.name
                                     ? "border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                     }`}
                             />
                             {errors.name && <span className="mt-1 block text-sm text-[#c5221f]">{errors.name}</span>}
 
                             {/* Quick template suggestions */}
                             <div className="mt-2.5">
-                                <span className="text-xs text-gray-500">Quick suggestions:</span>
+                                <span className="text-xs text-gray-500 dark:text-slate-400">Quick suggestions:</span>
                                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                                     {COMMON_COHORT_TEMPLATES.map((tpl) => (
                                         <button
                                             key={tpl}
                                             type="button"
                                             onClick={() => { setName(tpl); setErrors((p) => ({ ...p, name: "" })); }}
-                                            className="cursor-pointer rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                                            className="cursor-pointer rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-blue-900/40 dark:hover:text-blue-300"
                                         >
                                             {tpl}
                                         </button>
@@ -122,7 +122,7 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                     ) : (
                         /* Name field for program/department */
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                 {TYPE_LABELS[type]} Name <span className="text-[#c5221f]">*</span>
                             </label>
                             <input
@@ -134,9 +134,9 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                                         ? "e.g., Professional Track, Foundations, Advanced Mastery"
                                         : "e.g., Software Engineering, UI/UX Design, Cloud Architecture"
                                 }
-                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none ${errors.name
+                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 dark:text-slate-100 ${errors.name
                                     ? "border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                     }`}
                             />
                             {errors.name && <span className="mt-1 block text-sm text-[#c5221f]">{errors.name}</span>}
@@ -146,7 +146,7 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                     {/* Department code field */}
                     {type === "department" && (
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                 Department Code <span className="text-[#c5221f]">*</span>
                             </label>
                             <input
@@ -154,9 +154,9 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                                 value={code}
                                 onChange={(e) => { setCode(e.target.value); setErrors((p) => ({ ...p, code: "" })); }}
                                 placeholder="e.g., CSE, BBA, EEE"
-                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none ${errors.code
+                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 dark:text-slate-100 ${errors.code
                                     ? "border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                     }`}
                             />
                             {errors.code && <span className="mt-1 block text-sm text-[#c5221f]">{errors.code}</span>}
@@ -166,7 +166,7 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                     {/* Program description field */}
                     {type === "program" && (
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                 Description
                             </label>
                             <textarea
@@ -174,7 +174,7 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Brief description of the program..."
                                 rows={3}
-                                className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-[15px] focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-[15px] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         </div>
                     )}
@@ -185,14 +185,14 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
+                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] dark:bg-blue-600 dark:hover:bg-blue-500"
                     >
                         {item ? "Save Changes" : `Create ${TYPE_LABELS[type]}`}
                     </button>

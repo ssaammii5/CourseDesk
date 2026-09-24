@@ -36,7 +36,7 @@ export function CourseTabs({ tab, onTabChange, isInstructor, isTeacher = false }
         : [...COURSE_TABS];
 
     return (
-        <div className="sticky top-16 z-30 border-b border-gray-200 bg-white">
+        <div className="sticky top-16 z-30 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
             <nav className="no-scrollbar flex gap-2 overflow-x-auto px-4 sm:gap-6 sm:overflow-x-visible sm:px-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {tabs.map((t) => {
                     const Icon = t.icon;
@@ -47,14 +47,14 @@ export function CourseTabs({ tab, onTabChange, isInstructor, isTeacher = false }
                             type="button"
                             onClick={() => onTabChange(t.id)}
                             className={`relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap py-3.5 sm:py-4 text-sm font-medium transition-colors ${isActive
-                                ? "text-[#1a73e8]"
-                                : "text-gray-600 hover:text-gray-900"
+                                ? "text-[#1a73e8] dark:text-blue-400 font-semibold"
+                                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100"
                                 }`}
                         >
-                            <Icon className={`h-4 w-4 ${isActive ? "text-[#1a73e8]" : "text-gray-400"}`} />
+                            <Icon className={`h-4 w-4 ${isActive ? "text-[#1a73e8] dark:text-blue-400" : "text-gray-400 dark:text-slate-500"}`} />
                             <span>{t.label}</span>
                             {isActive && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
                             )}
                         </button>
                     );

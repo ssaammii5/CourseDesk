@@ -139,24 +139,24 @@ export function AdminAcademicsView() {
     return (
         <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
             {error && (
-                <div className="mb-4 rounded-lg bg-[#fce8e6] px-5 py-3.5 text-sm text-[#c5221f]">{error}</div>
+                <div className="mb-4 rounded-lg bg-[#fce8e6] dark:bg-red-950/40 px-5 py-3.5 text-sm text-[#c5221f] dark:text-red-400">{error}</div>
             )}
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-semibold text-gray-900">Categories &amp; Tracks</h1>
-                    <p className="mt-1 text-sm text-gray-600">Configure course categories, learning tracks, and delivery cohorts</p>
+                    <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Categories &amp; Tracks</h1>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">Configure course categories, learning tracks, and delivery cohorts</p>
                 </div>
             </div>
 
-            <div className="mt-6 border-b border-gray-200">
+            <div className="mt-6 border-b border-gray-200 dark:border-slate-800">
                 <nav className="flex gap-8">
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
                             type="button"
                             onClick={() => setActiveTab(tab.id)}
-                            className={`relative flex cursor-pointer items-center gap-2 py-3.5 text-sm font-medium transition-colors ${activeTab === tab.id ? "text-[#1a73e8]" : "text-gray-600 hover:text-gray-900"}`}
+                            className={`relative flex cursor-pointer items-center gap-2 py-3.5 text-sm font-medium transition-colors ${activeTab === tab.id ? "text-[#1a73e8] dark:text-blue-400" : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"}`}
                         >
                             {tab.icon}
                             {tab.label}
@@ -172,13 +172,13 @@ export function AdminAcademicsView() {
                 <div className="mt-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="relative max-w-sm flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                             <input
                                 type="text"
                                 value={departmentSearch}
                                 onChange={(e) => setDepartmentSearch(e.target.value)}
                                 placeholder="Search categories..."
-                                className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         </div>
                         <button
@@ -202,10 +202,10 @@ export function AdminAcademicsView() {
                                     className: "text-right",
                                     render: (d: AcademicDepartmentDto) => (
                                         <div className="flex items-center justify-end gap-1">
-                                            <button type="button" title="Edit" onClick={() => openEditModal("department", d)} className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100">
+                                            <button type="button" title="Edit" onClick={() => openEditModal("department", d)} className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800">
                                                 <Pencil className="h-4 w-4" />
                                             </button>
-                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "department", id: d.id, name: d.name })} className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50">
+                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "department", id: d.id, name: d.name })} className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40">
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>
@@ -224,13 +224,13 @@ export function AdminAcademicsView() {
                 <div className="mt-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="relative max-w-sm flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                             <input
                                 type="text"
                                 value={programSearch}
                                 onChange={(e) => setProgramSearch(e.target.value)}
                                 placeholder="Search tracks..."
-                                className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         </div>
                         <button
@@ -254,10 +254,10 @@ export function AdminAcademicsView() {
                                     className: "text-right",
                                     render: (p: AcademicProgramDto) => (
                                         <div className="flex items-center justify-end gap-1">
-                                            <button type="button" title="Edit" onClick={() => openEditModal("program", p)} className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100">
+                                            <button type="button" title="Edit" onClick={() => openEditModal("program", p)} className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800">
                                                 <Pencil className="h-4 w-4" />
                                             </button>
-                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "program", id: p.id, name: p.name })} className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50">
+                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "program", id: p.id, name: p.name })} className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40">
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>
@@ -276,13 +276,13 @@ export function AdminAcademicsView() {
                 <div className="mt-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="relative max-w-sm flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                             <input
                                 type="text"
                                 value={semesterSearch}
                                 onChange={(e) => setSemesterSearch(e.target.value)}
                                 placeholder="Search cohorts..."
-                                className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         </div>
                         <button
@@ -305,10 +305,10 @@ export function AdminAcademicsView() {
                                     className: "text-right",
                                     render: (s: AcademicSemesterDto) => (
                                         <div className="flex items-center justify-end gap-1">
-                                            <button type="button" title="Edit" onClick={() => openEditModal("semester", s)} className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100">
+                                            <button type="button" title="Edit" onClick={() => openEditModal("semester", s)} className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800">
                                                 <Pencil className="h-4 w-4" />
                                             </button>
-                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "semester", id: s.id, name: s.name })} className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50">
+                                            <button type="button" title="Delete" onClick={() => setDeleteTarget({ type: "semester", id: s.id, name: s.name })} className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40">
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>

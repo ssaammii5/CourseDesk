@@ -245,20 +245,20 @@ export function AssignmentComments({
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="flex flex-wrap items-center gap-1.5">
-                                            <span className="font-semibold text-gray-900">
+                                            <span className="font-semibold text-gray-900 dark:text-slate-100">
                                                 {c.userName || "User"}
                                             </span>
                                             {isInstructor && (
-                                                <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+                                                <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300">
                                                     Instructor
                                                 </span>
                                             )}
                                             {isAdmin && (
-                                                <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                                                <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/70 dark:text-amber-300">
                                                     Admin
                                                 </span>
                                             )}
-                                            <span className="text-[11px] text-gray-400">
+                                            <span className="text-[11px] text-gray-400 dark:text-slate-500">
                                                 • {formatCommentDate(c.createdAtUtc)}
                                             </span>
                                         </div>
@@ -269,7 +269,7 @@ export function AssignmentComments({
                                                 title="Delete comment"
                                                 disabled={deletingId === c.id}
                                                 onClick={() => handleDelete(c.id)}
-                                                className="cursor-pointer text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed"
+                                                className="cursor-pointer text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 group-hover:opacity-100 disabled:cursor-not-allowed dark:text-slate-500 dark:hover:text-red-400"
                                             >
                                                 {deletingId === c.id ? (
                                                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -280,7 +280,7 @@ export function AssignmentComments({
                                         )}
                                     </div>
 
-                                    <p className="mt-1 whitespace-pre-wrap break-words text-gray-700 leading-relaxed">
+                                    <p className="mt-1 whitespace-pre-wrap break-words text-gray-700 dark:text-slate-300 leading-relaxed">
                                         {c.content}
                                     </p>
                                 </div>
@@ -299,21 +299,21 @@ export function AssignmentComments({
                             setIsExpanded(true);
                             setTimeout(() => textareaRef.current?.focus(), 50);
                         }}
-                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-full border border-gray-300 bg-white text-gray-500 transition-all hover:border-gray-400 hover:bg-gray-50/70 hover:shadow-xs focus:border-[#1a73e8] focus:outline-none ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}`}
+                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-full border border-gray-300 bg-white text-gray-500 transition-all hover:border-gray-400 hover:bg-gray-50/70 hover:shadow-xs focus:border-[#1a73e8] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-750 ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}`}
                     >
                         <div
                             className={`flex shrink-0 items-center justify-center rounded-full ${compact ? "h-5 w-5 text-[10px]" : "h-6 w-6 text-xs"} ${getAvatarColor(user?.name || "Me")}`}
                         >
                             {initialOf(user?.name || "M")}
                         </div>
-                        <span className="truncate text-left text-gray-500">
+                        <span className="truncate text-left text-gray-500 dark:text-slate-400">
                             {isPrivate
                                 ? `Add private comment to ${targetLabel}…`
                                 : "Add class comment…"}
                         </span>
                     </button>
                 ) : (
-                    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-xs focus-within:border-[#1a73e8] focus-within:ring-1 focus-within:ring-[#1a73e8]/20 transition-all">
+                    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-xs focus-within:border-[#1a73e8] focus-within:ring-1 focus-within:ring-[#1a73e8]/20 transition-all dark:border-slate-700 dark:bg-slate-800">
                         <textarea
                             id={uniqueInputId}
                             ref={textareaRef}
@@ -326,10 +326,10 @@ export function AssignmentComments({
                                     ? `Add private comment to ${targetLabel}…`
                                     : "Add class comment…"
                             }
-                            className={`w-full resize-none border-0 bg-transparent p-3 text-gray-900 placeholder:text-gray-400 focus:outline-none ${compact ? "text-xs" : "text-sm"}`}
+                            className={`w-full resize-none border-0 bg-transparent p-3 text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500 ${compact ? "text-xs" : "text-sm"}`}
                         />
-                        <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/60 px-3 py-2">
-                            <span className="text-[10px] text-gray-400">
+                        <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/60 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/80">
+                            <span className="text-[10px] text-gray-400 dark:text-slate-500">
                                 Ctrl+Enter to send
                             </span>
                             <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export function AssignmentComments({
                                         setText("");
                                     }}
                                     disabled={submitting}
-                                    className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200/60 transition-colors"
+                                    className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200/60 transition-colors dark:text-slate-400 dark:hover:bg-slate-700"
                                 >
                                     Cancel
                                 </button>

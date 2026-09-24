@@ -34,6 +34,7 @@ import { type NotificationItem, type NotificationKind } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
 import { initialOf } from "@/lib/utils/format";
 import { hasAccessToken } from "@/lib/auth/session";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface TopBarProps {
     onMenuClick: () => void;
@@ -43,13 +44,13 @@ const NOTIFICATION_META: Record<
     NotificationKind,
     { icon: LucideIcon; classes: string }
 > = {
-    assignment: { icon: ClipboardList, classes: "bg-blue-50 text-blue-600 ring-1 ring-blue-100" },
-    grade: { icon: Star, classes: "bg-amber-50 text-amber-600 ring-1 ring-amber-100" },
-    announcement: { icon: Megaphone, classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100" },
-    submission: { icon: ClipboardCheck, classes: "bg-purple-50 text-purple-600 ring-1 ring-purple-100" },
-    due: { icon: CalendarDays, classes: "bg-rose-50 text-rose-600 ring-1 ring-rose-100" },
-    session: { icon: Video, classes: "bg-teal-50 text-teal-600 ring-1 ring-teal-100" },
-    system: { icon: Info, classes: "bg-slate-100 text-slate-600 ring-1 ring-slate-200" },
+    assignment: { icon: ClipboardList, classes: "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 ring-1 ring-blue-100 dark:ring-blue-900/60" },
+    grade: { icon: Star, classes: "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 ring-1 ring-amber-100 dark:ring-amber-900/60" },
+    announcement: { icon: Megaphone, classes: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-900/60" },
+    submission: { icon: ClipboardCheck, classes: "bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 ring-1 ring-purple-100 dark:ring-purple-900/60" },
+    due: { icon: CalendarDays, classes: "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 ring-1 ring-rose-100 dark:ring-rose-900/60" },
+    session: { icon: Video, classes: "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 ring-1 ring-teal-100 dark:ring-teal-900/60" },
+    system: { icon: Info, classes: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700" },
 };
 
 function formatRelativeTime(isoString?: string): string {
@@ -263,14 +264,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const avatarClass = user?.avatarClass ?? "bg-blue-600";
 
     return (
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 sm:px-6 backdrop-blur-md transition-all">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-3 sm:px-6 backdrop-blur-md transition-colors">
             {/* Left side: Hamburger, Logo, Breadcrumbs */}
             <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
                 <button
                     type="button"
                     onClick={onMenuClick}
                     aria-label="Toggle navigation menu"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
                 >
                     <Menu className="h-5 w-5" />
                 </button>
@@ -279,7 +280,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
                         <GraduationCap className="h-5 w-5" />
                     </span>
-                    <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
+                    <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         CourseDesk
                     </span>
                 </Link>
@@ -287,13 +288,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 {/* Breadcrumb Info */}
                 {classCourse && (
                     <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:pl-2">
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300" />
-                        <div className="flex items-center gap-1.5 min-w-0 max-w-[160px] sm:max-w-xs md:max-w-md rounded-lg bg-slate-100/80 px-2.5 py-1 border border-slate-200/60">
-                            <span className="truncate text-xs font-semibold text-slate-800">
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                        <div className="flex items-center gap-1.5 min-w-0 max-w-[160px] sm:max-w-xs md:max-w-md rounded-lg bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 border border-slate-200/60 dark:border-slate-700">
+                            <span className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">
                                 {classCourse.name}
                             </span>
                             {classSub && (
-                                <span className="hidden truncate text-[11px] font-medium text-slate-400 md:inline">
+                                <span className="hidden truncate text-[11px] font-medium text-slate-400 dark:text-slate-500 md:inline">
                                     • {classSub}
                                 </span>
                             )}
@@ -303,8 +304,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
                 {!classCourse && (isTodo || isCalendar || isSettings || isAdminPage) && (
                     <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:pl-2">
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300" />
-                        <span className="inline-flex items-center rounded-lg bg-slate-100/80 px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-200/60">
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                        <span className="inline-flex items-center rounded-lg bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
                             {isTodo && "To-do"}
                             {isCalendar && "Calendar"}
                             {isSettings && "Settings"}
@@ -320,36 +321,39 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 )}
             </div>
 
-            {/* Right side: Notifications, User Profile Menu */}
-            <div className="flex shrink-0 items-center gap-2">
+            {/* Right side: Theme Toggle, Notifications, User Profile Menu */}
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                {/* Theme Selector (Light, Dark, System) */}
+                <ThemeToggle />
+
                 {/* Notifications Button & Dropdown */}
                 <div ref={notifRef} className="relative">
                     <button
                         type="button"
                         aria-label="Notifications"
                         onClick={toggleNotif}
-                        className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-all ${
+                        className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition-all ${
                             notifOpen
-                                ? "bg-slate-100 text-slate-900 ring-1 ring-slate-200"
-                                : "hover:bg-slate-100 hover:text-slate-800"
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-slate-200 dark:ring-slate-700"
+                                : "hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200"
                         }`}
                     >
                         <Bell className="h-4.5 w-4.5" />
                         {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-white">
+                            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-white dark:ring-slate-900">
                                 {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                         )}
                     </button>
 
                     {notifOpen && (
-                        <div className="absolute right-0 top-full z-50 mt-2 w-[400px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200/90 ring-1 ring-black/5 max-sm:fixed max-sm:inset-x-3 max-sm:top-20 max-sm:w-auto animate-in fade-in zoom-in-95 duration-150">
+                        <div className="absolute right-0 top-full z-50 mt-2 w-[400px] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 max-sm:fixed max-sm:inset-x-3 max-sm:top-20 max-sm:w-auto animate-in fade-in zoom-in-95 duration-150">
                             {/* Notification Header */}
-                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50/70">
+                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold text-slate-900">Notifications</span>
+                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Notifications</span>
                                     {unreadCount > 0 && (
-                                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600 ring-1 ring-blue-100">
+                                        <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400 ring-1 ring-blue-100 dark:ring-blue-900/50">
                                             {unreadCount} new
                                         </span>
                                     )}
@@ -359,7 +363,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                         <button
                                             type="button"
                                             onClick={handleMarkAllRead}
-                                            className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                                            className="flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                                         >
                                             <CheckCheck className="h-3.5 w-3.5" />
                                             Mark read
@@ -369,7 +373,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                         type="button"
                                         disabled={notifications.length === 0}
                                         onClick={handleClearAll}
-                                        className="text-xs font-medium text-slate-400 hover:text-slate-700 disabled:opacity-40 disabled:hover:text-slate-400 transition-colors"
+                                        className="text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-40 disabled:hover:text-slate-400 transition-colors"
                                     >
                                         Clear all
                                     </button>
@@ -380,16 +384,16 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                             <div className="max-h-[400px] overflow-y-auto no-scrollbar">
                                 {notifications.length === 0 ? (
                                     <div className="flex flex-col items-center gap-2.5 px-6 py-12 text-center">
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
                                             <Bell className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-slate-800">All caught up!</p>
-                                            <p className="mt-0.5 text-xs text-slate-400">You don't have any unread notifications.</p>
+                                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">All caught up!</p>
+                                            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">You don't have any unread notifications.</p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <ul className="divide-y divide-slate-100">
+                                    <ul className="divide-y divide-slate-100 dark:divide-slate-800/80">
                                         {notifications.map((n) => {
                                             const meta = NOTIFICATION_META[n.kind] || NOTIFICATION_META.system;
                                             const Icon = meta.icon;
@@ -398,8 +402,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleNotificationClick(n)}
-                                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
-                                                            !n.isRead ? "bg-blue-50/40 hover:bg-blue-50/60" : ""
+                                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
+                                                            !n.isRead ? "bg-blue-50/40 dark:bg-blue-950/30 hover:bg-blue-50/60 dark:hover:bg-blue-950/50" : ""
                                                         }`}
                                                     >
                                                         <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${meta.classes}`}>
@@ -407,19 +411,19 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                                         </span>
                                                         <span className="min-w-0 flex-1">
                                                             <span className="flex items-start justify-between gap-2">
-                                                                <span className={`block text-xs leading-snug ${!n.isRead ? "font-semibold text-slate-900" : "font-medium text-slate-700"}`}>
+                                                                <span className={`block text-xs leading-snug ${!n.isRead ? "font-semibold text-slate-900 dark:text-white" : "font-medium text-slate-700 dark:text-slate-300"}`}>
                                                                     {n.title}
                                                                 </span>
                                                                 {!n.isRead && (
-                                                                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+                                                                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600 dark:bg-blue-400" />
                                                                 )}
                                                             </span>
                                                             {n.message && (
-                                                                <span className="mt-0.5 line-clamp-2 block text-xs text-slate-500">
+                                                                <span className="mt-0.5 line-clamp-2 block text-xs text-slate-500 dark:text-slate-400">
                                                                     {n.message}
                                                                 </span>
                                                             )}
-                                                            <span className="mt-1 block text-[10px] font-medium text-slate-400">
+                                                            <span className="mt-1 block text-[10px] font-medium text-slate-400 dark:text-slate-500">
                                                                     {formatRelativeTime(n.createdAtUtc)}
                                                                 </span>
                                                         </span>
@@ -442,40 +446,42 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                         onClick={toggleAccount}
                         className={`flex items-center gap-2 rounded-xl p-1 sm:pr-2.5 border transition-all duration-150 ${
                             accountOpen
-                                ? "bg-slate-100 border-slate-300 ring-1 ring-slate-200"
-                                : "border-slate-200/70 bg-white/60 hover:bg-slate-100/80 hover:border-slate-300/70 shadow-xs"
+                                ? "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 ring-1 ring-slate-200 dark:ring-slate-700"
+                                : "border-slate-200/70 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:border-slate-300/70 dark:hover:border-slate-600 shadow-xs"
                         }`}
                     >
                         <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs ${avatarClass}`}>
                             {initialOf(displayName)}
                         </span>
                         <div className="hidden text-left sm:block">
-                            <p className="max-w-[110px] truncate text-xs font-semibold text-slate-800 leading-tight">
+                            <p className="max-w-[110px] truncate text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">
                                 {displayName || "Account"}
                             </p>
-                            <p className="text-[10px] font-medium text-slate-400 capitalize leading-tight">
+                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-400 capitalize leading-tight">
                                 {displayRole}
                             </p>
                         </div>
-                        <ChevronDown className={`hidden sm:block h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown className={`hidden sm:block h-3.5 w-3.5 text-slate-400 dark:text-slate-500 transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`} />
                     </button>
 
                     {accountOpen && (
-                        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200/90 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
                             {/* User Card Header */}
-                            <div className="border-b border-slate-100 bg-slate-50/60 p-4">
+                            <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-4">
                                 <div className="flex items-center gap-3">
                                     <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white shadow-xs ${avatarClass}`}>
                                         {initialOf(displayName)}
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
-                                        <p className="truncate text-xs text-slate-500">{displayEmail}</p>
+                                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{displayName}</p>
+                                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{displayEmail}</p>
                                         <div className="mt-1">
                                             <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold border ${
-                                                displayRole === "Admin" ? "bg-rose-50 text-rose-700 border-rose-200/80" :
-                                                displayRole === "Instructor" ? "bg-amber-50 text-amber-700 border-amber-200/80" :
-                                                "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+                                                displayRole === "Admin"
+                                                    ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-900/60"
+                                                    : displayRole === "Instructor"
+                                                    ? "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-900/60"
+                                                    : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-900/60"
                                             }`}>
                                                 <span
                                                     className={`h-1.5 w-1.5 rounded-full ${
@@ -499,28 +505,28 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                         setAccountOpen(false);
                                         router.push("/settings");
                                     }}
-                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100/80 transition-colors"
+                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors"
                                 >
-                                    <Settings className="h-4 w-4 text-slate-400" />
+                                    <Settings className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                                     Account Settings
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleLogout}
-                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                                 >
-                                    <LogOut className="h-4 w-4 text-rose-500" />
+                                    <LogOut className="h-4 w-4 text-rose-500 dark:text-rose-400" />
                                     Sign out
                                 </button>
                             </div>
 
                             {/* Footer Links */}
-                            <div className="border-t border-slate-100 bg-slate-50/40 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                            <div className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/40 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
                                 <span>CourseDesk LMS</span>
                                 <div className="flex items-center gap-2">
-                                    <a href="#" className="hover:text-slate-600 transition-colors">Privacy</a>
+                                    <a href="#" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">Privacy</a>
                                     <span>•</span>
-                                    <a href="#" className="hover:text-slate-600 transition-colors">Terms</a>
+                                    <a href="#" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">Terms</a>
                                 </div>
                             </div>
                         </div>

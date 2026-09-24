@@ -213,7 +213,7 @@ export function AdminAssignmentsView() {
                 <button
                     type="button"
                     onClick={() => handleRowClick(a.id)}
-                    className="cursor-pointer text-left text-sm font-medium text-[#1a73e8] hover:underline"
+                    className="cursor-pointer text-left text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                 >
                     {a.title}
                 </button>
@@ -247,14 +247,14 @@ export function AdminAssignmentsView() {
     return (
         <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
             {error && (
-                <div className="mb-4 rounded-lg bg-[#fce8e6] px-5 py-3.5 text-sm text-[#c5221f]">{error}</div>
+                <div className="mb-4 rounded-lg bg-[#fce8e6] dark:bg-red-950/40 px-5 py-3.5 text-sm text-[#c5221f] dark:text-red-400">{error}</div>
             )}
 
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">All Assignments</h1>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100 sm:text-3xl">All Assignments</h1>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
                         {assignments.length} assignments total • {filtered.length} shown
                     </p>
                 </div>
@@ -263,13 +263,13 @@ export function AdminAssignmentsView() {
             {/* Search & Filters */}
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="relative w-full sm:max-w-sm sm:flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search by title, instructor, or course..."
-                        className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
 
@@ -278,8 +278,8 @@ export function AdminAssignmentsView() {
                         type="button"
                         onClick={() => setFiltersOpen((v) => !v)}
                         className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${filtersOpen || activeFilterCount > 0
-                            ? "border-[#1a63d8] bg-[#e8f0fe] text-[#174ea6]"
-                            : "border-gray-400 text-gray-700 hover:bg-gray-50"
+                            ? "border-[#1a63d8] bg-[#e8f0fe] dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300"
+                            : "border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
                             }`}
                     >
                         <SlidersHorizontal className="h-4 w-4" />
@@ -294,7 +294,7 @@ export function AdminAssignmentsView() {
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                            className="cursor-pointer text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                         >
                             Clear all
                         </button>
@@ -304,13 +304,13 @@ export function AdminAssignmentsView() {
 
             {/* Filter Panel */}
             {filtersOpen && (
-                <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:grid-cols-2 lg:grid-cols-4">
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Track / Level</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Track / Level</span>
                         <select
                             value={programFilter}
                             onChange={(e) => { setProgramFilter(e.target.value); setDepartmentFilter("all"); setSessionFilter("all"); }}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Tracks</option>
                             {PROGRAM_TYPES.map((p) => (
@@ -320,11 +320,11 @@ export function AdminAssignmentsView() {
                     </label>
 
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Category / Domain</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Category / Domain</span>
                         <select
                             value={departmentFilter}
                             onChange={(e) => setDepartmentFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Categories</option>
                             {departmentOptions.map((d) => (
@@ -334,11 +334,11 @@ export function AdminAssignmentsView() {
                     </label>
 
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Cohort / Schedule</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Cohort / Schedule</span>
                         <select
                             value={sessionFilter}
                             onChange={(e) => setSessionFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Cohorts</option>
                             {sessionOptions.map((s) => (
@@ -348,11 +348,11 @@ export function AdminAssignmentsView() {
                     </label>
 
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Status</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Status</span>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Status</option>
                             <option value="Draft">Draft</option>
@@ -366,22 +366,22 @@ export function AdminAssignmentsView() {
             {/* Grouped Content */}
             <div className="mt-8 space-y-12">
                 {filtered.length === 0 && (
-                    <div className="rounded-lg border border-gray-200 bg-white py-16 text-center">
-                        <p className="text-sm text-gray-600">No assignments match your filters.</p>
+                    <div className="rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-16 text-center">
+                        <p className="text-sm text-gray-600 dark:text-slate-400">No assignments match your filters.</p>
                     </div>
                 )}
 
                 {programGroups.map((pg) => (
                     <section key={pg.name}>
                         {/* Program Header */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-300 pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-200 dark:border-slate-800 pb-3">
                             <div className="flex min-w-0 items-center gap-3">
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7e3fd] text-[#174ea6] sm:h-10 sm:w-10">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7e3fd] dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300 sm:h-10 sm:w-10">
                                     <Layers className="h-5 w-5" />
                                 </span>
-                                <h2 className="truncate text-xl text-gray-900 sm:text-2xl">{pg.name}</h2>
+                                <h2 className="truncate text-xl text-gray-900 dark:text-slate-100 sm:text-2xl">{pg.name}</h2>
                             </div>
-                            <span className="shrink-0 text-sm font-medium text-gray-600">
+                            <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-slate-400">
                                 {pg.count} assignment{pg.count === 1 ? "" : "s"}
                             </span>
                         </div>
@@ -391,10 +391,10 @@ export function AdminAssignmentsView() {
                             <div key={dept.name} className="mt-6">
                                 <div className="flex flex-wrap items-center justify-between gap-2 px-1">
                                     <div className="flex min-w-0 items-center gap-2">
-                                        <Tag className="h-4 w-4 shrink-0 text-gray-500" />
-                                        <h3 className="min-w-0 truncate text-lg text-gray-800 sm:text-xl">{dept.name}</h3>
+                                        <Tag className="h-4 w-4 shrink-0 text-gray-500 dark:text-slate-400" />
+                                        <h3 className="min-w-0 truncate text-lg text-gray-800 dark:text-slate-200 sm:text-xl">{dept.name}</h3>
                                     </div>
-                                    <span className="shrink-0 text-xs font-medium text-gray-500">
+                                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-slate-400">
                                         {dept.count} assignment{dept.count === 1 ? "" : "s"}
                                     </span>
                                 </div>
@@ -404,11 +404,11 @@ export function AdminAssignmentsView() {
                                     {dept.sessions.map((sess) => (
                                         <div key={sess.session}>
                                             <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
-                                                <CalendarRange className="h-4 w-4 text-[#174ea6]" />
-                                                <span className="rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#174ea6]">
+                                                <CalendarRange className="h-4 w-4 text-[#174ea6] dark:text-blue-300" />
+                                                <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-3 py-1 text-xs font-medium text-[#174ea6] dark:text-blue-300">
                                                     {sess.session}
                                                 </span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-gray-500 dark:text-slate-400">
                                                     {sess.count} assignment{sess.count === 1 ? "" : "s"}
                                                 </span>
                                             </div>
@@ -418,11 +418,11 @@ export function AdminAssignmentsView() {
                                                 {sess.courses.map((course) => (
                                                     <div key={course.courseName}>
                                                         <div className="mb-2 flex items-center gap-2 px-1">
-                                                            <BookOpen className="h-4 w-4 text-gray-600" />
-                                                            <span className="text-sm font-semibold text-gray-800">
+                                                            <BookOpen className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+                                                            <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">
                                                                 {course.courseName}
                                                             </span>
-                                                            <span className="text-xs text-gray-500">
+                                                            <span className="text-xs text-gray-500 dark:text-slate-400">
                                                                 ({course.assignments.length} assignment{course.assignments.length === 1 ? "" : "s"})
                                                             </span>
                                                         </div>

@@ -249,10 +249,10 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     {/* Title row */}
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex min-w-0 items-center gap-6">
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-700">
+                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-700 dark:bg-slate-800 dark:text-slate-200">
                                 <ClipboardList className="h-6 w-6" />
                             </span>
-                            <h1 className="min-w-0 text-3xl text-gray-900 sm:text-[32px]">{detail.title}</h1>
+                            <h1 className="min-w-0 text-3xl font-semibold text-gray-900 dark:text-slate-100 sm:text-[32px]">{detail.title}</h1>
                         </div>
                         <IconButton label="More options" className="h-10 w-10 shrink-0">
                             <EllipsisVertical className="h-5 w-5" />
@@ -260,20 +260,20 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     </div>
 
                     {/* Meta info */}
-                    <p className="mt-6 text-sm text-gray-800">
+                    <p className="mt-6 text-sm text-gray-800 dark:text-slate-300">
                         {detail.instructorName || detail.teacherName}
-                        <span className="mx-2 text-gray-600">•</span>
+                        <span className="mx-2 text-gray-600 dark:text-slate-500">•</span>
                         {detail.postedDate}
                     </p>
-                    <p className="mt-4 text-sm font-semibold text-gray-900">
+                    <p className="mt-4 text-sm font-semibold text-gray-900 dark:text-slate-100">
                         {detail.points} points
-                        <span className="mx-3 font-normal text-gray-700">|</span>
+                        <span className="mx-3 font-normal text-gray-700 dark:text-slate-500">|</span>
                         {detail.dueLabel}
                     </p>
-                    <div className="mt-5 border-t border-gray-300" />
+                    <div className="mt-5 border-t border-gray-300 dark:border-slate-800" />
 
                     {/* Description */}
-                    <p className="mt-7 whitespace-pre-line text-sm leading-6 text-gray-800">
+                    <p className="mt-7 whitespace-pre-line text-sm leading-6 text-gray-800 dark:text-slate-300">
                         {detail.description}
                     </p>
 
@@ -287,7 +287,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     )}
 
                     {/* Class comments */}
-                    <div className="mt-12 border-t border-gray-200/80 pt-8">
+                    <div className="mt-12 border-t border-gray-200/80 dark:border-slate-800 pt-8">
                         <AssignmentComments assignmentId={detail.id} isPrivate={false} />
                     </div>
                 </div>
@@ -296,11 +296,11 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                 {!readOnly && (
                     <div className="w-full shrink-0 space-y-6 lg:w-[350px]">
                         {/* Your work */}
-                        <section className="rounded-lg bg-[#e9eef4] p-4 sm:p-5">
+                        <section className="rounded-lg bg-[#e9eef4] p-4 sm:p-5 dark:border dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg text-gray-900">Your work</h2>
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Your work</h2>
                                 <span
-                                    className={`text-sm font-medium ${turnedIn ? "text-[#188038]" : "text-gray-900"}`}
+                                    className={`text-sm font-medium ${turnedIn ? "text-[#188038] dark:text-emerald-400" : "text-gray-900 dark:text-slate-300"}`}
                                 >
                                     {turnedIn ? "Turned in" : "Assigned"}
                                 </span>
@@ -316,7 +316,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                                     type="button"
                                                     aria-label={`Remove ${att.title}`}
                                                     onClick={() => removeAttachment(att.id)}
-                                                    className="cursor-pointer rounded-full p-1.5 text-gray-700 hover:bg-gray-900/10"
+                                                    className="cursor-pointer rounded-full p-1.5 text-gray-700 hover:bg-gray-900/10 dark:text-slate-400 dark:hover:bg-slate-800"
                                                 >
                                                     <X className="h-5 w-5" />
                                                 </button>
@@ -327,7 +327,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             )}
 
                             {uploading && (
-                                <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-[#1a73e8]">
+                                <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-[#1a73e8] dark:bg-blue-950/60 dark:text-blue-300">
                                     <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
                                     <span>Saving to draft...</span>
                                 </div>
@@ -339,7 +339,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                         type="button"
                                         disabled={uploading}
                                         onClick={() => setAddMenuOpen((v) => !v)}
-                                        className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-gray-400/80 py-2 text-sm font-medium text-[#1a73e8] hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-gray-400/80 py-2 text-sm font-medium text-[#1a73e8] hover:bg-white/70 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800"
                                     >
                                         <Plus className="h-4 w-4" />
                                         Add or create
@@ -347,11 +347,11 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                     {addMenuOpen && (
                                         <>
                                             <div className="fixed inset-0 z-10" onClick={() => setAddMenuOpen(false)} />
-                                            <div className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-lg bg-[#e9eef4] py-2 shadow-lg">
+                                            <div className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-lg bg-[#e9eef4] py-2 shadow-lg dark:border dark:border-slate-700 dark:bg-slate-800">
                                                 <button
                                                     type="button"
                                                     onClick={openLinkDialog}
-                                                    className="flex w-full cursor-pointer items-center gap-4 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-900/5"
+                                                    className="flex w-full cursor-pointer items-center gap-4 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-900/5 dark:text-slate-100 dark:hover:bg-slate-700"
                                                 >
                                                     <Link2 className="h-5 w-5" />
                                                     Link
@@ -359,7 +359,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                                 <button
                                                     type="button"
                                                     onClick={openFilePicker}
-                                                    className="flex w-full cursor-pointer items-center gap-4 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-900/5"
+                                                    className="flex w-full cursor-pointer items-center gap-4 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-900/5 dark:text-slate-100 dark:hover:bg-slate-700"
                                                 >
                                                     <Paperclip className="h-5 w-5" />
                                                     File
@@ -375,21 +375,21 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 disabled={uploading}
                                 onClick={turnedIn ? () => setUnsubmitOpen(true) : handlePrimary}
                                 className={`mt-4 w-full cursor-pointer rounded-full py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${turnedIn
-                                    ? "border border-gray-400/80 text-[#1a73e8] hover:bg-white/70"
+                                    ? "border border-gray-400/80 text-[#1a73e8] hover:bg-white/70 dark:border-slate-700 dark:hover:bg-slate-800"
                                     : "bg-[#1a63d8] text-white hover:bg-[#1554b5]"
                                     }`}
                             >
                                 {uploading ? "Saving..." : turnedIn ? "Unsubmit" : attachments.length > 0 ? "Turn in" : "Mark as done"}
                             </button>
                             {!turnedIn && (
-                                <p className="mt-4 text-center text-xs italic text-gray-700">
+                                <p className="mt-4 text-center text-xs italic text-gray-700 dark:text-slate-400">
                                     Work cannot be turned in after the due date
                                 </p>
                             )}
                         </section>
 
                         {/* Private comments */}
-                        <section className="rounded-lg bg-[#e9eef4] p-4 sm:p-5">
+                        <section className="rounded-lg bg-[#e9eef4] p-4 sm:p-5 dark:border dark:border-slate-800 dark:bg-slate-900">
                             <AssignmentComments
                                 assignmentId={detail.id}
                                 isPrivate={true}
@@ -402,21 +402,21 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
 
             {/* Turn in confirmation */}
             {!readOnly && turnInOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-xl rounded-2xl bg-[#e9eef4] p-6 shadow-xl">
-                        <h2 className="text-2xl text-gray-900">Turn in your work?</h2>
-                        <p className="mt-4 text-sm text-gray-800">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4">
+                    <div className="w-full max-w-xl rounded-2xl bg-[#e9eef4] p-6 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
+                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Turn in your work?</h2>
+                        <p className="mt-4 text-sm text-gray-800 dark:text-slate-300">
                             {attachments.length} attachment{attachments.length === 1 ? "" : "s"} will be
                             submitted for &quot;{detail.title}&quot;.
                         </p>
-                        <div className="mt-4 border-t border-gray-400/60" />
+                        <div className="mt-4 border-t border-gray-400/60 dark:border-slate-700" />
                         <ul className="mt-4 space-y-3">
                             {attachments.map((att) => (
                                 <li key={att.id} className="flex items-center gap-3">
                                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#d93025] text-[7px] font-bold text-white">
                                         {att.kind === "link" ? "URL" : att.fileType.slice(0, 4)}
                                     </span>
-                                    <span className="truncate text-sm text-gray-900 underline">{att.title}</span>
+                                    <span className="truncate text-sm text-gray-900 underline dark:text-slate-200">{att.title}</span>
                                 </li>
                             ))}
                         </ul>
@@ -424,14 +424,14 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             <button
                                 type="button"
                                 onClick={() => setTurnInOpen(false)}
-                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={confirmTurnIn}
-                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                             >
                                 Turn in
                             </button>
@@ -442,10 +442,10 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
 
             {/* Unsubmit confirmation */}
             {!readOnly && unsubmitOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-xl rounded-2xl bg-[#e9eef4] p-6 shadow-xl">
-                        <h2 className="text-2xl text-gray-900">Unsubmit?</h2>
-                        <p className="mt-4 text-sm leading-6 text-gray-800">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4">
+                    <div className="w-full max-w-xl rounded-2xl bg-[#e9eef4] p-6 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
+                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Unsubmit?</h2>
+                        <p className="mt-4 text-sm leading-6 text-gray-800 dark:text-slate-300">
                             Unsubmit to add or change attachments. Don&apos;t forget to resubmit once
                             you&apos;re done.
                         </p>
@@ -453,14 +453,14 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             <button
                                 type="button"
                                 onClick={() => setUnsubmitOpen(false)}
-                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={confirmUnsubmit}
-                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                             >
                                 Unsubmit
                             </button>
@@ -471,12 +471,12 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
 
             {/* Link dialog */}
             {!readOnly && linkDialogOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-                        <h2 className="text-xl text-gray-900">Add link</h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4">
+                    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">Add link</h2>
                         <div className="mt-6">
                             <div
-                                className={`relative rounded-t border-b-2 bg-[#dfe3ea] ${linkError ? "border-[#d93025]" : "border-gray-500"
+                                className={`relative rounded-t border-b-2 bg-[#dfe3ea] dark:bg-slate-800 ${linkError ? "border-[#d93025]" : "border-gray-500 dark:border-slate-600"
                                     }`}
                             >
                                 <input
@@ -485,24 +485,24 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                     placeholder=" "
                                     onChange={(e) => setLinkValue(e.target.value)}
                                     onBlur={() => setLinkTouched(true)}
-                                    className="peer w-full bg-transparent px-4 pb-2 pt-6 text-base text-gray-900 focus:outline-none"
+                                    className="peer w-full bg-transparent px-4 pb-2 pt-6 text-base text-gray-900 dark:text-slate-100 focus:outline-none"
                                 />
                                 <span
-                                    className={`pointer-events-none absolute left-4 top-1.5 text-xs transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base ${linkError ? "text-[#d93025]" : "text-gray-700"
+                                    className={`pointer-events-none absolute left-4 top-1.5 text-xs transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base ${linkError ? "text-[#d93025]" : "text-gray-700 dark:text-slate-400"
                                         }`}
                                 >
                                     Link*
                                 </span>
                             </div>
                             {linkError && (
-                                <p className="mt-2 px-1 text-sm text-[#d93025]">Please enter a valid link</p>
+                                <p className="mt-2 px-1 text-sm text-[#d93025] dark:text-red-400">Please enter a valid link</p>
                             )}
                         </div>
                         <div className="mt-8 flex justify-end gap-8">
                             <button
                                 type="button"
                                 onClick={closeLinkDialog}
-                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                                className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                             >
                                 Cancel
                             </button>
@@ -511,8 +511,8 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 disabled={!linkValid}
                                 onClick={confirmAddLink}
                                 className={`text-sm font-medium ${linkValid
-                                    ? "cursor-pointer text-[#1a73e8] hover:underline"
-                                    : "cursor-default text-gray-400"
+                                    ? "cursor-pointer text-[#1a73e8] hover:underline dark:text-blue-400"
+                                    : "cursor-default text-gray-400 dark:text-slate-600"
                                     }`}
                             >
                                 Add link
@@ -538,17 +538,17 @@ function WorkAttachmentCard({
     onOpen: (a: AssignmentAttachment) => void;
 }) {
     const cardClass =
-        "flex min-w-0 flex-1 overflow-hidden rounded-lg border border-gray-300 bg-white text-left transition-shadow hover:shadow-md";
+        "flex min-w-0 flex-1 overflow-hidden rounded-lg border border-gray-300 bg-white text-left transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800";
     const inner = (
         <>
             <span className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-                <span className="truncate text-sm font-medium text-gray-900 underline">
+                <span className="truncate text-sm font-medium text-gray-900 underline dark:text-slate-100">
                     {attachment.title}
                 </span>
-                <span className="mt-1 text-xs text-gray-600">{attachment.fileType}</span>
+                <span className="mt-1 text-xs text-gray-600 dark:text-slate-400">{attachment.fileType}</span>
             </span>
             <span
-                className={`flex w-24 shrink-0 items-center justify-center border-l border-gray-200 text-3xl ${attachment.thumbClass}`}
+                className={`flex w-24 shrink-0 items-center justify-center border-l border-gray-200 dark:border-slate-700 text-3xl ${attachment.thumbClass}`}
             >
                 {cardEmoji(attachment)}
             </span>
@@ -574,16 +574,16 @@ function FileTile({ attachment }: { attachment: AssignmentAttachment }) {
         <a
             href="#"
             onClick={(e) => e.preventDefault()}
-            className="flex w-full max-w-[340px] overflow-hidden rounded-lg border border-gray-300 bg-white transition-shadow hover:shadow-md"
+            className="flex w-full max-w-[340px] overflow-hidden rounded-lg border border-gray-300 bg-white transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
         >
             <span className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-                <span className="truncate text-sm font-medium text-gray-900 underline">
+                <span className="truncate text-sm font-medium text-gray-900 underline dark:text-slate-100">
                     {attachment.title}
                 </span>
-                <span className="mt-1 text-xs text-gray-600">{attachment.fileType}</span>
+                <span className="mt-1 text-xs text-gray-600 dark:text-slate-400">{attachment.fileType}</span>
             </span>
             <span
-                className={`flex w-24 shrink-0 items-center justify-center border-l border-gray-200 text-3xl ${attachment.thumbClass}`}
+                className={`flex w-24 shrink-0 items-center justify-center border-l border-gray-200 dark:border-slate-700 text-3xl ${attachment.thumbClass}`}
             >
                 📄
             </span>

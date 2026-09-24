@@ -161,30 +161,30 @@ export function InstructorAssignmentView({
     };
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-white pb-16">
+        <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-slate-950 pb-16">
             {/* Top Bar with Navigation & Tabs */}
-            <header className="sticky top-16 z-30 border-b border-gray-200 bg-white">
+            <header className="sticky top-16 z-30 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-4 pt-4 sm:px-8">
                     <div className="flex items-center justify-between">
                         <button
                             type="button"
                             onClick={() => router.back()}
-                            className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                            className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Back
                         </button>
-                        <span className="text-xs text-gray-500">
-                            Course: <span className="font-medium text-gray-800">{assignment.courseName}</span>
+                        <span className="text-xs text-gray-500 dark:text-slate-400">
+                            Course: <span className="font-medium text-gray-800 dark:text-slate-200">{assignment.courseName}</span>
                         </span>
                     </div>
 
                     <div className="flex items-center justify-between pb-1">
                         <div>
-                            <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+                            <h1 className="text-xl font-semibold text-gray-900 dark:text-slate-100 sm:text-2xl">
                                 {assignment.title}
                             </h1>
-                            <p className="mt-0.5 text-xs text-gray-500">
+                            <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
                                 Due {formatDateTime(assignment.deadlineUtc)} • {assignment.maxMarks} points
                                 {assignment.topic && ` • ${assignment.topic}`}
                             </p>
@@ -192,18 +192,18 @@ export function InstructorAssignmentView({
                     </div>
 
                     {/* Tabs */}
-                    <nav className="flex gap-8 border-t border-gray-100">
+                    <nav className="flex gap-8 border-t border-gray-100 dark:border-slate-800">
                         <button
                             type="button"
                             onClick={() => setTab("learner-work")}
                             className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "learner-work"
-                                ? "text-[#1a73e8]"
-                                : "text-gray-600 hover:text-gray-900"
+                                ? "text-[#1a73e8] dark:text-blue-400"
+                                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                                 }`}
                         >
                             <Users className="h-4 w-4" />
                             Learner work
-                            <span className="rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-semibold text-[#174ea6]">
+                            <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-2 py-0.5 text-xs font-semibold text-[#174ea6] dark:text-blue-300">
                                 {submissions.length}
                             </span>
                             {tab === "learner-work" && (
@@ -215,8 +215,8 @@ export function InstructorAssignmentView({
                             type="button"
                             onClick={() => setTab("instructions")}
                             className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "instructions"
-                                ? "text-[#1a73e8]"
-                                : "text-gray-600 hover:text-gray-900"
+                                ? "text-[#1a73e8] dark:text-blue-400"
+                                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                                 }`}
                         >
                             <FileText className="h-4 w-4" />
@@ -233,28 +233,28 @@ export function InstructorAssignmentView({
             {tab === "learner-work" && (
                 <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8">
                     {/* Summary Counters Banner */}
-                    <div className="grid grid-cols-3 gap-4 rounded-xl border border-gray-200 bg-[#f9fafc] p-4 text-center sm:p-6">
-                        <div className="border-r border-gray-200">
-                            <span className="block text-3xl font-bold text-[#1a73e8]">
+                    <div className="grid grid-cols-3 gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-[#f9fafc] dark:bg-slate-900 p-4 text-center sm:p-6">
+                        <div className="border-r border-gray-200 dark:border-slate-800">
+                            <span className="block text-3xl font-bold text-[#1a73e8] dark:text-blue-400">
                                 {turnedInCount}
                             </span>
-                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 sm:text-sm">
+                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400 sm:text-sm">
                                 Turned in
                             </span>
                         </div>
-                        <div className="border-r border-gray-200">
-                            <span className="block text-3xl font-bold text-gray-700">
+                        <div className="border-r border-gray-200 dark:border-slate-800">
+                            <span className="block text-3xl font-bold text-gray-700 dark:text-slate-200">
                                 {assignedCount}
                             </span>
-                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 sm:text-sm">
+                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400 sm:text-sm">
                                 Assigned
                             </span>
                         </div>
                         <div>
-                            <span className="block text-3xl font-bold text-[#137333]">
+                            <span className="block text-3xl font-bold text-[#137333] dark:text-emerald-400">
                                 {gradedCount}
                             </span>
-                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 sm:text-sm">
+                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400 sm:text-sm">
                                 Graded
                             </span>
                         </div>
@@ -263,18 +263,18 @@ export function InstructorAssignmentView({
                     {/* Filter & Search Bar */}
                     <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="relative w-full sm:max-w-xs">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
                             <input
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search learner name or ID…"
-                                className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Filter status:</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400">Filter status:</span>
                             {(["All", "Turned in", "Assigned", "Graded"] as StatusFilter[]).map((st) => (
                                 <button
                                     key={st}
@@ -282,7 +282,7 @@ export function InstructorAssignmentView({
                                     onClick={() => setStatusFilter(st)}
                                     className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${statusFilter === st
                                         ? "bg-[#1a73e8] text-white"
-                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                        : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700"
                                         }`}
                                 >
                                     {st}
@@ -297,12 +297,12 @@ export function InstructorAssignmentView({
                             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
                         </div>
                     ) : filteredSubmissions.length === 0 ? (
-                        <div className="mt-10 rounded-xl border border-gray-200 bg-gray-50 py-16 text-center">
-                            <FolderCheck className="mx-auto h-12 w-12 text-gray-400" />
-                            <h3 className="mt-2 text-base font-semibold text-gray-800">
+                        <div className="mt-10 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-16 text-center">
+                            <FolderCheck className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-500" />
+                            <h3 className="mt-2 text-base font-semibold text-gray-800 dark:text-slate-200">
                                 No submissions found
                             </h3>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-slate-400">
                                 {statusFilter !== "All"
                                     ? `No learner work matches the "${statusFilter}" filter.`
                                     : "No learners have submitted work for this assignment yet."}
@@ -326,7 +326,7 @@ export function InstructorAssignmentView({
                                 return (
                                     <div
                                         key={sub.id}
-                                        className="rounded-xl border border-gray-200 bg-white p-5 shadow-xs transition-shadow hover:shadow-sm"
+                                        className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs transition-shadow hover:shadow-sm"
                                     >
                                         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                             {/* Left: Learner Info & Submitted Content */}
@@ -336,10 +336,10 @@ export function InstructorAssignmentView({
                                                         {initialOf(lName)}
                                                     </span>
                                                     <div>
-                                                        <h3 className="font-semibold text-gray-900">
+                                                        <h3 className="font-semibold text-gray-900 dark:text-slate-100">
                                                             {lName}
                                                         </h3>
-                                                        <p className="text-xs text-gray-500">
+                                                        <p className="text-xs text-gray-500 dark:text-slate-400">
                                                             {lEmail}
                                                             {lAcadId && ` • ID: ${lAcadId}`}
                                                         </p>
@@ -348,20 +348,20 @@ export function InstructorAssignmentView({
                                                     {/* Status Badge */}
                                                     <div className="ml-auto sm:ml-4">
                                                         {isGraded ? (
-                                                            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-[#137333]">
+                                                            <span className="rounded-full bg-green-100 dark:bg-emerald-950/60 px-3 py-1 text-xs font-semibold text-[#137333] dark:text-emerald-400">
                                                                 Graded: {sub.marks}/{assignment.maxMarks}
                                                             </span>
                                                         ) : isSubmitted ? (
                                                             <span
                                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${isLate
-                                                                    ? "bg-amber-100 text-[#b06000]"
-                                                                    : "bg-blue-100 text-[#174ea6]"
+                                                                    ? "bg-amber-100 dark:bg-amber-950/60 text-[#b06000] dark:text-amber-400"
+                                                                    : "bg-blue-100 dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300"
                                                                     }`}
                                                             >
                                                                 {isLate ? "Turned in late" : "Turned in"}
                                                             </span>
                                                         ) : (
-                                                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                                                            <span className="rounded-full bg-gray-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-gray-600 dark:text-slate-300">
                                                                 Assigned
                                                             </span>
                                                         )}
@@ -370,15 +370,15 @@ export function InstructorAssignmentView({
 
                                                 {/* Submitted details */}
                                                 {isSubmitted ? (
-                                                    <div className="mt-4 space-y-2 rounded-lg bg-gray-50 p-3.5">
-                                                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                                    <div className="mt-4 space-y-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 p-3.5">
+                                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
                                                             <Clock className="h-3.5 w-3.5" />
                                                             Submitted {formatDateTime(sub.submittedAtUtc)}
                                                         </div>
 
                                                         {sub.answer && (
-                                                            <div className="text-sm text-gray-800">
-                                                                <p className="text-xs font-medium text-gray-500">
+                                                            <div className="text-sm text-gray-800 dark:text-slate-200">
+                                                                <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
                                                                     Text Answer / Notes:
                                                                 </p>
                                                                 <p className="mt-0.5 whitespace-pre-wrap">{sub.answer}</p>
@@ -386,8 +386,8 @@ export function InstructorAssignmentView({
                                                         )}
 
                                                         {sub.privateNote && (
-                                                            <div className="text-xs text-gray-700">
-                                                                <span className="font-semibold text-gray-600">
+                                                            <div className="text-xs text-gray-700 dark:text-slate-300">
+                                                                <span className="font-semibold text-gray-600 dark:text-slate-400">
                                                                     Private Note from Learner:
                                                                 </span>{" "}
                                                                 {sub.privateNote}
@@ -400,7 +400,7 @@ export function InstructorAssignmentView({
                                                                     href={sub.externalUrl}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1a73e8] hover:underline"
+                                                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                                                                 >
                                                                     <ExternalLink className="h-3.5 w-3.5" />
                                                                     {sub.externalUrl}
@@ -411,7 +411,7 @@ export function InstructorAssignmentView({
                                                         {/* Attachments */}
                                                         {sub.attachments.length > 0 && (
                                                             <div className="mt-2 space-y-1.5 pt-1">
-                                                                <p className="text-xs font-medium text-gray-500">
+                                                                <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
                                                                     Attached Deliverables ({sub.attachments.length}):
                                                                 </p>
                                                                 <div className="flex flex-wrap gap-2">
@@ -425,13 +425,13 @@ export function InstructorAssignmentView({
                                                                                 href={downloadUrl}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
-                                                                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 shadow-2xs hover:bg-gray-50"
+                                                                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-gray-800 dark:text-slate-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-slate-700"
                                                                             >
-                                                                                <Paperclip className="h-3.5 w-3.5 text-gray-500" />
+                                                                                <Paperclip className="h-3.5 w-3.5 text-gray-500 dark:text-slate-400" />
                                                                                 <span className="max-w-[200px] truncate">
                                                                                     {att.fileName}
                                                                                 </span>
-                                                                                <Download className="h-3 w-3 text-gray-400" />
+                                                                                <Download className="h-3 w-3 text-gray-400 dark:text-slate-500" />
                                                                             </a>
                                                                         );
                                                                     })}
@@ -440,13 +440,13 @@ export function InstructorAssignmentView({
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <p className="mt-3 text-xs italic text-gray-500">
+                                                    <p className="mt-3 text-xs italic text-gray-500 dark:text-slate-400">
                                                         No submission turned in yet.
                                                     </p>
                                                 )}
 
                                                 {/* Private comments with this learner */}
-                                                <div className="mt-4 border-t border-gray-200/80 pt-3">
+                                                <div className="mt-4 border-t border-gray-200/80 dark:border-slate-800 pt-3">
                                                     <AssignmentComments
                                                         assignmentId={assignment.id}
                                                         isPrivate={true}
@@ -458,14 +458,14 @@ export function InstructorAssignmentView({
                                             </div>
 
                                             {/* Right: Inline Grading Form */}
-                                            <div className="w-full shrink-0 rounded-lg border border-gray-200 bg-[#f9fafc] p-4 lg:w-[320px]">
-                                                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                                            <div className="w-full shrink-0 rounded-lg border border-gray-200 dark:border-slate-800 bg-[#f9fafc] dark:bg-slate-800/50 p-4 lg:w-[320px]">
+                                                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-slate-300">
                                                     Grade &amp; Feedback
                                                 </h4>
 
                                                 <div className="mt-3 space-y-3">
                                                     <div>
-                                                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                                                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-400">
                                                             Score (out of {assignment.maxMarks})
                                                         </label>
                                                         <div className="flex items-center gap-2">
@@ -484,16 +484,16 @@ export function InstructorAssignmentView({
                                                                     }))
                                                                 }
                                                                 placeholder="Score"
-                                                                className="w-24 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 focus:border-[#1a73e8] focus:outline-none"
+                                                                className="w-24 rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none"
                                                             />
-                                                            <span className="text-sm font-medium text-gray-500">
+                                                            <span className="text-sm font-medium text-gray-500 dark:text-slate-400">
                                                                 / {assignment.maxMarks}
                                                             </span>
                                                         </div>
                                                     </div>
 
                                                     <div>
-                                                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                                                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-400">
                                                             Private Feedback
                                                         </label>
                                                         <textarea
@@ -509,7 +509,7 @@ export function InstructorAssignmentView({
                                                                 }))
                                                             }
                                                             placeholder="Add qualitative feedback…"
-                                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-800 focus:border-[#1a73e8] focus:outline-none"
+                                                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-gray-800 dark:text-slate-200 focus:border-[#1a73e8] focus:outline-none"
                                                         />
                                                     </div>
 
@@ -550,26 +550,26 @@ export function InstructorAssignmentView({
             {/* TAB 2: Instructions */}
             {tab === "instructions" && (
                 <div className="mx-auto max-w-[900px] px-4 py-8 sm:px-8">
-                    <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-4">
+                    <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
                             <div>
-                                <span className="text-xs font-semibold uppercase tracking-wider text-[#1a73e8]">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-[#1a73e8] dark:text-blue-400">
                                     {assignment.kind}
                                 </span>
-                                <h2 className="mt-1 text-2xl font-bold text-gray-900">
+                                <h2 className="mt-1 text-2xl font-bold text-gray-900 dark:text-slate-100">
                                     {assignment.title}
                                 </h2>
-                                <p className="mt-1 text-xs text-gray-500">
+                                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                                     Posted by {assignment.createdByName ?? "Instructor"} •{" "}
                                     {new Date(assignment.createdAtUtc).toLocaleDateString()}
                                 </p>
                             </div>
 
                             <div className="text-right">
-                                <span className="text-lg font-bold text-gray-900">
+                                <span className="text-lg font-bold text-gray-900 dark:text-slate-100">
                                     {assignment.maxMarks} points
                                 </span>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-500 dark:text-slate-400">
                                     Due {formatDateTime(assignment.deadlineUtc)}
                                 </p>
                             </div>
@@ -577,16 +577,16 @@ export function InstructorAssignmentView({
 
                         {/* Description */}
                         <div className="mt-6">
-                            <h3 className="text-sm font-semibold text-gray-900">Instructions:</h3>
-                            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-700">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Instructions:</h3>
+                            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-slate-300">
                                 {assignment.description || "No description provided."}
                             </p>
                         </div>
 
                         {/* Attachments */}
                         {assignment.attachments && assignment.attachments.length > 0 && (
-                            <div className="mt-8 border-t border-gray-100 pt-6">
-                                <h3 className="text-sm font-semibold text-gray-900">
+                            <div className="mt-8 border-t border-gray-100 dark:border-slate-800 pt-6">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                                     Assignment Materials ({assignment.attachments.length}):
                                 </h3>
                                 <div className="mt-3 flex flex-wrap gap-3">
@@ -600,11 +600,11 @@ export function InstructorAssignmentView({
                                                 href={fileUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium text-gray-800 hover:bg-gray-100"
+                                                className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-2 text-xs font-medium text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                                             >
-                                                <Paperclip className="h-4 w-4 text-[#1a73e8]" />
+                                                <Paperclip className="h-4 w-4 text-[#1a73e8] dark:text-blue-400" />
                                                 <span className="truncate">{att.fileName}</span>
-                                                <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
+                                                <ExternalLink className="h-3.5 w-3.5 text-gray-400 dark:text-slate-500" />
                                             </a>
                                         );
                                     })}
@@ -613,7 +613,7 @@ export function InstructorAssignmentView({
                         )}
 
                         {/* Class comments */}
-                        <div className="mt-8 border-t border-gray-100 pt-6">
+                        <div className="mt-8 border-t border-gray-100 dark:border-slate-800 pt-6">
                             <AssignmentComments
                                 assignmentId={assignment.id}
                                 isPrivate={false}

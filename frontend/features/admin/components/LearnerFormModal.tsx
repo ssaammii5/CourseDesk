@@ -198,17 +198,17 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-slate-800">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
                         {user ? "Edit Learner" : "Add New Learner"}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100"
+                        className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -216,7 +216,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
 
                 {/* Error Banner */}
                 {saveError && (
-                    <div className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    <div className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
                         {saveError}
                     </div>
                 )}
@@ -225,7 +225,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                 <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-6 py-6">
                     {/* Account */}
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Account</h3>
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Account</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
                                 label="Full Name"
@@ -245,14 +245,14 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                 error={errors.email}
                             />
                         </div>
-                        <div className="mt-4 flex items-center justify-between rounded-md border border-gray-200 px-4 py-3">
-                            <span className="text-sm text-gray-800">Active Account</span>
+                        <div className="mt-4 flex items-center justify-between rounded-md border border-gray-200 px-4 py-3 dark:border-slate-800">
+                            <span className="text-sm text-gray-800 dark:text-slate-200">Active Account</span>
                             <button
                                 type="button"
                                 role="switch"
                                 aria-checked={isActive}
                                 onClick={() => setIsActive((v) => !v)}
-                                className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${isActive ? "bg-[#1a73e8]" : "bg-gray-300"}`}
+                                className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${isActive ? "bg-[#1a73e8]" : "bg-gray-300 dark:bg-slate-700"}`}
                             >
                                 <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${isActive ? "left-6" : "left-1"}`} />
                             </button>
@@ -261,7 +261,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
 
                     {/* Learner Profile */}
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Learner Profile</h3>
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Learner Profile</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
                                 label="Learner ID"
@@ -309,7 +309,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
 
                     {/* Contact & Location */}
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Contact &amp; Location</h3>
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Contact &amp; Location</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
                                 label="Mobile Number"
@@ -338,12 +338,12 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+                <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-slate-800">
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={isSaving}
-                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
                         Cancel
                     </button>
@@ -351,7 +351,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                         type="button"
                         onClick={handleSubmit}
                         disabled={isSaving}
-                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-500"
                     >
                         {isSaving ? "Saving..." : user ? "Save Changes" : "Create Learner"}
                     </button>

@@ -96,9 +96,9 @@ export function StreamView({
 
             <div className="mt-6 flex flex-col gap-6 lg:flex-row">
                 <div className="w-full shrink-0 lg:w-[300px]">
-                    <section className="rounded-lg border border-gray-200 bg-white p-4">
-                        <h3 className="text-base text-gray-800">Upcoming</h3>
-                        <p className="mt-3 text-sm text-gray-600">
+                    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                        <h3 className="text-base text-gray-800 dark:text-slate-100 font-medium">Upcoming</h3>
+                        <p className="mt-3 text-sm text-gray-600 dark:text-slate-400">
                             {hasDueWork
                                 ? "You have work due soon."
                                 : "Woohoo, no work due soon!"}
@@ -106,7 +106,7 @@ export function StreamView({
                         <div className="mt-3 text-right">
                             <a
                                 href="#"
-                                className="text-sm font-medium text-[#1a73e8] hover:underline"
+                                className="text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
                             >
                                 View all
                             </a>
@@ -122,7 +122,7 @@ export function StreamView({
                                 setEditingAnnouncement(null);
                                 setAnnouncementModalOpen(true);
                             }}
-                            className="flex cursor-pointer items-center gap-3 rounded-full bg-[#cfe8fc] px-5 py-2.5 text-sm font-medium text-[#174ea6] hover:bg-[#b9dcf8]"
+                            className="flex cursor-pointer items-center gap-3 rounded-full bg-[#cfe8fc] px-5 py-2.5 text-sm font-medium text-[#174ea6] hover:bg-[#b9dcf8] dark:bg-blue-950/80 dark:text-blue-300 dark:hover:bg-blue-900/80"
                         >
                             <PenLine className="h-4 w-4" />
                             New announcement
@@ -132,7 +132,7 @@ export function StreamView({
                     <div className="mt-5 space-y-4">
                         {apiAnnouncements.length === 0 &&
                             details.announcements.length === 0 && (
-                                <p className="py-8 text-center text-sm text-gray-600">
+                                <p className="py-8 text-center text-sm text-gray-600 dark:text-slate-400">
                                     No announcements yet.
                                 </p>
                             )}
@@ -140,9 +140,9 @@ export function StreamView({
                         {apiAnnouncements.map((a) => {
                             const timeInfo = formatAnnouncementTime(a.createdAtUtc, a.updatedAtUtc);
                             return (
-                                <div key={a.id} className="relative rounded-lg bg-[#f1f3f4]">
+                                <div key={a.id} className="relative rounded-lg bg-[#f1f3f4] dark:border dark:border-slate-800 dark:bg-slate-900">
                                     {a.isPinned && (
-                                        <div className="flex items-center gap-1.5 rounded-t-lg bg-[#fef7e0] px-4 py-1.5 text-xs font-semibold text-[#b06000]">
+                                        <div className="flex items-center gap-1.5 rounded-t-lg bg-[#fef7e0] px-4 py-1.5 text-xs font-semibold text-[#b06000] dark:bg-amber-950/50 dark:text-amber-300">
                                             <Pin className="h-3.5 w-3.5 fill-current" />
                                             <span>Pinned announcement</span>
                                         </div>
@@ -156,13 +156,13 @@ export function StreamView({
                                                     {initialOf(a.authorName)}
                                                 </span>
                                                 <div>
-                                                    <p className="text-sm font-medium text-gray-900">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
                                                         {a.authorName ?? "Instructor"}
                                                     </p>
-                                                    <p className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600">
+                                                    <p className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600 dark:text-slate-400">
                                                         <span>{timeInfo.original}</span>
                                                         {timeInfo.updated && (
-                                                            <span className="font-medium text-gray-500 italic">
+                                                            <span className="font-medium text-gray-500 dark:text-slate-500 italic">
                                                                 (updated {timeInfo.updated})
                                                             </span>
                                                         )}
@@ -177,7 +177,7 @@ export function StreamView({
                                                         title="Announcement options"
                                                         aria-label="Announcement options"
                                                         onClick={() => setOpenMenuId(openMenuId === a.id ? null : a.id)}
-                                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-900"
+                                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                                                     >
                                                         <EllipsisVertical className="h-4 w-4" />
                                                     </button>
@@ -187,23 +187,23 @@ export function StreamView({
                                                                 className="fixed inset-0 z-20"
                                                                 onClick={() => setOpenMenuId(null)}
                                                             />
-                                                            <div className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg">
+                                                            <div className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-800">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => {
                                                                         onTogglePin?.(a.id, a.isPinned);
                                                                         setOpenMenuId(null);
                                                                     }}
-                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-700"
                                                                 >
                                                                     {a.isPinned ? (
                                                                         <>
-                                                                            <PinOff className="h-4 w-4 text-gray-500" />
+                                                                            <PinOff className="h-4 w-4 text-gray-500 dark:text-slate-400" />
                                                                             <span>Unpin</span>
                                                                         </>
                                                                     ) : (
                                                                         <>
-                                                                            <Pin className="h-4 w-4 text-gray-500" />
+                                                                            <Pin className="h-4 w-4 text-gray-500 dark:text-slate-400" />
                                                                             <span>Pin to top</span>
                                                                         </>
                                                                     )}
@@ -215,9 +215,9 @@ export function StreamView({
                                                                         setAnnouncementModalOpen(true);
                                                                         setOpenMenuId(null);
                                                                     }}
-                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-700"
                                                                 >
-                                                                    <Pencil className="h-4 w-4 text-gray-500" />
+                                                                    <Pencil className="h-4 w-4 text-gray-500 dark:text-slate-400" />
                                                                     <span>Edit</span>
                                                                 </button>
                                                                 <button
@@ -226,9 +226,9 @@ export function StreamView({
                                                                         setDeletingAnnouncement(a);
                                                                         setOpenMenuId(null);
                                                                     }}
-                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                                                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-rose-950/40"
                                                                 >
-                                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                                    <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                                                                     <span>Delete</span>
                                                                 </button>
                                                             </div>
@@ -239,11 +239,11 @@ export function StreamView({
                                         </div>
 
                                         {a.title && (
-                                            <h4 className="mt-3 text-sm font-semibold text-gray-900">
+                                            <h4 className="mt-3 text-sm font-semibold text-gray-900 dark:text-slate-100">
                                                 {a.title}
                                             </h4>
                                         )}
-                                        <p className="mt-2 whitespace-pre-line text-sm text-gray-800">
+                                        <p className="mt-2 whitespace-pre-line text-sm text-gray-800 dark:text-slate-300">
                                             {a.body}
                                         </p>
                                     </div>
@@ -291,19 +291,19 @@ export function StreamView({
             />
 
             {deletingAnnouncement && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
                             Delete announcement?
                         </h3>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
                             This announcement will be permanently deleted. This action cannot be undone.
                         </p>
                         <div className="mt-6 flex justify-end gap-3">
                             <button
                                 type="button"
                                 onClick={() => setDeletingAnnouncement(null)}
-                                className="cursor-pointer rounded-full border border-gray-400 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                className="cursor-pointer rounded-full border border-gray-400 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                             >
                                 Cancel
                             </button>

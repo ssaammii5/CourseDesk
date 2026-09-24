@@ -453,97 +453,97 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl">
-                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                    <h2 className="text-xl font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl dark:bg-slate-900 dark:border dark:border-slate-800">
+                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-slate-800">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
                         {course ? "Edit Course" : "Add New Course"}
                     </h2>
-                    <button type="button" onClick={onClose} className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100">
+                    <button type="button" onClick={onClose} className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800">
                         <X className="h-5 w-5" />
                     </button>
                 </div>
 
                 <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-6 py-6">
                     {loadingData && (
-                        <p className="text-sm text-gray-500">Loading academic data & users…</p>
+                        <p className="text-sm text-gray-500 dark:text-slate-400">Loading academic data & users…</p>
                     )}
 
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">Course Details</h3>
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Course Details</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Learning Track / Level <span className="text-[#c5221f]">*</span>
                                 </label>
                                 <div className="relative">
                                     <select
                                         value={program}
                                         onChange={(e) => handleProgramChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none ${errors.program
+                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.program
                                             ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
-                                            } ${program ? "text-gray-900" : "text-gray-600"}`}
+                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
+                                            } ${program ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
                                     >
                                         <option value="" disabled>Select track or level</option>
                                         {programOptions.map((p) => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
+                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                                 </div>
                                 {errors.program && <span className="mt-1 block text-sm text-[#c5221f]">{errors.program}</span>}
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Category / Domain <span className="text-[#c5221f]">*</span>
                                 </label>
                                 <div className="relative">
                                     <select
                                         value={department}
                                         onChange={(e) => handleDepartmentChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none ${errors.department
+                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.department
                                             ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
-                                            } ${department ? "text-gray-900" : "text-gray-600"}`}
+                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
+                                            } ${department ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
                                     >
                                         <option value="" disabled>Select category</option>
                                         {departmentOptions.map((d) => (
                                             <option key={d.value} value={d.value}>{d.label}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
+                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                                 </div>
                                 {errors.department && <span className="mt-1 block text-sm text-[#c5221f]">{errors.department}</span>}
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Cohort / Schedule <span className="text-[#c5221f]">*</span>
                                 </label>
                                 <div className="relative">
                                     <select
                                         value={session}
                                         onChange={(e) => handleSessionChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none ${errors.session
+                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.session
                                             ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
-                                            } ${session ? "text-gray-900" : "text-gray-600"}`}
+                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
+                                            } ${session ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
                                     >
                                         <option value="" disabled>Select cohort / schedule</option>
                                         {sessionOptions.map((s) => (
                                             <option key={s} value={s}>{s}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
+                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                                 </div>
                                 {errors.session && <span className="mt-1 block text-sm text-[#c5221f]">{errors.session}</span>}
                             </div>
 
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="block text-sm font-medium text-gray-800">
+                                    <label className="block text-sm font-medium text-gray-800 dark:text-slate-200">
                                         Course Title <span className="text-[#c5221f]">*</span>
                                     </label>
                                     {program && department && (
@@ -553,7 +553,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                 setIsCustomCourse(!isCustomCourse);
                                                 clearError("courseName");
                                             }}
-                                            className="text-xs font-medium text-[#1a73e8] hover:underline cursor-pointer"
+                                            className="text-xs font-medium text-[#1a73e8] hover:underline cursor-pointer dark:text-blue-400"
                                         >
                                             {isCustomCourse
                                                 ? "← Pick from catalog/database"
@@ -575,10 +575,10 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                     }
                                                 }}
                                                 disabled={!program || !department}
-                                                className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none ${errors.courseName
+                                                className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.courseName
                                                     ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
-                                                    } ${!program || !department ? "cursor-not-allowed bg-gray-100 text-gray-500" : courseName ? "text-gray-900" : "text-gray-600"}`}
+                                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
+                                                    } ${!program || !department ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500" : courseName ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
                                             >
                                                 <option value="" disabled>
                                                     {!program || !department
@@ -592,7 +592,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                 ))}
                                                 <option value="__custom__">+ Enter custom course title...</option>
                                             </select>
-                                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
+                                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                                         </>
                                     ) : (
                                         <input
@@ -601,10 +601,10 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             onChange={(e) => handleCourseNameChange(e.target.value)}
                                             placeholder="e.g. Full-Stack Web Development Bootcamp"
                                             disabled={!program || !department}
-                                            className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none ${errors.courseName
+                                            className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.courseName
                                                 ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                                : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
-                                                } ${!program || !department ? "cursor-not-allowed bg-gray-100 text-gray-500" : "text-gray-900"}`}
+                                                : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
+                                                } ${!program || !department ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500" : "text-gray-900 dark:text-slate-100"}`}
                                         />
                                     )}
                                 </div>
@@ -614,18 +614,18 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                     </section>
 
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
                             Live Class Configuration
                         </h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Meeting Provider
                                 </label>
                                 <select
                                     value={meetingProvider}
                                     onChange={(e) => setMeetingProvider(e.target.value)}
-                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 >
                                     <option value="">Select provider</option>
                                     <option value="zoom">Zoom</option>
@@ -635,7 +635,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                 </select>
                             </div>
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Meeting URL
                                 </label>
                                 <input
@@ -643,11 +643,11 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                     value={meetingUrl}
                                     onChange={(e) => setMeetingUrl(e.target.value)}
                                     placeholder="https://zoom.us/j/123456789"
-                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 />
                             </div>
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Meeting ID
                                 </label>
                                 <input
@@ -655,11 +655,11 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                     value={meetingId}
                                     onChange={(e) => setMeetingId(e.target.value)}
                                     placeholder="e.g., 123 456 7890"
-                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 />
                             </div>
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Passcode
                                 </label>
                                 <input
@@ -667,11 +667,11 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                     value={meetingPasscode}
                                     onChange={(e) => setMeetingPasscode(e.target.value)}
                                     placeholder="e.g., abc123"
-                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 />
                             </div>
                             <div className="md:col-span-2">
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Schedule Notes
                                 </label>
                                 <input
@@ -679,48 +679,48 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                     value={scheduleNotes}
                                     onChange={(e) => setScheduleNotes(e.target.value)}
                                     placeholder="e.g., Every Monday & Wednesday, 7:00 PM – 9:00 PM (GMT+6)"
-                                    className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 />
                             </div>
                         </div>
                     </section>
 
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
                             Assigned Instructors
                             {instructorIds.length > 0 && (
-                                <span className="ml-2 rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-medium text-[#174ea6]">
+                                <span className="ml-2 rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-medium text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300 dark:border dark:border-blue-850/50">
                                     {instructorIds.length} selected
                                 </span>
                             )}
                         </h3>
                         <div className="mb-3">
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800">
+                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                 Filter by Category / Domain
                             </label>
                             <div className="relative">
                                 <select
                                     value={instructorDeptFilter}
                                     onChange={(e) => handleInstructorDeptChange(e.target.value)}
-                                    className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 pr-10 text-[15px] text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                    className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 pr-10 text-[15px] text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 >
                                     <option value="" disabled>Select category / domain</option>
                                     {departmentOptions.map((d) => (
                                         <option key={d.value} value={d.value}>{d.label}</option>
                                     ))}
                                 </select>
-                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700" />
+                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                             </div>
                         </div>
                         {instructorDeptFilter && (
-                            <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200">
+                            <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-800 dark:bg-slate-800/40">
                                 {filteredInstructors.length === 0 ? (
-                                    <p className="px-4 py-3 text-sm text-gray-500">No active instructors in {instructorDeptFilter}.</p>
+                                    <p className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No active instructors in {instructorDeptFilter}.</p>
                                 ) : (
                                     filteredInstructors.map((t) => {
                                         const details = t.instructorDetails || t.teacherDetails;
                                         return (
-                                            <label key={t.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-gray-50">
+                                            <label key={t.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800/60">
                                                 <input
                                                     type="checkbox"
                                                     checked={instructorIds.includes(t.id)}
@@ -728,8 +728,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                     className="h-4 w-4 accent-[#1a73e8]"
                                                 />
                                                 <div className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm text-gray-900">{t.name}</span>
-                                                    <span className="block text-xs text-gray-500">
+                                                    <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{t.name}</span>
+                                                    <span className="block text-xs text-gray-500 dark:text-slate-400">
                                                         {details?.instructorId || details?.teacherId || "N/A"} • {details?.department ?? "N/A"} • {details?.designation ?? "Instructor"}
                                                     </span>
                                                 </div>
@@ -744,9 +744,9 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                 {instructorIds.map((id) => {
                                     const teacher = allUsers.find((u) => u.id === id);
                                     return teacher ? (
-                                        <span key={id} className="inline-flex items-center gap-1 rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#174ea6]">
+                                        <span key={id} className="inline-flex items-center gap-1 rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300 dark:border dark:border-blue-800/40">
                                             {teacher.name}
-                                            <button type="button" onClick={() => toggleInstructor(id)} className="ml-1 cursor-pointer text-[#174ea6] hover:text-[#c5221f]">
+                                            <button type="button" onClick={() => toggleInstructor(id)} className="ml-1 cursor-pointer text-[#174ea6] hover:text-[#c5221f] dark:text-blue-300 dark:hover:text-rose-400">
                                                 ×
                                             </button>
                                         </span>
@@ -757,74 +757,74 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                     </section>
 
                     <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
                             Enrolled Learners
                             {totalEnrolledCount > 0 && (
-                                <span className="ml-2 rounded-full bg-[#e6f4ea] px-2 py-0.5 text-xs font-medium text-[#137333]">
+                                <span className="ml-2 rounded-full bg-[#e6f4ea] px-2 py-0.5 text-xs font-medium text-[#137333] dark:bg-emerald-950/60 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
                                     {totalEnrolledCount} enrolled
                                 </span>
                             )}
                         </h3>
-                        <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4">
-                            <p className="mb-3 text-sm font-medium text-gray-700">Cohort & Track Enrollment</p>
+                        <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4 dark:border-slate-800 dark:bg-slate-800/40">
+                            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-slate-300">Cohort & Track Enrollment</p>
                             <div className="grid gap-3 sm:grid-cols-3">
                                 <div className="relative">
                                     <select
                                         value={learnerProgram}
                                         onChange={(e) => handleLearnerProgramChange(e.target.value)}
-                                        className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                        className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                     >
                                         <option value="" disabled>Select track</option>
                                         {programOptions.map((p) => (
                                             <option key={p} value={p}>{p}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700" />
+                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                                 </div>
                                 <div className="relative">
                                     <select
                                         value={learnerDept}
                                         onChange={(e) => handleLearnerDeptChange(e.target.value)}
                                         disabled={!learnerProgram}
-                                        className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!learnerProgram ? "cursor-not-allowed bg-gray-100" : ""}`}
+                                        className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!learnerProgram ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50" : ""}`}
                                     >
                                         <option value="" disabled>Select category</option>
                                         {departmentOptions.map((d) => (
                                             <option key={d.value} value={d.value}>{d.label}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700" />
+                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                                 </div>
                                 <div className="relative">
                                     <select
                                         value={learnerSession}
                                         onChange={(e) => handleLearnerSessionChange(e.target.value)}
                                         disabled={!learnerDept}
-                                        className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!learnerDept ? "cursor-not-allowed bg-gray-100" : ""}`}
+                                        className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!learnerDept ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50" : ""}`}
                                     >
                                         <option value="" disabled>Select cohort / schedule</option>
                                         {combinedLearnerSessionOptions.map((s) => (
                                             <option key={s} value={s}>{s}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700" />
+                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4">
-                            <p className="mb-3 text-sm font-medium text-gray-700">Individual Learner Enrollment</p>
+                        <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4 dark:border-slate-800 dark:bg-slate-800/40">
+                            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-slate-300">Individual Learner Enrollment</p>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                                 <input
                                     type="text"
                                     value={manualLearnerSearch}
                                     onChange={(e) => handleManualSearch(e.target.value)}
                                     placeholder="Type learner ID, email, or name..."
-                                    className="w-full rounded-md border border-gray-400/80 py-2 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                    className="w-full rounded-md border border-gray-400/80 bg-white py-2 pl-10 pr-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                                 />
                                 {showManualResults && manualLearnerResults.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                                    <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
                                         {manualLearnerResults.map((s) => {
                                             const isAlreadyEnrolled =
                                                 manualLearnerIds.includes(s.id) ||
@@ -835,17 +835,17 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                     key={s.id}
                                                     type="button"
                                                     onClick={() => addManualLearner(s)}
-                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50"
+                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-slate-700/60"
                                                 >
-                                                    <UserPlus className="h-4 w-4 shrink-0 text-[#1a73e8]" />
+                                                    <UserPlus className="h-4 w-4 shrink-0 text-[#1a73e8] dark:text-blue-400" />
                                                     <div className="min-w-0 flex-1">
-                                                        <span className="block truncate text-sm text-gray-900">{s.name}</span>
-                                                        <span className="block text-xs text-gray-500">
+                                                        <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{s.name}</span>
+                                                        <span className="block text-xs text-gray-500 dark:text-slate-400">
                                                             {details?.learnerId || details?.studentId || "N/A"} • {s.email}
                                                         </span>
                                                     </div>
                                                     {isAlreadyEnrolled && (
-                                                        <span className="shrink-0 text-xs text-[#137333]">Already enrolled</span>
+                                                        <span className="shrink-0 text-xs text-[#137333] dark:text-emerald-400">Already enrolled</span>
                                                     )}
                                                 </button>
                                             );
@@ -857,28 +857,28 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
                         {enrolledGroups.length > 0 && (
                             <div className="mb-4">
-                                <p className="mb-2 text-sm font-medium text-gray-700">
+                                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                                     Enrolled Cohorts / Groups ({enrolledGroups.length})
                                 </p>
                                 <div className="space-y-2">
                                     {enrolledGroups.map((group, index) => (
                                         <div
                                             key={`${group.program}-${group.department}-${group.session}`}
-                                            className="flex items-center gap-3 rounded-md border border-[#c8e6c9] bg-[#e8f5e9] px-4 py-3"
+                                            className="flex items-center gap-3 rounded-md border border-[#c8e6c9] bg-[#e8f5e9] px-4 py-3 dark:border-emerald-900/50 dark:bg-emerald-950/40"
                                         >
-                                            <Users className="h-5 w-5 shrink-0 text-[#137333]" />
+                                            <Users className="h-5 w-5 shrink-0 text-[#137333] dark:text-emerald-400" />
                                             <div className="min-w-0 flex-1">
-                                                <span className="block text-sm font-medium text-[#137333]">
+                                                <span className="block text-sm font-medium text-[#137333] dark:text-emerald-300">
                                                     {group.program} • {group.department} • {group.session}
                                                 </span>
-                                                <span className="block text-xs text-[#2e7d32]">
+                                                <span className="block text-xs text-[#2e7d32] dark:text-emerald-400">
                                                     {group.learnerIds.length} learner{group.learnerIds.length === 1 ? "" : "s"} enrolled
                                                 </span>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => removeGroup(index)}
-                                                className="shrink-0 cursor-pointer rounded-full p-1.5 text-[#2e7d32] hover:bg-[#c8e6c9] hover:text-[#c5221f]"
+                                                className="shrink-0 cursor-pointer rounded-full p-1.5 text-[#2e7d32] hover:bg-[#c8e6c9] hover:text-[#c5221f] dark:text-emerald-400 dark:hover:bg-emerald-900/50 dark:hover:text-rose-400"
                                                 title="Remove entire group"
                                             >
                                                 <X className="h-4 w-4" />
@@ -891,25 +891,25 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
 
                         {manualLearnerIds.length > 0 && (
                             <div>
-                                <p className="mb-2 text-sm font-medium text-gray-700">
+                                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                                     Individually Enrolled Learners ({manualLearnerIds.length})
                                 </p>
-                                <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200">
+                                <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-800">
                                     {manualLearnerIds.map((id) => {
                                         const student = allUsers.find((u) => u.id === id);
                                         const details = student?.learnerDetails || student?.studentDetails;
                                         return student ? (
-                                            <div key={id} className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0">
+                                            <div key={id} className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 dark:border-slate-800">
                                                 <div className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm text-gray-900">{student.name}</span>
-                                                    <span className="block text-xs text-gray-500">
+                                                    <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{student.name}</span>
+                                                    <span className="block text-xs text-gray-500 dark:text-slate-400">
                                                         {details?.learnerId || details?.studentId || "N/A"} • {details?.department ?? "N/A"} • {details?.semesterSession ?? "N/A"}
                                                     </span>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => removeManualLearner(id)}
-                                                    className="shrink-0 cursor-pointer rounded p-1 text-gray-500 hover:bg-red-50 hover:text-[#c5221f]"
+                                                    className="shrink-0 cursor-pointer rounded p-1 text-gray-500 hover:bg-red-50 hover:text-[#c5221f] dark:text-slate-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
                                                     title="Remove learner"
                                                 >
                                                     <X className="h-4 w-4" />
@@ -922,32 +922,32 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         )}
                     </section>
 
-                    <div className="flex items-center justify-between rounded-md border border-gray-200 px-4 py-3">
-                        <span className="text-sm text-gray-800">Active Course</span>
+                    <div className="flex items-center justify-between rounded-md border border-gray-200 px-4 py-3 dark:border-slate-800">
+                        <span className="text-sm text-gray-800 dark:text-slate-200">Active Course</span>
                         <button
                             type="button"
                             role="switch"
                             aria-checked={isActive}
                             onClick={() => setIsActive((v) => !v)}
-                            className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${isActive ? "bg-[#1a73e8]" : "bg-gray-300"}`}
+                            className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${isActive ? "bg-[#1a73e8]" : "bg-gray-300 dark:bg-slate-700"}`}
                         >
                             <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${isActive ? "left-6" : "left-1"}`} />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+                <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-slate-800">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
+                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] dark:bg-blue-600 dark:hover:bg-blue-500"
                     >
                         {course ? "Save Changes" : "Create Course"}
                     </button>

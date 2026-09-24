@@ -315,7 +315,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     };
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-white pb-10">
+        <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors pb-10">
             <CourseTabs tab={tab} onTabChange={handleTabChange} isInstructor={isInstructor} isTeacher={isTeacher} />
 
             {tab === "stream" && (

@@ -28,24 +28,24 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
     if (data.length === 0) {
         return (
-            <div className="rounded-lg border border-gray-200 bg-white py-16 text-center">
-                <p className="text-sm text-gray-600">{emptyMessage}</p>
+            <div className="rounded-lg border border-gray-200 bg-white py-16 text-center dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-sm text-gray-600 dark:text-slate-400">{emptyMessage}</p>
             </div>
         );
     }
     return (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <table
                 className={`w-full text-left ${tableLayout === "fixed" ? "table-fixed" : ""
                     } ${minWidthClassName}`}
             >
                 <thead>
-                    <tr className="border-b border-gray-200 bg-[#f8f9fa]">
+                    <tr className="border-b border-gray-200 bg-[#f8f9fa] dark:border-slate-800 dark:bg-slate-800/60">
                         {columns.map((col) => (
                             <th
                                 key={col.key}
                                 style={col.width ? { width: col.width } : undefined}
-                                className={`px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-600 ${col.className ?? ""
+                                className={`px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-400 ${col.className ?? ""
                                     }`}
                             >
                                 {col.truncate ? (
@@ -59,12 +59,12 @@ export function DataTable<T>({
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800/60">
                     {data.map((item) => (
                         <tr
                             key={keyExtractor(item)}
                             onClick={onRowClick ? () => onRowClick(item) : undefined}
-                            className={`transition-colors hover:bg-gray-50 ${onRowClick ? "cursor-pointer" : ""}`}
+                            className={`transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/40 ${onRowClick ? "cursor-pointer" : ""}`}
                         >
                             {columns.map((col) => {
                                 const content = col.render
@@ -79,7 +79,7 @@ export function DataTable<T>({
                                     <td
                                         key={col.key}
                                         style={col.width ? { width: col.width } : undefined}
-                                        className={`px-4 py-3.5 text-sm text-gray-800 ${col.truncate ? "" : "break-words"
+                                        className={`px-4 py-3.5 text-sm text-gray-800 dark:text-slate-200 ${col.truncate ? "" : "break-words"
                                             } ${col.className ?? ""}`}
                                     >
                                         {col.truncate ? (

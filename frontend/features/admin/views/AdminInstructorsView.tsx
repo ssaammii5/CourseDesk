@@ -307,11 +307,11 @@ export function AdminInstructorsView() {
             render: (u: AdminUser) => {
                 const idVal = u.instructorDetails?.instructorId ?? u.teacherDetails?.teacherId;
                 return idVal ? (
-                    <span className="text-sm text-gray-900" title={idVal}>
+                    <span className="text-sm text-gray-900 dark:text-slate-100" title={idVal}>
                         {idVal}
                     </span>
                 ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-gray-400 dark:text-slate-500">—</span>
                 );
             },
         },
@@ -323,11 +323,11 @@ export function AdminInstructorsView() {
             render: (u: AdminUser) => {
                 const desg = u.instructorDetails?.designation ?? u.teacherDetails?.designation;
                 return desg ? (
-                    <span className="text-sm text-gray-900" title={desg}>
+                    <span className="text-sm text-gray-900 dark:text-slate-100" title={desg}>
                         {desg}
                     </span>
                 ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-gray-400 dark:text-slate-500">—</span>
                 );
             },
         },
@@ -348,7 +348,7 @@ export function AdminInstructorsView() {
                         type="button"
                         title="Edit"
                         onClick={() => { setEditingUser(u); setModalOpen(true); }}
-                        className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100"
+                        className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800"
                     >
                         <Pencil className="h-4 w-4" />
                     </button>
@@ -356,7 +356,7 @@ export function AdminInstructorsView() {
                         type="button"
                         title="Delete"
                         onClick={() => setDeleteTarget(u)}
-                        className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50"
+                        className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                     >
                         <Trash2 className="h-4 w-4" />
                     </button>
@@ -378,10 +378,10 @@ export function AdminInstructorsView() {
             {/* Invitation Banner */}
             {inviteNotification && (
                 <div className="fixed inset-x-0 top-20 z-50 flex justify-center px-4">
-                    <div className="flex max-w-3xl flex-col gap-2 rounded-lg bg-[#e6f4ea] p-4 shadow-lg border border-[#ceead6] sm:flex-row sm:items-center sm:gap-3">
+                    <div className="flex max-w-3xl flex-col gap-2 rounded-lg bg-[#e6f4ea] dark:bg-emerald-950/90 p-4 shadow-lg border border-[#ceead6] dark:border-emerald-800 sm:flex-row sm:items-center sm:gap-3">
                         <div className="flex items-center gap-2 shrink-0">
-                            <Mail className="h-5 w-5 shrink-0 text-[#137333]" />
-                            <span className="text-sm font-medium text-[#137333]">
+                            <Mail className="h-5 w-5 shrink-0 text-[#137333] dark:text-emerald-300" />
+                            <span className="text-sm font-medium text-[#137333] dark:text-emerald-300">
                                 Invitation sent to {inviteNotification.email}. Share this link:
                             </span>
                         </div>
@@ -390,7 +390,7 @@ export function AdminInstructorsView() {
                                 type="text"
                                 readOnly
                                 value={inviteNotification.link}
-                                className="w-full min-w-0 rounded border border-[#a8dab5] bg-white px-2.5 py-1 text-xs text-gray-800 select-all focus:outline-none focus:ring-1 focus:ring-[#137333]"
+                                className="w-full min-w-0 rounded border border-[#a8dab5] dark:border-emerald-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-gray-800 dark:text-slate-100 select-all focus:outline-none focus:ring-1 focus:ring-[#137333]"
                             />
                             <button
                                 type="button"
@@ -412,7 +412,7 @@ export function AdminInstructorsView() {
                         <button
                             type="button"
                             onClick={() => setInviteNotification(null)}
-                            className="self-end sm:self-center cursor-pointer rounded p-1 text-[#137333] hover:bg-[#ceead6]"
+                            className="self-end sm:self-center cursor-pointer rounded p-1 text-[#137333] dark:text-emerald-300 hover:bg-[#ceead6] dark:hover:bg-emerald-900/40"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -423,13 +423,13 @@ export function AdminInstructorsView() {
             {/* Success Banner */}
             {successMessage && (
                 <div className="fixed inset-x-0 top-20 z-50 flex justify-center px-4">
-                    <div className="flex items-center gap-3 rounded-lg bg-[#e6f4ea] px-5 py-3.5 shadow-lg border border-[#ceead6]">
-                        <Mail className="h-5 w-5 shrink-0 text-[#137333]" />
-                        <span className="text-sm font-medium text-[#137333]">{successMessage}</span>
+                    <div className="flex items-center gap-3 rounded-lg bg-[#e6f4ea] dark:bg-emerald-950/90 px-5 py-3.5 shadow-lg border border-[#ceead6] dark:border-emerald-800">
+                        <Mail className="h-5 w-5 shrink-0 text-[#137333] dark:text-emerald-300" />
+                        <span className="text-sm font-medium text-[#137333] dark:text-emerald-300">{successMessage}</span>
                         <button
                             type="button"
                             onClick={() => setSuccessMessage(null)}
-                            className="ml-2 cursor-pointer rounded p-1 text-[#137333] hover:bg-[#ceead6]"
+                            className="ml-2 cursor-pointer rounded p-1 text-[#137333] dark:text-emerald-300 hover:bg-[#ceead6] dark:hover:bg-emerald-900/40"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -439,7 +439,7 @@ export function AdminInstructorsView() {
 
             {/* Error Banner */}
             {error && (
-                <div className="mb-4 rounded-lg bg-[#fce8e6] px-5 py-3.5 text-sm text-[#c5221f]">
+                <div className="mb-4 rounded-lg bg-[#fce8e6] dark:bg-red-950/40 px-5 py-3.5 text-sm text-[#c5221f] dark:text-red-400">
                     {error}
                 </div>
             )}
@@ -447,8 +447,8 @@ export function AdminInstructorsView() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Manage Instructors</h1>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100 sm:text-3xl">Manage Instructors</h1>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
                         {users.length} instructors total • {filtered.length} shown
                     </p>
                 </div>
@@ -465,13 +465,13 @@ export function AdminInstructorsView() {
             {/* Search and Filters */}
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="relative w-full sm:max-w-sm sm:flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search by name, email, or instructor ID..."
-                        className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -479,8 +479,8 @@ export function AdminInstructorsView() {
                         type="button"
                         onClick={() => setFiltersOpen((v) => !v)}
                         className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${filtersOpen || activeFilterCount > 0
-                            ? "border-[#1a63d8] bg-[#e8f0fe] text-[#174ea6]"
-                            : "border-gray-400 text-gray-700 hover:bg-gray-50"
+                            ? "border-[#1a63d8] bg-[#e8f0fe] dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300"
+                            : "border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
                             }`}
                     >
                         <SlidersHorizontal className="h-4 w-4" />
@@ -495,7 +495,7 @@ export function AdminInstructorsView() {
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                            className="cursor-pointer text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                         >
                             Clear all
                         </button>
@@ -505,13 +505,13 @@ export function AdminInstructorsView() {
 
             {/* Advanced Filters Panel */}
             {filtersOpen && (
-                <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:grid-cols-2 lg:grid-cols-3">
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Department</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Department</span>
                         <select
                             value={departmentFilter}
                             onChange={(e) => setDepartmentFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Departments</option>
                             {departmentOptions.map((d) => (
@@ -520,11 +520,11 @@ export function AdminInstructorsView() {
                         </select>
                     </label>
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Designation</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Designation</span>
                         <select
                             value={designationFilter}
                             onChange={(e) => setDesignationFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Designations</option>
                             {designationOptions.map((d) => (
@@ -533,11 +533,11 @@ export function AdminInstructorsView() {
                         </select>
                     </label>
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Status</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Status</span>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Status</option>
                             <option value="active">Active</option>
@@ -550,8 +550,8 @@ export function AdminInstructorsView() {
             {/* Instructor Groups */}
             <div className="mt-8 space-y-12">
                 {filtered.length === 0 && (
-                    <div className="rounded-lg border border-gray-200 bg-white py-16 text-center">
-                        <p className="text-sm text-gray-600">No instructors match your filters.</p>
+                    <div className="rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-16 text-center">
+                        <p className="text-sm text-gray-600 dark:text-slate-400">No instructors match your filters.</p>
                     </div>
                 )}
 
@@ -559,14 +559,14 @@ export function AdminInstructorsView() {
                 {departmentGroups.map((dept) => (
                     <section key={dept.name}>
                         {/* Department Header */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-300 pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-200 dark:border-slate-800 pb-3">
                             <div className="flex min-w-0 items-center gap-3">
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fef7e0] text-[#b06000] sm:h-10 sm:w-10">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fef7e0] dark:bg-amber-950/60 text-[#b06000] dark:text-amber-300 sm:h-10 sm:w-10">
                                     <BookOpen className="h-5 w-5" />
                                 </span>
-                                <h2 className="truncate text-xl text-gray-900 sm:text-2xl">{dept.name}</h2>
+                                <h2 className="truncate text-xl text-gray-900 dark:text-slate-100 sm:text-2xl">{dept.name}</h2>
                             </div>
-                            <span className="shrink-0 text-sm font-medium text-gray-600">
+                            <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-slate-400">
                                 {dept.count} instructor{dept.count === 1 ? "" : "s"}
                             </span>
                         </div>
@@ -575,8 +575,8 @@ export function AdminInstructorsView() {
                         {dept.designations.map((desg) => (
                             <div key={desg.name} className="mt-6">
                                 <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                                    <h3 className="min-w-0 truncate text-lg text-gray-800 sm:text-xl">{desg.name}</h3>
-                                    <span className="shrink-0 text-xs font-medium text-gray-500">
+                                    <h3 className="min-w-0 truncate text-lg text-gray-800 dark:text-slate-200 sm:text-xl">{desg.name}</h3>
+                                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-slate-400">
                                         {desg.count} instructor{desg.count === 1 ? "" : "s"}
                                     </span>
                                 </div>
@@ -598,13 +598,13 @@ export function AdminInstructorsView() {
                 {/* Uncategorized */}
                 {uncategorized.length > 0 && (
                     <section>
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-300 pb-3">
-                            <h2 className="text-xl text-gray-900 sm:text-2xl">Uncategorized</h2>
-                            <span className="shrink-0 text-sm font-medium text-gray-600">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-200 dark:border-slate-800 pb-3">
+                            <h2 className="text-xl text-gray-900 dark:text-slate-100 sm:text-2xl">Uncategorized</h2>
+                            <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-slate-400">
                                 {uncategorized.length} instructor{uncategorized.length === 1 ? "" : "s"}
                             </span>
                         </div>
-                        <p className="mt-2 px-1 text-xs text-gray-500">
+                        <p className="mt-2 px-1 text-xs text-gray-500 dark:text-slate-400">
                             Instructors missing department or designation details.
                         </p>
                         <div className="mt-4">

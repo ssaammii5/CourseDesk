@@ -56,23 +56,23 @@ export function NotificationsCard() {
     };
 
     return (
-        <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm">
+        <section className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Notifications</h2>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Notifications</h2>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
                         Manage your notification preferences and email delivery settings.
                     </p>
                 </div>
-                <div className="flex items-center text-xs text-gray-500 min-h-5">
+                <div className="flex items-center text-xs text-gray-500 dark:text-slate-400 min-h-5">
                     {saving && (
-                        <span className="flex items-center gap-1.5 text-blue-600 font-medium">
+                        <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             Saving...
                         </span>
                     )}
                     {savedNotice && !saving && (
-                        <span className="flex items-center gap-1.5 text-green-600 font-medium animate-fade-in">
+                        <span className="flex items-center gap-1.5 text-green-600 dark:text-emerald-400 font-medium animate-fade-in">
                             <Check className="h-3.5 w-3.5" />
                             Saved
                         </span>
@@ -81,15 +81,15 @@ export function NotificationsCard() {
             </div>
 
             {loading ? (
-                <div className="flex items-center justify-center py-12 text-gray-400">
+                <div className="flex items-center justify-center py-12 text-gray-400 dark:text-slate-500">
                     <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
             ) : (
                 <>
                     {/* Email settings */}
-                    <div className="mt-8 border-t border-gray-100 pt-6">
-                        <h3 className="text-base font-semibold text-gray-900">Email Notifications</h3>
-                        <p className="mt-1 text-sm text-gray-500">
+                    <div className="mt-8 border-t border-gray-100 dark:border-slate-800 pt-6">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">Email Notifications</h3>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                             Control whether CourseDesk sends summary and alert emails to your registered address.
                         </p>
                         <div className="mt-4">
@@ -103,9 +103,9 @@ export function NotificationsCard() {
                     </div>
 
                     {/* In-app event preferences */}
-                    <div className="mt-8 border-t border-gray-100 pt-6">
-                        <h3 className="text-base font-semibold text-gray-900">Activity & Alerts</h3>
-                        <p className="mt-1 text-sm text-gray-500">
+                    <div className="mt-8 border-t border-gray-100 dark:border-slate-800 pt-6">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">Activity & Alerts</h3>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                             Choose which types of activities trigger notifications in your dashboard header and feed.
                         </p>
                         <div className="mt-4 space-y-1">

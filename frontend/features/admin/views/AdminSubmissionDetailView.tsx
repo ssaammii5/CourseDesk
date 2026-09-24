@@ -110,13 +110,13 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
     }));
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-white">
+        <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-slate-950">
             <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
                 {/* Back */}
                 <button
                     type="button"
                     onClick={() => router.push("/submissions")}
-                    className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[#1a73e8] hover:underline"
+                    className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Back to All Submissions
@@ -129,11 +129,11 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                             {initialOf(learnerName)}
                         </span>
                         <div className="min-w-0">
-                            <h1 className="truncate text-2xl font-semibold text-gray-900 sm:text-3xl">
+                            <h1 className="truncate text-2xl font-semibold text-gray-900 dark:text-slate-100 sm:text-3xl">
                                 {submission.assignmentTitle}
                             </h1>
-                            <p className="mt-1 text-sm text-gray-600">
-                                Submitted by <span className="font-medium text-gray-900">{learnerName}</span>
+                            <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
+                                Submitted by <span className="font-medium text-gray-900 dark:text-slate-100">{learnerName}</span>
                                 <span className="mx-2">•</span>
                                 {submission.courseName}
                             </p>
@@ -141,7 +141,7 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                     </div>
                     <div className="flex items-center gap-3">
                         {isLate && !notSubmitted && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#fce8e6] px-3 py-1 text-xs font-medium text-[#c5221f]">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#fce8e6] dark:bg-rose-950/60 px-3 py-1 text-xs font-medium text-[#c5221f] dark:text-rose-300">
                                 <Clock className="h-3.5 w-3.5" />
                                 Late
                             </span>
@@ -155,41 +155,41 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                     {/* Left column */}
                     <div className="min-w-0 space-y-6">
                         {/* Learner answer */}
-                        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                            <div className="flex items-center gap-2 border-b border-gray-200 bg-[#f8f9fa] px-6 py-4">
-                                <FileText className="h-5 w-5 text-gray-600" />
-                                <h2 className="text-lg font-medium text-gray-900">Learner Answer</h2>
+                        <section className="overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <div className="flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 bg-[#f8f9fa] dark:bg-slate-800/60 px-6 py-4">
+                                <FileText className="h-5 w-5 text-gray-600 dark:text-slate-400" />
+                                <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100">Learner Answer</h2>
                             </div>
                             <div className="px-6 py-5">
                                 {notSubmitted ? (
-                                    <p className="text-sm italic text-gray-500">
+                                    <p className="text-sm italic text-gray-500 dark:text-slate-400">
                                         This learner has not submitted any work yet.
                                     </p>
                                 ) : answer ? (
-                                    <p className="whitespace-pre-line text-sm leading-6 text-gray-800">{answer}</p>
+                                    <p className="whitespace-pre-line text-sm leading-6 text-gray-800 dark:text-slate-200">{answer}</p>
                                 ) : (
-                                    <p className="text-sm italic text-gray-500">No written answer provided.</p>
+                                    <p className="text-sm italic text-gray-500 dark:text-slate-400">No written answer provided.</p>
                                 )}
                             </div>
                         </section>
 
                         {/* Attachments */}
-                        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                            <div className="flex items-center justify-between border-b border-gray-200 bg-[#f8f9fa] px-6 py-4">
+                        <section className="overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-800 bg-[#f8f9fa] dark:bg-slate-800/60 px-6 py-4">
                                 <div className="flex items-center gap-2">
-                                    <Paperclip className="h-5 w-5 text-gray-600" />
-                                    <h2 className="text-lg font-medium text-gray-900">Submitted Files</h2>
+                                    <Paperclip className="h-5 w-5 text-gray-600 dark:text-slate-400" />
+                                    <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100">Submitted Files</h2>
                                 </div>
-                                <span className="text-sm text-gray-600">
+                                <span className="text-sm text-gray-600 dark:text-slate-400">
                                     {attachments.length} file{attachments.length === 1 ? "" : "s"}
                                 </span>
                             </div>
                             {attachments.length === 0 ? (
-                                <p className="px-6 py-8 text-center text-sm text-gray-500">
+                                <p className="px-6 py-8 text-center text-sm text-gray-500 dark:text-slate-400">
                                     {notSubmitted ? "Nothing has been uploaded." : "No files were attached."}
                                 </p>
                             ) : (
-                                <div className="divide-y divide-gray-100">
+                                <div className="divide-y divide-gray-100 dark:divide-slate-800">
                                     {attachments.map((att) => (
                                         <AttachmentRow key={att.id} attachment={att} />
                                     ))}
@@ -198,24 +198,24 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                         </section>
 
                         {/* Activity */}
-                        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                            <div className="flex items-center gap-2 border-b border-gray-200 bg-[#f8f9fa] px-6 py-4">
-                                <Clock className="h-5 w-5 text-gray-600" />
-                                <h2 className="text-lg font-medium text-gray-900">Activity</h2>
+                        <section className="overflow-hidden rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <div className="flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 bg-[#f8f9fa] dark:bg-slate-800/60 px-6 py-4">
+                                <Clock className="h-5 w-5 text-gray-600 dark:text-slate-400" />
+                                <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100">Activity</h2>
                             </div>
                             {activity.length === 0 ? (
-                                <p className="px-6 py-8 text-center text-sm text-gray-500">No activity recorded.</p>
+                                <p className="px-6 py-8 text-center text-sm text-gray-500 dark:text-slate-400">No activity recorded.</p>
                             ) : (
                                 <ul className="px-6 py-5">
                                     {activity.map((event, index) => (
                                         <li key={event.id} className="relative flex gap-4 pb-6 last:pb-0">
                                             {index < activity.length - 1 && (
-                                                <span className="absolute left-[6px] top-5 h-full w-px bg-gray-200" />
+                                                <span className="absolute left-[6px] top-5 h-full w-px bg-gray-200 dark:bg-slate-800" />
                                             )}
-                                            <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-[#1a73e8] bg-white" />
+                                            <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-[#1a73e8] bg-white dark:bg-slate-900" />
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">{event.action}</p>
-                                                <p className="mt-0.5 text-xs text-gray-500">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{event.action}</p>
+                                                <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
                                                     {event.actor} <span className="mx-1">•</span> {event.timestamp}
                                                 </p>
                                             </div>
@@ -229,41 +229,41 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                     {/* Right column */}
                     <div className="space-y-6">
                         {/* Grading — read only */}
-                        <section className="rounded-xl border border-gray-200 bg-white p-6">
-                            <h2 className="text-lg font-medium text-gray-900">Grading</h2>
+                        <section className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+                            <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100">Grading</h2>
                             {notSubmitted ? (
-                                <p className="mt-3 text-sm text-gray-600">
+                                <p className="mt-3 text-sm text-gray-600 dark:text-slate-400">
                                     Waiting for the learner to submit before grading.
                                 </p>
                             ) : isGraded ? (
                                 <>
                                     <div className="mt-4">
-                                        <p className="text-xs text-gray-500">Marks</p>
-                                        <p className="mt-0.5 text-2xl font-semibold text-gray-900">
+                                        <p className="text-xs text-gray-500 dark:text-slate-400">Marks</p>
+                                        <p className="mt-0.5 text-2xl font-semibold text-gray-900 dark:text-slate-100">
                                             {submission.marks}
-                                            <span className="ml-1 text-base font-normal text-gray-500">/ {maxMarks}</span>
+                                            <span className="ml-1 text-base font-normal text-gray-500 dark:text-slate-400">/ {maxMarks}</span>
                                         </p>
                                     </div>
                                     {submission.feedback && (
-                                        <div className="mt-4 border-t border-gray-100 pt-4">
-                                            <p className="text-xs text-gray-500">Feedback</p>
-                                            <p className="mt-1 text-sm leading-6 text-gray-800">{submission.feedback}</p>
+                                        <div className="mt-4 border-t border-gray-100 dark:border-slate-800 pt-4">
+                                            <p className="text-xs text-gray-500 dark:text-slate-400">Feedback</p>
+                                            <p className="mt-1 text-sm leading-6 text-gray-800 dark:text-slate-200">{submission.feedback}</p>
                                         </div>
                                     )}
-                                    <div className="mt-4 flex items-center gap-2 rounded-lg bg-[#e6f4ea] px-4 py-3">
-                                        <GraduationCap className="h-4 w-4 text-[#137333]" />
-                                        <span className="text-sm font-medium text-[#137333]">
+                                    <div className="mt-4 flex items-center gap-2 rounded-lg bg-[#e6f4ea] dark:bg-emerald-950/60 px-4 py-3">
+                                        <GraduationCap className="h-4 w-4 text-[#137333] dark:text-emerald-300" />
+                                        <span className="text-sm font-medium text-[#137333] dark:text-emerald-300">
                                             Current grade: {submission.marks} / {maxMarks}
                                         </span>
                                     </div>
                                 </>
                             ) : (
                                 <>
-                                    <p className="mt-3 text-sm text-gray-600">Not graded yet.</p>
+                                    <p className="mt-3 text-sm text-gray-600 dark:text-slate-400">Not graded yet.</p>
                                     {submission.feedback && (
-                                        <div className="mt-4 border-t border-gray-100 pt-4">
-                                            <p className="text-xs text-gray-500">Feedback</p>
-                                            <p className="mt-1 text-sm leading-6 text-gray-800">{submission.feedback}</p>
+                                        <div className="mt-4 border-t border-gray-100 dark:border-slate-800 pt-4">
+                                            <p className="text-xs text-gray-500 dark:text-slate-400">Feedback</p>
+                                            <p className="mt-1 text-sm leading-6 text-gray-800 dark:text-slate-200">{submission.feedback}</p>
                                         </div>
                                     )}
                                 </>
@@ -271,8 +271,8 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                         </section>
 
                         {/* Submission info */}
-                        <section className="rounded-xl border border-gray-200 bg-white p-6">
-                            <h2 className="text-lg font-medium text-gray-900">Submission Info</h2>
+                        <section className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+                            <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100">Submission Info</h2>
                             <dl className="mt-4 space-y-3 text-sm">
                                 <InfoRow icon={<ClipboardList className="h-4 w-4" />} label="Assignment" value={submission.assignmentTitle ?? "—"} />
                                 <InfoRow icon={<BookOpen className="h-4 w-4" />} label="Course" value={submission.courseName ?? "—"} />
@@ -295,8 +295,8 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                         </section>
 
                         {/* Learner info */}
-                        <section className="rounded-xl border border-gray-200 bg-white p-6">
-                            <h2 className="text-lg font-medium text-gray-900">Learner Info</h2>
+                        <section className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+                            <h2 className="text-lg font-medium text-gray-900 dark:text-slate-100">Learner Info</h2>
                             <dl className="mt-4 space-y-3 text-sm">
                                 <InfoRow icon={<UserRound className="h-4 w-4" />} label="Name" value={learnerName} />
                                 <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={learnerEmail} />
@@ -307,7 +307,7 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                             {(submission.learnerEmail || submission.studentEmail) && (
                                 <a
                                     href={`mailto:${submission.learnerEmail || submission.studentEmail}`}
-                                    className="mt-5 flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-400 px-5 py-2.5 text-sm font-medium text-[#1a73e8] hover:bg-blue-50"
+                                    className="mt-5 flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 dark:border-slate-700 px-5 py-2.5 text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800"
                                 >
                                     <Mail className="h-4 w-4" />
                                     Contact Learner
@@ -324,10 +324,10 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
 function InfoRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
     return (
         <div className="flex items-start gap-3">
-            <span className="mt-0.5 text-gray-500">{icon}</span>
+            <span className="mt-0.5 text-gray-500 dark:text-slate-400">{icon}</span>
             <div className="min-w-0">
-                <dt className="text-xs text-gray-500">{label}</dt>
-                <dd className="break-words font-medium text-gray-900">{value}</dd>
+                <dt className="text-xs text-gray-500 dark:text-slate-400">{label}</dt>
+                <dd className="break-words font-medium text-gray-900 dark:text-slate-100">{value}</dd>
             </div>
         </div>
     );
@@ -338,8 +338,8 @@ function AttachmentRow({ attachment }: { attachment: AttachmentItem }) {
         <div className="flex items-center gap-4 px-6 py-4">
             <span className="text-3xl">{attachmentEmoji(attachment)}</span>
             <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900">{attachment.fileName}</p>
-                <p className="mt-0.5 text-xs text-gray-500">
+                <p className="truncate text-sm font-medium text-gray-900 dark:text-slate-100">{attachment.fileName}</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
                     {attachment.fileType}
                     <span className="mx-1">•</span>
                     {attachment.fileSize}
@@ -352,7 +352,7 @@ function AttachmentRow({ attachment }: { attachment: AttachmentItem }) {
                     href={attachment.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-400 px-4 py-2 text-xs font-medium text-[#1a73e8] hover:bg-blue-50"
+                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-300 dark:border-slate-700 px-4 py-2 text-xs font-medium text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800"
                 >
                     <Link2 className="h-3.5 w-3.5" />
                     Open
@@ -360,7 +360,7 @@ function AttachmentRow({ attachment }: { attachment: AttachmentItem }) {
             ) : (
                 <button
                     type="button"
-                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-400 px-4 py-2 text-xs font-medium text-[#1a73e8] hover:bg-blue-50"
+                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-300 dark:border-slate-700 px-4 py-2 text-xs font-medium text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800"
                 >
                     <Download className="h-3.5 w-3.5" />
                     Download

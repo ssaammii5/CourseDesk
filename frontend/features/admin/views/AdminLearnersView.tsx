@@ -383,11 +383,11 @@ export function AdminLearnersView() {
             render: (u: AdminUser) => {
                 const idVal = u.learnerDetails?.learnerId ?? u.studentDetails?.studentId;
                 return idVal ? (
-                    <span className="text-sm text-gray-900" title={idVal}>
+                    <span className="text-sm text-gray-900 dark:text-slate-100" title={idVal}>
                         {idVal}
                     </span>
                 ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-gray-400 dark:text-slate-500">—</span>
                 );
             },
         },
@@ -399,11 +399,11 @@ export function AdminLearnersView() {
             render: (u: AdminUser) => {
                 const d = u.learnerDetails ?? u.studentDetails;
                 return d?.department || d?.currentProgram ? (
-                    <span className="text-sm text-gray-900">
+                    <span className="text-sm text-gray-900 dark:text-slate-100">
                         {d.department || d.currentProgram}
                     </span>
                 ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-gray-400 dark:text-slate-500">—</span>
                 );
             },
         },
@@ -424,7 +424,7 @@ export function AdminLearnersView() {
                         type="button"
                         title="Edit"
                         onClick={() => { setEditingUser(u); setModalOpen(true); }}
-                        className="cursor-pointer rounded p-2 text-gray-600 hover:bg-gray-100"
+                        className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800"
                     >
                         <Pencil className="h-4 w-4" />
                     </button>
@@ -432,7 +432,7 @@ export function AdminLearnersView() {
                         type="button"
                         title="Delete"
                         onClick={() => setDeleteTarget(u)}
-                        className="cursor-pointer rounded p-2 text-[#c5221f] hover:bg-red-50"
+                        className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                     >
                         <Trash2 className="h-4 w-4" />
                     </button>
@@ -454,13 +454,13 @@ export function AdminLearnersView() {
             {/* Success Banner */}
             {successMessage && (
                 <div className="fixed inset-x-0 top-20 z-50 flex justify-center px-4">
-                    <div className="flex items-center gap-3 rounded-lg bg-[#e6f4ea] px-5 py-3.5 shadow-lg border border-[#ceead6]">
-                        <Mail className="h-5 w-5 shrink-0 text-[#137333]" />
-                        <span className="text-sm font-medium text-[#137333]">{successMessage}</span>
+                    <div className="flex items-center gap-3 rounded-lg bg-[#e6f4ea] dark:bg-emerald-950/90 px-5 py-3.5 shadow-lg border border-[#ceead6] dark:border-emerald-800">
+                        <Mail className="h-5 w-5 shrink-0 text-[#137333] dark:text-emerald-300" />
+                        <span className="text-sm font-medium text-[#137333] dark:text-emerald-300">{successMessage}</span>
                         <button
                             type="button"
                             onClick={() => setSuccessMessage(null)}
-                            className="ml-2 cursor-pointer rounded p-1 text-[#137333] hover:bg-[#ceead6]"
+                            className="ml-2 cursor-pointer rounded p-1 text-[#137333] dark:text-emerald-300 hover:bg-[#ceead6] dark:hover:bg-emerald-900/40"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -470,7 +470,7 @@ export function AdminLearnersView() {
 
             {/* Error Banner */}
             {error && (
-                <div className="mb-4 rounded-lg bg-[#fce8e6] px-5 py-3.5 text-sm text-[#c5221f]">
+                <div className="mb-4 rounded-lg bg-[#fce8e6] dark:bg-red-950/40 px-5 py-3.5 text-sm text-[#c5221f] dark:text-red-400">
                     {error}
                 </div>
             )}
@@ -478,8 +478,8 @@ export function AdminLearnersView() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Manage Learners</h1>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100 sm:text-3xl">Manage Learners</h1>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
                         {users.length} learners total • {filtered.length} shown
                     </p>
                 </div>
@@ -496,24 +496,24 @@ export function AdminLearnersView() {
             {/* Search and Filters */}
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="relative w-full sm:max-w-sm sm:flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search by name, email, or learner ID..."
-                        className="w-full rounded-md border border-gray-400/80 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2">
-                        <span className="whitespace-nowrap text-sm font-medium text-gray-700">
+                        <span className="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-slate-300">
                             Cohort order
                         </span>
                         <select
                             value={sessionSort}
                             onChange={(e) => setSessionSort(e.target.value as SessionSortOrder)}
-                            className="cursor-pointer rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="cursor-pointer rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="newest">Newest first</option>
                             <option value="oldest">Oldest first</option>
@@ -523,8 +523,8 @@ export function AdminLearnersView() {
                         type="button"
                         onClick={() => setFiltersOpen((v) => !v)}
                         className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${filtersOpen || activeFilterCount > 0
-                            ? "border-[#1a63d8] bg-[#e8f0fe] text-[#174ea6]"
-                            : "border-gray-400 text-gray-700 hover:bg-gray-50"
+                            ? "border-[#1a63d8] bg-[#e8f0fe] dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300"
+                            : "border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
                             }`}
                     >
                         <SlidersHorizontal className="h-4 w-4" />
@@ -539,7 +539,7 @@ export function AdminLearnersView() {
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                            className="cursor-pointer text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                         >
                             Clear all
                         </button>
@@ -549,13 +549,13 @@ export function AdminLearnersView() {
 
             {/* Advanced Filters Panel */}
             {filtersOpen && (
-                <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:grid-cols-2 lg:grid-cols-4">
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Program</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Program</span>
                         <select
                             value={programFilter}
                             onChange={(e) => setProgramFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Programs</option>
                             {PROGRAM_TYPES.map((p) => (
@@ -564,11 +564,11 @@ export function AdminLearnersView() {
                         </select>
                     </label>
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Department</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Department</span>
                         <select
                             value={departmentFilter}
                             onChange={(e) => setDepartmentFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Departments</option>
                             {departmentOptions.map((d) => (
@@ -577,11 +577,11 @@ export function AdminLearnersView() {
                         </select>
                     </label>
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Semester</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Semester</span>
                         <select
                             value={semesterSessionFilter}
                             onChange={(e) => setSemesterSessionFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Semesters</option>
                             {semesterSessionOptions.map((s) => (
@@ -590,11 +590,11 @@ export function AdminLearnersView() {
                         </select>
                     </label>
                     <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600">Status</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Status</span>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-400/80 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                         >
                             <option value="all">All Status</option>
                             <option value="active">Active</option>
@@ -607,8 +607,8 @@ export function AdminLearnersView() {
             {/* Learner Groups */}
             <div className="mt-8 space-y-12">
                 {filtered.length === 0 && (
-                    <div className="rounded-lg border border-gray-200 bg-white py-16 text-center">
-                        <p className="text-sm text-gray-600">No learners match your filters.</p>
+                    <div className="rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-16 text-center">
+                        <p className="text-sm text-gray-600 dark:text-slate-400">No learners match your filters.</p>
                     </div>
                 )}
 
@@ -616,14 +616,14 @@ export function AdminLearnersView() {
                 {programGroups.map((pg) => (
                     <section key={pg.name}>
                         {/* Program Header */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-300 pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-200 dark:border-slate-800 pb-3">
                             <div className="flex min-w-0 items-center gap-3">
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7e3fd] text-[#174ea6] sm:h-10 sm:w-10">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7e3fd] dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300 sm:h-10 sm:w-10">
                                     <GraduationCap className="h-5 w-5" />
                                 </span>
-                                <h2 className="truncate text-xl text-gray-900 sm:text-2xl">{pg.name}</h2>
+                                <h2 className="truncate text-xl text-gray-900 dark:text-slate-100 sm:text-2xl">{pg.name}</h2>
                             </div>
-                            <span className="shrink-0 text-sm font-medium text-gray-600">
+                            <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-slate-400">
                                 {pg.count} learner{pg.count === 1 ? "" : "s"}
                             </span>
                         </div>
@@ -632,8 +632,8 @@ export function AdminLearnersView() {
                         {pg.depts.map((dept) => (
                             <div key={dept.name} className="mt-6">
                                 <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                                    <h3 className="min-w-0 truncate text-lg text-gray-800 sm:text-xl">{dept.name}</h3>
-                                    <span className="shrink-0 text-xs font-medium text-gray-500">
+                                    <h3 className="min-w-0 truncate text-lg text-gray-800 dark:text-slate-200 sm:text-xl">{dept.name}</h3>
+                                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-slate-400">
                                         {dept.count} learner{dept.count === 1 ? "" : "s"}
                                     </span>
                                 </div>
@@ -643,10 +643,10 @@ export function AdminLearnersView() {
                                     {dept.groups.map((g) => (
                                         <div key={g.key}>
                                             <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
-                                                <span className="rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#174ea6]">
+                                                <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-3 py-1 text-xs font-medium text-[#174ea6] dark:text-blue-300">
                                                     {g.key}
                                                 </span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-gray-500 dark:text-slate-400">
                                                     {g.learners.length} learner{g.learners.length === 1 ? "" : "s"}
                                                 </span>
                                             </div>
@@ -669,13 +669,13 @@ export function AdminLearnersView() {
                 {/* Uncategorized */}
                 {uncategorized.length > 0 && (
                     <section>
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-300 pb-3">
-                            <h2 className="text-xl text-gray-900 sm:text-2xl">Uncategorized</h2>
-                            <span className="shrink-0 text-sm font-medium text-gray-600">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-200 dark:border-slate-800 pb-3">
+                            <h2 className="text-xl text-gray-900 dark:text-slate-100 sm:text-2xl">Uncategorized</h2>
+                            <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-slate-400">
                                 {uncategorized.length} learner{uncategorized.length === 1 ? "" : "s"}
                             </span>
                         </div>
-                        <p className="mt-2 px-1 text-xs text-gray-500">
+                        <p className="mt-2 px-1 text-xs text-gray-500 dark:text-slate-400">
                             Learners missing program, department, or semester details.
                         </p>
                         <div className="mt-4">
