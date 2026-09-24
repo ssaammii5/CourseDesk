@@ -95,7 +95,9 @@ export const CourseworkEntrySchema = z.object({
     status: z.enum(["Assigned", "Submitted", "Graded", "Draft"]),
     description: z.string(),
     kind: z.enum(["assignment", "material", "quiz"]).optional(),
+    deadlineUtc: z.string().optional(),
 });
+
 export type CourseworkEntry = z.infer<typeof CourseworkEntrySchema>;
 export const ClassworkEntrySchema = CourseworkEntrySchema;
 export type ClassworkEntry = CourseworkEntry;

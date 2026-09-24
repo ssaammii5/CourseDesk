@@ -48,6 +48,7 @@ function mapAssignmentToCoursework(
         status,
         description: dto.description,
         kind: (dto.kind ?? "assignment").toLowerCase() as CourseworkEntry["kind"],
+        deadlineUtc: dto.deadlineUtc,
     };
 }
 
