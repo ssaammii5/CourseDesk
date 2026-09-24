@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import {
+    Award,
     Bell,
     CalendarDays,
+    Check,
     CheckCheck,
     ChevronDown,
     ChevronRight,
@@ -11,17 +13,19 @@ import {
     ClipboardList,
     GraduationCap,
     Info,
+    Layers,
     LogOut,
     Megaphone,
     Menu,
     Settings,
     Star,
+    Users,
     Video,
     X,
     type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import {
     clearAllNotificationsRequest,
@@ -32,6 +36,7 @@ import {
 } from "@/lib/api";
 import { type NotificationItem, type NotificationKind } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
+import { getAssignmentRequest } from "@/lib/api/assignments";
 import { initialOf } from "@/lib/utils/format";
 import { hasAccessToken } from "@/lib/auth/session";
 import { ThemeToggle } from "./ThemeToggle";
@@ -62,6 +67,186 @@ function formatRelativeTime(isoString?: string): string {
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     if (diff < 172800) return "Yesterday";
     return `${Math.floor(diff / 86400)}d ago`;
+}
+
+interface CourseBreadcrumbProps {
+    course: { id: number; name: string; sub?: string };
+}
+
+function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const [assignmentTitle, setAssignmentTitle] = useState<string | null>(null);
+    const [resolvedCourseName, setResolvedCourseName] = useState<string>(course.name);
+    const [tabState, setTabState] = useState<string | null>(null);
+
+    const assignmentMatch = pathname.match(/\/course\/\d+\/assignments\/(\d+)/);
+    const assignmentId = assignmentMatch ? Number(assignmentMatch[1]) : null;
+
+    useEffect(() => {
+        if (course.name && course.name !== "Course") {
+            setResolvedCourseName(course.name);
+        }
+    }, [course.name]);
+
+    useEffect(() => {
+        const handleTabEvent = (e: Event) => {
+            const customEvent = e as CustomEvent<{ tab?: string }>;
+            if (customEvent.detail?.tab) {
+                setTabState(customEvent.detail.tab);
+            }
+        };
+        window.addEventListener("coursedesk:tab-changed", handleTabEvent);
+        return () => window.removeEventListener("coursedesk:tab-changed", handleTabEvent);
+    }, []);
+
+    useEffect(() => {
+        if (!assignmentId) {
+            setAssignmentTitle(null);
+            return;
+        }
+
+        let cancelled = false;
+        getAssignmentRequest(assignmentId)
+            .then((dto) => {
+                if (!cancelled) {
+                    if (dto?.title) {
+                        setAssignmentTitle(dto.title);
+                    }
+                    if (dto?.courseName && (!resolvedCourseName || resolvedCourseName === "Course")) {
+                        setResolvedCourseName(dto.courseName);
+                    }
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setAssignmentTitle(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [assignmentId, resolvedCourseName]);
+
+    const tabParam = tabState || (searchParams ? searchParams.get("tab") : null);
+    let activeTabLabel = "Stream";
+    let activeTabId = "stream";
+
+    if (
+        pathname.includes("/curriculum") ||
+        pathname.includes("/lectures") ||
+        tabParam === "curriculum" ||
+        tabParam === "lectures"
+    ) {
+        activeTabLabel = "Lectures";
+        activeTabId = "curriculum";
+    } else if (
+        pathname.includes("/coursework") ||
+        pathname.includes("/classwork") ||
+        tabParam === "coursework" ||
+        tabParam === "classwork"
+    ) {
+        activeTabLabel = "Coursework";
+        activeTabId = "coursework";
+    } else if (pathname.includes("/people") || tabParam === "people") {
+        activeTabLabel = "People";
+        activeTabId = "people";
+    } else if (pathname.includes("/grades") || tabParam === "grades") {
+        activeTabLabel = "Grades";
+        activeTabId = "grades";
+    } else if (pathname.includes("/stream") || tabParam === "stream") {
+        activeTabLabel = "Stream";
+        activeTabId = "stream";
+    }
+
+    const isAssignmentPage = Boolean(assignmentId);
+    const isWorkPage = pathname.includes("/work");
+    const isSubmissionsPage = pathname.includes("/submissions");
+    const displayName = resolvedCourseName || course.name;
+
+    return (
+        <nav aria-label="Breadcrumbs" className="flex min-w-0 items-center gap-1.5 text-xs">
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+            <Link
+                href={`/course/${course.id}`}
+                title={displayName}
+                className="max-w-[140px] sm:max-w-[200px] md:max-w-[280px] truncate font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+            >
+                {displayName}
+            </Link>
+
+            {isAssignmentPage ? (
+                <>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                    <Link
+                        href={`/course/${course.id}?tab=coursework`}
+                        className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                    >
+                        Coursework
+                    </Link>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                    <span
+                        title={assignmentTitle || (assignmentId ? `Assignment #${assignmentId}` : "Assignment")}
+                        className="max-w-[140px] sm:max-w-[220px] md:max-w-[320px] truncate font-semibold text-[#1a73e8] dark:text-blue-400"
+                    >
+                        {assignmentTitle || (assignmentId ? `Assignment #${assignmentId}` : "Assignment")}
+                    </span>
+                </>
+            ) : isWorkPage ? (
+                <>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                    <Link
+                        href={`/course/${course.id}?tab=coursework`}
+                        className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                    >
+                        Coursework
+                    </Link>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                    <span className="shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400">
+                        Your Work
+                    </span>
+                </>
+            ) : isSubmissionsPage ? (
+                <>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                    <Link
+                        href={`/course/${course.id}?tab=coursework`}
+                        className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                    >
+                        Coursework
+                    </Link>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                    <span className="shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400">
+                        Submissions
+                    </span>
+                </>
+            ) : (
+                <>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                    <Link
+                        href={`/course/${course.id}?tab=${activeTabId}`}
+                        className="shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline transition-colors"
+                    >
+                        {activeTabLabel}
+                    </Link>
+                </>
+            )}
+        </nav>
+    );
+}
+
+function CourseBreadcrumb(props: CourseBreadcrumbProps) {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex items-center gap-1.5 pl-1 sm:pl-2">
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
+                    <span className="text-xs font-semibold text-slate-700">{props.course.name}</span>
+                </div>
+            }
+        >
+            <CourseBreadcrumbContent {...props} />
+        </Suspense>
+    );
 }
 
 export function TopBar({ onMenuClick }: TopBarProps) {
@@ -287,23 +472,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 </Link>
 
                 {/* Breadcrumb Info */}
-                {classCourse && (
-                    <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:pl-2">
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                        <div className="flex items-center gap-1.5 min-w-0 max-w-[160px] sm:max-w-xs md:max-w-md rounded-lg bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 border border-slate-200/60 dark:border-slate-700">
-                            <span className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                {classCourse.name}
-                            </span>
-                            {classSub && (
-                                <span className="hidden truncate text-[11px] font-medium text-slate-400 dark:text-slate-500 md:inline">
-                                    • {classSub}
-                                </span>
-                            )}
-                        </div>
-                    </div>
+                {(classCourse || classCourseId) && (
+                    <CourseBreadcrumb course={classCourse || { id: classCourseId!, name: "Course" }} />
                 )}
 
-                {!classCourse && (isTodo || isCalendar || isSettings || isAdminPage) && (
+                {!classCourse && !classCourseId && (isTodo || isCalendar || isSettings || isAdminPage) && (
                     <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:pl-2">
                         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                         <span className="inline-flex items-center rounded-lg bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">

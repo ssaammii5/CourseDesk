@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+    ArrowLeft,
     ClipboardList,
     EllipsisVertical,
     FileArchive,
@@ -15,6 +16,7 @@ import {
     UsersRound,
     X,
 } from "lucide-react";
+import Link from "next/link";
 import { IconButton } from "@/components/ui";
 import {
     deleteSubmissionAttachmentRequest,
@@ -243,9 +245,20 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                 />
             )}
 
-            <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-4 py-10 sm:px-8 lg:flex-row">
+            <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-4 py-8 sm:px-8 lg:flex-row">
                 {/* Main content */}
                 <div className="min-w-0 flex-1">
+                    {/* Back link */}
+                    <div className="mb-6">
+                        <Link
+                            href={detail.courseId ? `/course/${detail.courseId}?tab=coursework` : "/courses"}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Back to Coursework
+                        </Link>
+                    </div>
+
                     {/* Title row */}
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex min-w-0 items-center gap-6">

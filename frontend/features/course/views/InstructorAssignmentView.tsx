@@ -168,14 +168,26 @@ export function InstructorAssignmentView({
                     <div className="flex items-center justify-between">
                         <button
                             type="button"
-                            onClick={() => router.back()}
+                            onClick={() => {
+                                if (typeof window !== "undefined" && window.history.length > 1) {
+                                    router.back();
+                                } else {
+                                    router.push(`/course/${courseId}?tab=coursework`);
+                                }
+                            }}
                             className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Back
                         </button>
                         <span className="text-xs text-gray-500 dark:text-slate-400">
-                            Course: <span className="font-medium text-gray-800 dark:text-slate-200">{assignment.courseName}</span>
+                            Course:{" "}
+                            <Link
+                                href={`/course/${courseId}?tab=coursework`}
+                                className="font-medium text-gray-800 dark:text-slate-200 hover:text-[#1a73e8] dark:hover:text-blue-400 hover:underline transition-colors"
+                            >
+                                {assignment.courseName}
+                            </Link>
                         </span>
                     </div>
 

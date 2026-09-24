@@ -314,6 +314,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 url.searchParams.set("tab", nextTab);
             }
             window.history.replaceState(null, "", url.toString());
+            window.dispatchEvent(new CustomEvent("coursedesk:tab-changed", { detail: { tab: nextTab } }));
         }
     };
 

@@ -10,6 +10,7 @@ import {
     EllipsisVertical,
     SquareUserRound,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IconButton } from "@/components/ui";
 import type { CourseworkEntry, ClassworkEntry } from "@/types";
@@ -130,6 +131,7 @@ export function CourseworkView({ items, courseId }: CourseworkViewProps) {
                                 <ClassworkRow
                                     key={entry.id}
                                     entry={entry}
+                                    courseId={courseId}
                                     expanded={expandedItems.has(entry.id)}
                                     onToggle={() => toggleItem(entry.id)}
                                 />
@@ -143,10 +145,12 @@ export function CourseworkView({ items, courseId }: CourseworkViewProps) {
 
 function ClassworkRow({
     entry,
+    courseId,
     expanded,
     onToggle,
 }: {
     entry: ClassworkEntry;
+    courseId?: number;
     expanded: boolean;
     onToggle: () => void;
 }) {
@@ -181,9 +185,12 @@ function ClassworkRow({
                 <p className="mt-5 whitespace-pre-line text-sm leading-6 text-gray-800 dark:text-slate-300">{entry.description}</p>
             </div>
             <div className="border-t border-gray-300/80 dark:border-slate-800 px-6 py-3">
-                <a href="#" className="text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline">
+                <Link
+                    href={courseId ? `/course/${courseId}/assignments/${entry.id}` : "#"}
+                    className="text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
+                >
                     View instructions
-                </a>
+                </Link>
             </div>
         </div>
     );

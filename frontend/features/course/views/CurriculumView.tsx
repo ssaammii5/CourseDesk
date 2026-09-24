@@ -458,32 +458,6 @@ export function CurriculumView({
 
     return (
         <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 pb-16 transition-colors">
-            {/* Top Breadcrumb Navigation */}
-            <div className="border-b border-gray-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 backdrop-blur-sm">
-                <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
-                    <nav className="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
-                        <Link
-                            href="/courses"
-                            className="font-medium text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                        >
-                            My Course
-                        </Link>
-                        <ChevronRight className="h-3.5 w-3.5 text-gray-400 dark:text-slate-600" />
-                        <span className="max-w-[260px] truncate sm:max-w-md font-medium text-gray-700 dark:text-slate-300">
-                            {breadcrumbCourseTitle}
-                        </span>
-                        <ChevronRight className="h-3.5 w-3.5 text-gray-400 dark:text-slate-600" />
-                        <span className="font-medium text-gray-700 dark:text-slate-300">
-                            {currentTopic?.title || "Preli Class"}
-                        </span>
-                        <ChevronRight className="h-3.5 w-3.5 text-gray-400 dark:text-slate-600" />
-                        <span className="font-semibold text-[#1a73e8] dark:text-blue-400 capitalize">
-                            {selectedSubItem === "question-bank" ? "Question Bank" : selectedSubItem}
-                        </span>
-                    </nav>
-                </div>
-            </div>
-
             {/* Main Content Area */}
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
@@ -901,9 +875,6 @@ export function CurriculumView({
                                             Preli Class
                                         </h2>
                                     </div>
-                                    <span className="inline-flex items-center rounded-full bg-blue-100/70 dark:bg-blue-950/80 px-2.5 py-0.5 text-[11px] font-semibold text-[#1a73e8] dark:text-blue-300">
-                                        Batch-01
-                                    </span>
                                 </div>
 
                                 {/* Video & File Stats Badges */}
