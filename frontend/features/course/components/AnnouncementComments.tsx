@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
     ChevronDown,
     ChevronUp,
@@ -71,11 +71,12 @@ export function AnnouncementComments({
 }: AnnouncementCommentsProps) {
     const { user } = useAuth();
     const [comments, setComments] = useState<AnnouncementCommentDto[]>(initialComments);
-    const [isExpanded, setIsExpanded] = useState<boolean>(initialComments.length > 0);
+    const [isExpanded, setIsExpanded] = useState<boolean>(false);
     const [commentText, setCommentText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const refreshComments = useCallback(async () => {
         if (!isApi) return;
@@ -86,6 +87,16 @@ export function AnnouncementComments({
             // Silently retain current comments if refresh fails
         }
     }, [announcementId, isApi]);
+
+    const toggleExpanded = () => {
+        setIsExpanded((prev) => {
+            const next = !prev;
+            if (next) {
+                setTimeout(() => textareaRef.current?.focus(), 60);
+            }
+            return next;
+        });
+    };
 
     const handleAddComment = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -152,21 +163,19 @@ export function AnnouncementComments({
             <div className="flex items-center justify-between px-4 py-2.5 sm:px-5">
                 <button
                     type="button"
-                    onClick={() => setIsExpanded((prev) => !prev)}
+                    onClick={toggleExpanded}
                     className="group inline-flex cursor-pointer items-center gap-2 rounded-lg py-1 text-xs font-semibold text-slate-600 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
                 >
                     <MessageSquare className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-indigo-500 dark:text-slate-500" />
                     <span>
                         {hasComments
                             ? `${comments.length} comment${comments.length === 1 ? "" : "s"}`
-                            : "Add a comment"}
+                            : (isExpanded ? "Hide comment box" : "Add a comment")}
                     </span>
-                    {hasComments && (
-                        isExpanded ? (
-                            <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
-                        ) : (
-                            <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-                        )
+                    {isExpanded ? (
+                        <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
+                    ) : (
+                        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                     )}
                 </button>
             </div>
@@ -177,6 +186,7 @@ export function AnnouncementComments({
                     {error}
                 </div>
             )}
+
 
             {/* Collapsible Comment Thread */}
             {isExpanded && (
@@ -264,6 +274,7 @@ export function AnnouncementComments({
 
                         <div className="relative flex-1">
                             <textarea
+                                ref={textareaRef}
                                 value={commentText}
                                 onChange={(e) => setCommentText(e.target.value)}
                                 onKeyDown={handleKeyDown}
