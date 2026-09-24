@@ -12,6 +12,7 @@ import {
     Megaphone,
     Plus,
     Radio,
+    Search,
     Share2,
     Users,
     Video,
@@ -34,6 +35,8 @@ export interface StreamHeroProps {
     announcementsCount?: number;
     isInstructor?: boolean;
     onNewAnnouncement?: () => void;
+    searchQuery?: string;
+    onSearchChange?: (query: string) => void;
 }
 
 export function StreamHero({
@@ -44,10 +47,13 @@ export function StreamHero({
     announcementsCount = 0,
     isInstructor = false,
     onNewAnnouncement,
+    searchQuery = "",
+    onSearchChange,
 }: StreamHeroProps) {
     const [infoOpen, setInfoOpen] = useState(false);
     const [copiedLink, setCopiedLink] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [searchOpen, setSearchOpen] = useState(false);
 
     const state: LiveClassState = nextSession?.scheduledAtUtc
         ? getLiveClassState(nextSession.scheduledAtUtc, nextSession.durationMinutes)
@@ -105,7 +111,7 @@ export function StreamHero({
                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
                             <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
                         </span>
-                        <span className="font-bold uppercase tracking-wider text-[11px]">Class is Live:</span>
+                        <span className="font-bold uppercase tracking-wider text-[11px]">Live Now:</span>
                         <span className="truncate font-medium">
                             {nextSession ? `Session ${nextSession.sessionNumber}: ${nextSession.title}` : title}
                         </span>
@@ -157,7 +163,7 @@ export function StreamHero({
                                 {!isLive && isUpcoming && nextSession?.scheduledAtUtc && (
                                     <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-medium text-sky-700 dark:border-sky-800/60 dark:bg-sky-950/50 dark:text-sky-300">
                                         <Clock className="h-3 w-3" />
-                                        <span>Class in {formatCountdown(nextSession.scheduledAtUtc)}</span>
+                                        <span>Starts in {formatCountdown(nextSession.scheduledAtUtc)}</span>
                                     </span>
                                 )}
                             </div>
@@ -189,6 +195,43 @@ export function StreamHero({
 
                     {/* Right: Modern Compact Action Bar */}
                     <div className="flex flex-wrap items-center gap-2 shrink-0 border-t border-slate-100 pt-3 sm:border-t-0 sm:pt-0 dark:border-slate-800">
+                        {/* Integrated Search Button / Input */}
+                        {onSearchChange && (
+                            searchOpen || Boolean(searchQuery) ? (
+                                <div className="relative flex items-center">
+                                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        value={searchQuery}
+                                        onChange={(e) => onSearchChange(e.target.value)}
+                                        placeholder="Search stream…"
+                                        className="w-40 sm:w-52 rounded-xl border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 transition-all"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onSearchChange("");
+                                            setSearchOpen(false);
+                                        }}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchOpen(true)}
+                                    title="Search stream"
+                                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    <Search className="h-3.5 w-3.5 text-slate-400" />
+                                    <span>Search</span>
+                                </button>
+                            )
+                        )}
+
                         {/* Share Button */}
                         <button
                             type="button"
@@ -245,7 +288,7 @@ export function StreamHero({
                                     Course & Meeting Info
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    Virtual classroom credentials and course details
+                                    Virtual meeting credentials and course details
                                 </p>
                             </div>
                             <button
@@ -269,7 +312,7 @@ export function StreamHero({
                                 <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
                                     <div className="flex items-center justify-between">
                                         <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">
-                                            Virtual Classroom Link
+                                            Virtual Meeting Link
                                         </p>
                                         <button
                                             type="button"
@@ -357,8 +400,8 @@ export function StreamHero({
                                     <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{primaryInstructor}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Class Size</p>
-                                    <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{learnerCount} Students</p>
+                                    <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Enrolled</p>
+                                    <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{learnerCount} Learners</p>
                                 </div>
                             </div>
                         </div>

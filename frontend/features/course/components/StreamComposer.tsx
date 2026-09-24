@@ -31,7 +31,7 @@ export function StreamComposer({ authorName, authorId = 1, onClick }: StreamComp
                 {/* Simulated Input Bar */}
                 <div className="flex min-w-0 flex-1 items-center justify-between rounded-xl border border-slate-200/70 bg-slate-50/80 px-4 py-2.5 transition-colors group-hover:border-slate-300 group-hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50 dark:group-hover:border-slate-700 dark:group-hover:bg-slate-800/80">
                     <span className="truncate text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                        Share an update, lecture material, or announcement with your class…
+                        Share an update, lecture material, or announcement…
                     </span>
 
                     <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-400">
