@@ -50,15 +50,15 @@ interface LectureTopicGroup {
 // Default curriculum matching the user's reference design
 const DEFAULT_SAMPLE_MODULES = [
     {
-        id: "bangla-grammar",
-        title: "Bangla Grammar",
+        id: "ancient-bangla-literature",
+        title: "Ancient Era of Bangla Literature & Charyapada",
         sessions: [
             {
                 id: 101,
                 courseId: 1,
                 sessionNumber: 1,
-                title: "বাংলা সাহিত্যের প্রাচীন যুগ",
-                topic: "Bangla Grammar",
+                title: "Ancient Era of Bangla Literature & Charyapada",
+                topic: "Ancient Era of Bangla Literature & Charyapada",
                 description:
                     "প্রাচীন যুগের সাহিত্যের প্রধান বৈশিষ্ট্য হলো ব্যক্তি ও সমাজজীবন প্রধান, ধর্ম গৌণ। বাংলা সাহিত্যের সূচনা যুগ, চর্যাপদ এবং প্রাচীন যুগের ইতিহাস ও সাহিত্যকর্মের বিস্তারিত আলোচনা।",
                 meetingUrl: null,
@@ -76,7 +76,7 @@ const DEFAULT_SAMPLE_MODULES = [
                     {
                         id: 201,
                         sessionId: 101,
-                        title: "Lecture-1: বাংলা সাহিত্যের প্রাচীন যুগ লেকচার শীট",
+                        title: "বাংলা সাহিত্যের প্রাচীন যুগ লেকচার শীট",
                         kind: "slides",
                         url: "#",
                         fileName: "bangla_literature_lec1.pdf",
@@ -112,15 +112,15 @@ const DEFAULT_SAMPLE_MODULES = [
         ],
     },
     {
-        id: "bangla-literature",
-        title: "Bangla Literature",
+        id: "medieval-bangla-literature",
+        title: "Medieval Bangla Literature & Mangalkavya",
         sessions: [
             {
                 id: 102,
                 courseId: 1,
                 sessionNumber: 2,
-                title: "মধ্যযুগের সাহিত্য ও মঙ্গলকাব্য",
-                topic: "Bangla Literature",
+                title: "Medieval Bangla Literature & Mangalkavya",
+                topic: "Medieval Bangla Literature & Mangalkavya",
                 description:
                     "মধ্যযুগের বাংলা সাহিত্যের বিকাশ, শ্রীকৃষ্ণকীর্তন কাব্য, অনুবাদ সাহিত্য, বৈষ্ণব পদাবলী এবং মঙ্গলকাব্যের বিস্তারিত পাঠদান।",
                 meetingUrl: null,
@@ -159,15 +159,15 @@ const DEFAULT_SAMPLE_MODULES = [
         ],
     },
     {
-        id: "english-grammar",
-        title: "English Grammar",
+        id: "parts-of-speech",
+        title: "Parts of Speech & Advanced Subject-Verb Agreement",
         sessions: [
             {
                 id: 103,
                 courseId: 1,
                 sessionNumber: 3,
                 title: "Parts of Speech & Advanced Subject-Verb Agreement",
-                topic: "English Grammar",
+                topic: "Parts of Speech & Advanced Subject-Verb Agreement",
                 description:
                     "Comprehensive coverage of Parts of Speech, Identifications, and high-frequency rules for competitive examinations.",
                 meetingUrl: null,
@@ -206,15 +206,15 @@ const DEFAULT_SAMPLE_MODULES = [
         ],
     },
     {
-        id: "vocabulary",
-        title: "Vocabulary",
+        id: "root-words-vocabulary",
+        title: "Root Words, Synonyms & Antonyms for Bank Exams",
         sessions: [
             {
                 id: 104,
                 courseId: 1,
                 sessionNumber: 4,
                 title: "Root Words, Synonyms & Antonyms for Bank Exams",
-                topic: "Vocabulary",
+                topic: "Root Words, Synonyms & Antonyms for Bank Exams",
                 description:
                     "Mastering high-yield root words, contextual usage, and memory mnemonics for competitive job recruitment.",
                 meetingUrl: null,
@@ -252,15 +252,15 @@ const DEFAULT_SAMPLE_MODULES = [
         ],
     },
     {
-        id: "english-literature",
-        title: "English Literature",
+        id: "elizabethan-romantic-era",
+        title: "Elizabethan & Romantic Era Major Authors and Quotations",
         sessions: [
             {
                 id: 105,
                 courseId: 1,
                 sessionNumber: 5,
                 title: "Elizabethan & Romantic Era Major Authors and Quotations",
-                topic: "English Literature",
+                topic: "Elizabethan & Romantic Era Major Authors and Quotations",
                 description:
                     "Timeline of English Literary Periods: Shakespearean tragedies, Romantic poets, and prominent literary terms.",
                 meetingUrl: null,
@@ -344,10 +344,8 @@ export function CurriculumView({
     }, [sessions]);
 
     // Active state
-    const [selectedTopicId, setSelectedTopicId] = useState<string>(() => topicGroups[0]?.id || "bangla-grammar");
-    const [openTopicIds, setOpenTopicIds] = useState<Record<string, boolean>>({});
+    const [selectedTopicId, setSelectedTopicId] = useState<string>(() => topicGroups[0]?.id || "ancient-bangla-literature");
     const [activeTab, setActiveTab] = useState<TabType>("video");
-    const [selectedSubItem, setSelectedSubItem] = useState<"video" | "pdf" | "question-bank">("video");
     const [selectedSessionId, setSelectedSessionId] = useState<number>(() => {
         return topicGroups[0]?.sessions[0]?.id || 101;
     });
@@ -369,8 +367,6 @@ export function CurriculumView({
 
     const handleTopicFilterChange = (topicId: string) => {
         setSelectedTopicFilter(topicId);
-        // Always show as collapsed when selecting an option from menu
-        setOpenTopicIds({});
     };
 
     const filteredTopics = useMemo(() => {
@@ -393,19 +389,6 @@ export function CurriculumView({
         return list;
     }, [topicGroups, selectedTopicFilter, sidebarSearch]);
 
-    const allExpanded = useMemo(() => {
-        return filteredTopics.length > 0 && filteredTopics.every((t) => openTopicIds[t.id]);
-    }, [filteredTopics, openTopicIds]);
-
-    const toggleExpandAll = () => {
-        const nextState = !allExpanded;
-        const newMap: Record<string, boolean> = { ...openTopicIds };
-        filteredTopics.forEach((t) => {
-            newMap[t.id] = nextState;
-        });
-        setOpenTopicIds(newMap);
-    };
-
     // Active topic & session
     const currentTopic = topicGroups.find((g) => g.id === selectedTopicId) || topicGroups[0];
     const currentSession =
@@ -424,35 +407,10 @@ export function CurriculumView({
         return count > 0 ? count + 145 : 150; // Reference screenshot says 150 Video
     }, [topicGroups]);
 
-    const toggleTopicAccordion = (topicId: string) => {
-        setOpenTopicIds((prev) => ({
-            ...prev,
-            [topicId]: !prev[topicId],
-        }));
-    };
-
-    const handleSelectSubItem = (
-        topic: LectureTopicGroup,
-        session: SessionDto,
-        subItem: "video" | "pdf" | "question-bank"
-    ) => {
+    const handleSelectVideo = (topic: LectureTopicGroup, session: SessionDto) => {
         setSelectedTopicId(topic.id);
         setSelectedSessionId(session.id);
-        setSelectedSubItem(subItem);
-
-        if (subItem === "video") {
-            setActiveTab("video");
-        } else if (subItem === "pdf") {
-            setActiveTab("file");
-        } else if (subItem === "question-bank") {
-            setActiveTab("review");
-        }
-
-        // Keep this topic open
-        setOpenTopicIds((prev) => ({
-            ...prev,
-            [topic.id]: true,
-        }));
+        setActiveTab("video");
     };
 
     const breadcrumbCourseTitle =
@@ -508,14 +466,10 @@ export function CurriculumView({
                             )}
                         </div>
 
-                        {/* Lecture Title */}
+                        {/* Title Below Video */}
                         <div className="pt-1">
                             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">
-                                {currentSession?.title?.startsWith("Lecture")
-                                    ? currentSession.title
-                                    : `Lecture-${currentSession?.sessionNumber || 1}: ${
-                                          currentSession?.title || "বাংলা সাহিত্যের প্রাচীন যুগ"
-                                      }`}
+                                {currentTopic?.title || currentSession?.title || "Ancient Era of Bangla Literature & Charyapada"}
                             </h1>
                         </div>
 
@@ -576,7 +530,7 @@ export function CurriculumView({
                                                 {currentSession?.status || "Completed"}
                                             </span>
                                             <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-slate-800 px-3 py-1 font-medium text-gray-600 dark:text-slate-400">
-                                                Topic: {currentTopic?.title || "Bangla Grammar"}
+                                                Video: {currentTopic?.title || "Ancient Era of Bangla Literature & Charyapada"}
                                             </span>
                                         </div>
                                     </div>
@@ -704,7 +658,7 @@ export function CurriculumView({
                                         <div className="flex items-center justify-between mb-4">
                                             <div>
                                                 <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-                                                    Lecture Notes &amp; PDF Handouts
+                                                    Lecture Files &amp; PDF Handouts
                                                 </h3>
                                                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                                                     Download or read class slides, hand notes, and reference PDFs
@@ -719,7 +673,7 @@ export function CurriculumView({
                                                       {
                                                           id: 201,
                                                           sessionId: 101,
-                                                          title: "Lecture-1: বাংলা সাহিত্যের প্রাচীন যুগ লেকচার শীট",
+                                                          title: "বাংলা সাহিত্যের প্রাচীন যুগ লেকচার শীট",
                                                           kind: "slides",
                                                           url: "#",
                                                           fileName: "bangla_literature_lec1.pdf",
@@ -876,19 +830,8 @@ export function CurriculumView({
                                             <strong className="font-semibold text-slate-900 dark:text-slate-100">{totalVideoCount}</strong> Videos
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 min-w-0">
-                                        <span className="truncate">
-                                            Progress: <strong className="font-semibold text-slate-700 dark:text-slate-300">18% (27/150)</strong>
-                                        </span>
-                                        <span className="text-slate-300 dark:text-slate-700">•</span>
-                                        <button
-                                            type="button"
-                                            onClick={toggleExpandAll}
-                                            title={allExpanded ? "Collapse All" : "Expand All"}
-                                            className="w-[74px] text-right whitespace-nowrap text-[11px] font-medium text-slate-500 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer shrink-0"
-                                        >
-                                            {allExpanded ? "Collapse All" : "Expand All"}
-                                        </button>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Progress: <strong className="font-semibold text-slate-700 dark:text-slate-300">18% (27/150)</strong>
                                     </div>
                                 </div>
 
@@ -902,15 +845,15 @@ export function CurriculumView({
 
                                 {/* Topic Filter Dropdown & Search Controls */}
                                 <div className="mt-3.5 space-y-2">
-                                    {/* Topic Filter Dropdown */}
+                                    {/* Video Filter Dropdown */}
                                     <div className="relative">
-                                        <label htmlFor="sidebar-topic-filter" className="sr-only">
-                                            Topic filter
+                                        <label htmlFor="sidebar-video-filter" className="sr-only">
+                                            Filter videos
                                         </label>
                                         <div className="relative flex items-center">
                                             <Filter className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#1a73e8] dark:text-blue-400" />
                                             <select
-                                                id="sidebar-topic-filter"
+                                                id="sidebar-video-filter"
                                                 value={selectedTopicFilter}
                                                 onChange={(e) => handleTopicFilterChange(e.target.value)}
                                                 className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 py-1.5 pl-8.5 pr-8 text-xs font-medium text-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all cursor-pointer shadow-xs hover:border-slate-300 dark:hover:border-slate-600"
@@ -932,14 +875,14 @@ export function CurriculumView({
                                         </div>
                                     </div>
 
-                                    {/* Instant Topic Search Input */}
+                                    {/* Instant Search Input */}
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                                         <input
                                             type="text"
                                             value={sidebarSearch}
                                             onChange={(e) => setSidebarSearch(e.target.value)}
-                                            placeholder="Search topics or lectures..."
+                                            placeholder="Search videos..."
                                             className="w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/70 py-1.5 pl-9 pr-8 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all"
                                         />
                                         {sidebarSearch && (
@@ -954,11 +897,11 @@ export function CurriculumView({
                                     </div>
                                 </div>
 
-                                {/* Active Topic Filter Chip if not "all" */}
+                                {/* Active Video Filter Chip if not "all" */}
                                 {selectedTopicFilter !== "all" && (
                                     <div className="mt-2.5 flex items-center justify-between rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 px-2.5 py-1 text-[11px] text-[#1a73e8] dark:text-blue-300">
                                         <span className="truncate">
-                                            Topic: <strong className="font-semibold">{topicGroups.find((g) => g.id === selectedTopicFilter)?.title || selectedTopicFilter}</strong>
+                                            Video: <strong className="font-semibold">{topicGroups.find((g) => g.id === selectedTopicFilter)?.title || selectedTopicFilter}</strong>
                                         </span>
                                         <button
                                             type="button"
@@ -975,7 +918,7 @@ export function CurriculumView({
                             <div className="flex-1 overflow-y-auto p-2.5 space-y-2 [scrollbar-width:thin] scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
                                 {filteredTopics.length === 0 ? (
                                     <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
-                                        <p>No topics found matching your filter.</p>
+                                        <p>No videos found matching your filter.</p>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -989,7 +932,6 @@ export function CurriculumView({
                                     </div>
                                 ) : (
                                     filteredTopics.map((topic, index) => {
-                                        const isOpen = Boolean(openTopicIds[topic.id]);
                                         const isCurrentTopic = currentTopic?.id === topic.id;
                                         const primarySession = topic.sessions[0];
                                         const topicIndexFormatted = String(index + 1).padStart(2, "0");
@@ -997,123 +939,46 @@ export function CurriculumView({
                                         return (
                                             <div
                                                 key={topic.id}
-                                                className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                                                onClick={() => {
+                                                    if (primarySession) {
+                                                        handleSelectVideo(topic, primarySession);
+                                                    }
+                                                }}
+                                                className={`group flex items-center justify-between rounded-xl border p-2.5 sm:p-3 cursor-pointer transition-all ${
                                                     isCurrentTopic
-                                                        ? "border-blue-200/90 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/10 shadow-xs"
-                                                        : "border-slate-100 dark:border-slate-800/70 bg-white dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700"
+                                                        ? "border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/40 shadow-xs ring-1 ring-[#1a73e8]/20"
+                                                        : "border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 hover:border-blue-200 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
                                                 }`}
                                             >
-                                                {/* Topic Header Accordion Button */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleTopicAccordion(topic.id)}
-                                                    className={`group flex w-full cursor-pointer items-center justify-between px-3.5 py-3 text-left transition-colors ${
-                                                        isCurrentTopic
-                                                            ? "bg-blue-50/40 dark:bg-blue-950/20"
-                                                            : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-2.5 min-w-0">
-                                                        <span
-                                                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                    <span
+                                                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                                                            isCurrentTopic
+                                                                ? "bg-[#1a73e8] text-white shadow-xs"
+                                                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-950/70 group-hover:text-[#1a73e8]"
+                                                        }`}
+                                                    >
+                                                        {topicIndexFormatted}
+                                                    </span>
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3
+                                                            className={`truncate text-xs sm:text-sm font-semibold transition-colors ${
                                                                 isCurrentTopic
-                                                                    ? "bg-[#1a73e8] text-white shadow-xs"
-                                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-950/70 group-hover:text-[#1a73e8]"
+                                                                    ? "text-[#1a73e8] dark:text-blue-300"
+                                                                    : "text-slate-900 dark:text-slate-100 group-hover:text-[#1a73e8] dark:group-hover:text-blue-400"
                                                             }`}
                                                         >
-                                                            {topicIndexFormatted}
-                                                        </span>
-                                                        <div className="min-w-0">
-                                                            <h3 className="truncate text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#1a73e8] dark:group-hover:text-blue-400 transition-colors">
-                                                                {topic.title}
-                                                            </h3>
-                                                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                                                                2 Lessons • {primarySession?.durationMinutes || 45} mins
-                                                            </p>
-                                                        </div>
+                                                            {topic.title}
+                                                        </h3>
+                                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                                            {primarySession?.durationMinutes || 45} mins
+                                                        </p>
                                                     </div>
+                                                </div>
 
-                                                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                                                        <span
-                                                            className={`transform transition-transform duration-200 text-slate-400 dark:text-slate-500 ${
-                                                                isOpen ? "rotate-180 text-[#1a73e8] dark:text-blue-400" : ""
-                                                            }`}
-                                                        >
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        </span>
-                                                    </div>
-                                                </button>
-
-                                                {/* Sub-items (Video, PDF, Question Bank) */}
-                                                {isOpen && primarySession && (
-                                                    <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/60 space-y-1.5">
-                                                        {/* Sub-item: Video */}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleSelectSubItem(topic, primarySession, "video")
-                                                            }
-                                                            className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left transition-all ${
-                                                                isCurrentTopic && selectedSubItem === "video"
-                                                                    ? "bg-blue-50 dark:bg-blue-950/70 text-[#1a73e8] dark:text-blue-300 font-semibold ring-1 ring-[#1a73e8]/30 shadow-xs"
-                                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-medium"
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center gap-2.5">
-                                                                <span
-                                                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-                                                                        isCurrentTopic && selectedSubItem === "video"
-                                                                            ? "bg-[#1a73e8] text-white"
-                                                                            : "bg-blue-100/70 dark:bg-blue-950/60 text-[#1a73e8] dark:text-blue-400 group-hover:bg-blue-100"
-                                                                    }`}
-                                                                >
-                                                                    <Video className="h-3.5 w-3.5" />
-                                                                </span>
-                                                                <div>
-                                                                    <p className="text-xs sm:text-sm leading-tight">Video</p>
-                                                                    <p className="text-[10px] text-slate-400 font-normal">
-                                                                        {primarySession?.durationMinutes || 45} mins • HD
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            {isCurrentTopic && selectedSubItem === "video" && (
-                                                                <span className="flex h-1.5 w-1.5 rounded-full bg-[#1a73e8] animate-ping" />
-                                                            )}
-                                                        </button>
-
-                                                        {/* Sub-item: Notes */}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleSelectSubItem(topic, primarySession, "pdf")
-                                                            }
-                                                            className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left transition-all ${
-                                                                isCurrentTopic && selectedSubItem === "pdf"
-                                                                    ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 font-semibold ring-1 ring-rose-400/30 shadow-xs"
-                                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-medium"
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center gap-2.5">
-                                                                <span
-                                                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-                                                                        isCurrentTopic && selectedSubItem === "pdf"
-                                                                            ? "bg-rose-600 text-white"
-                                                                            : "bg-rose-100/70 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 group-hover:bg-rose-100"
-                                                                    }`}
-                                                                >
-                                                                    <FileText className="h-3.5 w-3.5" />
-                                                                </span>
-                                                                <div>
-                                                                    <p className="text-xs sm:text-sm leading-tight">Notes</p>
-                                                                    <p className="text-[10px] text-slate-400 font-normal">
-                                                                        {primarySession?.materials?.[0]?.fileSize || "2.8 MB"} • Handout
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            {isCurrentTopic && selectedSubItem === "pdf" && (
-                                                                <span className="flex h-1.5 w-1.5 rounded-full bg-rose-600 animate-ping" />
-                                                            )}
-                                                        </button>
+                                                {isCurrentTopic && (
+                                                    <div className="shrink-0 ml-2">
+                                                        <span className="flex h-2 w-2 rounded-full bg-[#1a73e8] dark:bg-blue-400" />
                                                     </div>
                                                 )}
                                             </div>
