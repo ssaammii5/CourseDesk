@@ -130,10 +130,10 @@ const DEFAULT_SAMPLE_MODULES = [
                 meetingId: "",
                 meetingPasscode: "",
                 scheduledAtUtc: "2024-01-20T14:00:00Z",
-                durationMinutes: 50,
+                durationMinutes: 75,
                 videoUrl: "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
                 videoProvider: "youtube",
-                videoDurationMinutes: 50,
+                videoDurationMinutes: 75,
                 status: "Completed",
                 createdAtUtc: "2024-01-15T10:00:00Z",
                 materials: [
@@ -400,36 +400,98 @@ export function CurriculumView({
 
     const parsedVideo = currentSession?.videoUrl ? parseVideoUrl(currentSession.videoUrl) : null;
 
-    // Watched videos state (persisted to localStorage)
-    const [watchedSessionIds, setWatchedSessionIds] = useState<number[]>(() => {
+    // Watched videos records (persisted to localStorage)
+    const [watchRecords, setWatchRecords] = useState<Record<number, { isFullyWatched: boolean; watchedSeconds: number }>>(() => {
         if (typeof window !== "undefined") {
             try {
-                const saved = localStorage.getItem(`coursedesk_watched_${courseId || 1}`);
+                const saved = localStorage.getItem(`coursedesk_watch_records_${courseId || 1}`);
                 if (saved) return JSON.parse(saved);
             } catch {
                 // ignore
             }
         }
-        return [101]; // First session marked as watched by default
+        return {
+            101: { isFullyWatched: true, watchedSeconds: 2700 }, // Lecture 1 fully watched
+        };
     });
 
-    const toggleSessionWatched = (sessionId: number) => {
-        setWatchedSessionIds((prev) => {
-            const next = prev.includes(sessionId)
-                ? prev.filter((id) => id !== sessionId)
-                : [...prev, sessionId];
-            if (typeof window !== "undefined") {
-                try {
-                    localStorage.setItem(`coursedesk_watched_${courseId || 1}`, JSON.stringify(next));
-                } catch {
-                    // ignore
-                }
-            }
-            return next;
-        });
+    const [watchPopoverOpen, setWatchPopoverOpen] = useState(false);
+    const [activeWatchMode, setActiveWatchMode] = useState<"full" | "timestamp">("full");
+    const [tempTimestampSeconds, setTempTimestampSeconds] = useState<number>(1350);
+
+    const currentWatchRecord = currentSession ? watchRecords[currentSession.id] : undefined;
+    const currentTotalSeconds = (currentSession?.durationMinutes || 45) * 60;
+
+    const handleSetFullyWatched = () => {
+        if (!currentSession) return;
+        const totalSecs = (currentSession.durationMinutes || 45) * 60;
+        const updated = {
+            ...watchRecords,
+            [currentSession.id]: {
+                isFullyWatched: true,
+                watchedSeconds: totalSecs,
+            },
+        };
+        setWatchRecords(updated);
+        if (typeof window !== "undefined") {
+            try {
+                localStorage.setItem(`coursedesk_watch_records_${courseId || 1}`, JSON.stringify(updated));
+            } catch {}
+        }
+        setWatchPopoverOpen(false);
     };
 
-    const isCurrentWatched = currentSession ? watchedSessionIds.includes(currentSession.id) : false;
+    const handleSaveTimestampProgress = (seconds: number) => {
+        if (!currentSession) return;
+        const totalSecs = (currentSession.durationMinutes || 45) * 60;
+        const clamped = Math.max(0, Math.min(seconds, totalSecs));
+        const isFull = clamped >= totalSecs;
+        const updated = {
+            ...watchRecords,
+            [currentSession.id]: {
+                isFullyWatched: isFull,
+                watchedSeconds: clamped,
+            },
+        };
+        setWatchRecords(updated);
+        if (typeof window !== "undefined") {
+            try {
+                localStorage.setItem(`coursedesk_watch_records_${courseId || 1}`, JSON.stringify(updated));
+            } catch {}
+        }
+        setWatchPopoverOpen(false);
+    };
+
+    const handleMarkUnwatched = () => {
+        if (!currentSession) return;
+        const updated = { ...watchRecords };
+        delete updated[currentSession.id];
+        setWatchRecords(updated);
+        if (typeof window !== "undefined") {
+            try {
+                localStorage.setItem(`coursedesk_watch_records_${courseId || 1}`, JSON.stringify(updated));
+            } catch {}
+        }
+        setWatchPopoverOpen(false);
+    };
+
+    const toggleWatchPopover = () => {
+        if (!watchPopoverOpen && currentSession) {
+            const rec = watchRecords[currentSession.id];
+            const totalSecs = (currentSession.durationMinutes || 45) * 60;
+            if (rec?.isFullyWatched) {
+                setActiveWatchMode("full");
+                setTempTimestampSeconds(totalSecs);
+            } else if (rec?.watchedSeconds) {
+                setActiveWatchMode("timestamp");
+                setTempTimestampSeconds(rec.watchedSeconds);
+            } else {
+                setActiveWatchMode("full");
+                setTempTimestampSeconds(Math.round(totalSecs / 2));
+            }
+        }
+        setWatchPopoverOpen((prev) => !prev);
+    };
 
     // Personal Note state per video session (persisted to localStorage)
     const [personalNotes, setPersonalNotes] = useState<Record<number, string>>(() => {
@@ -493,19 +555,28 @@ export function CurriculumView({
         handleNoteChange(nextText);
     };
 
-    // Calculate dynamic watched progress
-    const watchedCount = useMemo(() => {
-        let count = 0;
+    // Calculate dynamic watched progress factoring in timestamps and full completion
+    const overallProgress = useMemo(() => {
+        let totalWatchedMinutes = 0;
+        let totalCourseMinutes = 0;
         topicGroups.forEach((g) => {
-            if (g.sessions.some((s) => watchedSessionIds.includes(s.id))) {
-                count++;
-            }
+            g.sessions.forEach((s) => {
+                const duration = s.durationMinutes || 45;
+                totalCourseMinutes += duration;
+                const record = watchRecords[s.id];
+                if (record) {
+                    if (record.isFullyWatched) {
+                        totalWatchedMinutes += duration;
+                    } else if (record.watchedSeconds) {
+                        totalWatchedMinutes += Math.min(duration, record.watchedSeconds / 60);
+                    }
+                }
+            });
         });
-        return count;
-    }, [topicGroups, watchedSessionIds]);
-
-    const totalTopicsCount = topicGroups.length || 5;
-    const progressPercent = Math.min(100, Math.round((watchedCount / totalTopicsCount) * 100));
+        const percent = totalCourseMinutes > 0 ? Math.min(100, Math.round((totalWatchedMinutes / totalCourseMinutes) * 100)) : 0;
+        const completedCount = topicGroups.filter((g) => g.sessions.some((s) => watchRecords[s.id]?.isFullyWatched)).length;
+        return { percent, completedCount, totalCount: topicGroups.length };
+    }, [topicGroups, watchRecords]);
 
     // Counts for the playlist card header
     const totalVideoCount = useMemo(() => {
@@ -540,9 +611,15 @@ export function CurriculumView({
     };
 
     const formatVideoDuration = (durationMinutes?: number, index: number = 0) => {
-        const sampleDurations = ["45:18", "38:06", "42:25", "35:40", "48:15"];
-        if (!durationMinutes || durationMinutes === 45) {
+        const sampleDurations = ["45:18", "1:15:24", "1:02:40", "38:06", "48:15"];
+        if (!durationMinutes) {
             return sampleDurations[index % sampleDurations.length];
+        }
+        const sample = sampleDurations[index % sampleDurations.length];
+        const parts = sample.split(":");
+        const sampleMins = parts.length === 3 ? parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10) : parseInt(parts[0], 10);
+        if (Math.abs(sampleMins - durationMinutes) <= 5) {
+            return sample;
         }
         const h = Math.floor(durationMinutes / 60);
         const m = durationMinutes % 60;
@@ -605,28 +682,304 @@ export function CurriculumView({
                             )}
                         </div>
 
-                        {/* Title Below Video & Mark as Watched Button */}
-                        <div className="pt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        {/* Title Below Video & Interactive Watch Status Popover */}
+                        <div className="pt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative">
                             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">
                                 {currentTopic?.title || currentSession?.title || "Ancient Era of Bangla Literature & Charyapada"}
                             </h1>
+                            
                             {currentSession && (
-                                <button
-                                    type="button"
-                                    onClick={() => toggleSessionWatched(currentSession.id)}
-                                    className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 shadow-xs ${
-                                        isCurrentWatched
-                                            ? "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
-                                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750"
-                                    }`}
-                                >
-                                    <CheckCircle2
-                                        className={`h-4 w-4 ${
-                                            isCurrentWatched ? "text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-950" : "text-slate-400"
+                                <div className="relative shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={toggleWatchPopover}
+                                        className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-xs ${
+                                            currentWatchRecord?.isFullyWatched
+                                                ? "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                                                : currentWatchRecord && currentWatchRecord.watchedSeconds > 0
+                                                ? "bg-blue-50 dark:bg-blue-950/70 text-[#1a73e8] dark:text-blue-300 border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60"
+                                                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750"
                                         }`}
-                                    />
-                                    <span>{isCurrentWatched ? "Watched" : "Mark as Watched"}</span>
-                                </button>
+                                    >
+                                        {currentWatchRecord?.isFullyWatched ? (
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-950" />
+                                        ) : currentWatchRecord && currentWatchRecord.watchedSeconds > 0 ? (
+                                            <Clock className="h-4 w-4 text-[#1a73e8] dark:text-blue-400" />
+                                        ) : (
+                                            <CheckCircle2 className="h-4 w-4 text-slate-400" />
+                                        )}
+                                        <span>
+                                            {currentWatchRecord?.isFullyWatched
+                                                ? "Fully Watched"
+                                                : currentWatchRecord && currentWatchRecord.watchedSeconds > 0
+                                                ? `Watched till ${formatTimestamp(currentWatchRecord.watchedSeconds)}`
+                                                : "Mark Watch Progress"}
+                                        </span>
+                                        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${watchPopoverOpen ? "rotate-180" : ""}`} />
+                                    </button>
+
+                                    {/* Watch Status Popover Dialog */}
+                                    {watchPopoverOpen && (
+                                        <>
+                                            <div
+                                                className="fixed inset-0 z-40"
+                                                onClick={() => setWatchPopoverOpen(false)}
+                                            />
+                                            <div className="absolute right-0 top-full mt-2 z-50 w-80 sm:w-96 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-xl backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150">
+                                                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                                        <Clock className="h-4 w-4 text-[#1a73e8] dark:text-blue-400" />
+                                                        Update Watch Status
+                                                    </h4>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setWatchPopoverOpen(false)}
+                                                        className="rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+
+                                                {/* 2 Main Choice Buttons */}
+                                                <div className="grid grid-cols-2 gap-2 mt-3 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setActiveWatchMode("full");
+                                                            handleSetFullyWatched();
+                                                        }}
+                                                        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                                                            activeWatchMode === "full" && currentWatchRecord?.isFullyWatched
+                                                                ? "bg-emerald-600 text-white shadow-xs"
+                                                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                                                        }`}
+                                                    >
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                        <span>Fully Watched</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setActiveWatchMode("timestamp");
+                                                            if (tempTimestampSeconds === 0) {
+                                                                setTempTimestampSeconds(Math.round(currentTotalSeconds / 2));
+                                                            }
+                                                        }}
+                                                        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                                                            activeWatchMode === "timestamp" || (currentWatchRecord && !currentWatchRecord.isFullyWatched)
+                                                                ? "bg-[#1a73e8] text-white shadow-xs"
+                                                                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                                                        }`}
+                                                    >
+                                                        <Clock className="h-3.5 w-3.5" />
+                                                        <span>Till Timestamp</span>
+                                                    </button>
+                                                </div>
+
+                                                {/* Timestamp Setter: Interactive Drag Slider + Manual Inputs */}
+                                                {(activeWatchMode === "timestamp" || (currentWatchRecord && !currentWatchRecord.isFullyWatched)) && (
+                                                    <div className="mt-4 space-y-3.5">
+                                                        {/* Live Timestamp Display */}
+                                                        <div className="flex items-baseline justify-between">
+                                                            <div>
+                                                                <span className="text-xl font-bold font-mono text-[#1a73e8] dark:text-blue-400">
+                                                                    {formatTimestamp(tempTimestampSeconds)}
+                                                                </span>
+                                                                <span className="text-xs text-slate-400 font-medium ml-1.5">
+                                                                    / {formatTimestamp(currentTotalSeconds)}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                                                                {Math.round((tempTimestampSeconds / currentTotalSeconds) * 100)}% watched
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Drag & Drop Time Slider */}
+                                                        <div className="space-y-1.5">
+                                                            <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                                                <span>{currentTotalSeconds >= 3600 ? "0:00:00" : "0:00"}</span>
+                                                                <span>Drag slider to set timestamp</span>
+                                                                <span>{formatTimestamp(currentTotalSeconds)}</span>
+                                                            </div>
+                                                            <input
+                                                                type="range"
+                                                                min={0}
+                                                                max={currentTotalSeconds}
+                                                                step={1}
+                                                                value={tempTimestampSeconds}
+                                                                onChange={(e) => setTempTimestampSeconds(Number(e.target.value))}
+                                                                className="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#1a73e8]"
+                                                            />
+                                                        </div>
+
+                                                        {/* Quick Presets */}
+                                                        <div className="flex items-center gap-1.5">
+                                                            {[
+                                                                { label: "25%", sec: Math.round(currentTotalSeconds * 0.25) },
+                                                                { label: "50%", sec: Math.round(currentTotalSeconds * 0.5) },
+                                                                { label: "75%", sec: Math.round(currentTotalSeconds * 0.75) },
+                                                                { label: "90%", sec: Math.round(currentTotalSeconds * 0.9) },
+                                                            ].map((preset) => (
+                                                                <button
+                                                                    key={preset.label}
+                                                                    type="button"
+                                                                    onClick={() => setTempTimestampSeconds(preset.sec)}
+                                                                    className="flex-1 py-1 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-[#1a73e8] dark:hover:bg-blue-950/60 dark:hover:text-blue-300 transition-colors cursor-pointer"
+                                                                >
+                                                                    {preset.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+
+                                                        {/* Manual Way (Hours, Minutes & Seconds Input) */}
+                                                        {(() => {
+                                                            const hasHours = currentTotalSeconds >= 3600;
+                                                            const currentHours = Math.floor(tempTimestampSeconds / 3600);
+                                                            const currentMinutes = Math.floor((tempTimestampSeconds % 3600) / 60);
+                                                            const currentSeconds = tempTimestampSeconds % 60;
+
+                                                            return (
+                                                                <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-1.5">
+                                                                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                                                        Or enter timestamp manually:
+                                                                    </p>
+                                                                    {hasHours ? (
+                                                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                                                            {/* Hr input */}
+                                                                            <div className="flex-1 flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
+                                                                                <span className="text-[11px] text-slate-400">Hr:</span>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={0}
+                                                                                    max={Math.floor(currentTotalSeconds / 3600)}
+                                                                                    value={currentHours}
+                                                                                    onChange={(e) => {
+                                                                                        const hrs = Math.max(0, Number(e.target.value));
+                                                                                        setTempTimestampSeconds(
+                                                                                            Math.min(currentTotalSeconds, hrs * 3600 + currentMinutes * 60 + currentSeconds)
+                                                                                        );
+                                                                                    }}
+                                                                                    className="w-full text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 bg-transparent outline-none"
+                                                                                />
+                                                                            </div>
+                                                                            <span className="font-bold text-slate-400">:</span>
+                                                                            {/* Min input */}
+                                                                            <div className="flex-1 flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
+                                                                                <span className="text-[11px] text-slate-400">Min:</span>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={0}
+                                                                                    max={59}
+                                                                                    value={currentMinutes}
+                                                                                    onChange={(e) => {
+                                                                                        const mins = Math.max(0, Math.min(59, Number(e.target.value)));
+                                                                                        setTempTimestampSeconds(
+                                                                                            Math.min(currentTotalSeconds, currentHours * 3600 + mins * 60 + currentSeconds)
+                                                                                        );
+                                                                                    }}
+                                                                                    className="w-full text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 bg-transparent outline-none"
+                                                                                />
+                                                                            </div>
+                                                                            <span className="font-bold text-slate-400">:</span>
+                                                                            {/* Sec input */}
+                                                                            <div className="flex-1 flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
+                                                                                <span className="text-[11px] text-slate-400">Sec:</span>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={0}
+                                                                                    max={59}
+                                                                                    value={currentSeconds}
+                                                                                    onChange={(e) => {
+                                                                                        const secs = Math.max(0, Math.min(59, Number(e.target.value)));
+                                                                                        setTempTimestampSeconds(
+                                                                                            Math.min(currentTotalSeconds, currentHours * 3600 + currentMinutes * 60 + secs)
+                                                                                        );
+                                                                                    }}
+                                                                                    className="w-full text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 bg-transparent outline-none"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="flex-1 flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1">
+                                                                                <span className="text-[11px] text-slate-400">Min:</span>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={0}
+                                                                                    max={Math.floor(currentTotalSeconds / 60)}
+                                                                                    value={Math.floor(tempTimestampSeconds / 60)}
+                                                                                    onChange={(e) => {
+                                                                                        const mins = Math.max(0, Number(e.target.value));
+                                                                                        const secs = tempTimestampSeconds % 60;
+                                                                                        setTempTimestampSeconds(Math.min(currentTotalSeconds, mins * 60 + secs));
+                                                                                    }}
+                                                                                    className="w-full text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 bg-transparent outline-none"
+                                                                                />
+                                                                            </div>
+                                                                            <span className="font-bold text-slate-400">:</span>
+                                                                            <div className="flex-1 flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1">
+                                                                                <span className="text-[11px] text-slate-400">Sec:</span>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={0}
+                                                                                    max={59}
+                                                                                    value={tempTimestampSeconds % 60}
+                                                                                    onChange={(e) => {
+                                                                                        const secs = Math.max(0, Math.min(59, Number(e.target.value)));
+                                                                                        const mins = Math.floor(tempTimestampSeconds / 60);
+                                                                                        setTempTimestampSeconds(Math.min(currentTotalSeconds, mins * 60 + secs));
+                                                                                    }}
+                                                                                    className="w-full text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 bg-transparent outline-none"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })()}
+
+                                                        {/* Action Buttons */}
+                                                        <div className="flex items-center gap-2 pt-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleSaveTimestampProgress(tempTimestampSeconds)}
+                                                                className="flex-1 rounded-xl bg-[#1a73e8] py-2 text-xs font-semibold text-white hover:bg-blue-600 shadow-xs transition-colors cursor-pointer"
+                                                            >
+                                                                Save Timestamp ({formatTimestamp(tempTimestampSeconds)})
+                                                            </button>
+                                                            {currentWatchRecord && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleMarkUnwatched}
+                                                                    className="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 hover:border-red-200 dark:hover:text-red-400 transition-colors cursor-pointer"
+                                                                    title="Reset to unwatched"
+                                                                >
+                                                                    Reset
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* If fully watched, provide reset option */}
+                                                {activeWatchMode === "full" && currentWatchRecord?.isFullyWatched && (
+                                                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
+                                                        <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                                                            <CheckCircle2 className="h-3.5 w-3.5" /> 100% Complete
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleMarkUnwatched}
+                                                            className="text-red-500 hover:underline cursor-pointer"
+                                                        >
+                                                            Mark as Unwatched
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
 
@@ -680,7 +1033,15 @@ export function CurriculumView({
                                         <div className="mt-4 flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100 dark:border-slate-800 text-xs sm:text-sm">
                                             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-3 py-1 font-medium text-[#1a73e8] dark:text-blue-400">
                                                 <Clock className="h-3.5 w-3.5" />
-                                                {currentSession?.durationMinutes || 45} Minutes
+                                                {(() => {
+                                                    const mins = currentSession?.durationMinutes || 45;
+                                                    const h = Math.floor(mins / 60);
+                                                    const m = mins % 60;
+                                                    if (h > 0) {
+                                                        return m > 0 ? `${h} hr ${m} mins` : `${h} hr`;
+                                                    }
+                                                    return `${mins} Minutes`;
+                                                })()}
                                             </span>
                                             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400">
                                                 <CheckCircle2 className="h-3.5 w-3.5" />
@@ -1043,7 +1404,7 @@ export function CurriculumView({
                                         </span>
                                     </div>
                                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                        Progress: <strong className="font-semibold text-slate-700 dark:text-slate-300">{progressPercent}% ({watchedCount}/{totalTopicsCount})</strong>
+                                        Progress: <strong className="font-semibold text-slate-700 dark:text-slate-300">{overallProgress.percent}% ({overallProgress.completedCount}/{overallProgress.totalCount} completed)</strong>
                                     </div>
                                 </div>
 
@@ -1051,7 +1412,7 @@ export function CurriculumView({
                                 <div className="mt-2 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div
                                         className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-600 transition-all duration-500"
-                                        style={{ width: `${Math.max(progressPercent, 5)}%` }}
+                                        style={{ width: `${Math.max(overallProgress.percent, 5)}%` }}
                                     />
                                 </div>
 
@@ -1146,7 +1507,15 @@ export function CurriculumView({
                                     filteredTopics.map((topic, index) => {
                                         const isCurrentTopic = currentTopic?.id === topic.id;
                                         const primarySession = topic.sessions[0];
-                                        const isWatched = primarySession ? watchedSessionIds.includes(primarySession.id) : false;
+                                        const record = primarySession ? watchRecords[primarySession.id] : undefined;
+                                        const isFullyWatched = Boolean(record?.isFullyWatched);
+                                        const watchedSecs = record?.watchedSeconds || 0;
+                                        const totalSessionSecs = (primarySession?.durationMinutes || 45) * 60;
+                                        const progressPercentWatched = isFullyWatched
+                                            ? 100
+                                            : watchedSecs > 0
+                                            ? Math.min(100, Math.round((watchedSecs / totalSessionSecs) * 100))
+                                            : 0;
                                         const thumbnailUrl = getSessionThumbnail(primarySession, index);
                                         const durationText = formatVideoDuration(primarySession?.durationMinutes, index);
 
@@ -1168,8 +1537,10 @@ export function CurriculumView({
                                                 <div className="w-4 shrink-0 text-center">
                                                     {isCurrentTopic ? (
                                                         <Play className="h-3 w-3 text-[#1a73e8] dark:text-blue-400 fill-current mx-auto" />
-                                                    ) : isWatched ? (
+                                                    ) : isFullyWatched ? (
                                                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-950 mx-auto" />
+                                                    ) : watchedSecs > 0 ? (
+                                                        <Clock className="h-3 w-3 text-[#1a73e8] dark:text-blue-400 mx-auto" />
                                                     ) : (
                                                         <span className="text-xs font-normal text-slate-400 dark:text-slate-500">
                                                             {index + 1}
@@ -1177,7 +1548,7 @@ export function CurriculumView({
                                                     )}
                                                 </div>
 
-                                                {/* Thumbnail with Duration Pill and Watched badge */}
+                                                {/* Thumbnail with Duration Pill, Watched Badge, and Bottom Progress Bar */}
                                                 <div className="relative shrink-0 w-28 sm:w-32 aspect-video rounded-lg overflow-hidden bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
                                                     <img
                                                         src={thumbnailUrl}
@@ -1185,17 +1556,39 @@ export function CurriculumView({
                                                         className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                         loading="lazy"
                                                     />
-                                                    {/* Watched badge on top-left of thumbnail */}
-                                                    {isWatched && (
+                                                    
+                                                    {/* Fully Watched badge */}
+                                                    {isFullyWatched && (
                                                         <span className="absolute top-1 left-1 flex items-center gap-0.5 rounded bg-emerald-600/90 backdrop-blur-2xs px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-xs">
                                                             <CheckCircle2 className="h-2.5 w-2.5" />
                                                             Watched
                                                         </span>
                                                     )}
-                                                    {/* Duration pill in bottom-right corner (matching reference screenshot) */}
-                                                    <span className="absolute bottom-1 right-1 rounded bg-black/85 backdrop-blur-2xs px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-tight leading-none shadow-xs">
+
+                                                    {/* Watched till Timestamp badge */}
+                                                    {!isFullyWatched && watchedSecs > 0 && (
+                                                        <span className="absolute top-1 left-1 flex items-center gap-0.5 rounded bg-blue-600/90 backdrop-blur-2xs px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-xs">
+                                                            <Clock className="h-2.5 w-2.5" />
+                                                            {formatTimestamp(watchedSecs)}
+                                                        </span>
+                                                    )}
+
+                                                    {/* Duration pill in bottom-right corner */}
+                                                    <span className="absolute bottom-1.5 right-1 rounded bg-black/85 backdrop-blur-2xs px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-tight leading-none shadow-xs">
                                                         {durationText}
                                                     </span>
+
+                                                    {/* YouTube style Red/Emerald Watch Progress Bar at bottom of thumbnail */}
+                                                    {progressPercentWatched > 0 && (
+                                                        <div className="absolute bottom-0 inset-x-0 h-1 bg-black/60">
+                                                            <div
+                                                                className={`h-full transition-all duration-300 ${
+                                                                    isFullyWatched ? "bg-emerald-500" : "bg-red-500"
+                                                                }`}
+                                                                style={{ width: `${progressPercentWatched}%` }}
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Title & Channel / Course Details */}
