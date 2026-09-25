@@ -1,28 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+    Bold,
     BookOpen,
     Check,
     CheckCircle2,
     ChevronDown,
     Clock,
+    Code,
     Copy,
     Download,
+    Eraser,
     ExternalLink,
     FileEdit,
     FileSpreadsheet,
     FileText,
     Filter,
+    Heading1,
+    Heading2,
     HelpCircle,
+    Highlighter,
+    Italic,
+    List,
+    ListOrdered,
     MessageCircle,
     Minimize2,
     Play,
     PlayCircle,
+    Quote,
+    Redo,
     Search,
     Share2,
     Star,
+    Strikethrough,
+    Trash2,
+    Underline,
+    Undo,
     Video,
     X,
 } from "lucide-react";
@@ -495,6 +510,9 @@ export function CurriculumView({
     };
 
     // Personal Note state per video session (persisted to localStorage)
+    const editorRef = useRef<HTMLDivElement>(null);
+    const lastSessionIdRef = useRef<number | null>(null);
+
     const [personalNotes, setPersonalNotes] = useState<Record<number, string>>(() => {
         if (typeof window !== "undefined") {
             try {
@@ -505,16 +523,35 @@ export function CurriculumView({
             }
         }
         return {
-            101: "Key revision notes on Ancient Era & Charyapada:\n- Discovered in Nepal Royal Library in 1907 by Haraprasad Shastri.\n- Oldest preserved specimen of Bengali language and literature.\n- Major poets: Luipa, Kanhapa, Shabarpa.\n- Review question bank before weekly mock test.",
+            101: "<p><strong>Key revision notes on Ancient Era &amp; Charyapada:</strong></p><ul><li>Discovered in Nepal Royal Library in 1907 by Haraprasad Shastri.</li><li>Oldest preserved specimen of Bengali language and literature.</li><li>Major poets: Luipa, Kanhapa, Shabarpa.</li><li>Review question bank before weekly mock test.</li></ul>",
         };
     });
 
     const [noteSavedFeedback, setNoteSavedFeedback] = useState(false);
     const [noteCopied, setNoteCopied] = useState(false);
 
-    const handleNoteChange = (text: string) => {
+    // Sync editor HTML when switching session or activeTab
+    useEffect(() => {
+        if (!editorRef.current || !currentSession) return;
+        if (lastSessionIdRef.current !== currentSession.id) {
+            lastSessionIdRef.current = currentSession.id;
+            const rawNote = personalNotes[currentSession.id] || "";
+            const htmlContent =
+                rawNote.includes("<") && rawNote.includes(">")
+                    ? rawNote
+                    : rawNote
+                    ? rawNote
+                          .split("\n\n")
+                          .map((para) => `<p>${para.replace(/\n/g, "<br/>")}</p>`)
+                          .join("")
+                    : "";
+            editorRef.current.innerHTML = htmlContent;
+        }
+    }, [currentSession?.id, activeTab, personalNotes]);
+
+    const handleNoteChange = (html: string) => {
         if (!currentSession) return;
-        const updated = { ...personalNotes, [currentSession.id]: text };
+        const updated = { ...personalNotes, [currentSession.id]: html };
         setPersonalNotes(updated);
         if (typeof window !== "undefined") {
             try {
@@ -527,8 +564,17 @@ export function CurriculumView({
         setTimeout(() => setNoteSavedFeedback(false), 2000);
     };
 
+    const executeFormat = (command: string, value: string | undefined = undefined) => {
+        if (!editorRef.current) return;
+        editorRef.current.focus();
+        document.execCommand(command, false, value);
+        if (currentSession) {
+            handleNoteChange(editorRef.current.innerHTML);
+        }
+    };
+
     const copyNoteToClipboard = () => {
-        const text = currentSession ? (personalNotes[currentSession.id] || "") : "";
+        const text = editorRef.current?.innerText || (currentSession ? personalNotes[currentSession.id] || "" : "");
         if (!text) return;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(text);
@@ -538,7 +584,7 @@ export function CurriculumView({
     };
 
     const downloadNote = () => {
-        const text = currentSession ? (personalNotes[currentSession.id] || "") : "";
+        const text = editorRef.current?.innerText || (currentSession ? personalNotes[currentSession.id] || "" : "");
         const cleanTitle = (currentTopic?.title || currentSession?.title || "lecture-note").replace(/[^a-zA-Z0-9_-]/g, "_");
         const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
@@ -547,13 +593,6 @@ export function CurriculumView({
         a.download = `${cleanTitle}_note.txt`;
         a.click();
         URL.revokeObjectURL(url);
-    };
-
-    const insertNoteSnippet = (snippet: string) => {
-        if (!currentSession) return;
-        const prevText = personalNotes[currentSession.id] || "";
-        const nextText = prevText ? `${prevText}\n${snippet}` : snippet;
-        handleNoteChange(nextText);
     };
 
     // Calculate dynamic watched progress factoring in timestamps and full completion
@@ -1238,10 +1277,10 @@ export function CurriculumView({
                                             <div>
                                                 <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
                                                     <FileEdit className="h-4.5 w-4.5 text-[#1a73e8] dark:text-blue-400" />
-                                                    Personal Study Notes
+                                                    Personal Note
                                                 </h3>
                                                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                                                    Private notes for <strong className="text-slate-700 dark:text-slate-300">{currentTopic?.title || currentSession?.title}</strong>. Auto-saved to your browser.
+                                                    Private notes auto-saved to your browser.
                                                 </p>
                                             </div>
 
@@ -1282,40 +1321,195 @@ export function CurriculumView({
                                             </div>
                                         </div>
 
-                                        {/* Quick Insert Snippet Chips */}
-                                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                                            <span className="text-gray-400 dark:text-slate-500 font-medium">Quick insert:</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => insertNoteSnippet(`• [Key Takeaway]: `)}
-                                                className="rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1a73e8] dark:text-blue-300 border border-blue-100 dark:border-blue-900/60 px-2.5 py-1 font-medium hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors cursor-pointer"
-                                            >
-                                                + Key Takeaway
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => insertNoteSnippet(`• [Timestamp 00:00]: `)}
-                                                className="rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/60 px-2.5 py-1 font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors cursor-pointer"
-                                            >
-                                                + Timestamp
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => insertNoteSnippet(`• [Exam Point]: `)}
-                                                className="rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-900/60 px-2.5 py-1 font-medium hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors cursor-pointer"
-                                            >
-                                                + Exam Question / Point
-                                            </button>
-                                        </div>
+                                        {/* Rich Text Editor Container */}
+                                        <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus-within:border-[#1a73e8] dark:focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-[#1a73e8] transition-all overflow-hidden shadow-2xs">
+                                            {/* Formatting Toolbar */}
+                                            <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-50/80 dark:bg-slate-800/60 border-b border-gray-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                                                {/* Text Styles */}
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("bold");
+                                                    }}
+                                                    title="Bold (Ctrl+B)"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Bold className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("italic");
+                                                    }}
+                                                    title="Italic (Ctrl+I)"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Italic className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("underline");
+                                                    }}
+                                                    title="Underline (Ctrl+U)"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Underline className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("strikeThrough");
+                                                    }}
+                                                    title="Strikethrough"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Strikethrough className="h-4 w-4" />
+                                                </button>
 
-                                        {/* Note Editor Textarea */}
-                                        <div className="relative">
-                                            <textarea
-                                                rows={9}
-                                                value={currentSession ? (personalNotes[currentSession.id] ?? "") : ""}
-                                                onChange={(e) => handleNoteChange(e.target.value)}
-                                                placeholder="Write down personal notes, important rules, timestamps, questions, or revision summaries for this lecture..."
-                                                className="w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-950/60 p-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all resize-y leading-relaxed font-sans"
+                                                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
+                                                {/* Headings */}
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("formatBlock", "<h1>");
+                                                    }}
+                                                    title="Heading 1"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Heading1 className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("formatBlock", "<h2>");
+                                                    }}
+                                                    title="Heading 2"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Heading2 className="h-4 w-4" />
+                                                </button>
+
+                                                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
+                                                {/* Lists */}
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("insertUnorderedList");
+                                                    }}
+                                                    title="Bullet List"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <List className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("insertOrderedList");
+                                                    }}
+                                                    title="Numbered List"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <ListOrdered className="h-4 w-4" />
+                                                </button>
+
+                                                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
+                                                {/* Quotes, Code, Highlight */}
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("formatBlock", "<blockquote>");
+                                                    }}
+                                                    title="Quote block"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Quote className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("formatBlock", "<pre>");
+                                                    }}
+                                                    title="Code Block"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Code className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("hiliteColor", "#fef08a");
+                                                    }}
+                                                    title="Highlight Text"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Highlighter className="h-4 w-4" />
+                                                </button>
+
+                                                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
+                                                {/* Actions: Clear Formatting, Undo, Redo */}
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("removeFormat");
+                                                    }}
+                                                    title="Clear Formatting"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Eraser className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("undo");
+                                                    }}
+                                                    title="Undo (Ctrl+Z)"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Undo className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        executeFormat("redo");
+                                                    }}
+                                                    title="Redo (Ctrl+Y)"
+                                                    className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                    <Redo className="h-4 w-4" />
+                                                </button>
+                                            </div>
+
+                                            {/* Rich Text Editor ContentEditable Area */}
+                                            <div
+                                                ref={editorRef}
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onInput={() => {
+                                                    if (editorRef.current) {
+                                                        handleNoteChange(editorRef.current.innerHTML);
+                                                    }
+                                                }}
+                                                data-placeholder="Write down personal notes, important rules, timestamps, questions, or revision summaries for this lecture..."
+                                                className="w-full min-h-[220px] max-h-[500px] overflow-y-auto p-4 text-sm text-gray-900 dark:text-slate-100 outline-none leading-relaxed font-sans empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 dark:empty:before:text-slate-500 empty:before:pointer-events-none [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mb-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-[#1a73e8] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-slate-600 [&_blockquote]:dark:text-slate-400 [&_blockquote]:my-2 [&_pre]:bg-slate-100 [&_pre]:dark:bg-slate-800 [&_pre]:p-2 [&_pre]:rounded-md [&_pre]:font-mono [&_pre]:text-xs [&_pre]:my-2"
                                             />
                                         </div>
 
@@ -1323,14 +1517,20 @@ export function CurriculumView({
                                         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 pt-1">
                                             <div className="flex items-center gap-3">
                                                 <span>
-                                                    {currentSession && personalNotes[currentSession.id]?.trim()
-                                                        ? personalNotes[currentSession.id]!.trim().split(/\s+/).length
-                                                        : 0}{" "}
+                                                    {(() => {
+                                                        const text = editorRef.current?.innerText || (currentSession ? personalNotes[currentSession.id] || "" : "");
+                                                        const clean = text.replace(/<[^>]*>/g, "").trim();
+                                                        return clean ? clean.split(/\s+/).length : 0;
+                                                    })()}{" "}
                                                     words
                                                 </span>
                                                 <span>•</span>
                                                 <span>
-                                                    {currentSession ? (personalNotes[currentSession.id]?.length || 0) : 0} characters
+                                                    {(() => {
+                                                        const text = editorRef.current?.innerText || (currentSession ? personalNotes[currentSession.id] || "" : "");
+                                                        return text.replace(/<[^>]*>/g, "").length;
+                                                    })()}{" "}
+                                                    characters
                                                 </span>
                                             </div>
                                             {currentSession && Boolean(personalNotes[currentSession.id]?.length) && (
@@ -1338,11 +1538,15 @@ export function CurriculumView({
                                                     type="button"
                                                     onClick={() => {
                                                         if (window.confirm("Are you sure you want to clear your note for this video?")) {
+                                                            if (editorRef.current) {
+                                                                editorRef.current.innerHTML = "";
+                                                            }
                                                             handleNoteChange("");
                                                         }
                                                     }}
-                                                    className="text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer"
+                                                    className="flex items-center gap-1 text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer"
                                                 >
+                                                    <Trash2 className="h-3.5 w-3.5" />
                                                     Clear note
                                                 </button>
                                             )}
