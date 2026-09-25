@@ -21,7 +21,6 @@ import {
     PlayCircle,
     Search,
     Share2,
-    Sparkles,
     Star,
     Video,
     X,
@@ -424,16 +423,6 @@ export function CurriculumView({
             count += g.sessions.filter((s) => Boolean(s.videoUrl)).length;
         });
         return count > 0 ? count + 145 : 150; // Reference screenshot says 150 Video
-    }, [topicGroups]);
-
-    const totalFileCount = useMemo(() => {
-        let count = 0;
-        topicGroups.forEach((g) => {
-            g.sessions.forEach((s) => {
-                count += s.materials?.length || 0;
-            });
-        });
-        return count > 0 ? count + 175 : 179; // Reference screenshot says 179 File
     }, [topicGroups]);
 
     const toggleTopicAccordion = (topicId: string) => {
@@ -879,50 +868,37 @@ export function CurriculumView({
                     <div className="lg:col-span-4 sticky top-20">
                         <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg shadow-slate-200/40 dark:shadow-none overflow-hidden flex flex-col max-h-[calc(100vh-6.5rem)]">
                             {/* Card Header with Modern Gradient & Stats */}
-                            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800/90 bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1a73e8] text-white shadow-xs">
-                                            <Sparkles className="h-4 w-4" />
+                            <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800/90 bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20">
+                                {/* Total Videos & Course Progress in Same Row */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 shrink-0">
+                                        <Video className="h-3.5 w-3.5 text-[#1a73e8] dark:text-blue-400" />
+                                        <span>
+                                            <strong className="font-semibold text-slate-900 dark:text-slate-100">{totalVideoCount}</strong> Videos
                                         </span>
-                                        <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                                            Preli Class
-                                        </h2>
                                     </div>
-                                </div>
-
-                                {/* Video & File Stats Badges */}
-                                <div className="mt-3 flex items-center gap-2">
-                                    <div className="flex items-center gap-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-[#1a73e8] dark:text-blue-300 border border-blue-100 dark:border-blue-900/40">
-                                        <Video className="h-3.5 w-3.5" />
-                                        <span>{totalVideoCount} Videos</span>
+                                    <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 min-w-0">
+                                        <span className="truncate">
+                                            Progress: <strong className="font-semibold text-slate-700 dark:text-slate-300">18% (27/150)</strong>
+                                        </span>
+                                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                                        <button
+                                            type="button"
+                                            onClick={toggleExpandAll}
+                                            title={allExpanded ? "Collapse All" : "Expand All"}
+                                            className="w-[74px] text-right whitespace-nowrap text-[11px] font-medium text-slate-500 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer shrink-0"
+                                        >
+                                            {allExpanded ? "Collapse All" : "Expand All"}
+                                        </button>
                                     </div>
-                                    <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40">
-                                        <FileText className="h-3.5 w-3.5" />
-                                        <span>{totalFileCount} Files</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={toggleExpandAll}
-                                        title={allExpanded ? "Collapse All" : "Expand All"}
-                                        className="ml-auto text-[11px] font-medium text-slate-500 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
-                                    >
-                                        {allExpanded ? "Collapse All" : "Expand All"}
-                                    </button>
                                 </div>
 
                                 {/* Modern Progress Bar */}
-                                <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                                    <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                                        <span>Course Progress</span>
-                                        <span className="font-semibold text-slate-700 dark:text-slate-300">18% (27/150)</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
-                                            style={{ width: "18%" }}
-                                        />
-                                    </div>
+                                <div className="mt-2 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+                                        style={{ width: "18%" }}
+                                    />
                                 </div>
 
                                 {/* Topic Filter Dropdown & Search Controls */}
