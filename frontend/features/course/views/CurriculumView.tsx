@@ -12,6 +12,7 @@ import {
     ExternalLink,
     FileSpreadsheet,
     FileText,
+    Filter,
     HelpCircle,
     Maximize2,
     MessageCircle,
@@ -346,9 +347,7 @@ export function CurriculumView({
 
     // Active state
     const [selectedTopicId, setSelectedTopicId] = useState<string>(() => topicGroups[0]?.id || "bangla-grammar");
-    const [openTopicIds, setOpenTopicIds] = useState<Record<string, boolean>>(() => ({
-        [topicGroups[0]?.id || "bangla-grammar"]: true,
-    }));
+    const [openTopicIds, setOpenTopicIds] = useState<Record<string, boolean>>({});
     const [activeTab, setActiveTab] = useState<TabType>("video");
     const [selectedSubItem, setSelectedSubItem] = useState<"video" | "pdf" | "question-bank">("video");
     const [selectedSessionId, setSelectedSessionId] = useState<number>(() => {
@@ -364,35 +363,50 @@ export function CurriculumView({
     const [videoSpeed, setVideoSpeed] = useState<number>(1);
     const [theaterMode, setTheaterMode] = useState<boolean>(false);
 
+    // Topic filter dropdown state (default is always "all")
+    const [selectedTopicFilter, setSelectedTopicFilter] = useState<string>("all");
+
     // Sidebar search state
     const [sidebarSearch, setSidebarSearch] = useState("");
 
+    const handleTopicFilterChange = (topicId: string) => {
+        setSelectedTopicFilter(topicId);
+        // Always show as collapsed when selecting an option from menu
+        setOpenTopicIds({});
+    };
+
+    const filteredTopics = useMemo(() => {
+        let list = topicGroups;
+        if (selectedTopicFilter !== "all") {
+            list = list.filter((t) => t.id === selectedTopicFilter);
+        }
+        if (sidebarSearch.trim()) {
+            const q = sidebarSearch.toLowerCase();
+            list = list.filter(
+                (t) =>
+                    t.title.toLowerCase().includes(q) ||
+                    t.sessions.some(
+                        (s) =>
+                            s.title.toLowerCase().includes(q) ||
+                            (s.description && s.description.toLowerCase().includes(q))
+                    )
+            );
+        }
+        return list;
+    }, [topicGroups, selectedTopicFilter, sidebarSearch]);
+
     const allExpanded = useMemo(() => {
-        return topicGroups.length > 0 && topicGroups.every((t) => openTopicIds[t.id]);
-    }, [topicGroups, openTopicIds]);
+        return filteredTopics.length > 0 && filteredTopics.every((t) => openTopicIds[t.id]);
+    }, [filteredTopics, openTopicIds]);
 
     const toggleExpandAll = () => {
         const nextState = !allExpanded;
-        const newMap: Record<string, boolean> = {};
-        topicGroups.forEach((t) => {
+        const newMap: Record<string, boolean> = { ...openTopicIds };
+        filteredTopics.forEach((t) => {
             newMap[t.id] = nextState;
         });
         setOpenTopicIds(newMap);
     };
-
-    const filteredTopics = useMemo(() => {
-        if (!sidebarSearch.trim()) return topicGroups;
-        const q = sidebarSearch.toLowerCase();
-        return topicGroups.filter(
-            (t) =>
-                t.title.toLowerCase().includes(q) ||
-                t.sessions.some(
-                    (s) =>
-                        s.title.toLowerCase().includes(q) ||
-                        (s.description && s.description.toLowerCase().includes(q))
-                )
-        );
-    }, [topicGroups, sidebarSearch]);
 
     // Active topic & session
     const currentTopic = topicGroups.find((g) => g.id === selectedTopicId) || topicGroups[0];
@@ -911,33 +925,92 @@ export function CurriculumView({
                                     </div>
                                 </div>
 
-                                {/* Instant Topic Search Input */}
-                                <div className="mt-3.5 relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        value={sidebarSearch}
-                                        onChange={(e) => setSidebarSearch(e.target.value)}
-                                        placeholder="Search topics or lectures..."
-                                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/70 py-1.5 pl-9 pr-8 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all"
-                                    />
-                                    {sidebarSearch && (
+                                {/* Topic Filter Dropdown & Search Controls */}
+                                <div className="mt-3.5 space-y-2">
+                                    {/* Topic Filter Dropdown */}
+                                    <div className="relative">
+                                        <label htmlFor="sidebar-topic-filter" className="sr-only">
+                                            Topic filter
+                                        </label>
+                                        <div className="relative flex items-center">
+                                            <Filter className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#1a73e8] dark:text-blue-400" />
+                                            <select
+                                                id="sidebar-topic-filter"
+                                                value={selectedTopicFilter}
+                                                onChange={(e) => handleTopicFilterChange(e.target.value)}
+                                                className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 py-1.5 pl-8.5 pr-8 text-xs font-medium text-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all cursor-pointer shadow-xs hover:border-slate-300 dark:hover:border-slate-600"
+                                            >
+                                                <option value="all" className="dark:bg-slate-900 dark:text-slate-100">
+                                                    All
+                                                </option>
+                                                {topicGroups.map((group) => (
+                                                    <option
+                                                        key={group.id}
+                                                        value={group.id}
+                                                        className="dark:bg-slate-900 dark:text-slate-100"
+                                                    >
+                                                        {group.title}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                                        </div>
+                                    </div>
+
+                                    {/* Instant Topic Search Input */}
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={sidebarSearch}
+                                            onChange={(e) => setSidebarSearch(e.target.value)}
+                                            placeholder="Search topics or lectures..."
+                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/70 py-1.5 pl-9 pr-8 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all"
+                                        />
+                                        {sidebarSearch && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSidebarSearch("")}
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Active Topic Filter Chip if not "all" */}
+                                {selectedTopicFilter !== "all" && (
+                                    <div className="mt-2.5 flex items-center justify-between rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 px-2.5 py-1 text-[11px] text-[#1a73e8] dark:text-blue-300">
+                                        <span className="truncate">
+                                            Topic: <strong className="font-semibold">{topicGroups.find((g) => g.id === selectedTopicFilter)?.title || selectedTopicFilter}</strong>
+                                        </span>
                                         <button
                                             type="button"
-                                            onClick={() => setSidebarSearch("")}
-                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                            onClick={() => handleTopicFilterChange("all")}
+                                            className="ml-2 font-medium hover:underline text-xs text-blue-600 dark:text-blue-400 shrink-0 cursor-pointer"
                                         >
-                                            <X className="h-3 w-3" />
+                                            Show All
                                         </button>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Scrollable Topics & Lectures List */}
                             <div className="flex-1 overflow-y-auto p-2.5 space-y-2 [scrollbar-width:thin] scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
                                 {filteredTopics.length === 0 ? (
-                                    <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                                        No topics found matching &quot;{sidebarSearch}&quot;
+                                    <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                                        <p>No topics found matching your filter.</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedTopicFilter("all");
+                                                setSidebarSearch("");
+                                            }}
+                                            className="font-medium text-[#1a73e8] dark:text-blue-400 hover:underline cursor-pointer"
+                                        >
+                                            Reset filter to &quot;All&quot;
+                                        </button>
                                     </div>
                                 ) : (
                                     filteredTopics.map((topic, index) => {
