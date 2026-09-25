@@ -25,7 +25,6 @@ import {
     Italic,
     List,
     ListOrdered,
-    MessageCircle,
     Minimize2,
     Play,
     PlayCircle,
@@ -366,10 +365,6 @@ export function CurriculumView({
         return topicGroups[0]?.sessions[0]?.id || 101;
     });
 
-    // Chat drawer state for the floating button
-    const [chatOpen, setChatOpen] = useState(false);
-    const [chatDoubtText, setChatDoubtText] = useState("");
-    const [doubtSent, setDoubtSent] = useState(false);
 
     // Theater mode state for video
     const [theaterMode, setTheaterMode] = useState<boolean>(false);
@@ -1783,103 +1778,6 @@ export function CurriculumView({
                     </div>
                 </div>
             </div>
-
-            {/* Floating Action Button (matching bottom-right circular chat button) */}
-            <button
-                type="button"
-                onClick={() => setChatOpen(true)}
-                title="Ask a Question / Chat"
-                className="fixed bottom-6 right-6 z-40 flex h-13 w-13 items-center justify-center rounded-full bg-[#0070e0] text-white shadow-xl hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all"
-            >
-                <MessageCircle className="h-6 w-6" />
-            </button>
-
-            {/* Quick Doubt / Chat Drawer Modal */}
-            {chatOpen && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end sm:justify-center bg-black/40 backdrop-blur-xs p-4 sm:p-6">
-                    <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 shadow-2xl space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#0070e0]">
-                                    <MessageCircle className="h-4 w-4" />
-                                </div>
-                                <h3 className="font-semibold text-gray-900 dark:text-slate-100">
-                                    Ask Doubt / Question
-                                </h3>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setChatOpen(false)}
-                                className="rounded-full p-1 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        {doubtSent ? (
-                            <div className="py-6 text-center space-y-2">
-                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600">
-                                    <CheckCircle2 className="h-6 w-6" />
-                                </div>
-                                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                                    Question Submitted!
-                                </h4>
-                                <p className="text-xs text-gray-500 dark:text-slate-400">
-                                    The instructor and teaching assistants have received your doubt.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setDoubtSent(false);
-                                        setChatOpen(false);
-                                    }}
-                                    className="mt-3 rounded-lg bg-gray-100 dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-gray-700 dark:text-slate-200"
-                                >
-                                    Close
-                                </button>
-                            </div>
-                        ) : (
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    if (chatDoubtText.trim()) {
-                                        setDoubtSent(true);
-                                        setChatDoubtText("");
-                                    }
-                                }}
-                                className="space-y-3"
-                            >
-                                <p className="text-xs text-gray-500 dark:text-slate-400">
-                                    Topic: <span className="font-semibold text-gray-700 dark:text-slate-200">{currentTopic?.title}</span> • {currentSession?.title}
-                                </p>
-                                <textarea
-                                    rows={4}
-                                    value={chatDoubtText}
-                                    onChange={(e) => setChatDoubtText(e.target.value)}
-                                    placeholder="Type your question or doubt regarding this lecture..."
-                                    className="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 focus:border-[#0070e0] focus:ring-1 focus:ring-[#0070e0] outline-none"
-                                    required
-                                />
-                                <div className="flex justify-end gap-2 pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setChatOpen(false)}
-                                        className="rounded-lg px-4 py-2 text-xs font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="rounded-lg bg-[#0070e0] px-4 py-2 text-xs font-semibold text-white hover:bg-blue-600 shadow-sm"
-                                    >
-                                        Send Doubt
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
