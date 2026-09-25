@@ -16,7 +16,6 @@ import {
     FileText,
     Filter,
     HelpCircle,
-    Maximize2,
     MessageCircle,
     Minimize2,
     Play,
@@ -29,7 +28,7 @@ import {
 } from "lucide-react";
 import type { SessionDto, SessionMaterial } from "@/types/session";
 import type { ClassworkEntry } from "@/types";
-import { parseVideoUrl, extractYouTubeId, formatTimestamp, PLAYBACK_SPEEDS } from "@/lib/utils/video";
+import { parseVideoUrl, extractYouTubeId, formatTimestamp } from "@/lib/utils/video";
 
 export interface CurriculumViewProps {
     sessions?: SessionDto[];
@@ -41,7 +40,7 @@ export interface CurriculumViewProps {
     classwork?: ClassworkEntry[];
 }
 
-type TabType = "overview" | "video" | "file" | "notes";
+type TabType = "overview" | "file" | "notes";
 
 interface LectureTopicGroup {
     id: string;
@@ -347,7 +346,7 @@ export function CurriculumView({
 
     // Active state
     const [selectedTopicId, setSelectedTopicId] = useState<string>(() => topicGroups[0]?.id || "ancient-bangla-literature");
-    const [activeTab, setActiveTab] = useState<TabType>("video");
+    const [activeTab, setActiveTab] = useState<TabType>("overview");
     const [selectedSessionId, setSelectedSessionId] = useState<number>(() => {
         return topicGroups[0]?.sessions[0]?.id || 101;
     });
@@ -357,9 +356,11 @@ export function CurriculumView({
     const [chatDoubtText, setChatDoubtText] = useState("");
     const [doubtSent, setDoubtSent] = useState(false);
 
-    // Speed and theater state for video
-    const [videoSpeed, setVideoSpeed] = useState<number>(1);
+    // Theater mode state for video
     const [theaterMode, setTheaterMode] = useState<boolean>(false);
+
+    // YouTube description style expandable state for Overview
+    const [isOverviewExpanded, setIsOverviewExpanded] = useState<boolean>(false);
 
     // Topic filter dropdown state (default is always "all")
     const [selectedTopicFilter, setSelectedTopicFilter] = useState<string>("all");
@@ -590,7 +591,6 @@ export function CurriculumView({
     const handleSelectVideo = (topic: LectureTopicGroup, session: SessionDto) => {
         setSelectedTopicId(topic.id);
         setSelectedSessionId(session.id);
-        setActiveTab("video");
     };
 
     const getSessionThumbnail = (session?: SessionDto, index: number = 0) => {
@@ -989,7 +989,6 @@ export function CurriculumView({
                                 {(
                                     [
                                         { id: "overview", label: "Overview" },
-                                        { id: "video", label: "Video" },
                                         { id: "file", label: "File" },
                                         { id: "notes", label: "Personal Note" },
                                     ] as const
@@ -1018,91 +1017,67 @@ export function CurriculumView({
 
                         {/* Tab Content Panels */}
                         <div className="pt-2">
-                            {/* OVERVIEW TAB */}
+                            {/* OVERVIEW TAB (Whole Card - YouTube Description Style) */}
                             {activeTab === "overview" && (
-                                <div className="space-y-6">
-                                    <div className="rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                                        <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-2">
-                                            About this Lecture
-                                        </h3>
-                                        <p className="text-sm leading-relaxed text-gray-600 dark:text-slate-300">
-                                            {currentSession?.description ||
-                                                "প্রাচীন যুগের সাহিত্যের প্রধান বৈশিষ্ট্য হলো ব্যক্তি ও সমাজজীবন প্রধান, ধর্ম গৌণ। বাংলা সাহিত্যের সূচনা যুগ, চর্যাপদ এবং প্রাচীন যুগের ইতিহাস ও সাহিত্যকর্মের বিস্তারিত আলোচনা।"}
-                                        </p>
+                                <div
+                                    onClick={() => {
+                                        if (!isOverviewExpanded) {
+                                            setIsOverviewExpanded(true);
+                                        }
+                                    }}
+                                    className={`group rounded-2xl bg-slate-100/90 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 p-4 sm:p-5 transition-all duration-200 ${
+                                        !isOverviewExpanded ? "cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800" : ""
+                                    }`}
+                                >
 
-                                        <div className="mt-4 flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100 dark:border-slate-800 text-xs sm:text-sm">
-                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-3 py-1 font-medium text-[#1a73e8] dark:text-blue-400">
-                                                <Clock className="h-3.5 w-3.5" />
-                                                {(() => {
-                                                    const mins = currentSession?.durationMinutes || 45;
-                                                    const h = Math.floor(mins / 60);
-                                                    const m = mins % 60;
-                                                    if (h > 0) {
-                                                        return m > 0 ? `${h} hr ${m} mins` : `${h} hr`;
-                                                    }
-                                                    return `${mins} Minutes`;
-                                                })()}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400">
-                                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                                {currentSession?.status || "Completed"}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-slate-800 px-3 py-1 font-medium text-gray-600 dark:text-slate-400">
-                                                Video: {currentTopic?.title || "Ancient Era of Bangla Literature & Charyapada"}
-                                            </span>
-                                        </div>
-                                    </div>
 
-                                    {/* Key Topics Covered */}
-                                    <div className="rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                                        <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-3">
-                                            Key Topics Covered
-                                        </h3>
-                                        <ul className="space-y-2.5 text-sm text-gray-600 dark:text-slate-300">
-                                            <li className="flex items-start gap-2.5">
-                                                <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
-                                                    ✓
-                                                </span>
-                                                <span>বাংলা ভাষার উদ্ভব ও বিকাশ এবং প্রাচীন যুগের বৈশিষ্ট্য বিশ্লেষণ</span>
-                                            </li>
-                                            <li className="flex items-start gap-2.5">
-                                                <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
-                                                    ✓
-                                                </span>
-                                                <span>চর্যাপদ আবিষ্কার, পুঁথি উদ্ধার, হরপ্রসাদ শাস্ত্রী ও পদকর্তাগণ</span>
-                                            </li>
-                                            <li className="flex items-start gap-2.5">
-                                                <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
-                                                    ✓
-                                                </span>
-                                                <span>প্রাচীন যুগের সমাজ, ধর্মীয় দৃষ্টিভঙ্গি এবং ছন্দ-অলঙ্কার</span>
-                                            </li>
-                                            <li className="flex items-start gap-2.5">
-                                                <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
-                                                    ✓
-                                                </span>
-                                                <span>ব্যাংক ও বিসিএস প্রিলিমিনারি পরীক্ষার গুরুত্বপূর্ণ প্রশ্নোত্তর</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            )}
+                                    {/* Main Description Text */}
+                                    <p
+                                        className={`text-sm sm:text-[14.5px] leading-relaxed text-slate-700 dark:text-slate-300 transition-all ${
+                                            !isOverviewExpanded ? "line-clamp-2" : ""
+                                        }`}
+                                    >
+                                        {currentSession?.description ||
+                                            "প্রাচীন যুগের সাহিত্যের প্রধান বৈশিষ্ট্য হলো ব্যক্তি ও সমাজজীবন প্রধান, ধর্ম গৌণ। বাংলা সাহিত্যের সূচনা যুগ, চর্যাপদ এবং প্রাচীন যুগের ইতিহাস ও সাহিত্যকর্মের বিস্তারিত আলোচনা।"}
+                                    </p>
 
-                            {/* VIDEO TAB */}
-                            {activeTab === "video" && (
-                                <div className="space-y-4">
-                                    {/* Chapters / Markers */}
-                                    <div className="rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-                                                Video Chapters &amp; Timestamps
-                                            </h3>
-                                            <span className="text-xs text-gray-500 dark:text-slate-400">
-                                                Click any chapter to navigate
-                                            </span>
-                                        </div>
+                                    {/* Expanded Content (Topics & Chapters) */}
+                                    {isOverviewExpanded && (
+                                        <div className="mt-4 pt-4 border-t border-slate-200/80 dark:border-slate-700/80 space-y-4 animate-in fade-in duration-150">
+                                            {/* Key Topics Covered */}
+                                            <div>
+                                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                                                    Key Topics Covered
+                                                </h4>
+                                                <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                                                    <li className="flex items-start gap-2.5">
+                                                        <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
+                                                            ✓
+                                                        </span>
+                                                        <span>বাংলা ভাষার উদ্ভব ও বিকাশ এবং প্রাচীন যুগের বৈশিষ্ট্য বিশ্লেষণ</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2.5">
+                                                        <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
+                                                            ✓
+                                                        </span>
+                                                        <span>চর্যাপদ আবিষ্কার, পুঁথি উদ্ধার, হরপ্রসাদ শাস্ত্রী ও পদকর্তাগণ</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2.5">
+                                                        <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
+                                                            ✓
+                                                        </span>
+                                                        <span>প্রাচীন যুগের সমাজ, ধর্মীয় দৃষ্টিভঙ্গি এবং ছন্দ-অলঙ্কার</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2.5">
+                                                        <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#1a73e8] dark:text-blue-300 text-xs">
+                                                            ✓
+                                                        </span>
+                                                        <span>ব্যাংক ও বিসিএস প্রিলিমিনারি পরীক্ষার গুরুত্বপূর্ণ প্রশ্নোত্তর</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
 
-                                        <div className="space-y-2">
+                                            {/* Video Chapters / Timestamps in YouTube style */}
                                             {(currentSession?.videoMarkers && currentSession.videoMarkers.length > 0
                                                 ? currentSession.videoMarkers
                                                 : [
@@ -1111,63 +1086,51 @@ export function CurriculumView({
                                                       { id: 3, timestampSeconds: 1220, label: "প্রাচীন যুগের সমাজজীবন ও ভাষা" },
                                                       { id: 4, timestampSeconds: 2130, label: "বিগত বছরের প্রশ্ন সমাধান ও টিপস" },
                                                   ]
-                                            ).map((marker) => (
-                                                <div
-                                                    key={marker.id}
-                                                    className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-800/40 p-3 hover:bg-blue-50/50 dark:hover:bg-slate-800 transition-colors"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-950/70 text-[#1a73e8] dark:text-blue-400">
-                                                            <Play className="h-3.5 w-3.5 fill-current" />
-                                                        </span>
-                                                        <span className="text-sm font-medium text-gray-800 dark:text-slate-200">
-                                                            {marker.label}
-                                                        </span>
+                                            ).length > 0 && (
+                                                <div className="pt-2">
+                                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                                                        Timestamps
+                                                    </h4>
+                                                    <div className="space-y-1.5 text-xs sm:text-sm">
+                                                        {(currentSession?.videoMarkers && currentSession.videoMarkers.length > 0
+                                                            ? currentSession.videoMarkers
+                                                            : [
+                                                                  { id: 1, timestampSeconds: 0, label: "ভূমিকা ও প্রাচীন যুগ পরিচিতি" },
+                                                                  { id: 2, timestampSeconds: 410, label: "চর্যাপদ আবিষ্কার ও পদকর্তাগণ" },
+                                                                  { id: 3, timestampSeconds: 1220, label: "প্রাচীন যুগের সমাজজীবন ও ভাষা" },
+                                                                  { id: 4, timestampSeconds: 2130, label: "বিগত বছরের প্রশ্ন সমাধান ও টিপস" },
+                                                              ]
+                                                        ).map((m) => (
+                                                            <div key={m.id} className="flex items-baseline gap-2">
+                                                                <span className="font-mono text-xs font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline cursor-pointer">
+                                                                    {formatTimestamp(m.timestampSeconds)}
+                                                                </span>
+                                                                <span className="text-slate-700 dark:text-slate-300">
+                                                                    {m.label}
+                                                                </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                    <span className="rounded-full bg-white dark:bg-slate-900 px-2.5 py-1 font-mono text-xs font-semibold text-[#1a73e8] dark:text-blue-400 border border-gray-200 dark:border-slate-700">
-                                                        {formatTimestamp(marker.timestampSeconds)}
-                                                    </span>
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
-                                    </div>
+                                    )}
 
-                                    {/* Video Features Card */}
-                                    <div className="rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                                        <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-2">
-                                            Video Controls &amp; Playback Notes
-                                        </h3>
-                                        <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
-                                            Recorded in Full HD (1080p). You can adjust playback speed, activate subtitles, and bookmark specific sections.
-                                        </p>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="text-xs text-gray-500 font-medium mr-1">Speed:</span>
-                                            {PLAYBACK_SPEEDS.map((s) => (
-                                                <button
-                                                    key={s}
-                                                    type="button"
-                                                    onClick={() => setVideoSpeed(s)}
-                                                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                                                        videoSpeed === s
-                                                            ? "bg-[#1a73e8] text-white"
-                                                            : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700"
-                                                    }`}
-                                                >
-                                                    {s}×
-                                                </button>
-                                            ))}
-                                            <button
-                                                type="button"
-                                                onClick={() => setTheaterMode(!theaterMode)}
-                                                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
-                                            >
-                                                <Maximize2 className="h-3.5 w-3.5" />
-                                                Theater Mode
-                                            </button>
-                                        </div>
-                                    </div>
+                                    {/* YouTube Style ...more / Show less button */}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsOverviewExpanded(!isOverviewExpanded);
+                                        }}
+                                        className="mt-2.5 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-[#1a73e8] dark:hover:text-blue-400 transition-colors inline-block cursor-pointer"
+                                    >
+                                        {isOverviewExpanded ? "Show less" : "...more"}
+                                    </button>
                                 </div>
                             )}
+
+
 
                             {/* FILE TAB */}
                             {activeTab === "file" && (
