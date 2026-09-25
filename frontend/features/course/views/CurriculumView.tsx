@@ -6,7 +6,6 @@ import {
     BookOpen,
     CheckCircle2,
     ChevronDown,
-    ChevronRight,
     Clock,
     Download,
     ExternalLink,
@@ -1029,7 +1028,7 @@ export function CurriculumView({
                                                                 {topic.title}
                                                             </h3>
                                                             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                                                                3 Lessons • {primarySession?.durationMinutes || 45} mins
+                                                                2 Lessons • {primarySession?.durationMinutes || 45} mins
                                                             </p>
                                                         </div>
                                                     </div>
@@ -1077,15 +1076,12 @@ export function CurriculumView({
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-1.5">
-                                                                {isCurrentTopic && selectedSubItem === "video" && (
-                                                                    <span className="flex h-1.5 w-1.5 rounded-full bg-[#1a73e8] animate-ping" />
-                                                                )}
-                                                                <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                                                            </div>
+                                                            {isCurrentTopic && selectedSubItem === "video" && (
+                                                                <span className="flex h-1.5 w-1.5 rounded-full bg-[#1a73e8] animate-ping" />
+                                                            )}
                                                         </button>
 
-                                                        {/* Sub-item: PDF */}
+                                                        {/* Sub-item: Notes */}
                                                         <button
                                                             type="button"
                                                             onClick={() =>
@@ -1108,49 +1104,15 @@ export function CurriculumView({
                                                                     <FileText className="h-3.5 w-3.5" />
                                                                 </span>
                                                                 <div>
-                                                                    <p className="text-xs sm:text-sm leading-tight">PDF</p>
+                                                                    <p className="text-xs sm:text-sm leading-tight">Notes</p>
                                                                     <p className="text-[10px] text-slate-400 font-normal">
-                                                                        {primarySession?.materials?.[0]?.fileSize || "2.8 MB"} • Notes
+                                                                        {primarySession?.materials?.[0]?.fileSize || "2.8 MB"} • Handout
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                                                        </button>
-
-                                                        {/* Sub-item: Question Bank */}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleSelectSubItem(
-                                                                    topic,
-                                                                    primarySession,
-                                                                    "question-bank"
-                                                                )
-                                                            }
-                                                            className={`group flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left transition-all ${
-                                                                isCurrentTopic && selectedSubItem === "question-bank"
-                                                                    ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold ring-1 ring-indigo-400/30 shadow-xs"
-                                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 font-medium"
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center gap-2.5">
-                                                                <span
-                                                                    className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-                                                                        isCurrentTopic && selectedSubItem === "question-bank"
-                                                                            ? "bg-indigo-600 text-white"
-                                                                            : "bg-indigo-100/70 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100"
-                                                                    }`}
-                                                                >
-                                                                    <BookOpen className="h-3.5 w-3.5" />
-                                                                </span>
-                                                                <div>
-                                                                    <p className="text-xs sm:text-sm leading-tight">Question Bank</p>
-                                                                    <p className="text-[10px] text-slate-400 font-normal">
-                                                                        25 Questions • Test
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                                                            {isCurrentTopic && selectedSubItem === "pdf" && (
+                                                                <span className="flex h-1.5 w-1.5 rounded-full bg-rose-600 animate-ping" />
+                                                            )}
                                                         </button>
                                                     </div>
                                                 )}
