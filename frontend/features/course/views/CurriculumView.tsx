@@ -4,11 +4,14 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
     BookOpen,
+    Check,
     CheckCircle2,
     ChevronDown,
     Clock,
+    Copy,
     Download,
     ExternalLink,
+    FileEdit,
     FileSpreadsheet,
     FileText,
     Filter,
@@ -38,7 +41,7 @@ export interface CurriculumViewProps {
     classwork?: ClassworkEntry[];
 }
 
-type TabType = "overview" | "video" | "file" | "review";
+type TabType = "overview" | "video" | "file" | "notes";
 
 interface LectureTopicGroup {
     id: string;
@@ -397,6 +400,113 @@ export function CurriculumView({
 
     const parsedVideo = currentSession?.videoUrl ? parseVideoUrl(currentSession.videoUrl) : null;
 
+    // Watched videos state (persisted to localStorage)
+    const [watchedSessionIds, setWatchedSessionIds] = useState<number[]>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const saved = localStorage.getItem(`coursedesk_watched_${courseId || 1}`);
+                if (saved) return JSON.parse(saved);
+            } catch {
+                // ignore
+            }
+        }
+        return [101]; // First session marked as watched by default
+    });
+
+    const toggleSessionWatched = (sessionId: number) => {
+        setWatchedSessionIds((prev) => {
+            const next = prev.includes(sessionId)
+                ? prev.filter((id) => id !== sessionId)
+                : [...prev, sessionId];
+            if (typeof window !== "undefined") {
+                try {
+                    localStorage.setItem(`coursedesk_watched_${courseId || 1}`, JSON.stringify(next));
+                } catch {
+                    // ignore
+                }
+            }
+            return next;
+        });
+    };
+
+    const isCurrentWatched = currentSession ? watchedSessionIds.includes(currentSession.id) : false;
+
+    // Personal Note state per video session (persisted to localStorage)
+    const [personalNotes, setPersonalNotes] = useState<Record<number, string>>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const saved = localStorage.getItem(`coursedesk_notes_${courseId || 1}`);
+                if (saved) return JSON.parse(saved);
+            } catch {
+                // ignore
+            }
+        }
+        return {
+            101: "Key revision notes on Ancient Era & Charyapada:\n- Discovered in Nepal Royal Library in 1907 by Haraprasad Shastri.\n- Oldest preserved specimen of Bengali language and literature.\n- Major poets: Luipa, Kanhapa, Shabarpa.\n- Review question bank before weekly mock test.",
+        };
+    });
+
+    const [noteSavedFeedback, setNoteSavedFeedback] = useState(false);
+    const [noteCopied, setNoteCopied] = useState(false);
+
+    const handleNoteChange = (text: string) => {
+        if (!currentSession) return;
+        const updated = { ...personalNotes, [currentSession.id]: text };
+        setPersonalNotes(updated);
+        if (typeof window !== "undefined") {
+            try {
+                localStorage.setItem(`coursedesk_notes_${courseId || 1}`, JSON.stringify(updated));
+            } catch {
+                // ignore
+            }
+        }
+        setNoteSavedFeedback(true);
+        setTimeout(() => setNoteSavedFeedback(false), 2000);
+    };
+
+    const copyNoteToClipboard = () => {
+        const text = currentSession ? (personalNotes[currentSession.id] || "") : "";
+        if (!text) return;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+            setNoteCopied(true);
+            setTimeout(() => setNoteCopied(false), 2000);
+        }
+    };
+
+    const downloadNote = () => {
+        const text = currentSession ? (personalNotes[currentSession.id] || "") : "";
+        const cleanTitle = (currentTopic?.title || currentSession?.title || "lecture-note").replace(/[^a-zA-Z0-9_-]/g, "_");
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${cleanTitle}_note.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const insertNoteSnippet = (snippet: string) => {
+        if (!currentSession) return;
+        const prevText = personalNotes[currentSession.id] || "";
+        const nextText = prevText ? `${prevText}\n${snippet}` : snippet;
+        handleNoteChange(nextText);
+    };
+
+    // Calculate dynamic watched progress
+    const watchedCount = useMemo(() => {
+        let count = 0;
+        topicGroups.forEach((g) => {
+            if (g.sessions.some((s) => watchedSessionIds.includes(s.id))) {
+                count++;
+            }
+        });
+        return count;
+    }, [topicGroups, watchedSessionIds]);
+
+    const totalTopicsCount = topicGroups.length || 5;
+    const progressPercent = Math.min(100, Math.round((watchedCount / totalTopicsCount) * 100));
+
     // Counts for the playlist card header
     const totalVideoCount = useMemo(() => {
         let count = 0;
@@ -495,11 +605,29 @@ export function CurriculumView({
                             )}
                         </div>
 
-                        {/* Title Below Video */}
-                        <div className="pt-1">
+                        {/* Title Below Video & Mark as Watched Button */}
+                        <div className="pt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">
                                 {currentTopic?.title || currentSession?.title || "Ancient Era of Bangla Literature & Charyapada"}
                             </h1>
+                            {currentSession && (
+                                <button
+                                    type="button"
+                                    onClick={() => toggleSessionWatched(currentSession.id)}
+                                    className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 shadow-xs ${
+                                        isCurrentWatched
+                                            ? "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750"
+                                    }`}
+                                >
+                                    <CheckCircle2
+                                        className={`h-4 w-4 ${
+                                            isCurrentWatched ? "text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-950" : "text-slate-400"
+                                        }`}
+                                    />
+                                    <span>{isCurrentWatched ? "Watched" : "Mark as Watched"}</span>
+                                </button>
+                            )}
                         </div>
 
                         {/* Tabs Bar */}
@@ -510,7 +638,7 @@ export function CurriculumView({
                                         { id: "overview", label: "Overview" },
                                         { id: "video", label: "Video" },
                                         { id: "file", label: "File" },
-                                        { id: "review", label: "Review" },
+                                        { id: "notes", label: "Personal Note" },
                                     ] as const
                                 ).map((t) => {
                                     const isActive = activeTab === t.id;
@@ -778,67 +906,122 @@ export function CurriculumView({
                                 </div>
                             )}
 
-                            {/* REVIEW TAB */}
-                            {activeTab === "review" && (
+                            {/* PERSONAL NOTE TAB */}
+                            {activeTab === "notes" && (
                                 <div className="space-y-4">
-                                    {/* Question Bank card */}
-                                    <div className="rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-                                        <div className="flex items-center justify-between mb-4">
+                                    <div className="rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-slate-800">
                                             <div>
-                                                <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
-                                                    Question Bank &amp; Practice Tests
+                                                <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                                                    <FileEdit className="h-4.5 w-4.5 text-[#1a73e8] dark:text-blue-400" />
+                                                    Personal Study Notes
                                                 </h3>
                                                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                                                    Evaluate your preparation with targeted practice sets for this lecture
+                                                    Private notes for <strong className="text-slate-700 dark:text-slate-300">{currentTopic?.title || currentSession?.title}</strong>. Auto-saved to your browser.
                                                 </p>
                                             </div>
-                                            <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-bold text-[#1a73e8] dark:text-blue-400">
-                                                25 Questions
-                                            </span>
+
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                    {noteSavedFeedback ? "Saved!" : "Auto-saved"}
+                                                </span>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={copyNoteToClipboard}
+                                                    className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                                    title="Copy note to clipboard"
+                                                >
+                                                    {noteCopied ? (
+                                                        <>
+                                                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                                            <span>Copied</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Copy className="h-3.5 w-3.5" />
+                                                            <span>Copy</span>
+                                                        </>
+                                                    )}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={downloadNote}
+                                                    className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                                    title="Export note as text file"
+                                                >
+                                                    <Download className="h-3.5 w-3.5" />
+                                                    <span>Export</span>
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <div className="rounded-xl border border-gray-200 dark:border-slate-800 p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/30 dark:from-blue-950/20 dark:to-slate-900">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1a73e8] text-white">
-                                                            <HelpCircle className="h-5 w-5" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                                                                Question Bank: বাংলা সাহিত্য প্রাচীন যুগ স্পেশাল টেস্ট
-                                                            </h4>
-                                                            <p className="text-xs text-gray-500 dark:text-slate-400">
-                                                                25 Multiple Choice Questions • Time: 20 Minutes • Negative Marking 0.25
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => alert("Practice quiz loaded successfully!")}
-                                                        className="rounded-lg bg-[#1a73e8] px-4 py-2 text-xs font-semibold text-white hover:bg-blue-600 shadow-sm transition-colors"
-                                                    >
-                                                        Start Test
-                                                    </button>
-                                                </div>
-                                            </div>
+                                        {/* Quick Insert Snippet Chips */}
+                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                            <span className="text-gray-400 dark:text-slate-500 font-medium">Quick insert:</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => insertNoteSnippet(`• [Key Takeaway]: `)}
+                                                className="rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1a73e8] dark:text-blue-300 border border-blue-100 dark:border-blue-900/60 px-2.5 py-1 font-medium hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors cursor-pointer"
+                                            >
+                                                + Key Takeaway
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => insertNoteSnippet(`• [Timestamp 00:00]: `)}
+                                                className="rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/60 px-2.5 py-1 font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors cursor-pointer"
+                                            >
+                                                + Timestamp
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => insertNoteSnippet(`• [Exam Point]: `)}
+                                                className="rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-900/60 px-2.5 py-1 font-medium hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors cursor-pointer"
+                                            >
+                                                + Exam Question / Point
+                                            </button>
+                                        </div>
 
-                                            {/* Discussion & feedback */}
-                                            <div className="rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-800/40 p-4">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <div className="flex text-amber-400">
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <Star key={i} className="h-4 w-4 fill-current" />
-                                                        ))}
-                                                    </div>
-                                                    <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
-                                                        4.9 / 5.0 (142 reviews)
-                                                    </span>
-                                                </div>
-                                                <p className="text-xs text-gray-600 dark:text-slate-400">
-                                                    &quot;অসাধারণ লেকচার! চর্যাপদের পদকর্তাদের ছন্দ ও রচনাকাল সম্পর্কিত যাবতীয় বিভ্রান্তি দূর হয়ে গেছে।&quot; — সাজিদ হাসান
-                                                </p>
+                                        {/* Note Editor Textarea */}
+                                        <div className="relative">
+                                            <textarea
+                                                rows={9}
+                                                value={currentSession ? (personalNotes[currentSession.id] ?? "") : ""}
+                                                onChange={(e) => handleNoteChange(e.target.value)}
+                                                placeholder="Write down personal notes, important rules, timestamps, questions, or revision summaries for this lecture..."
+                                                className="w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-950/60 p-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:bg-white dark:focus:bg-slate-900 focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all resize-y leading-relaxed font-sans"
+                                            />
+                                        </div>
+
+                                        {/* Footer Stats & Clear Button */}
+                                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 pt-1">
+                                            <div className="flex items-center gap-3">
+                                                <span>
+                                                    {currentSession && personalNotes[currentSession.id]?.trim()
+                                                        ? personalNotes[currentSession.id]!.trim().split(/\s+/).length
+                                                        : 0}{" "}
+                                                    words
+                                                </span>
+                                                <span>•</span>
+                                                <span>
+                                                    {currentSession ? (personalNotes[currentSession.id]?.length || 0) : 0} characters
+                                                </span>
                                             </div>
+                                            {currentSession && Boolean(personalNotes[currentSession.id]?.length) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (window.confirm("Are you sure you want to clear your note for this video?")) {
+                                                            handleNoteChange("");
+                                                        }
+                                                    }}
+                                                    className="text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:underline cursor-pointer"
+                                                >
+                                                    Clear note
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -860,15 +1043,15 @@ export function CurriculumView({
                                         </span>
                                     </div>
                                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                        Progress: <strong className="font-semibold text-slate-700 dark:text-slate-300">18% (27/150)</strong>
+                                        Progress: <strong className="font-semibold text-slate-700 dark:text-slate-300">{progressPercent}% ({watchedCount}/{totalTopicsCount})</strong>
                                     </div>
                                 </div>
 
                                 {/* Modern Progress Bar */}
                                 <div className="mt-2 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div
-                                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
-                                        style={{ width: "18%" }}
+                                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-blue-600 transition-all duration-500"
+                                        style={{ width: `${Math.max(progressPercent, 5)}%` }}
                                     />
                                 </div>
 
@@ -963,6 +1146,7 @@ export function CurriculumView({
                                     filteredTopics.map((topic, index) => {
                                         const isCurrentTopic = currentTopic?.id === topic.id;
                                         const primarySession = topic.sessions[0];
+                                        const isWatched = primarySession ? watchedSessionIds.includes(primarySession.id) : false;
                                         const thumbnailUrl = getSessionThumbnail(primarySession, index);
                                         const durationText = formatVideoDuration(primarySession?.durationMinutes, index);
 
@@ -980,10 +1164,12 @@ export function CurriculumView({
                                                         : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent"
                                                 }`}
                                             >
-                                                {/* Index Number on Left / Play indicator */}
+                                                {/* Index Number on Left / Play / Watched indicator */}
                                                 <div className="w-4 shrink-0 text-center">
                                                     {isCurrentTopic ? (
                                                         <Play className="h-3 w-3 text-[#1a73e8] dark:text-blue-400 fill-current mx-auto" />
+                                                    ) : isWatched ? (
+                                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-950 mx-auto" />
                                                     ) : (
                                                         <span className="text-xs font-normal text-slate-400 dark:text-slate-500">
                                                             {index + 1}
@@ -991,7 +1177,7 @@ export function CurriculumView({
                                                     )}
                                                 </div>
 
-                                                {/* Thumbnail with Duration Pill */}
+                                                {/* Thumbnail with Duration Pill and Watched badge */}
                                                 <div className="relative shrink-0 w-28 sm:w-32 aspect-video rounded-lg overflow-hidden bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
                                                     <img
                                                         src={thumbnailUrl}
@@ -999,6 +1185,13 @@ export function CurriculumView({
                                                         className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                         loading="lazy"
                                                     />
+                                                    {/* Watched badge on top-left of thumbnail */}
+                                                    {isWatched && (
+                                                        <span className="absolute top-1 left-1 flex items-center gap-0.5 rounded bg-emerald-600/90 backdrop-blur-2xs px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-xs">
+                                                            <CheckCircle2 className="h-2.5 w-2.5" />
+                                                            Watched
+                                                        </span>
+                                                    )}
                                                     {/* Duration pill in bottom-right corner (matching reference screenshot) */}
                                                     <span className="absolute bottom-1 right-1 rounded bg-black/85 backdrop-blur-2xs px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-tight leading-none shadow-xs">
                                                         {durationText}
