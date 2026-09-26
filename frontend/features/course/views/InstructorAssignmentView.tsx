@@ -245,31 +245,57 @@ export function InstructorAssignmentView({
             {tab === "learner-work" && (
                 <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8">
                     {/* Summary Counters Banner */}
-                    <div className="grid grid-cols-3 gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-[#f9fafc] dark:bg-slate-900 p-4 text-center sm:p-6">
-                        <div className="border-r border-gray-200 dark:border-slate-800">
-                            <span className="block text-3xl font-bold text-[#1a73e8] dark:text-blue-400">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4 rounded-2xl border border-gray-200 dark:border-slate-800 bg-[#f9fafc] dark:bg-slate-900 p-2 sm:p-3 text-center shadow-xs">
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter(statusFilter === "Submitted" ? "All" : "Submitted")}
+                            className={`group rounded-xl p-3 sm:p-4 transition-all cursor-pointer text-center ${
+                                statusFilter === "Submitted"
+                                    ? "bg-blue-50/80 dark:bg-blue-950/50 ring-2 ring-[#1a73e8] shadow-xs"
+                                    : "hover:bg-white dark:hover:bg-slate-800/80"
+                            }`}
+                        >
+                            <span className="block text-3xl sm:text-4xl font-bold text-[#1a73e8] dark:text-blue-400 group-hover:scale-105 transition-transform">
                                 {submittedCount}
                             </span>
-                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400 sm:text-sm">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300 sm:text-sm mt-1 block">
                                 Submitted
                             </span>
-                        </div>
-                        <div className="border-r border-gray-200 dark:border-slate-800">
-                            <span className="block text-3xl font-bold text-gray-700 dark:text-slate-200">
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter(statusFilter === "Assigned" ? "All" : "Assigned")}
+                            className={`group rounded-xl p-3 sm:p-4 transition-all cursor-pointer text-center ${
+                                statusFilter === "Assigned"
+                                    ? "bg-slate-200/70 dark:bg-slate-800 ring-2 ring-slate-400 dark:ring-slate-500 shadow-xs"
+                                    : "hover:bg-white dark:hover:bg-slate-800/80"
+                            }`}
+                        >
+                            <span className="block text-3xl sm:text-4xl font-bold text-gray-700 dark:text-slate-200 group-hover:scale-105 transition-transform">
                                 {assignedCount}
                             </span>
-                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400 sm:text-sm">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300 sm:text-sm mt-1 block">
                                 Assigned
                             </span>
-                        </div>
-                        <div>
-                            <span className="block text-3xl font-bold text-[#137333] dark:text-emerald-400">
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter(statusFilter === "Graded" ? "All" : "Graded")}
+                            className={`group rounded-xl p-3 sm:p-4 transition-all cursor-pointer text-center ${
+                                statusFilter === "Graded"
+                                    ? "bg-emerald-50/80 dark:bg-emerald-950/50 ring-2 ring-[#137333] dark:ring-emerald-500 shadow-xs"
+                                    : "hover:bg-white dark:hover:bg-slate-800/80"
+                            }`}
+                        >
+                            <span className="block text-3xl sm:text-4xl font-bold text-[#137333] dark:text-emerald-400 group-hover:scale-105 transition-transform">
                                 {gradedCount}
                             </span>
-                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400 sm:text-sm">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300 sm:text-sm mt-1 block">
                                 Graded
                             </span>
-                        </div>
+                        </button>
                     </div>
 
                     {/* Filter & Search Bar */}
