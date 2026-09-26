@@ -80,6 +80,33 @@ function getFileExtension(name: string): string {
     return ext ? ext.toUpperCase() : "FILE";
 }
 
+function getContainingBlock(
+    node: Node | null,
+    root: HTMLElement | null,
+    tagNames: string[]
+): HTMLElement | null {
+    let curr: Node | null = node;
+    const targets = tagNames.map((t) => t.toUpperCase());
+    while (curr && curr !== root) {
+        if (curr.nodeType === Node.ELEMENT_NODE && targets.includes((curr as HTMLElement).tagName)) {
+            return curr as HTMLElement;
+        }
+        curr = curr.parentNode;
+    }
+    return null;
+}
+
+function setCaretToElement(el: HTMLElement) {
+    el.focus();
+    const range = document.createRange();
+    const sel = window.getSelection();
+    if (!sel) return;
+    range.selectNodeContents(el);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
 /**
  * Converts initial plain text or markdown to simple HTML for the contentEditable area if needed
  */
@@ -141,6 +168,7 @@ export function AnnouncementFormModal({
         h2: false,
         h3: false,
         blockquote: false,
+        code: false,
     });
 
     // Link insertion popover state
@@ -161,6 +189,13 @@ export function AnnouncementFormModal({
         if (typeof document === "undefined") return;
         try {
             const formatBlockValue = (document.queryCommandValue("formatBlock") || "").toLowerCase();
+            const selection = window.getSelection();
+            const anchor = selection?.anchorNode ?? null;
+            const insidePre = Boolean(getContainingBlock(anchor, editorRef.current, ["pre"]));
+            const insideBlockquote =
+                formatBlockValue === "blockquote" ||
+                Boolean(getContainingBlock(anchor, editorRef.current, ["blockquote"]));
+
             setActiveFormats({
                 bold: document.queryCommandState("bold"),
                 italic: document.queryCommandState("italic"),
@@ -171,7 +206,8 @@ export function AnnouncementFormModal({
                 h1: formatBlockValue === "h1",
                 h2: formatBlockValue === "h2",
                 h3: formatBlockValue === "h3",
-                blockquote: formatBlockValue === "blockquote",
+                blockquote: insideBlockquote,
+                code: insidePre || formatBlockValue === "pre",
             });
         } catch {
             // Ignore
@@ -233,6 +269,37 @@ export function AnnouncementFormModal({
         updateCounts();
     };
 
+    const toggleCodeBlock = () => {
+        if (!editorRef.current) return;
+        editorRef.current.focus();
+
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            const preEl = getContainingBlock(range.startContainer, editorRef.current, ["pre"]);
+            if (preEl) {
+                // If user selected text, convert it to paragraph
+                if (!range.collapsed) {
+                    document.execCommand("formatBlock", false, "<p>");
+                } else {
+                    // Step out into a new paragraph after <pre>
+                    const p = document.createElement("p");
+                    p.innerHTML = "<br>";
+                    if (preEl.nextSibling) {
+                        preEl.parentNode?.insertBefore(p, preEl.nextSibling);
+                    } else {
+                        preEl.parentNode?.appendChild(p);
+                    }
+                    setCaretToElement(p);
+                }
+                updateCounts();
+                return;
+            }
+        }
+
+        executeFormat("formatBlock", "<pre>");
+    };
+
     const handleOpenLinkDialog = () => {
         const selection = window.getSelection();
         const selectedStr = selection ? selection.toString() : "";
@@ -263,6 +330,152 @@ export function AnnouncementFormModal({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const sel = window.getSelection();
+        const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+
+        // Check if inside pre or blockquote
+        const preEl = range && editorRef.current ? getContainingBlock(range.startContainer, editorRef.current, ["pre"]) : null;
+        const bqEl = range && editorRef.current ? getContainingBlock(range.startContainer, editorRef.current, ["blockquote"]) : null;
+
+        // Escape: step out of code block or blockquote immediately
+        if (e.key === "Escape" && (preEl || bqEl)) {
+            e.preventDefault();
+            const targetEl = preEl || bqEl;
+            if (targetEl) {
+                const p = document.createElement("p");
+                p.innerHTML = "<br>";
+                if (targetEl.nextSibling) {
+                    targetEl.parentNode?.insertBefore(p, targetEl.nextSibling);
+                } else {
+                    targetEl.parentNode?.appendChild(p);
+                }
+                setCaretToElement(p);
+                updateCounts();
+            }
+            return;
+        }
+
+        // Ctrl+Enter or Cmd+Enter: step out of code block or blockquote into a new paragraph
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            if (preEl || bqEl) {
+                e.preventDefault();
+                const targetEl = preEl || bqEl;
+                if (targetEl) {
+                    const p = document.createElement("p");
+                    p.innerHTML = "<br>";
+                    if (targetEl.nextSibling) {
+                        targetEl.parentNode?.insertBefore(p, targetEl.nextSibling);
+                    } else {
+                        targetEl.parentNode?.appendChild(p);
+                    }
+                    setCaretToElement(p);
+                    updateCounts();
+                }
+                return;
+            }
+        }
+
+        // Tab inside code block: indent 2 spaces instead of losing browser focus
+        if (e.key === "Tab" && preEl) {
+            e.preventDefault();
+            document.execCommand("insertText", false, "  ");
+            updateCounts();
+            return;
+        }
+
+        // ArrowDown at the very end of code block: automatically create/step into paragraph below
+        if (e.key === "ArrowDown" && preEl && range) {
+            const isAtEnd =
+                (range.startContainer === preEl && range.startOffset === preEl.childNodes.length) ||
+                (range.startContainer.nodeType === Node.TEXT_NODE &&
+                    range.startOffset === (range.startContainer.textContent?.length ?? 0) &&
+                    !range.startContainer.nextSibling);
+
+            if (isAtEnd && !preEl.nextSibling) {
+                e.preventDefault();
+                const p = document.createElement("p");
+                p.innerHTML = "<br>";
+                preEl.parentNode?.appendChild(p);
+                setCaretToElement(p);
+                updateCounts();
+                return;
+            }
+        }
+
+        // Regular Enter inside pre or blockquote: detect double Enter or empty block to break out
+        if (e.key === "Enter" && !e.shiftKey) {
+            if (preEl && range) {
+                const fullText = preEl.innerText || "";
+                if (!fullText.trim()) {
+                    // Completely empty pre: convert directly to paragraph
+                    e.preventDefault();
+                    const p = document.createElement("p");
+                    p.innerHTML = "<br>";
+                    preEl.parentNode?.replaceChild(p, preEl);
+                    setCaretToElement(p);
+                    updateCounts();
+                    return;
+                }
+
+                // Check text before caret inside the pre
+                const preRange = range.cloneRange();
+                preRange.selectNodeContents(preEl);
+                preRange.setEnd(range.startContainer, range.startOffset);
+                const textBefore = preRange.toString();
+
+                if (textBefore.endsWith("\n") || textBefore.endsWith("\r\n")) {
+                    // Double Enter detected: exit code block
+                    e.preventDefault();
+                    if (range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.textContent) {
+                        range.startContainer.textContent = range.startContainer.textContent.replace(/\n$/, "");
+                    }
+                    const p = document.createElement("p");
+                    p.innerHTML = "<br>";
+                    if (preEl.nextSibling) {
+                        preEl.parentNode?.insertBefore(p, preEl.nextSibling);
+                    } else {
+                        preEl.parentNode?.appendChild(p);
+                    }
+                    setCaretToElement(p);
+                    updateCounts();
+                    return;
+                }
+            }
+
+            if (bqEl && range) {
+                const bqText = bqEl.innerText || "";
+                if (!bqText.trim()) {
+                    e.preventDefault();
+                    const p = document.createElement("p");
+                    p.innerHTML = "<br>";
+                    bqEl.parentNode?.replaceChild(p, bqEl);
+                    setCaretToElement(p);
+                    updateCounts();
+                    return;
+                }
+
+                const bqRange = range.cloneRange();
+                bqRange.selectNodeContents(bqEl);
+                bqRange.setEnd(range.startContainer, range.startOffset);
+                const textBefore = bqRange.toString();
+
+                if (textBefore.endsWith("\n") || textBefore.endsWith("\r\n")) {
+                    e.preventDefault();
+                    const p = document.createElement("p");
+                    p.innerHTML = "<br>";
+                    if (bqEl.nextSibling) {
+                        bqEl.parentNode?.insertBefore(p, bqEl.nextSibling);
+                    } else {
+                        bqEl.parentNode?.appendChild(p);
+                    }
+                    setCaretToElement(p);
+                    updateCounts();
+                    return;
+                }
+            }
+        }
+
+        // Standard formatting shortcuts
         if (e.ctrlKey || e.metaKey) {
             if (e.key.toLowerCase() === "b") {
                 e.preventDefault();
@@ -618,10 +831,14 @@ export function AnnouncementFormModal({
                                     type="button"
                                     onMouseDown={(e) => {
                                         e.preventDefault();
-                                        executeFormat("formatBlock", "<pre>");
+                                        toggleCodeBlock();
                                     }}
-                                    title="Code Block"
-                                    className="rounded-md p-1.5 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-700 cursor-pointer"
+                                    title="Code Block (Press Enter twice, Ctrl+Enter, or Esc to exit)"
+                                    className={`rounded-md p-1.5 transition-colors cursor-pointer ${
+                                        activeFormats.code
+                                            ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                                            : "hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-700"
+                                    }`}
                                 >
                                     <Code className="h-4 w-4" />
                                 </button>
@@ -704,11 +921,18 @@ export function AnnouncementFormModal({
 
                         {/* Document Footer Bar */}
                         <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-4 py-2 text-[11px] text-slate-400 dark:border-slate-800 dark:bg-slate-850">
-                            <span className="flex items-center gap-1.5">
-                                <span>WYSIWYG Rich Editor</span>
-                                <span>•</span>
-                                <span>Drag & Drop files anywhere</span>
-                            </span>
+                            {activeFormats.code ? (
+                                <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold animate-in fade-in duration-150">
+                                    <Code className="h-3.5 w-3.5" />
+                                    <span>Inside Code Block — press Enter twice or Esc to exit</span>
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-1.5">
+                                    <span>WYSIWYG Rich Editor</span>
+                                    <span>•</span>
+                                    <span>Drag & Drop files anywhere</span>
+                                </span>
+                            )}
                             <div className="flex items-center gap-3 font-medium">
                                 <span>{wordCount} words</span>
                                 <span>{charCount} characters</span>
