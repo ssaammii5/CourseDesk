@@ -18,6 +18,7 @@ import type { SubmissionDto } from "@/lib/api/submissions";
 import { loadInstructorCoursework, saveInstructorCoursework } from "@/lib/instructorCoursework";
 import {
     createAssignmentRequest,
+    deleteAssignmentRequest,
     uploadAssignmentAttachmentRequest,
 } from "@/lib/api/assignments";
 import { getCourseSessionsRequest } from "@/lib/api/sessions";
@@ -168,8 +169,14 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         setEditing(null);
     };
 
-    const handleDelete = (entry: ClassworkEntry) =>
+    const handleDelete = async (entry: ClassworkEntry) => {
+        try {
+            await deleteAssignmentRequest(entry.id);
+        } catch (err) {
+            console.error("Failed to delete assignment", err);
+        }
         mutateClasswork(classwork.filter((i) => i.id !== entry.id));
+    };
 
     const handlePostAnnouncement = useCallback(
         async (
@@ -429,9 +436,14 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                         onEdit={openEdit}
                         onDelete={handleDelete}
                         courseId={details.courseId}
+                        submissions={submissions}
                     />
                 ) : (
-                    <CourseworkView items={classwork} courseId={details.courseId} />
+                    <CourseworkView
+                        items={classwork}
+                        courseId={details.courseId}
+                        assignmentStatusMap={assignmentStatusMap}
+                    />
                 ))}
 
             {tab === "people" && <PeopleView people={details.people} />}
