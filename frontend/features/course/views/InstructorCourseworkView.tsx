@@ -530,7 +530,7 @@ export function InstructorCourseworkView({
                                                             {entry.maxMarks !== undefined && entry.maxMarks > 0 && (
                                                                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                                                                     <Award className="h-3 w-3" />
-                                                                    {entry.maxMarks} pts
+                                                                    Marks: {entry.maxMarks}
                                                                 </span>
                                                             )}
 

@@ -622,7 +622,7 @@ function CourseworkItemCard({
                         {entry.maxMarks !== undefined && entry.maxMarks > 0 && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                                 <Award className="h-3 w-3" />
-                                {entry.maxMarks} pts
+                                Marks: {entry.maxMarks}
                             </span>
                         )}
                     </div>
@@ -761,7 +761,7 @@ function CourseworkItemCard({
                         {entry.maxMarks !== undefined && entry.maxMarks > 0 && (
                             <div className="flex items-center gap-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5">
                                 <Award className="h-3.5 w-3.5 text-amber-500" />
-                                <span>Max Score: {entry.maxMarks} pts</span>
+                                <span>Marks: {entry.maxMarks}</span>
                             </div>
                         )}
                     </div>

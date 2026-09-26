@@ -36,7 +36,7 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
                     submissionStatus = "Graded";
                 } else if (mine.status === "Submitted" || mine.status === "Turned in") {
                     submissionStatus = "Turned in";
-                } else if (mine.status === "Draft" && hasWork) {
+                } else if (hasWork) {
                     submissionStatus = "Draft";
                 } else if (mine.status === "Missed") {
                     submissionStatus = "Missed";

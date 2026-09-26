@@ -92,8 +92,6 @@ def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str |
         or bool(mine.answer and mine.answer.strip() and mine.answer != "Submitted via file attachment")
         or bool(mine.external_url and mine.external_url.strip())
     )
-    is_draft = mine is not None and mine.status == "Draft" and not is_submitted and has_work
-
     if is_graded:
         return "Graded"
     if is_submitted:
@@ -104,7 +102,7 @@ def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str |
     if is_past_deadline:
         return "Missed"
 
-    if is_draft:
+    if has_work:
         return "Draft"
     return "Assigned"
 

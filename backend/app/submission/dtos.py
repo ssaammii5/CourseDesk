@@ -106,11 +106,13 @@ def serialize_submission(submission) -> "SubmissionResponseSchema":
         student_department=details.department if details else None,
         student_program=details.current_program if details else None,
         answer=submission.answer,
-        status="Assigned" if submission.status == "Draft" and not (
-            (submission.attachments and len(submission.attachments) > 0)
-            or bool(submission.answer and submission.answer.strip() and submission.answer != "Submitted via file attachment")
-            or bool(submission.external_url and submission.external_url.strip())
-        ) else submission.status,
+        status=submission.status if submission.status in ("Submitted", "Graded") else (
+            "Draft" if (
+                (submission.attachments and len(submission.attachments) > 0)
+                or bool(submission.answer and submission.answer.strip() and submission.answer != "Submitted via file attachment")
+                or bool(submission.external_url and submission.external_url.strip())
+            ) else "Assigned"
+        ),
         marks=submission.marks,
         feedback=submission.feedback,
         submitted_at_utc=submission.submitted_at_utc,

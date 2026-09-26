@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, UploadFile
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.assignment.models import AssignmentModel
@@ -275,6 +275,10 @@ def add_submission_attachment(
     else:
         raise HTTPException(400, detail="Must provide either a file or a link")
 
+    if submission.status not in ("Submitted", "Graded"):
+        submission.status = "Draft"
+        db.add(submission)
+
     db.add(attachment)
     db.commit()
     db.refresh(attachment)
@@ -296,7 +300,16 @@ def delete_submission_attachment(
     if not attachment or attachment.submission_id != submission_id:
         raise HTTPException(404, detail="Attachment id is incorrect")
 
+    if submission.attachments and attachment in submission.attachments:
+        submission.attachments.remove(attachment)
     db.delete(attachment)
+
+    has_work = bool(submission.attachments and len(submission.attachments) > 0) or bool(
+        submission.answer and submission.answer.strip() and submission.answer != "Submitted via file attachment"
+    ) or bool(submission.external_url and submission.external_url.strip())
+    if submission.status == "Draft" and not has_work:
+        submission.status = "Assigned"
+
     db.commit()
 
 

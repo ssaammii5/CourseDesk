@@ -86,12 +86,13 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
     const turnedIn = status === "Turned in" || status === "Submitted";
     const isMissed = status === "Missed";
     const isGraded = status === "Graded";
-    const isDraft = status === "Draft" && attachments.length > 0;
+    const isDraft = (status === "Draft" || attachments.length > 0) && !turnedIn && !isGraded && !isMissed;
     const linkValid = isValidLink(linkValue);
     const linkError = linkTouched && !linkValid;
 
     useEffect(() => {
-        setStatus((detail.submission.status as WorkStatus) || "Assigned");
+        const nextStatus = (detail.submission.status as WorkStatus) || "Assigned";
+        setStatus(nextStatus);
         setSubmissionId(detail.submission.id);
         setAttachments(detail.submission.attachments ?? []);
     }, [detail.submission]);
@@ -132,6 +133,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     },
                 ]);
             }
+            setStatus("Draft");
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error("Failed to upload draft file", err);
@@ -173,6 +175,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     kind: "link",
                 },
             ]);
+            setStatus("Draft");
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error("Failed to add draft link", err);
@@ -182,7 +185,11 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
     };
 
     const removeAttachment = async (id: number) => {
-        setAttachments((prev) => prev.filter((a) => a.id !== id));
+        const next = attachments.filter((a) => a.id !== id);
+        setAttachments(next);
+        if (next.length === 0) {
+            setStatus("Assigned");
+        }
         if (submissionId) {
             try {
                 await deleteSubmissionAttachmentRequest(submissionId, id);
@@ -285,7 +292,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                         {detail.postedDate}
                     </p>
                     <p className="mt-4 text-sm font-semibold text-gray-900 dark:text-slate-100">
-                        {detail.points} points
+                        Marks: {detail.points}
                         <span className="mx-3 font-normal text-gray-700 dark:text-slate-500">|</span>
                         {detail.dueLabel}
                     </p>

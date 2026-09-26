@@ -656,14 +656,14 @@ export function AssignmentCreateView({
                             )}
                         </div>
 
-                        {/* Grading & Points */}
+                        {/* Grading & Marks */}
                         <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                    Grading & Points
+                                    Grading & Marks
                                 </h3>
                                 <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                                    {points > 0 ? `${points} points` : "Ungraded"}
+                                    {points > 0 ? `Marks: ${points}` : "Ungraded"}
                                 </span>
                             </div>
 
@@ -680,7 +680,7 @@ export function AssignmentCreateView({
                                                 : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                         }`}
                                     >
-                                        {p === 0 ? "Ungraded" : `${p} pts`}
+                                        {p === 0 ? "Ungraded" : `Marks: ${p}`}
                                     </button>
                                 ))}
                             </div>

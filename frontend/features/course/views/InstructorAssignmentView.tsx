@@ -220,7 +220,7 @@ export function InstructorAssignmentView({
                                 {assignment.title}
                             </h1>
                             <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
-                                Due {formatDateTime(assignment.deadlineUtc)} • {assignment.maxMarks} points
+                                Due {formatDateTime(assignment.deadlineUtc)} • Marks: {assignment.maxMarks}
                                 {assignment.topic && ` • ${assignment.topic}`}
                             </p>
                         </div>
@@ -833,7 +833,7 @@ export function InstructorAssignmentView({
 
                             <div className="text-right">
                                 <span className="text-lg font-bold text-gray-900 dark:text-slate-100">
-                                    {assignment.maxMarks} points
+                                    Marks: {assignment.maxMarks}
                                 </span>
                                 <p className="text-xs text-gray-500 dark:text-slate-400">
                                     Due {formatDateTime(assignment.deadlineUtc)}
