@@ -92,8 +92,8 @@ export function CourseworkView({
     const [expandedItems, setExpandedItems] = useState<ReadonlySet<number>>(new Set());
     const [copiedId, setCopiedId] = useState<number | null>(null);
 
-    // Learners only see published items
-    const published = useMemo(() => items.filter((i) => i.status !== "Draft"), [items]);
+    // Coursework items provided to learner
+    const published = items;
 
     // Unique topics
     const topics = useMemo(() => {

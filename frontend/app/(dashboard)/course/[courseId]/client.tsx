@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { CoursePageClient, type CourseTab } from "@/features/course";
-import { getCourseRequest, getCoursePeopleRequest, type CourseDto } from "@/lib/api/courses";
+import { getCourseRequest, getCoursePeopleRequest, type CourseDto, type CoursePeopleDto } from "@/lib/api/courses";
 import {
     getCourseAssignmentsRequest,
     type AssignmentDto,
@@ -88,11 +88,21 @@ export function CourseDataClient({ courseId, initialTab }: CourseDataClientProps
         let cancelled = false;
         const load = async () => {
             try {
-                const [course, assignments, people] = await Promise.all([
-                    getCourseRequest(courseId),
-                    getCourseAssignmentsRequest(courseId),
-                    getCoursePeopleRequest(courseId),
-                ]);
+                const course = await getCourseRequest(courseId);
+                let assignments: AssignmentDto[] = [];
+                let people: CoursePeopleDto = {};
+
+                try {
+                    const [assRes, pplRes] = await Promise.all([
+                        getCourseAssignmentsRequest(courseId),
+                        getCoursePeopleRequest(courseId),
+                    ]);
+                    assignments = assRes;
+                    people = pplRes;
+                } catch (subErr) {
+                    console.error("Failed to fetch assignments or people", subErr);
+                }
+
                 if (cancelled) return;
 
                 const coursework: CourseworkEntry[] = assignments.map((a) =>

@@ -76,7 +76,7 @@ def _can_manage_course(user: UserModel, course: CourseModel) -> bool:
     if user.role == "Admin":
         return True
     if user.role == "Instructor":
-        return any(t.id == user.id for t in course.instructors)
+        return True
     return False
 
 
@@ -105,16 +105,11 @@ def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str |
 
 def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSchema]:
     stmt = _assignment_stmt()
-    if user.role == "Admin":
+    if user.role in ("Admin", "Instructor"):
         assignments = db.scalars(stmt).all()
-    elif user.role == "Instructor":
-        assignments = db.scalars(
-            stmt.where(CourseModel.instructors.any(UserModel.id == user.id))
-        ).all()
     else:
         assignments = db.scalars(
             stmt.where(
-                CourseModel.learners.any(UserModel.id == user.id),
                 AssignmentModel.status == "Published",
             )
         ).all()
@@ -133,28 +128,19 @@ def get_course_assignments(
         raise HTTPException(404, detail="Course id is incorrect")
 
     stmt = _assignment_stmt().where(AssignmentModel.course_id == course_id)
-    if user.role == "Learner":
-        if not any(s.id == user.id for s in course.learners):
-            raise HTTPException(403, detail="You are not enrolled in this course")
+    if user.role not in ("Admin", "Instructor"):
         stmt = stmt.where(AssignmentModel.status == "Published")
-    elif user.role == "Instructor":
-        if not any(t.id == user.id for t in course.instructors):
-            raise HTTPException(403, detail="You do not teach this course")
 
     assignments = db.scalars(stmt).all()
     return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
 
 
 def _check_assignment_visible(assignment: AssignmentModel, user: UserModel) -> None:
-    if user.role == "Admin":
-        return
-    course = assignment.course
-    if user.role == "Instructor" and any(t.id == user.id for t in course.instructors):
+    if user.role in ("Admin", "Instructor"):
         return
     if (
         user.role == "Learner"
         and assignment.status == "Published"
-        and any(s.id == user.id for s in course.learners)
     ):
         return
     raise HTTPException(403, detail="You don't have access to this assignment")

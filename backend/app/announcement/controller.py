@@ -89,19 +89,13 @@ def _announcement_stmt():
 
 
 def _can_manage_course(user: UserModel, course: CourseModel) -> bool:
-    if user.role == "Admin":
+    if user.role in ("Admin", "Instructor"):
         return True
-    if user.role == "Instructor":
-        return any(t.id == user.id for t in course.instructors)
     return False
 
 
 def _check_course_access(user: UserModel, course: CourseModel) -> None:
-    if user.role == "Admin":
-        return
-    if user.role == "Instructor" and any(t.id == user.id for t in course.instructors):
-        return
-    if user.role == "Learner" and any(s.id == user.id for s in course.learners):
+    if user.role in ("Admin", "Instructor", "Learner"):
         return
     raise HTTPException(403, detail="You don't have access to this course")
 

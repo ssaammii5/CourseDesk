@@ -147,10 +147,6 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         };
     }, []);
 
-    useEffect(() => {
-        setClasswork(details.classwork);
-    }, [details.classwork]);
-
     const refreshCoursework = useCallback(async () => {
         try {
             const assignments = await getCourseAssignmentsRequest(details.courseId);
@@ -160,6 +156,14 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
             console.error("Failed to refresh coursework from database", err);
         }
     }, [details.courseId, isInstructor]);
+
+    useEffect(() => {
+        setClasswork(details.classwork);
+    }, [details.classwork]);
+
+    useEffect(() => {
+        void refreshCoursework();
+    }, [refreshCoursework]);
 
     const openCreate = () => {
         setEditing(null);
