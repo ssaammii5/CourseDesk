@@ -1,4 +1,6 @@
 from datetime import UTC, datetime
+import html
+import re
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import select
@@ -52,6 +54,30 @@ def _serialize(a: AnnouncementModel) -> AnnouncementResponseSchema:
             for att in (a.attachments or [])
         ],
     )
+
+
+def _clean_announcement_preview(
+    title: str | None, body: str | None, max_length: int = 120
+) -> str:
+    clean_title = (title or "").strip()
+
+    # Strip HTML tags and markdown symbols
+    raw_body = body or ""
+    clean_body = re.sub(r"<[^>]+>", " ", raw_body)
+    clean_body = html.unescape(clean_body)
+    clean_body = re.sub(r"[*_#`~]", "", clean_body)
+    clean_body = re.sub(r"\s+", " ", clean_body).strip()
+
+    if clean_title:
+        if clean_body:
+            snippet = clean_body[:80].rstrip() + ("..." if len(clean_body) > 80 else "")
+            return f"{clean_title}: {snippet}"
+        return clean_title
+
+    if clean_body:
+        return clean_body[:max_length].rstrip() + ("..." if len(clean_body) > max_length else "")
+
+    return "New announcement posted."
 
 
 def _announcement_stmt():
@@ -140,7 +166,7 @@ def create_announcement(
     if recipient_ids:
         from app.notification.controller import create_notifications_bulk
 
-        preview = body.title or (body.body[:80] + ("..." if len(body.body) > 80 else ""))
+        preview = _clean_announcement_preview(body.title, body.body, max_length=120)
         create_notifications_bulk(
             db=db,
             user_ids=recipient_ids,

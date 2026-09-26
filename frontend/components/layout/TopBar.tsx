@@ -69,6 +69,30 @@ function formatRelativeTime(isoString?: string): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function formatNotificationPreview(text?: string | null): string {
+    if (!text) return "";
+    let cleaned = text;
+    // Strip HTML tags and entities cleanly
+    if (typeof window !== "undefined" && /<[^>]+>/i.test(cleaned)) {
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(cleaned, "text/html");
+            cleaned = doc.body.textContent || "";
+        } catch {
+            cleaned = cleaned.replace(/<[^>]+>/g, " ");
+        }
+    } else {
+        cleaned = cleaned.replace(/<[^>]+>/g, " ");
+    }
+    // Clean up any lingering unclosed tags like '<...'
+    cleaned = cleaned.replace(/<[^>]*>?/g, " ");
+    // Remove raw markdown syntax characters (*, _, #, `, ~)
+    cleaned = cleaned.replace(/[*_#`~]/g, "");
+    // Collapse excess whitespace
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
+    return cleaned || "New announcement posted";
+}
+
 interface CourseBreadcrumbProps {
     course: { id: number; name: string; sub?: string };
 }
@@ -594,7 +618,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                                             </span>
                                                             {n.message && (
                                                                 <span className="mt-0.5 line-clamp-2 block text-xs text-slate-500 dark:text-slate-400">
-                                                                    {n.message}
+                                                                    {formatNotificationPreview(n.message)}
                                                                 </span>
                                                             )}
                                                             <span className="mt-1 block text-[10px] font-medium text-slate-400 dark:text-slate-500">
