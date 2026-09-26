@@ -360,14 +360,24 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
 
     const assignmentStatusMap: Record<number, string> = {};
     for (const sub of submissions) {
-        if (sub.submittedAtUtc) {
-            assignmentStatusMap[sub.assignmentId] =
-                sub.status === "Graded" ? "Graded" : "Submitted";
+        if (sub.status === "Graded") {
+            assignmentStatusMap[sub.assignmentId] = "Graded";
+        } else if (sub.submittedAtUtc || sub.status === "Submitted" || sub.status === "Turned in") {
+            assignmentStatusMap[sub.assignmentId] = "Submitted";
+        } else if (sub.status === "Draft") {
+            assignmentStatusMap[sub.assignmentId] = "Draft";
+        } else if (sub.status === "Missed") {
+            assignmentStatusMap[sub.assignmentId] = "Missed";
         }
     }
     for (const cw of classwork) {
-        if (!assignmentStatusMap[cw.id] && cw.status !== "Draft") {
-            assignmentStatusMap[cw.id] = cw.status;
+        if (!assignmentStatusMap[cw.id]) {
+            if (cw.status === "Graded" || cw.status === "Submitted" || cw.status === "Draft" || cw.status === "Missed") {
+                assignmentStatusMap[cw.id] = cw.status;
+            } else {
+                const isPast = cw.deadlineUtc ? new Date(cw.deadlineUtc).getTime() < Date.now() : false;
+                assignmentStatusMap[cw.id] = isPast ? "Missed" : "Assigned";
+            }
         }
     }
 

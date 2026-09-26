@@ -10,7 +10,7 @@ export interface AssignmentAttachment {
 
 export interface AssignmentSubmission {
     id?: number;
-    status: "Assigned" | "Submitted" | "Turned in" | "Graded";
+    status: "Assigned" | "Draft" | "Submitted" | "Turned in" | "Graded" | "Missed";
     attachments: AssignmentAttachment[];
 }
 

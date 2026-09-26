@@ -92,7 +92,7 @@ export const CourseworkEntrySchema = z.object({
     topic: z.string(),
     dueLabel: z.string(),
     postedLabel: z.string(),
-    status: z.enum(["Assigned", "Submitted", "Graded", "Draft"]),
+    status: z.enum(["Assigned", "Draft", "Submitted", "Graded", "Missed"]),
     description: z.string(),
     kind: z.enum(["assignment", "material", "quiz"]).optional(),
     deadlineUtc: z.string().optional(),

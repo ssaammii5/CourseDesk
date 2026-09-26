@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
@@ -83,9 +84,23 @@ def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str |
     if user.role != "Learner":
         return None
     mine = next((s for s in assignment.submissions if s.learner_id == user.id), None)
-    if not mine or not mine.submitted_at_utc:
-        return "Assigned"
-    return "Graded" if mine.status == "Graded" else "Submitted"
+    is_submitted = mine is not None and (mine.status == "Submitted" or mine.submitted_at_utc is not None)
+    is_graded = mine is not None and mine.status == "Graded"
+    is_draft = mine is not None and mine.status == "Draft" and not is_submitted
+
+    if is_graded:
+        return "Graded"
+    if is_submitted:
+        return "Submitted"
+
+    now = datetime.now(UTC)
+    is_past_deadline = assignment.deadline_utc is not None and now > assignment.deadline_utc
+    if is_past_deadline:
+        return "Missed"
+
+    if is_draft:
+        return "Draft"
+    return "Assigned"
 
 
 def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSchema]:

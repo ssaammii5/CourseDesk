@@ -34,11 +34,23 @@ function mapAssignmentToCoursework(
     dto: AssignmentDto,
     isLearner: boolean,
 ): CourseworkEntry {
-    const status: CourseworkEntry["status"] = isLearner
-        ? ((dto.mySubmissionStatus as CourseworkEntry["status"]) ?? "Assigned")
-        : dto.status === "Draft"
-            ? "Draft"
-            : "Assigned";
+    let status: CourseworkEntry["status"] = "Assigned";
+    if (isLearner) {
+        if (dto.mySubmissionStatus === "Graded") {
+            status = "Graded";
+        } else if (dto.mySubmissionStatus === "Submitted" || dto.mySubmissionStatus === "Turned in") {
+            status = "Submitted";
+        } else if (dto.mySubmissionStatus === "Draft") {
+            status = "Draft";
+        } else if (dto.mySubmissionStatus === "Missed") {
+            status = "Missed";
+        } else {
+            const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
+            status = isPast ? "Missed" : "Assigned";
+        }
+    } else {
+        status = dto.status === "Draft" ? "Draft" : "Assigned";
+    }
     return {
         id: dto.id,
         title: dto.title,

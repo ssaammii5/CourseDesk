@@ -2,8 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+    AlertCircle,
     ArrowLeft,
+    Award,
+    Check,
     ClipboardList,
+    Clock,
     EllipsisVertical,
     FileArchive,
     FileText,
@@ -39,7 +43,7 @@ interface AssignmentAttachment {
     id: number; title: string; fileType: string; thumbClass: string; url?: string; kind?: "file" | "link"; file?: File;
 }
 
-type WorkStatus = "Assigned" | "Turned in";
+type WorkStatus = "Assigned" | "Draft" | "Submitted" | "Turned in" | "Graded" | "Missed";
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "avif"];
 const TEXT_EXTS = ["txt", "md", "csv", "json", "log", "js", "ts", "jsx", "tsx", "html", "css", "xml", "yml", "yaml"];
@@ -64,8 +68,8 @@ function cardEmoji(a: AssignmentAttachment): string {
 }
 
 export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: AssignmentDetailViewProps) {
-    const initiallyTurnedIn = detail.submission.status === "Turned in" || detail.submission.status === "Submitted";
-    const [status, setStatus] = useState<WorkStatus>(initiallyTurnedIn ? "Turned in" : "Assigned");
+    const initialStatus = (detail.submission.status as WorkStatus) || "Assigned";
+    const [status, setStatus] = useState<WorkStatus>(initialStatus);
     const [submissionId, setSubmissionId] = useState<number | undefined>(detail.submission.id);
     const [attachments, setAttachments] = useState<AssignmentAttachment[]>(
         detail.submission.attachments ?? []
@@ -79,13 +83,15 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
     const [linkTouched, setLinkTouched] = useState(false);
     const [viewerAttachment, setViewerAttachment] = useState<AssignmentAttachment | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const turnedIn = status === "Turned in";
+    const turnedIn = status === "Turned in" || status === "Submitted";
+    const isMissed = status === "Missed";
+    const isGraded = status === "Graded";
+    const isDraft = status === "Draft";
     const linkValid = isValidLink(linkValue);
     const linkError = linkTouched && !linkValid;
 
     useEffect(() => {
-        const isTurned = detail.submission.status === "Turned in" || detail.submission.status === "Submitted";
-        setStatus(isTurned ? "Turned in" : "Assigned");
+        setStatus((detail.submission.status as WorkStatus) || "Assigned");
         setSubmissionId(detail.submission.id);
         setAttachments(detail.submission.attachments ?? []);
     }, [detail.submission]);
@@ -312,19 +318,53 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                         <section className="rounded-lg bg-[#e9eef4] p-4 sm:p-5 dark:border dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Your work</h2>
-                                <span
-                                    className={`text-sm font-medium ${turnedIn ? "text-[#188038] dark:text-emerald-400" : "text-gray-900 dark:text-slate-300"}`}
-                                >
-                                    {turnedIn ? "Turned in" : "Assigned"}
-                                </span>
+                                {isMissed ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40">
+                                        <AlertCircle className="h-3.5 w-3.5" />
+                                        Missed
+                                    </span>
+                                ) : isGraded ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+                                        <Award className="h-3.5 w-3.5" />
+                                        Graded
+                                    </span>
+                                ) : turnedIn ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40">
+                                        <Check className="h-3.5 w-3.5" />
+                                        Submitted
+                                    </span>
+                                ) : isDraft ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        Draft
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                                        Assigned
+                                    </span>
+                                )}
                             </div>
+
+                            {/* Missed Warning banner */}
+                            {isMissed && (
+                                <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-200/80 bg-rose-50/80 dark:border-rose-900/60 dark:bg-rose-950/40 p-3.5 text-xs text-rose-700 dark:text-rose-300">
+                                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                                    <div>
+                                        <p className="font-semibold text-rose-800 dark:text-rose-200">Submissions Closed</p>
+                                        <p className="mt-0.5 leading-relaxed text-rose-700/90 dark:text-rose-300/90">
+                                            The deadline for this assignment has passed. It is marked as Missed and can no longer be submitted.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {attachments.length > 0 && (
                                 <div className="mt-4 space-y-4">
                                     {attachments.map((att) => (
                                         <div key={att.id} className="flex items-center gap-3">
                                             <WorkAttachmentCard attachment={att} onOpen={setViewerAttachment} />
-                                            {!turnedIn && (
+                                            {!turnedIn && !isMissed && !isGraded && (
                                                 <button
                                                     type="button"
                                                     aria-label={`Remove ${att.title}`}
@@ -346,7 +386,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 </div>
                             )}
 
-                            {!turnedIn && (
+                            {!turnedIn && !isMissed && !isGraded && (
                                 <div className="relative mt-4">
                                     <button
                                         type="button"
@@ -383,18 +423,37 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 </div>
                             )}
 
-                            <button
-                                type="button"
-                                disabled={uploading}
-                                onClick={turnedIn ? () => setUnsubmitOpen(true) : handlePrimary}
-                                className={`mt-4 w-full cursor-pointer rounded-full py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${turnedIn
-                                    ? "border border-gray-400/80 text-[#1a73e8] hover:bg-white/70 dark:border-slate-700 dark:hover:bg-slate-800"
-                                    : "bg-[#1a63d8] text-white hover:bg-[#1554b5]"
-                                    }`}
-                            >
-                                {uploading ? "Saving..." : turnedIn ? "Unsubmit" : attachments.length > 0 ? "Turn in" : "Mark as done"}
-                            </button>
-                            {!turnedIn && (
+                            {isMissed ? (
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="mt-4 w-full cursor-not-allowed rounded-full border border-rose-200 bg-rose-50/80 py-2.5 text-sm font-semibold text-rose-600 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-400 opacity-90"
+                                >
+                                    Submission Closed (Missed)
+                                </button>
+                            ) : isGraded ? (
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="mt-4 w-full cursor-not-allowed rounded-full border border-emerald-200 bg-emerald-50/80 py-2.5 text-sm font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                >
+                                    Assignment Graded
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    disabled={uploading}
+                                    onClick={turnedIn ? () => setUnsubmitOpen(true) : handlePrimary}
+                                    className={`mt-4 w-full cursor-pointer rounded-full py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${turnedIn
+                                        ? "border border-gray-400/80 text-[#1a73e8] hover:bg-white/70 dark:border-slate-700 dark:hover:bg-slate-800"
+                                        : "bg-[#1a63d8] text-white hover:bg-[#1554b5]"
+                                        }`}
+                                >
+                                    {uploading ? "Saving..." : turnedIn ? "Unsubmit" : attachments.length > 0 ? "Turn in" : "Mark as done"}
+                                </button>
+                            )}
+
+                            {!turnedIn && !isMissed && !isGraded && (
                                 <p className="mt-4 text-center text-xs italic text-gray-700 dark:text-slate-400">
                                     Work cannot be turned in after the due date
                                 </p>

@@ -96,6 +96,12 @@ def submit_assignment(
         raise HTTPException(400, detail="Assignment is not published")
 
     now = datetime.now(UTC)
+    if assignment.deadline_utc is not None and now > assignment.deadline_utc:
+        raise HTTPException(
+            400,
+            detail="Submission deadline has passed. This assignment is missed and cannot be submitted."
+        )
+
     submission = db.scalar(
         select(SubmissionModel).where(
             SubmissionModel.assignment_id == assignment.id,
@@ -113,9 +119,7 @@ def submit_assignment(
     submission.answer = body.answer
     submission.status = "Submitted"
     submission.submitted_at_utc = now
-    submission.is_late = (
-        assignment.deadline_utc is not None and now > assignment.deadline_utc
-    )
+    submission.is_late = False
     # ── NEW ──
     submission.private_note = body.private_note
     submission.external_url = body.external_url
@@ -354,6 +358,10 @@ def unsubmit_assignment(
         raise HTTPException(403, detail="You cannot unsubmit this submission")
     if submission.status == "Graded":
         raise HTTPException(400, detail="Cannot unsubmit work that has already been graded")
+
+    now = datetime.now(UTC)
+    if submission.assignment and submission.assignment.deadline_utc is not None and now > submission.assignment.deadline_utc:
+        raise HTTPException(400, detail="Cannot unsubmit work after the deadline has passed.")
 
     submission.status = "Draft"
     submission.submitted_at_utc = None

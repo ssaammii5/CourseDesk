@@ -34,7 +34,25 @@ export interface CourseworkViewProps {
 }
 export type ClassworkViewProps = CourseworkViewProps;
 
-type StatusFilter = "all" | "pending" | "completed" | "overdue";
+export type AssignmentStage = "Assigned" | "Draft" | "Submitted" | "Graded" | "Missed";
+export type StatusFilter = "all" | "assigned" | "draft" | "submitted" | "graded" | "missed";
+
+export function getEffectiveStage(
+    status?: string,
+    deadlineUtc?: string,
+): AssignmentStage {
+    if (status === "Graded") return "Graded";
+    if (status === "Submitted" || status === "Turned in") return "Submitted";
+    if (status === "Draft") return "Draft";
+    if (status === "Missed") return "Missed";
+    if (deadlineUtc) {
+        const due = new Date(deadlineUtc).getTime();
+        if (!isNaN(due) && due < Date.now()) {
+            return "Missed";
+        }
+    }
+    return "Assigned";
+}
 
 function formatDateTime(iso?: string, fallback = ""): string {
     if (!iso) return fallback;
@@ -57,35 +75,6 @@ function formatDateTime(iso?: string, fallback = ""): string {
     } catch {
         return fallback;
     }
-}
-
-function getDueMeta(deadlineUtc?: string, status?: string) {
-    const isCompleted = status === "Graded" || status === "Submitted" || status === "Turned in";
-    if (isCompleted) {
-        return { isOverdue: false, isSoon: false, label: "Completed" };
-    }
-    if (!deadlineUtc) {
-        return { isOverdue: false, isSoon: false, label: "No due date" };
-    }
-    const due = new Date(deadlineUtc).getTime();
-    if (isNaN(due)) {
-        return { isOverdue: false, isSoon: false, label: "" };
-    }
-    const now = Date.now();
-    const diff = due - now;
-
-    if (diff < 0) {
-        return { isOverdue: true, isSoon: false, label: "Overdue" };
-    }
-    if (diff <= 48 * 60 * 60 * 1000) {
-        const hours = Math.round(diff / (60 * 60 * 1000));
-        return {
-            isOverdue: false,
-            isSoon: true,
-            label: hours <= 1 ? "Due in 1 hour" : hours < 24 ? `Due in ${hours}h` : "Due tomorrow",
-        };
-    }
-    return { isOverdue: false, isSoon: false, label: "" };
 }
 
 export function CourseworkView({
@@ -114,39 +103,40 @@ export function CourseworkView({
         return Array.from(set).sort();
     }, [published]);
 
-    // Overall metrics for learner
+    // Overall 5-stage metrics for learner
     const metrics = useMemo(() => {
-        let completed = 0;
-        let overdue = 0;
-        let pending = 0;
+        let assigned = 0;
+        let draft = 0;
+        let submitted = 0;
+        let graded = 0;
+        let missed = 0;
 
         for (const item of published) {
-            const effectiveStatus = assignmentStatusMap[item.id] || item.status;
-            const dueMeta = getDueMeta(item.deadlineUtc, effectiveStatus);
+            const rawStatus = assignmentStatusMap[item.id] || item.status;
+            const stage = getEffectiveStage(rawStatus, item.deadlineUtc);
 
-            if (effectiveStatus === "Graded" || effectiveStatus === "Submitted" || effectiveStatus === "Turned in") {
-                completed++;
-            } else {
-                pending++;
-                if (dueMeta.isOverdue) {
-                    overdue++;
-                }
-            }
+            if (stage === "Assigned") assigned++;
+            else if (stage === "Draft") draft++;
+            else if (stage === "Submitted") submitted++;
+            else if (stage === "Graded") graded++;
+            else if (stage === "Missed") missed++;
         }
 
         return {
             total: published.length,
-            completed,
-            pending,
-            overdue,
+            assigned,
+            draft,
+            submitted,
+            graded,
+            missed,
         };
     }, [published, assignmentStatusMap]);
 
     // Filter items based on search and selected filters
     const filteredItems = useMemo(() => {
         return published.filter((item) => {
-            const effectiveStatus = assignmentStatusMap[item.id] || item.status;
-            const dueMeta = getDueMeta(item.deadlineUtc, effectiveStatus);
+            const rawStatus = assignmentStatusMap[item.id] || item.status;
+            const stage = getEffectiveStage(rawStatus, item.deadlineUtc);
 
             // Search query
             if (searchQuery.trim()) {
@@ -160,17 +150,13 @@ export function CourseworkView({
             // Topic filter
             if (topicFilter !== "all" && item.topic !== topicFilter) return false;
 
-            // Status filter
-            if (statusFilter === "pending") {
-                if (effectiveStatus === "Graded" || effectiveStatus === "Submitted" || effectiveStatus === "Turned in") {
-                    return false;
-                }
-            } else if (statusFilter === "completed") {
-                if (effectiveStatus !== "Graded" && effectiveStatus !== "Submitted" && effectiveStatus !== "Turned in") {
-                    return false;
-                }
-            } else if (statusFilter === "overdue") {
-                if (!dueMeta.isOverdue) return false;
+            // 5 Stages filter
+            if (statusFilter !== "all") {
+                if (statusFilter === "assigned" && stage !== "Assigned") return false;
+                if (statusFilter === "draft" && stage !== "Draft") return false;
+                if (statusFilter === "submitted" && stage !== "Submitted") return false;
+                if (statusFilter === "graded" && stage !== "Graded") return false;
+                if (statusFilter === "missed" && stage !== "Missed") return false;
             }
 
             return true;
@@ -283,47 +269,102 @@ export function CourseworkView({
                     </div>
                 </div>
 
-                {/* KPI Metrics Row */}
-                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
+                {/* KPI Metrics Row - 5 Stages */}
+                <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                    {/* Assigned */}
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(statusFilter === "assigned" ? "all" : "assigned")}
+                        className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "assigned"
+                                ? "border-blue-400 bg-blue-50/80 dark:bg-blue-950/40 dark:border-blue-700 shadow-xs ring-2 ring-blue-500/20"
+                                : "border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
+                        }`}
+                    >
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                             <Layers className="h-5 w-5" />
                         </div>
                         <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.total}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Assignments</p>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.assigned}</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Assigned</p>
                         </div>
-                    </div>
+                    </button>
 
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.completed}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Completed</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
+                    {/* Draft */}
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(statusFilter === "draft" ? "all" : "draft")}
+                        className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "draft"
+                                ? "border-amber-400 bg-amber-50/80 dark:bg-amber-950/40 dark:border-amber-700 shadow-xs ring-2 ring-amber-500/20"
+                                : "border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
+                        }`}
+                    >
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                             <Clock className="h-5 w-5" />
                         </div>
                         <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.pending}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Pending</p>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.draft}</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Draft</p>
                         </div>
-                    </div>
+                    </button>
 
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
+                    {/* Submitted */}
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(statusFilter === "submitted" ? "all" : "submitted")}
+                        className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "submitted"
+                                ? "border-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/40 dark:border-indigo-700 shadow-xs ring-2 ring-indigo-500/20"
+                                : "border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
+                        }`}
+                    >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                            <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.submitted}</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Submitted</p>
+                        </div>
+                    </button>
+
+                    {/* Graded */}
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(statusFilter === "graded" ? "all" : "graded")}
+                        className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "graded"
+                                ? "border-emerald-400 bg-emerald-50/80 dark:bg-emerald-950/40 dark:border-emerald-700 shadow-xs ring-2 ring-emerald-500/20"
+                                : "border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
+                        }`}
+                    >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            <Award className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.graded}</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Graded</p>
+                        </div>
+                    </button>
+
+                    {/* Missed */}
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(statusFilter === "missed" ? "all" : "missed")}
+                        className={`flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "missed"
+                                ? "border-rose-400 bg-rose-50/80 dark:bg-rose-950/40 dark:border-rose-700 shadow-xs ring-2 ring-rose-500/20"
+                                : "border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
+                        }`}
+                    >
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
                             <AlertCircle className="h-5 w-5" />
                         </div>
                         <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.overdue}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Overdue</p>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.missed}</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Missed</p>
                         </div>
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -373,21 +414,23 @@ export function CourseworkView({
                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     </div>
 
-                    {/* Status Filter Pills */}
-                    <div className="flex items-center gap-1 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 p-1 border border-slate-200/60 dark:border-slate-700/60">
+                    {/* Stage Filter Pills */}
+                    <div className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 p-1 border border-slate-200/60 dark:border-slate-700/60">
                         {(
                             [
-                                { id: "all", label: "All" },
-                                { id: "pending", label: "Pending" },
-                                { id: "completed", label: "Completed" },
-                                ...(metrics.overdue > 0 ? [{ id: "overdue", label: `Overdue (${metrics.overdue})` }] : []),
+                                { id: "all", label: `All (${published.length})` },
+                                { id: "assigned", label: `Assigned (${metrics.assigned})` },
+                                { id: "draft", label: `Draft (${metrics.draft})` },
+                                { id: "submitted", label: `Submitted (${metrics.submitted})` },
+                                { id: "graded", label: `Graded (${metrics.graded})` },
+                                { id: "missed", label: `Missed (${metrics.missed})` },
                             ] as const
                         ).map((tab) => (
                             <button
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setStatusFilter(tab.id as StatusFilter)}
-                                className={`rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${statusFilter === tab.id
+                                className={`cursor-pointer rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${statusFilter === tab.id
                                     ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs"
                                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                                     }`}
@@ -443,7 +486,8 @@ export function CourseworkView({
                     const totalInTopic = group.entries.length;
                     const completedInTopic = group.entries.filter((e) => {
                         const status = assignmentStatusMap[e.id] || e.status;
-                        return status === "Graded" || status === "Submitted" || status === "Turned in";
+                        const stage = getEffectiveStage(status, e.deadlineUtc);
+                        return stage === "Graded" || stage === "Submitted";
                     }).length;
 
                     return (
@@ -533,10 +577,7 @@ function CourseworkItemCard({
     onToggle: () => void;
     onCopyLink: () => void;
 }) {
-    const router = useRouter();
-    const dueMeta = getDueMeta(entry.deadlineUtc, effectiveStatus);
-    const isCompleted =
-        effectiveStatus === "Graded" || effectiveStatus === "Submitted" || effectiveStatus === "Turned in";
+    const stage = getEffectiveStage(effectiveStatus, entry.deadlineUtc);
 
     const Icon = FileText;
     const iconClass = "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/40";
@@ -591,25 +632,31 @@ function CourseworkItemCard({
                 {/* Status & Due Date Info */}
                 <div className="flex items-center gap-3 shrink-0">
                     <div className="hidden sm:flex flex-col items-end text-right">
-                        {/* Status Badge */}
-                        {isCompleted ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+                        {/* 5-Stage Status Badge */}
+                        {stage === "Graded" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+                                <Award className="h-3 w-3" />
+                                Graded
+                            </span>
+                        ) : stage === "Submitted" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40">
                                 <Check className="h-3 w-3" />
-                                {effectiveStatus === "Graded" ? "Graded" : "Turned in"}
+                                Submitted
                             </span>
-                        ) : dueMeta.isOverdue ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40">
-                                <AlertCircle className="h-3 w-3" />
-                                Overdue
-                            </span>
-                        ) : dueMeta.isSoon ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
+                        ) : stage === "Draft" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
                                 <Clock className="h-3 w-3" />
-                                {dueMeta.label}
+                                Draft
+                            </span>
+                        ) : stage === "Missed" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40">
+                                <AlertCircle className="h-3 w-3" />
+                                Missed
                             </span>
                         ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
-                                {effectiveStatus || "Assigned"}
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                                Assigned
                             </span>
                         )}
 
@@ -633,6 +680,17 @@ function CourseworkItemCard({
             {/* Expanded Content Drawer */}
             {expanded && (
                 <div className="border-t border-slate-200/70 dark:border-slate-700/70 bg-slate-50/60 dark:bg-slate-900/40 p-5 sm:p-6 rounded-b-2xl space-y-5 animate-in fade-in duration-150">
+                    {/* Missed Warning Banner */}
+                    {stage === "Missed" && (
+                        <div className="flex items-center gap-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 p-3 text-xs text-rose-700 dark:text-rose-300">
+                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                            <div>
+                                <p className="font-semibold">Submission Deadline Passed</p>
+                                <p className="text-rose-600/90 dark:text-rose-300/90">This assignment was missed and can no longer be submitted.</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Description */}
                     <div>
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
@@ -684,9 +742,23 @@ function CourseworkItemCard({
                         {courseId !== undefined && (
                             <Link
                                 href={`/course/${courseId}/assignments/${entry.id}`}
-                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 text-sm font-semibold shadow-xs hover:shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
+                                    stage === "Missed"
+                                        ? "border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+                                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99]"
+                                }`}
                             >
-                                <span>{isCompleted ? "Review your submission" : "View instructions & submit"}</span>
+                                <span>
+                                    {stage === "Missed"
+                                        ? "View details (Submission closed)"
+                                        : stage === "Graded"
+                                        ? "View grade & feedback"
+                                        : stage === "Submitted"
+                                        ? "Review your submission"
+                                        : stage === "Draft"
+                                        ? "Continue draft"
+                                        : "View instructions & submit"}
+                                </span>
                                 <ArrowRight className="h-4 w-4" />
                             </Link>
                         )}

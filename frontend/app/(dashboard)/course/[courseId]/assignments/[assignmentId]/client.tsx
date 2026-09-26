@@ -31,8 +31,18 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
             const mine = mySubs.find((s) => s.assignmentId === dto.id);
             if (mine) {
                 submissionId = mine.id;
-                submissionStatus =
-                    mine.status === "Graded" ? "Graded" : mine.status === "Submitted" ? "Turned in" : "Assigned";
+                if (mine.status === "Graded") {
+                    submissionStatus = "Graded";
+                } else if (mine.status === "Submitted" || mine.status === "Turned in") {
+                    submissionStatus = "Turned in";
+                } else if (mine.status === "Draft") {
+                    submissionStatus = "Draft";
+                } else if (mine.status === "Missed") {
+                    submissionStatus = "Missed";
+                } else {
+                    const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
+                    submissionStatus = isPast ? "Missed" : "Assigned";
+                }
                 submissionAttachments = (mine.attachments ?? []).map((att) => ({
                     id: att.id,
                     title: att.fileName,
@@ -41,9 +51,13 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
                     url: att.url ?? undefined,
                     kind: (att.kind === "link" ? "link" : "file") as "file" | "link",
                 }));
+            } else {
+                const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
+                submissionStatus = isPast ? "Missed" : "Assigned";
             }
         } catch {
-            // Fall back to "Assigned" if submissions can't be loaded.
+            const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
+            submissionStatus = isPast ? "Missed" : "Assigned";
         }
     }
 
