@@ -15,12 +15,15 @@ import type { CourseDto } from "@/lib/api/courses";
 import type { CourseDetails, CourseworkEntry, ClassDetails, ClassworkEntry } from "@/types";
 import type { SessionDto, AnnouncementDto, AnnouncementAttachmentDto } from "@/types/session";
 import type { SubmissionDto } from "@/lib/api/submissions";
-import { loadInstructorCoursework, saveInstructorCoursework } from "@/lib/instructorCoursework";
 import {
     createAssignmentRequest,
     deleteAssignmentRequest,
+    getCourseAssignmentsRequest,
+    publishAssignmentRequest,
+    updateAssignmentRequest,
     uploadAssignmentAttachmentRequest,
 } from "@/lib/api/assignments";
+import { mapAssignmentToCoursework } from "@/app/(dashboard)/course/[courseId]/client";
 import { getCourseSessionsRequest } from "@/lib/api/sessions";
 import {
     getCourseAnnouncementsRequest,
@@ -145,14 +148,18 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     }, []);
 
     useEffect(() => {
-        if (isInstructor)
-            setClasswork(loadInstructorCoursework(details.courseId, details.classwork));
-    }, [isInstructor, details.courseId, details.classwork]);
+        setClasswork(details.classwork);
+    }, [details.classwork]);
 
-    const mutateClasswork = (next: ClassworkEntry[]) => {
-        setClasswork(next);
-        if (isInstructor) saveInstructorCoursework(details.courseId, next);
-    };
+    const refreshCoursework = useCallback(async () => {
+        try {
+            const assignments = await getCourseAssignmentsRequest(details.courseId);
+            const mapped = assignments.map((a) => mapAssignmentToCoursework(a, !isInstructor));
+            setClasswork(mapped);
+        } catch (err) {
+            console.error("Failed to refresh coursework from database", err);
+        }
+    }, [details.courseId, isInstructor]);
 
     const openCreate = () => {
         setEditing(null);
@@ -172,10 +179,19 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     const handleDelete = async (entry: ClassworkEntry) => {
         try {
             await deleteAssignmentRequest(entry.id);
+            await refreshCoursework();
         } catch (err) {
             console.error("Failed to delete assignment", err);
         }
-        mutateClasswork(classwork.filter((i) => i.id !== entry.id));
+    };
+
+    const handlePublish = async (entry: ClassworkEntry) => {
+        try {
+            await publishAssignmentRequest(entry.id);
+            await refreshCoursework();
+        } catch (err) {
+            console.error("Failed to publish assignment", err);
+        }
     };
 
     const handlePostAnnouncement = useCallback(
@@ -310,29 +326,43 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
 
     const handleSubmit = async (
         entry: ClassworkEntry,
-        attachments: { kind: string; file?: File; url?: string; title?: string }[],
+        attachments: { id?: number; kind: string; file?: File; url?: string; title?: string }[],
     ) => {
         try {
-            const payload = {
-                courseId: details.courseId,
-                title: entry.title,
-                description: entry.description,
-                topic: entry.topic,
-                kind:
-                    entry.kind === "quiz"
-                        ? "Quiz"
-                        : entry.kind === "material"
-                            ? "Material"
-                            : "Assignment",
-                deadlineUtc: new Date(
-                    Date.now() + 7 * 24 * 60 * 60 * 1000,
-                ).toISOString(),
-                maxMarks: 100,
-            };
-            const res = await createAssignmentRequest(payload);
-            const newId = res.id;
+            const isEditing = classwork.some((i) => i.id === entry.id && i.id > 0);
+            const deadlineUtc = entry.deadlineUtc || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            const maxMarks = entry.maxMarks ?? 100;
+            const topic = entry.topic && entry.topic.trim() ? entry.topic.trim() : "General";
+
+            let assignmentId = entry.id;
+
+            if (isEditing) {
+                await updateAssignmentRequest(entry.id, {
+                    title: entry.title,
+                    description: entry.description,
+                    topic,
+                    kind: "Assignment",
+                    deadlineUtc,
+                    maxMarks,
+                });
+            } else {
+                const res = await createAssignmentRequest({
+                    courseId: details.courseId,
+                    title: entry.title,
+                    description: entry.description,
+                    topic,
+                    kind: "Assignment",
+                    deadlineUtc,
+                    maxMarks,
+                });
+                assignmentId = res.id;
+            }
 
             for (const att of attachments) {
+                // If attachment already has a database id and no new file was provided, skip
+                if (att.id && att.id > 0 && !att.file) {
+                    continue;
+                }
                 const fd = new FormData();
                 if (att.kind === "file" && att.file) {
                     fd.append("file", att.file);
@@ -342,19 +372,17 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 } else {
                     continue;
                 }
-                await uploadAssignmentAttachmentRequest(newId, fd);
+                await uploadAssignmentAttachmentRequest(assignmentId, fd);
             }
 
-            const savedEntry: ClassworkEntry = { ...entry, id: newId };
-            const exists = classwork.some((i) => i.id === entry.id);
-            mutateClasswork(
-                exists
-                    ? classwork.map((i) => (i.id === entry.id ? savedEntry : i))
-                    : [...classwork, savedEntry],
-            );
+            if (entry.status === "Assigned") {
+                await publishAssignmentRequest(assignmentId);
+            }
+
+            await refreshCoursework();
             closeEditor();
         } catch (err) {
-            console.error("Failed to create assignment", err);
+            console.error("Failed to save assignment to database", err);
         }
     };
 
@@ -445,6 +473,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                         onCreate={openCreate}
                         onEdit={openEdit}
                         onDelete={handleDelete}
+                        onPublish={handlePublish}
                         courseId={details.courseId}
                         submissions={submissions}
                     />

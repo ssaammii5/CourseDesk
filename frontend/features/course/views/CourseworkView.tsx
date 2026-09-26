@@ -18,6 +18,7 @@ import {
     FileText,
     Filter,
     Layers,
+    Paperclip,
     Search,
     Sparkles,
     SquareUserRound,
@@ -25,6 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { API_URL } from "@/lib/api/client";
 import type { CourseworkEntry } from "@/types";
 
 export interface CourseworkViewProps {
@@ -700,6 +702,51 @@ function CourseworkItemCard({
                             {entry.description || "No specific instructions provided for this assignment."}
                         </p>
                     </div>
+
+                    {/* Attachments */}
+                    {entry.attachments && entry.attachments.length > 0 && (
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                                Attachments ({entry.attachments.length})
+                            </h4>
+                            <div className="flex flex-wrap gap-2.5">
+                                {entry.attachments.map((att) => {
+                                    const rawUrl = att.url;
+                                    const fileUrl = rawUrl?.startsWith("http")
+                                        ? rawUrl
+                                        : rawUrl
+                                        ? `${API_URL}${rawUrl}`
+                                        : undefined;
+
+                                    return fileUrl ? (
+                                        <a
+                                            key={att.id}
+                                            href={fileUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-2xs"
+                                        >
+                                            <Paperclip className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                            <span className="truncate max-w-[220px]">{att.fileName}</span>
+                                            {att.fileSize && (
+                                                <span className="text-[10px] text-slate-400 font-normal">
+                                                    ({att.fileSize})
+                                                </span>
+                                            )}
+                                        </a>
+                                    ) : (
+                                        <div
+                                            key={att.id}
+                                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300"
+                                        >
+                                            <Paperclip className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                            <span className="truncate max-w-[220px]">{att.fileName}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Metadata tags */}
                     <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-slate-500 dark:text-slate-400">

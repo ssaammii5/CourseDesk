@@ -30,7 +30,7 @@ function formatDue(iso: string): string {
     return `${date}, ${time}`;
 }
 
-function mapAssignmentToCoursework(
+export function mapAssignmentToCoursework(
     dto: AssignmentDto,
     isLearner: boolean,
 ): CourseworkEntry {
@@ -54,7 +54,7 @@ function mapAssignmentToCoursework(
     return {
         id: dto.id,
         title: dto.title,
-        topic: dto.topic || dto.courseName || "No topic",
+        topic: dto.topic?.trim() || "General",
         dueLabel: `Due ${formatDue(dto.deadlineUtc)}`,
         postedLabel: `Posted ${formatDate(dto.createdAtUtc)}`,
         status,
@@ -66,6 +66,7 @@ function mapAssignmentToCoursework(
         turnedInCount: dto.turnedInCount,
         gradedCount: dto.gradedCount,
         assignedCount: dto.assignedCount,
+        attachments: dto.attachments,
     };
 }
 

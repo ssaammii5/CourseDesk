@@ -61,10 +61,27 @@ export function AssignmentCreateView({
     const [title, setTitle] = useState(initial?.title ?? "");
     const [titleTouched, setTitleTouched] = useState(false);
     const [instructions, setInstructions] = useState(initial?.description ?? "");
-    const [attachments, setAttachments] = useState<DraftAttachment[]>([]);
-    const [points, setPoints] = useState(100);
-    const [due, setDue] = useState<DueOption>("none");
-    const [customDate, setCustomDate] = useState("");
+    const [topic, setTopic] = useState(initial?.topic ?? "General");
+    const [attachments, setAttachments] = useState<DraftAttachment[]>(() => {
+        if (!initial?.attachments) return [];
+        return initial.attachments.map((att) => ({
+            id: att.id,
+            title: att.fileName,
+            kind: (att.kind === "link" ? "link" : "file") as "file" | "link",
+            fileType: att.fileType,
+            url: att.url ?? undefined,
+        }));
+    });
+    const [points, setPoints] = useState(initial?.maxMarks ?? 100);
+    const [due, setDue] = useState<DueOption>(initial?.deadlineUtc ? "custom" : "none");
+    const [customDate, setCustomDate] = useState(() => {
+        if (!initial?.deadlineUtc) return "";
+        try {
+            return new Date(initial.deadlineUtc).toISOString().slice(0, 10);
+        } catch {
+            return "";
+        }
+    });
     const [assignMenuOpen, setAssignMenuOpen] = useState(false);
     const [linkDialogOpen, setLinkDialogOpen] = useState(false);
     const [linkValue, setLinkValue] = useState("");
@@ -179,12 +196,14 @@ export function AssignmentCreateView({
     const buildEntry = (status: "Assigned" | "Draft"): ClassworkEntry => ({
         id: initial?.id ?? Date.now(),
         title: title.trim() || "Untitled assignment",
-        topic: initial?.topic ?? "No topic",
+        topic: topic.trim() || "General",
         dueLabel: dueDate ? `Due ${formatShort(dueDate)}` : "No due date",
         postedLabel: initial?.postedLabel ?? `Posted ${formatShort(new Date())}`,
         status,
         description: instructions,
         kind: initial?.kind ?? "assignment",
+        deadlineUtc: dueDate ? dueDate.toISOString() : undefined,
+        maxMarks: points,
     });
 
     const submit = (status: "Assigned" | "Draft") => {
@@ -459,6 +478,19 @@ export function AssignmentCreateView({
                                 className="mt-2 w-full rounded-md border border-gray-400/80 px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                             />
                         )}
+                    </div>
+
+                    <div>
+                        <p className="text-sm text-gray-800">Topic</p>
+                        <div className="relative mt-2">
+                            <input
+                                type="text"
+                                value={topic}
+                                onChange={(e) => setTopic(e.target.value)}
+                                placeholder="e.g. Classical Cryptography"
+                                className="w-full rounded-md border border-gray-400/80 px-4 py-2.5 text-sm text-gray-900 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            />
+                        </div>
                     </div>
                 </aside>
             </div>

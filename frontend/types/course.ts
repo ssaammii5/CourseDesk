@@ -101,6 +101,15 @@ export const CourseworkEntrySchema = z.object({
     turnedInCount: z.number().optional(),
     gradedCount: z.number().optional(),
     assignedCount: z.number().optional(),
+    attachments: z.array(z.object({
+        id: z.number().int(),
+        fileName: z.string(),
+        fileType: z.string(),
+        fileSize: z.string().optional(),
+        uploadedAtUtc: z.string().optional(),
+        kind: z.string().optional(),
+        url: z.string().nullable().optional(),
+    })).optional(),
 });
 
 export type CourseworkEntry = z.infer<typeof CourseworkEntrySchema>;

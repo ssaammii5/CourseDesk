@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
     Award,
     Calendar,
+    Check,
     ChevronDown,
     ChevronUp,
     ChevronsDownUp,
@@ -14,6 +15,7 @@ import {
     FileText,
     Filter,
     Layers,
+    Paperclip,
     Pencil,
     Plus,
     Search,
@@ -67,6 +69,7 @@ export interface InstructorCourseworkViewProps {
     onCreate: () => void;
     onEdit: (entry: CourseworkEntry) => void;
     onDelete: (entry: CourseworkEntry) => void;
+    onPublish?: (entry: CourseworkEntry) => void;
     courseId?: number;
     submissions?: SubmissionDto[];
 }
@@ -77,6 +80,7 @@ export function InstructorCourseworkView({
     onCreate,
     onEdit,
     onDelete,
+    onPublish,
     courseId,
     submissions = [],
 }: InstructorCourseworkViewProps) {
@@ -475,7 +479,10 @@ export function InstructorCourseworkView({
                                         const Icon = config.icon;
                                         const isDraft = entry.status === "Draft";
                                         const stats = submissionStats[entry.id];
-                                        const hasSubs = stats && stats.total > 0;
+                                        const turnedInCount = stats ? stats.turnedIn : (entry.turnedInCount ?? 0);
+                                        const gradedCount = stats ? stats.graded : (entry.gradedCount ?? 0);
+                                        const totalCount = stats ? stats.total : (entry.submissionCount ?? (turnedInCount + gradedCount));
+                                        const hasSubs = totalCount > 0 || (entry.turnedInCount ?? 0) > 0 || (entry.gradedCount ?? 0) > 0;
 
                                         return (
                                             <div
@@ -514,6 +521,13 @@ export function InstructorCourseworkView({
                                                                     {entry.maxMarks} pts
                                                                 </span>
                                                             )}
+
+                                                            {entry.attachments && entry.attachments.length > 0 && (
+                                                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                                                    <Paperclip className="h-3 w-3 text-slate-400" />
+                                                                    {entry.attachments.length} {entry.attachments.length === 1 ? "attachment" : "attachments"}
+                                                                </span>
+                                                            )}
                                                         </div>
 
                                                         <button
@@ -525,7 +539,7 @@ export function InstructorCourseworkView({
                                                                     onEdit(entry);
                                                                 }
                                                             }}
-                                                            className="mt-1 text-left text-[15px] font-semibold text-slate-900 dark:text-white truncate block hover:text-blue-600 dark:hover:text-blue-400 transition-colors w-full"
+                                                            className="mt-1 text-left text-[15px] font-semibold text-slate-900 dark:text-white truncate block hover:text-blue-600 dark:hover:text-blue-400 transition-colors w-full cursor-pointer"
                                                         >
                                                             {entry.title}
                                                         </button>
@@ -539,7 +553,7 @@ export function InstructorCourseworkView({
                                                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50">
                                                             <Users className="h-3.5 w-3.5" />
                                                             <span>
-                                                                {stats.turnedIn} submitted · {stats.graded} graded
+                                                                {turnedInCount} submitted · {gradedCount} graded
                                                             </span>
                                                         </span>
                                                     )}
@@ -550,12 +564,24 @@ export function InstructorCourseworkView({
                                                         <span>{formatDateTime(entry.deadlineUtc, entry.dueLabel)}</span>
                                                     </span>
 
+                                                    {/* Publish button if Draft */}
+                                                    {isDraft && onPublish && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onPublish(entry)}
+                                                            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                                                        >
+                                                            <Check className="h-3.5 w-3.5" />
+                                                            <span>Publish</span>
+                                                        </button>
+                                                    )}
+
                                                     {/* Quick Review action */}
                                                     {courseId && !isDraft && (
                                                         <button
                                                             type="button"
                                                             onClick={() => router.push(`/course/${courseId}/assignments/${entry.id}`)}
-                                                            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 px-3.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100/80 dark:hover:bg-blue-900/60 transition-colors"
+                                                            className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 px-3.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100/80 dark:hover:bg-blue-900/60 transition-colors cursor-pointer"
                                                         >
                                                             <ClipboardList className="h-3.5 w-3.5" />
                                                             <span>Review work</span>
@@ -577,6 +603,19 @@ export function InstructorCourseworkView({
                                                             <>
                                                                 <div className="fixed inset-0 z-20" onClick={() => setMenuFor(null)} />
                                                                 <div className="absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                                                                    {isDraft && onPublish && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setMenuFor(null);
+                                                                                onPublish(entry);
+                                                                            }}
+                                                                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-700/80 transition-colors"
+                                                                        >
+                                                                            <Check className="h-4 w-4" />
+                                                                            <span>Publish assignment</span>
+                                                                        </button>
+                                                                    )}
                                                                     {courseId && !isDraft && (
                                                                         <button
                                                                             type="button"
