@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import {
     Award,
-    BookOpen,
     Calendar,
     ChevronDown,
     ChevronUp,
@@ -14,7 +13,6 @@ import {
     EllipsisVertical,
     FileText,
     Filter,
-    HelpCircle,
     Layers,
     Pencil,
     Plus,
@@ -30,37 +28,15 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { CourseworkEntry } from "@/types";
 import type { SubmissionDto } from "@/lib/api/submissions";
 
-const KIND_CONFIG: Record<
-    string,
-    { icon: LucideIcon; iconClass: string; label: string; tagClass: string }
-> = {
-    assignment: {
-        icon: FileText,
-        iconClass:
-            "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/40",
-        label: "Assignment",
-        tagClass:
-            "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-800/40",
-    },
-    quiz: {
-        icon: HelpCircle,
-        iconClass:
-            "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200/50 dark:border-purple-800/40",
-        label: "Quiz",
-        tagClass:
-            "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200/50 dark:border-purple-800/40",
-    },
-    material: {
-        icon: BookOpen,
-        iconClass:
-            "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/40",
-        label: "Material",
-        tagClass:
-            "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-800/40",
-    },
+const KIND_CONFIG = {
+    icon: FileText,
+    iconClass:
+        "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/40",
+    label: "Assignment",
+    tagClass:
+        "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-800/40",
 };
 
-type TypeFilter = "all" | "assignment" | "quiz" | "material";
 type StatusFilter = "all" | "published" | "draft";
 
 function formatDateTime(iso?: string, fallback = ""): string {
@@ -106,7 +82,6 @@ export function InstructorCourseworkView({
 }: InstructorCourseworkViewProps) {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
-    const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
     const [topicFilter, setTopicFilter] = useState<string>("all");
     const [collapsedTopics, setCollapsedTopics] = useState<ReadonlySet<string>>(new Set());
@@ -171,7 +146,6 @@ export function InstructorCourseworkView({
     // Filter items based on search and filters
     const filteredItems = useMemo(() => {
         return items.filter((item) => {
-            const kind = (item.kind ?? "assignment").toLowerCase();
             const isDraft = item.status === "Draft";
 
             // Search query
@@ -183,9 +157,6 @@ export function InstructorCourseworkView({
                 if (!matchTitle && !matchTopic && !matchDesc) return false;
             }
 
-            // Type filter
-            if (typeFilter !== "all" && kind !== typeFilter) return false;
-
             // Topic filter
             if (topicFilter !== "all" && item.topic !== topicFilter) return false;
 
@@ -195,7 +166,7 @@ export function InstructorCourseworkView({
 
             return true;
         });
-    }, [items, searchQuery, typeFilter, topicFilter, statusFilter]);
+    }, [items, searchQuery, topicFilter, statusFilter]);
 
     // Group filtered items by topic
     const visibleGroups = useMemo(() => {
@@ -229,13 +200,11 @@ export function InstructorCourseworkView({
 
     const hasActiveFilters =
         searchQuery.trim() !== "" ||
-        typeFilter !== "all" ||
         statusFilter !== "all" ||
         topicFilter !== "all";
 
     const resetFilters = () => {
         setSearchQuery("");
-        setTypeFilter("all");
         setStatusFilter("all");
         setTopicFilter("all");
     };
@@ -264,7 +233,7 @@ export function InstructorCourseworkView({
                             Coursework Management
                         </h1>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-xl">
-                            Publish assignments, organize learning modules, manage quizzes, and review learner submissions.
+                            Publish assignments, organize topics, and review learner submissions.
                         </p>
                     </div>
 
@@ -275,7 +244,7 @@ export function InstructorCourseworkView({
                             className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 text-sm font-semibold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
                             <Plus className="h-4 w-4" />
-                            <span>Create Coursework</span>
+                            <span>Create Assignment</span>
                         </button>
 
                         <button
@@ -301,7 +270,7 @@ export function InstructorCourseworkView({
                         </div>
                         <div>
                             <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.total}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Items</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Assignments</p>
                         </div>
                     </div>
 
@@ -348,7 +317,7 @@ export function InstructorCourseworkView({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search assignments, topics, or materials..."
+                        placeholder="Search assignments or topics..."
                         className="w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/60 py-2.5 pl-10 pr-9 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                     />
                     {searchQuery && (
@@ -408,30 +377,6 @@ export function InstructorCourseworkView({
                         ))}
                     </div>
 
-                    {/* Type Filter Pills */}
-                    <div className="flex items-center gap-1 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 p-1 border border-slate-200/60 dark:border-slate-700/60">
-                        {(
-                            [
-                                { id: "all", label: "All Types" },
-                                { id: "assignment", label: "Assignments" },
-                                { id: "quiz", label: "Quizzes" },
-                                { id: "material", label: "Materials" },
-                            ] as const
-                        ).map((tab) => (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setTypeFilter(tab.id)}
-                                className={`rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${typeFilter === tab.id
-                                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs"
-                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                                    }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
                     {hasActiveFilters && (
                         <button
                             type="button"
@@ -457,7 +402,7 @@ export function InstructorCourseworkView({
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-sm">
                         {hasActiveFilters
                             ? "Try adjusting your search query or filters to find what you are looking for."
-                            : "Create your first assignment, quiz, or study material to get started."}
+                            : "Create your first assignment to get started."}
                     </p>
                     <div className="mt-5 flex gap-3">
                         {hasActiveFilters ? (
@@ -526,8 +471,7 @@ export function InstructorCourseworkView({
                             {!collapsed ? (
                                 <div className="space-y-3">
                                     {group.entries.map((entry) => {
-                                        const kind = (entry.kind ?? "assignment").toLowerCase();
-                                        const config = KIND_CONFIG[kind] ?? KIND_CONFIG.assignment;
+                                        const config = KIND_CONFIG;
                                         const Icon = config.icon;
                                         const isDraft = entry.status === "Draft";
                                         const stats = submissionStats[entry.id];
@@ -575,7 +519,7 @@ export function InstructorCourseworkView({
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                if (courseId && kind !== "material" && !isDraft) {
+                                                                if (courseId && !isDraft) {
                                                                     router.push(`/course/${courseId}/assignments/${entry.id}`);
                                                                 } else {
                                                                     onEdit(entry);
@@ -607,7 +551,7 @@ export function InstructorCourseworkView({
                                                     </span>
 
                                                     {/* Quick Review action */}
-                                                    {courseId && kind !== "material" && !isDraft && (
+                                                    {courseId && !isDraft && (
                                                         <button
                                                             type="button"
                                                             onClick={() => router.push(`/course/${courseId}/assignments/${entry.id}`)}
@@ -633,7 +577,7 @@ export function InstructorCourseworkView({
                                                             <>
                                                                 <div className="fixed inset-0 z-20" onClick={() => setMenuFor(null)} />
                                                                 <div className="absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100">
-                                                                    {courseId && kind !== "material" && !isDraft && (
+                                                                    {courseId && !isDraft && (
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => {
@@ -683,7 +627,7 @@ export function InstructorCourseworkView({
                                     onClick={() => toggleTopic(group.topic)}
                                     className="w-full py-2.5 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-800 text-center transition-colors cursor-pointer"
                                 >
-                                    {totalInTopic} {totalInTopic === 1 ? "coursework item" : "coursework items"} collapsed • Click to show
+                                    {totalInTopic} {totalInTopic === 1 ? "assignment" : "assignments"} collapsed • Click to show
                                 </button>
                             )}
                         </section>
@@ -694,8 +638,8 @@ export function InstructorCourseworkView({
             {/* Confirm Delete Dialog */}
             <ConfirmDialog
                 open={deletingItem !== null}
-                title="Delete Coursework"
-                message={`Are you sure you want to delete "${deletingItem?.title}"? This will remove all associated submissions and materials.`}
+                title="Delete Assignment"
+                message={`Are you sure you want to delete "${deletingItem?.title}"? This will remove all associated submissions.`}
                 confirmLabel="Delete"
                 variant="danger"
                 onConfirm={handleConfirmDelete}

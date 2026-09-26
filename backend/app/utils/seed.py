@@ -209,7 +209,7 @@ def seed_notifications(db) -> None:
         ),
         NotificationModel(
             user_id=mahbubur_id,
-            title="New submission: Quiz 1 - Classical Ciphers",
+            title="New submission: Assignment 1 - Classical Ciphers",
             message="Md. Samiur Rahman submitted work in CIT-6105: Information Security",
             kind="submission",
             link=f"/course/{sec_id}/submissions",
@@ -396,9 +396,9 @@ def seed() -> None:
 
         a3 = create_assignment(
             AssignmentSchema(
-                course_id=security, title="Quiz 1 - Classical Ciphers",
-                description="10 multiple-choice questions on classical cryptography.",
-                topic="Software Security", kind="Quiz",
+                course_id=security, title="Assignment 1 - Classical Ciphers",
+                description="10 practice problems and questions on classical cryptography.",
+                topic="Software Security", kind="Assignment",
                 deadline_utc=datetime(2027, 1, 12, 23, 59, tzinfo=UTC), max_marks=10,
             ), mahbubur, db,
         )

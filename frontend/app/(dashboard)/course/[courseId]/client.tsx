@@ -47,7 +47,7 @@ function mapAssignmentToCoursework(
         postedLabel: `Posted ${formatDate(dto.createdAtUtc)}`,
         status,
         description: dto.description,
-        kind: (dto.kind ?? "assignment").toLowerCase() as CourseworkEntry["kind"],
+        kind: "assignment" as CourseworkEntry["kind"],
         deadlineUtc: dto.deadlineUtc,
         maxMarks: dto.maxMarks,
         submissionCount: dto.submissionCount,

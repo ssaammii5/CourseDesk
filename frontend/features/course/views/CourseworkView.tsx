@@ -5,7 +5,6 @@ import {
     AlertCircle,
     ArrowRight,
     Award,
-    BookOpen,
     Calendar,
     Check,
     CheckCircle2,
@@ -18,7 +17,6 @@ import {
     ExternalLink,
     FileText,
     Filter,
-    HelpCircle,
     Layers,
     Search,
     Sparkles,
@@ -36,7 +34,6 @@ export interface CourseworkViewProps {
 }
 export type ClassworkViewProps = CourseworkViewProps;
 
-type TypeFilter = "all" | "assignment" | "quiz" | "material";
 type StatusFilter = "all" | "pending" | "completed" | "overdue";
 
 function formatDateTime(iso?: string, fallback = ""): string {
@@ -98,7 +95,6 @@ export function CourseworkView({
 }: CourseworkViewProps) {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
-    const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
     const [topicFilter, setTopicFilter] = useState<string>("all");
     const [collapsedTopics, setCollapsedTopics] = useState<ReadonlySet<string>>(new Set());
@@ -120,34 +116,28 @@ export function CourseworkView({
 
     // Overall metrics for learner
     const metrics = useMemo(() => {
-        let assignments = 0;
-        let quizzes = 0;
-        let materials = 0;
         let completed = 0;
         let overdue = 0;
+        let pending = 0;
 
         for (const item of published) {
-            const kind = (item.kind ?? "assignment").toLowerCase();
-            if (kind === "quiz") quizzes++;
-            else if (kind === "material") materials++;
-            else assignments++;
-
             const effectiveStatus = assignmentStatusMap[item.id] || item.status;
             const dueMeta = getDueMeta(item.deadlineUtc, effectiveStatus);
 
             if (effectiveStatus === "Graded" || effectiveStatus === "Submitted" || effectiveStatus === "Turned in") {
                 completed++;
-            } else if (dueMeta.isOverdue) {
-                overdue++;
+            } else {
+                pending++;
+                if (dueMeta.isOverdue) {
+                    overdue++;
+                }
             }
         }
 
         return {
             total: published.length,
-            assignments,
-            quizzes,
-            materials,
             completed,
+            pending,
             overdue,
         };
     }, [published, assignmentStatusMap]);
@@ -155,7 +145,6 @@ export function CourseworkView({
     // Filter items based on search and selected filters
     const filteredItems = useMemo(() => {
         return published.filter((item) => {
-            const kind = (item.kind ?? "assignment").toLowerCase();
             const effectiveStatus = assignmentStatusMap[item.id] || item.status;
             const dueMeta = getDueMeta(item.deadlineUtc, effectiveStatus);
 
@@ -167,9 +156,6 @@ export function CourseworkView({
                 const matchDesc = item.description?.toLowerCase().includes(q);
                 if (!matchTitle && !matchTopic && !matchDesc) return false;
             }
-
-            // Type filter
-            if (typeFilter !== "all" && kind !== typeFilter) return false;
 
             // Topic filter
             if (topicFilter !== "all" && item.topic !== topicFilter) return false;
@@ -189,7 +175,7 @@ export function CourseworkView({
 
             return true;
         });
-    }, [published, searchQuery, typeFilter, topicFilter, statusFilter, assignmentStatusMap]);
+    }, [published, searchQuery, topicFilter, statusFilter, assignmentStatusMap]);
 
     // Group filtered items by topic
     const visibleGroups = useMemo(() => {
@@ -241,13 +227,11 @@ export function CourseworkView({
 
     const hasActiveFilters =
         searchQuery.trim() !== "" ||
-        typeFilter !== "all" ||
         statusFilter !== "all" ||
         topicFilter !== "all";
 
     const resetFilters = () => {
         setSearchQuery("");
-        setTypeFilter("all");
         setStatusFilter("all");
         setTopicFilter("all");
     };
@@ -269,7 +253,7 @@ export function CourseworkView({
                             Coursework & Assignments
                         </h1>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-xl">
-                            Track all your module assignments, quizzes, and learning resources in one place.
+                            Track all your course assignments, upcoming deadlines, and submission statuses in one place.
                         </p>
                     </div>
 
@@ -300,54 +284,44 @@ export function CourseworkView({
                 </div>
 
                 {/* KPI Metrics Row */}
-                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                             <Layers className="h-5 w-5" />
                         </div>
                         <div>
                             <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.total}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Items</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                            <FileText className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.assignments}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Assignments</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                            <HelpCircle className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.quizzes}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Quizzes</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Assignments</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <BookOpen className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.materials}</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Materials</p>
-                        </div>
-                    </div>
-
-                    <div className="col-span-2 sm:col-span-1 flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                             <CheckCircle2 className="h-5 w-5" />
                         </div>
                         <div>
                             <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.completed}</p>
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Completed</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            <Clock className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.pending}</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Pending</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                            <AlertCircle className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.overdue}</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Overdue</p>
                         </div>
                     </div>
                 </div>
@@ -362,7 +336,7 @@ export function CourseworkView({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search assignments, topics, or materials..."
+                        placeholder="Search assignments or topics..."
                         className="w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/60 py-2.5 pl-10 pr-9 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                     />
                     {searchQuery && (
@@ -399,21 +373,21 @@ export function CourseworkView({
                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     </div>
 
-                    {/* Type Filter Pills */}
+                    {/* Status Filter Pills */}
                     <div className="flex items-center gap-1 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 p-1 border border-slate-200/60 dark:border-slate-700/60">
                         {(
                             [
                                 { id: "all", label: "All" },
-                                { id: "assignment", label: "Assignments" },
-                                { id: "quiz", label: "Quizzes" },
-                                { id: "material", label: "Materials" },
+                                { id: "pending", label: "Pending" },
+                                { id: "completed", label: "Completed" },
+                                ...(metrics.overdue > 0 ? [{ id: "overdue", label: `Overdue (${metrics.overdue})` }] : []),
                             ] as const
                         ).map((tab) => (
                             <button
                                 key={tab.id}
                                 type="button"
-                                onClick={() => setTypeFilter(tab.id)}
-                                className={`rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${typeFilter === tab.id
+                                onClick={() => setStatusFilter(tab.id as StatusFilter)}
+                                className={`rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${statusFilter === tab.id
                                     ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs"
                                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                                     }`}
@@ -421,22 +395,6 @@ export function CourseworkView({
                                 {tab.label}
                             </button>
                         ))}
-                    </div>
-
-                    {/* Status Filter */}
-                    <div className="relative">
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                            aria-label="Filter by status"
-                            className="appearance-none rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/60 py-2.5 pl-3.5 pr-9 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
-                            {metrics.overdue > 0 && <option value="overdue">Overdue ({metrics.overdue})</option>}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     </div>
 
                     {hasActiveFilters && (
@@ -459,12 +417,12 @@ export function CourseworkView({
                         <Filter className="h-8 w-8" />
                     </div>
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                        {hasActiveFilters ? "No matching coursework found" : "No coursework posted yet"}
+                        {hasActiveFilters ? "No matching assignments found" : "No assignments posted yet"}
                     </h3>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 max-w-sm">
                         {hasActiveFilters
                             ? "Try adjusting your search query or filters to find what you are looking for."
-                            : "Your instructor has not published any coursework or learning materials yet."}
+                            : "Your instructor has not published any assignments yet."}
                     </p>
                     {hasActiveFilters && (
                         <button
@@ -547,7 +505,7 @@ export function CourseworkView({
                                     onClick={() => toggleTopic(group.topic)}
                                     className="w-full py-2.5 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-800 text-center transition-colors cursor-pointer"
                                 >
-                                    {totalInTopic} {totalInTopic === 1 ? "coursework item" : "coursework items"} collapsed • Click to show
+                                    {totalInTopic} {totalInTopic === 1 ? "assignment" : "assignments"} collapsed • Click to show
                                 </button>
                             )}
                         </section>
@@ -576,39 +534,14 @@ function CourseworkItemCard({
     onCopyLink: () => void;
 }) {
     const router = useRouter();
-    const kind = (entry.kind ?? "assignment").toLowerCase();
     const dueMeta = getDueMeta(entry.deadlineUtc, effectiveStatus);
     const isCompleted =
         effectiveStatus === "Graded" || effectiveStatus === "Submitted" || effectiveStatus === "Turned in";
 
-    // Style configs by kind
-    const kindConfig = {
-        assignment: {
-            icon: FileText,
-            iconClass: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/40",
-            label: "Assignment",
-            tagClass: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-800/40",
-        },
-        quiz: {
-            icon: HelpCircle,
-            iconClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200/50 dark:border-purple-800/40",
-            label: "Quiz",
-            tagClass: "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200/50 dark:border-purple-800/40",
-        },
-        material: {
-            icon: BookOpen,
-            iconClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/40",
-            label: "Material",
-            tagClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-800/40",
-        },
-    }[kind as "assignment" | "quiz" | "material"] ?? {
-        icon: FileText,
-        iconClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/40",
-        label: "Assignment",
-        tagClass: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200/50 dark:border-blue-800/40",
-    };
-
-    const Icon = kindConfig.icon;
+    const Icon = FileText;
+    const iconClass = "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/40";
+    const tagClass = "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-800/40";
+    const label = "Assignment";
 
     return (
         <div
@@ -632,7 +565,7 @@ function CourseworkItemCard({
             >
                 {/* Type Icon Badge */}
                 <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${kindConfig.iconClass} transition-transform group-hover:scale-105`}
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${iconClass} transition-transform group-hover:scale-105`}
                 >
                     <Icon className="h-5 w-5" />
                 </div>
@@ -640,8 +573,8 @@ function CourseworkItemCard({
                 {/* Main Content */}
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${kindConfig.tagClass}`}>
-                            {kindConfig.label}
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${tagClass}`}>
+                            {label}
                         </span>
                         {entry.maxMarks !== undefined && entry.maxMarks > 0 && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -706,7 +639,7 @@ function CourseworkItemCard({
                             Instructions & Overview
                         </h4>
                         <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line">
-                            {entry.description || "No specific instructions provided for this coursework item."}
+                            {entry.description || "No specific instructions provided for this assignment."}
                         </p>
                     </div>
 

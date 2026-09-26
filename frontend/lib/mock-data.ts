@@ -123,12 +123,12 @@ const classDetailsList = z.array(ClassDetailsSchema).parse([
             },
             {
                 id: 3,
-                title: "Quiz 1 - Classical Ciphers",
+                title: "Assignment 1 - Classical Ciphers",
                 topic: "Software Security",
                 dueLabel: "Due Jul 12, 11:59 PM",
                 postedLabel: "Posted Jul 5, 2025",
                 status: "Graded",
-                description: "10 multiple-choice questions on classical cryptography.",
+                description: "10 practice problems and questions on classical cryptography.",
             },
         ],
         people: [
