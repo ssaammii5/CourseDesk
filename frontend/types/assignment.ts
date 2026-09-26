@@ -12,6 +12,10 @@ export interface AssignmentSubmission {
     id?: number;
     status: "Assigned" | "Draft" | "Submitted" | "Turned in" | "Graded" | "Missed";
     attachments: AssignmentAttachment[];
+    marks?: number | null;
+    feedback?: string | null;
+    gradedByName?: string | null;
+    gradedAtUtc?: string | null;
 }
 
 export interface AssignmentDetail {

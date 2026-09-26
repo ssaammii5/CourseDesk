@@ -11,6 +11,10 @@ export interface AssignmentAttachment {
 export interface AssignmentSubmission {
     status: "Assigned" | "Submitted" | "Turned in" | "Graded";
     attachments: AssignmentAttachment[];
+    marks?: number | null;
+    feedback?: string | null;
+    gradedByName?: string | null;
+    gradedAtUtc?: string | null;
 }
 
 export interface AssignmentDetail {

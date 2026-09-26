@@ -24,6 +24,10 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
     let submissionStatus: AssignmentDetail["submission"]["status"] = "Assigned";
     let submissionId: number | undefined = undefined;
     let submissionAttachments: AssignmentDetail["submission"]["attachments"] = [];
+    let submissionMarks: number | null | undefined = undefined;
+    let submissionFeedback: string | null | undefined = undefined;
+    let gradedByName: string | null | undefined = undefined;
+    let gradedAtUtc: string | null | undefined = undefined;
 
     if (isLearner) {
         try {
@@ -31,6 +35,10 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
             const mine = mySubs.find((s) => s.assignmentId === dto.id);
             if (mine) {
                 submissionId = mine.id;
+                submissionMarks = mine.marks;
+                submissionFeedback = mine.feedback;
+                gradedByName = mine.gradedByName;
+                gradedAtUtc = mine.gradedAtUtc;
                 const hasWork = (mine.attachments && mine.attachments.length > 0) || Boolean(mine.answer?.trim() && mine.answer !== "Submitted via file attachment") || Boolean(mine.externalUrl?.trim());
                 if (mine.status === "Graded") {
                     submissionStatus = "Graded";
@@ -85,6 +93,10 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
             id: submissionId,
             status: submissionStatus,
             attachments: submissionAttachments,
+            marks: submissionMarks,
+            feedback: submissionFeedback,
+            gradedByName,
+            gradedAtUtc,
         },
         privateCommentTarget: creatorName,
         courseId: dto.courseId,

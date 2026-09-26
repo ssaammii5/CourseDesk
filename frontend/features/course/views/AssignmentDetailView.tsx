@@ -90,11 +90,20 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
     const linkValid = isValidLink(linkValue);
     const linkError = linkTouched && !linkValid;
 
+    const [submissionMarks, setSubmissionMarks] = useState<number | null | undefined>(detail.submission.marks);
+    const [submissionFeedback, setSubmissionFeedback] = useState<string | null | undefined>(detail.submission.feedback);
+    const [gradedByName, setGradedByName] = useState<string | null | undefined>(detail.submission.gradedByName);
+    const [gradedAtUtc, setGradedAtUtc] = useState<string | null | undefined>(detail.submission.gradedAtUtc);
+
     useEffect(() => {
         const nextStatus = (detail.submission.status as WorkStatus) || "Assigned";
         setStatus(nextStatus);
         setSubmissionId(detail.submission.id);
         setAttachments(detail.submission.attachments ?? []);
+        setSubmissionMarks(detail.submission.marks);
+        setSubmissionFeedback(detail.submission.feedback);
+        setGradedByName(detail.submission.gradedByName);
+        setGradedAtUtc(detail.submission.gradedAtUtc);
     }, [detail.submission]);
 
     const getEnsuredSubmissionId = async (): Promise<number> => {
@@ -312,6 +321,51 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                         </div>
                     )}
 
+                    {/* Graded & Feedback Banner on Main Column */}
+                    {isGraded && (
+                        <div className="mt-8 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/40 dark:border-emerald-900/60 dark:from-emerald-950/30 dark:via-slate-900 dark:to-teal-950/20 p-5 shadow-xs">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                                        <Award className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-sm font-bold text-emerald-950 dark:text-emerald-200">
+                                            {detail.points > 0 ? "Assignment Graded" : "Assignment Reviewed"}
+                                        </h2>
+                                        <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80">
+                                            {gradedByName
+                                                ? `Evaluated by ${gradedByName}`
+                                                : "Your submission has been evaluated by your instructor."}
+                                            {gradedAtUtc && ` • ${new Date(gradedAtUtc).toLocaleDateString()}`}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-left sm:text-right">
+                                    <span className="text-lg font-extrabold text-emerald-700 dark:text-emerald-300">
+                                        {detail.points > 0
+                                            ? `Marks: ${submissionMarks ?? 0} / ${detail.points}`
+                                            : "Reviewed"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {submissionFeedback && (
+                                <div className="mt-4 pt-3.5 border-t border-emerald-200/60 dark:border-emerald-900/50">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <MessageSquare className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+                                        <span className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
+                                            Private Feedback from Instructor
+                                        </span>
+                                    </div>
+                                    <p className="whitespace-pre-line text-xs leading-relaxed text-gray-800 dark:text-slate-200 rounded-xl bg-white/90 dark:bg-slate-900/90 p-3.5 border border-emerald-200/50 dark:border-slate-800">
+                                        {submissionFeedback}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Class comments */}
                     <div className="mt-12 border-t border-gray-200/80 dark:border-slate-800 pt-8">
                         <AssignmentComments assignmentId={detail.id} isPrivate={false} />
@@ -363,6 +417,48 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                             The deadline for this assignment has passed. It is marked as Missed and can no longer be submitted.
                                         </p>
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Graded info & feedback in Your Work sidebar */}
+                            {isGraded && (
+                                <div className="mt-4 space-y-3">
+                                    <div className="rounded-xl border border-emerald-200/90 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/40 p-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-200">
+                                                <Award className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                                <span className="text-xs font-bold uppercase tracking-wider">
+                                                    Your Grade
+                                                </span>
+                                            </div>
+                                            <span className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
+                                                {detail.points > 0
+                                                    ? `Marks: ${submissionMarks ?? 0} / ${detail.points}`
+                                                    : "Reviewed"}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {submissionFeedback && (
+                                        <div className="rounded-xl border border-blue-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 p-3.5 shadow-2xs">
+                                            <div className="flex items-center justify-between gap-1 mb-1.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    <MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                                    <span className="text-xs font-bold text-gray-900 dark:text-slate-100">
+                                                        Private Feedback
+                                                    </span>
+                                                </div>
+                                                {gradedByName && (
+                                                    <span className="text-[10px] text-gray-500 dark:text-slate-400">
+                                                        from {gradedByName}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="whitespace-pre-line text-xs leading-relaxed text-gray-700 dark:text-slate-300 pl-2 border-l-2 border-blue-300 dark:border-blue-700">
+                                                {submissionFeedback}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
