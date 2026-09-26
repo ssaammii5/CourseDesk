@@ -185,23 +185,28 @@ def grade_submission(
         raise HTTPException(400, detail="Cannot grade work that has not been submitted")
 
     assignment = submission.assignment
-    if body.marks < 0 or body.marks > assignment.max_marks:
+    if body.marks < 0 or (assignment.max_marks > 0 and body.marks > assignment.max_marks):
         raise HTTPException(
             400, detail=f"Marks must be between 0 and {assignment.max_marks}"
         )
 
     submission.status = "Graded"
-    submission.marks = body.marks
+    submission.marks = body.marks if assignment.max_marks > 0 else 0
     submission.feedback = body.feedback
     submission.graded_by_id = user.id
     submission.graded_at_utc = datetime.now(UTC)
     db.add(submission)
     db.flush()
 
+    action_text = (
+        f"Graded — {body.marks}/{assignment.max_marks}"
+        if assignment.max_marks > 0
+        else "Reviewed submission"
+    )
     db.add(
         SubmissionActivityModel(
             submission_id=submission.id,
-            action=f"Graded — {body.marks}/{assignment.max_marks}",
+            action=action_text,
             actor_name=user.name,
         )
     )
@@ -209,15 +214,49 @@ def grade_submission(
     from app.notification.controller import create_notification
 
     fb = f" • Feedback: {body.feedback}" if body.feedback else ""
+    msg = (
+        f"Score: {body.marks}/{assignment.max_marks}{fb}"
+        if assignment.max_marks > 0
+        else f"Reviewed by instructor{fb}"
+    )
     create_notification(
         db=db,
         user_id=submission.learner_id,
-        title=f"Graded: {assignment.title}",
-        message=f"Score: {body.marks}/{assignment.max_marks}{fb}",
+        title=f"Reviewed: {assignment.title}" if assignment.max_marks == 0 else f"Graded: {assignment.title}",
+        message=msg,
         kind="grade",
         link=f"/course/{assignment.course_id}/assignments/{assignment.id}",
     )
 
+    db.commit()
+    return get_submission(submission_id, user, db)
+
+
+def ungrade_submission(
+    submission_id: int, user: UserModel, db: Session
+) -> SubmissionResponseSchema:
+    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    if not submission:
+        raise HTTPException(404, detail="Submission id is incorrect")
+    if not _can_grade(user, submission):
+        raise HTTPException(403, detail="You cannot ungrade this submission")
+
+    has_work = bool(submission.attachments and len(submission.attachments) > 0) or bool(
+        submission.answer and submission.answer.strip() and submission.answer != "Submitted via file attachment"
+    ) or bool(submission.external_url and submission.external_url.strip())
+
+    submission.status = "Submitted" if submission.submitted_at_utc else ("Draft" if has_work else "Assigned")
+    submission.marks = None
+    submission.graded_by_id = None
+    submission.graded_at_utc = None
+    db.add(submission)
+    db.add(
+        SubmissionActivityModel(
+            submission_id=submission.id,
+            action="Marked as ungraded",
+            actor_name=user.name,
+        )
+    )
     db.commit()
     return get_submission(submission_id, user, db)
 

@@ -662,9 +662,17 @@ export function AssignmentCreateView({
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                     Grading & Marks
                                 </h3>
-                                <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                                    {points > 0 ? `Marks: ${points}` : "Ungraded"}
-                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setPoints(points > 0 ? 0 : 100)}
+                                    className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+                                        points === 0
+                                            ? "border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                                            : "border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400"
+                                    }`}
+                                >
+                                    {points === 0 ? "✓ Ungraded" : "Mark as Ungraded"}
+                                </button>
                             </div>
 
                             {/* Preset Buttons */}
@@ -694,9 +702,11 @@ export function AssignmentCreateView({
                                     type="number"
                                     min={0}
                                     max={1000}
-                                    value={points}
+                                    disabled={points === 0}
+                                    value={points === 0 ? "" : points}
+                                    placeholder={points === 0 ? "Ungraded assignment" : "Enter max marks"}
                                     onChange={(e) => setPoints(Math.max(0, parseInt(e.target.value) || 0))}
-                                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
+                                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </div>

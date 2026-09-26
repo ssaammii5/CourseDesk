@@ -527,10 +527,10 @@ export function InstructorCourseworkView({
                                                                 </span>
                                                             )}
 
-                                                            {entry.maxMarks !== undefined && entry.maxMarks > 0 && (
+                                                            {entry.maxMarks !== undefined && (
                                                                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                                                                     <Award className="h-3 w-3" />
-                                                                    Marks: {entry.maxMarks}
+                                                                    {entry.maxMarks > 0 ? `Marks: ${entry.maxMarks}` : "Ungraded"}
                                                                 </span>
                                                             )}
 

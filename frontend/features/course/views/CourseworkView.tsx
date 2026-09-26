@@ -619,10 +619,10 @@ function CourseworkItemCard({
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${tagClass}`}>
                             {label}
                         </span>
-                        {entry.maxMarks !== undefined && entry.maxMarks > 0 && (
+                        {entry.maxMarks !== undefined && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                                 <Award className="h-3 w-3" />
-                                Marks: {entry.maxMarks}
+                                {entry.maxMarks > 0 ? `Marks: ${entry.maxMarks}` : "Ungraded"}
                             </span>
                         )}
                     </div>
@@ -758,10 +758,10 @@ function CourseworkItemCard({
                             <Clock className="h-3.5 w-3.5 text-indigo-500" />
                             <span>{formatDateTime(entry.deadlineUtc, entry.dueLabel)}</span>
                         </div>
-                        {entry.maxMarks !== undefined && entry.maxMarks > 0 && (
+                        {entry.maxMarks !== undefined && (
                             <div className="flex items-center gap-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5">
                                 <Award className="h-3.5 w-3.5 text-amber-500" />
-                                <span>Marks: {entry.maxMarks}</span>
+                                <span>{entry.maxMarks > 0 ? `Marks: ${entry.maxMarks}` : "Ungraded"}</span>
                             </div>
                         )}
                     </div>

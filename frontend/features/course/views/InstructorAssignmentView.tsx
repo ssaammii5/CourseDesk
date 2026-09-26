@@ -14,15 +14,17 @@ import {
     Paperclip,
     Search,
     Send,
+    RotateCcw,
     User,
     Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { AssignmentDto } from "@/lib/api/assignments";
+import { updateAssignmentRequest, type AssignmentDto } from "@/lib/api/assignments";
 import {
     getSubmissionsByAssignmentRequest,
     gradeSubmissionRequest,
+    ungradeSubmissionRequest,
     type SubmissionDto,
 } from "@/lib/api/submissions";
 import { initialOf } from "@/lib/utils/format";
@@ -157,10 +159,13 @@ export function InstructorAssignmentView({
         const input = gradeInputs[submissionId];
         if (!input) return;
 
-        const marksNum = Number(input.marks);
-        if (Number.isNaN(marksNum) || marksNum < 0 || marksNum > assignment.maxMarks) {
-            alert(`Please enter a valid grade between 0 and ${assignment.maxMarks}`);
-            return;
+        let marksNum = 0;
+        if (assignment.maxMarks > 0) {
+            marksNum = Number(input.marks);
+            if (Number.isNaN(marksNum) || marksNum < 0 || marksNum > assignment.maxMarks) {
+                alert(`Please enter a valid grade between 0 and ${assignment.maxMarks}`);
+                return;
+            }
         }
 
         try {
@@ -180,6 +185,50 @@ export function InstructorAssignmentView({
             alert(err instanceof Error ? err.message : "Failed to grade submission.");
         } finally {
             setSavingGradeId(null);
+        }
+    };
+
+    const handleUngrade = async (submissionId: number) => {
+        try {
+            setSavingGradeId(submissionId);
+            const updated = await ungradeSubmissionRequest(submissionId);
+            setSubmissions((prev) =>
+                prev.map((s) => (s.id === submissionId ? updated : s)),
+            );
+            setGradeInputs((prev) => ({
+                ...prev,
+                [submissionId]: {
+                    marks: "",
+                    feedback: prev[submissionId]?.feedback ?? "",
+                },
+            }));
+            onRefresh?.();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to ungrade submission.");
+        } finally {
+            setSavingGradeId(null);
+        }
+    };
+
+    const [togglingUngraded, setTogglingUngraded] = useState(false);
+    const handleToggleAssignmentUngraded = async () => {
+        try {
+            setTogglingUngraded(true);
+            const nextMarks = assignment.maxMarks > 0 ? 0 : 100;
+            await updateAssignmentRequest(assignment.id, {
+                title: assignment.title,
+                description: assignment.description,
+                topic: assignment.topic || "General",
+                kind: assignment.kind || "Assignment",
+                deadlineUtc: assignment.deadlineUtc,
+                maxMarks: nextMarks,
+            });
+            assignment.maxMarks = nextMarks;
+            onRefresh?.();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to update assignment.");
+        } finally {
+            setTogglingUngraded(false);
         }
     };
 
@@ -220,9 +269,28 @@ export function InstructorAssignmentView({
                                 {assignment.title}
                             </h1>
                             <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
-                                Due {formatDateTime(assignment.deadlineUtc)} • Marks: {assignment.maxMarks}
+                                Due {formatDateTime(assignment.deadlineUtc)} • {assignment.maxMarks > 0 ? `Marks: ${assignment.maxMarks}` : "Ungraded"}
                                 {assignment.topic && ` • ${assignment.topic}`}
                             </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleToggleAssignmentUngraded}
+                                disabled={togglingUngraded}
+                                className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                                    assignment.maxMarks === 0
+                                        ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                }`}
+                                title={assignment.maxMarks > 0 ? "Mark this assignment as Ungraded" : "Set assignment marks to 100"}
+                            >
+                                {togglingUngraded
+                                    ? "Updating…"
+                                    : assignment.maxMarks > 0
+                                    ? "Mark as Ungraded"
+                                    : "Set Marks: 100"}
+                            </button>
                         </div>
                     </div>
 
@@ -437,7 +505,7 @@ export function InstructorAssignmentView({
                                                         </button>
                                                         {isGraded ? (
                                                             <span className="rounded-full bg-green-100 dark:bg-emerald-950/60 px-3 py-1 text-xs font-semibold text-[#137333] dark:text-emerald-400">
-                                                                Graded: {sub.marks}/{assignment.maxMarks}
+                                                                {assignment.maxMarks > 0 ? `Graded: ${sub.marks}/${assignment.maxMarks}` : "Reviewed"}
                                                             </span>
                                                         ) : isSubmitted ? (
                                                             <span
@@ -541,33 +609,39 @@ export function InstructorAssignmentView({
                                                 </h4>
 
                                                 <div className="mt-3 space-y-3">
-                                                    <div>
-                                                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-400">
-                                                            Score (out of {assignment.maxMarks})
-                                                        </label>
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                max={assignment.maxMarks}
-                                                                value={currentInput.marks}
-                                                                onChange={(e) =>
-                                                                    setGradeInputs((prev) => ({
-                                                                        ...prev,
-                                                                        [sub.id]: {
-                                                                            ...currentInput,
-                                                                            marks: e.target.value,
-                                                                        },
-                                                                    }))
-                                                                }
-                                                                placeholder="Score"
-                                                                className="w-24 rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none"
-                                                            />
-                                                            <span className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                                                                / {assignment.maxMarks}
-                                                            </span>
+                                                    {assignment.maxMarks > 0 ? (
+                                                        <div>
+                                                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-400">
+                                                                Score (out of {assignment.maxMarks})
+                                                            </label>
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max={assignment.maxMarks}
+                                                                    value={currentInput.marks}
+                                                                    onChange={(e) =>
+                                                                        setGradeInputs((prev) => ({
+                                                                            ...prev,
+                                                                            [sub.id]: {
+                                                                                ...currentInput,
+                                                                                marks: e.target.value,
+                                                                            },
+                                                                        }))
+                                                                    }
+                                                                    placeholder="Score"
+                                                                    className="w-24 rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none"
+                                                                />
+                                                                <span className="text-sm font-medium text-gray-500 dark:text-slate-400">
+                                                                    / {assignment.maxMarks}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    ) : (
+                                                        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 p-2.5 text-xs text-amber-800 dark:text-amber-200">
+                                                            This assignment is <span className="font-semibold">Ungraded</span>. You can leave private feedback and mark as reviewed.
+                                                        </div>
+                                                    )}
 
                                                     <div>
                                                         <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-400">
@@ -590,29 +664,45 @@ export function InstructorAssignmentView({
                                                         />
                                                     </div>
 
-                                                    <button
-                                                        type="button"
-                                                        disabled={savingGradeId === sub.id}
-                                                        onClick={() => handleSaveGrade(sub.id)}
-                                                        className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold text-white transition-colors ${savedSuccessId === sub.id
-                                                            ? "bg-[#137333]"
-                                                            : "bg-[#1a73e8] hover:bg-[#1554b5]"
-                                                            }`}
-                                                    >
-                                                        {savedSuccessId === sub.id ? (
-                                                            <>
-                                                                <CheckCircle2 className="h-4 w-4" />
-                                                                Grade Saved!
-                                                            </>
-                                                        ) : savingGradeId === sub.id ? (
-                                                            <span>Saving…</span>
-                                                        ) : (
-                                                            <>
-                                                                <Send className="h-3.5 w-3.5" />
-                                                                {isGraded ? "Update Grade" : "Save Grade"}
-                                                            </>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            disabled={savingGradeId === sub.id}
+                                                            onClick={() => handleSaveGrade(sub.id)}
+                                                            className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold text-white transition-colors ${savedSuccessId === sub.id
+                                                                ? "bg-[#137333]"
+                                                                : "bg-[#1a73e8] hover:bg-[#1554b5]"
+                                                                }`}
+                                                        >
+                                                            {savedSuccessId === sub.id ? (
+                                                                <>
+                                                                    <CheckCircle2 className="h-4 w-4" />
+                                                                    {assignment.maxMarks > 0 ? "Grade Saved!" : "Feedback Saved!"}
+                                                                </>
+                                                            ) : savingGradeId === sub.id ? (
+                                                                <span>Saving…</span>
+                                                            ) : (
+                                                                <>
+                                                                    <Send className="h-3.5 w-3.5" />
+                                                                    {isGraded
+                                                                        ? (assignment.maxMarks > 0 ? "Update Grade" : "Update Feedback")
+                                                                        : (assignment.maxMarks > 0 ? "Save Grade" : "Mark as Reviewed")}
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                        {isGraded && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={savingGradeId === sub.id}
+                                                                onClick={() => handleUngrade(sub.id)}
+                                                                className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2 px-3 text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                                                                title="Remove grade and mark submission as ungraded"
+                                                            >
+                                                                <RotateCcw className="h-3.5 w-3.5" />
+                                                                Mark as ungraded
+                                                            </button>
                                                         )}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -724,7 +814,7 @@ export function InstructorAssignmentView({
                                                                 </p>
                                                                 {sub.status === "Graded" ? (
                                                                     <span className="shrink-0 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                                                        {sub.marks}/{assignment.maxMarks}
+                                                                        {assignment.maxMarks > 0 ? `${sub.marks}/${assignment.maxMarks}` : "Reviewed"}
                                                                     </span>
                                                                 ) : sub.submittedAtUtc ? (
                                                                     <span className="shrink-0 text-[10px] font-medium text-blue-600 dark:text-blue-400">
@@ -768,7 +858,7 @@ export function InstructorAssignmentView({
                                                 <div className="text-right">
                                                     {activeLearner.status === "Graded" ? (
                                                         <span className="rounded-full bg-green-100 dark:bg-emerald-950/60 px-2.5 py-1 text-xs font-semibold text-[#137333] dark:text-emerald-400">
-                                                            Graded: {activeLearner.marks}/{assignment.maxMarks}
+                                                            {assignment.maxMarks > 0 ? `Graded: ${activeLearner.marks}/${assignment.maxMarks}` : "Reviewed"}
                                                         </span>
                                                     ) : activeLearner.submittedAtUtc ? (
                                                         <span className="rounded-full bg-blue-100 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-[#174ea6] dark:text-blue-300">
@@ -833,7 +923,7 @@ export function InstructorAssignmentView({
 
                             <div className="text-right">
                                 <span className="text-lg font-bold text-gray-900 dark:text-slate-100">
-                                    Marks: {assignment.maxMarks}
+                                    {assignment.maxMarks > 0 ? `Marks: ${assignment.maxMarks}` : "Ungraded"}
                                 </span>
                                 <p className="text-xs text-gray-500 dark:text-slate-400">
                                     Due {formatDateTime(assignment.deadlineUtc)}

@@ -46,6 +46,13 @@ def grade_submission(
     return controller.grade_submission(submission_id, body, user, db)
 
 
+@submission_routes.post("/{submission_id}/ungrade", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
+def ungrade_submission(
+    submission_id: int, db: DbSession, user: IsAdminOrInstructor
+):
+    return controller.ungrade_submission(submission_id, user, db)
+
+
 @submission_routes.post("/{submission_id}/unsubmit", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
 def unsubmit_submission(submission_id: int, db: DbSession, user: IsAuthenticated):
     return controller.unsubmit_assignment(submission_id, user, db)

@@ -16,7 +16,7 @@ class SubmitAssignmentSchema(CamelModel):
 
 
 class GradeSubmissionSchema(CamelModel):
-    marks: int
+    marks: int = 0
     feedback: str | None = None
 
 

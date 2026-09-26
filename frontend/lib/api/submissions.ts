@@ -96,6 +96,12 @@ export function gradeSubmissionRequest(id: number, payload: GradeSubmissionPaylo
     });
 }
 
+export function ungradeSubmissionRequest(id: number): Promise<SubmissionDto> {
+    return apiFetch<SubmissionDto>(`/api/submissions/${id}/ungrade`, {
+        method: "POST",
+    });
+}
+
 export function uploadSubmissionAttachmentRequest(submissionId: number, formData: FormData): Promise<SubmissionAttachmentDto> {
     return apiFetch<SubmissionAttachmentDto>(`/api/submissions/${submissionId}/attachments`, {
         method: "POST",

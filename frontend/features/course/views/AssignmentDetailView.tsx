@@ -292,7 +292,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                         {detail.postedDate}
                     </p>
                     <p className="mt-4 text-sm font-semibold text-gray-900 dark:text-slate-100">
-                        Marks: {detail.points}
+                        {detail.points > 0 ? `Marks: ${detail.points}` : "Ungraded"}
                         <span className="mx-3 font-normal text-gray-700 dark:text-slate-500">|</span>
                         {detail.dueLabel}
                     </p>
