@@ -413,6 +413,18 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         }
     }
 
+    const handleTopicRenamed = (oldName: string, newName: string) => {
+        setClasswork((prev) =>
+            prev.map((cw) => (cw.topic === oldName ? { ...cw, topic: newName } : cw))
+        );
+    };
+
+    const handleTopicDeleted = (deletedName: string, fallbackName: string) => {
+        setClasswork((prev) =>
+            prev.map((cw) => (cw.topic === deletedName ? { ...cw, topic: fallbackName } : cw))
+        );
+    };
+
     if (editorOpen)
         return (
             <AssignmentCreateView
@@ -423,6 +435,8 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 courseId={details.courseId}
                 sessions={sessions}
                 existingTopics={Array.from(new Set(classwork.map((c) => c.topic).filter(Boolean)))}
+                onTopicRenamed={handleTopicRenamed}
+                onTopicDeleted={handleTopicDeleted}
             />
         );
 

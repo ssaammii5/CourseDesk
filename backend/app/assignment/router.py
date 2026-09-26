@@ -6,6 +6,8 @@ from app.assignment.dtos import (
     AssignmentResponseSchema,
     AssignmentSchema,
     AssignmentUpdateSchema,
+    TopicDeleteSchema,
+    TopicRenameSchema,
 )
 from app.submission.dtos import SubmissionResponseSchema
 from app.utils.db import get_db
@@ -69,3 +71,17 @@ def delete_assignment_attachment(
     assignment_id: int, attachment_id: int, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.delete_attachment(assignment_id, attachment_id, user, db)
+
+
+@assignment_routes.put("/courses/{course_id}/topics/rename", status_code=status.HTTP_200_OK)
+def rename_assignment_topic(
+    course_id: int, body: TopicRenameSchema, db: DbSession, user: IsAdminOrInstructor
+):
+    return controller.rename_topic(course_id, body.old_name, body.new_name, user, db)
+
+
+@assignment_routes.post("/courses/{course_id}/topics/delete", status_code=status.HTTP_200_OK)
+def delete_assignment_topic(
+    course_id: int, body: TopicDeleteSchema, db: DbSession, user: IsAdminOrInstructor
+):
+    return controller.delete_topic(course_id, body.topic_name, body.fallback_topic, user, db)

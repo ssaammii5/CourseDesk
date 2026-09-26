@@ -65,3 +65,13 @@ class AssignmentResponseSchema(CamelModel):
     session_id: int | None = None
     submission_formats: str = "file_upload"
     attachments: list[AssignmentAttachmentResponseSchema] = []
+
+
+class TopicRenameSchema(CamelModel):
+    old_name: str
+    new_name: str
+
+
+class TopicDeleteSchema(CamelModel):
+    topic_name: str
+    fallback_topic: str = "General"

@@ -11,6 +11,7 @@ from app.assignment.dtos import (
 )
 from app.assignment.models import AssignmentAttachmentModel, AssignmentModel
 from app.course.models import CourseModel
+from app.session.models import SessionModel
 from app.submission.dtos import SubmissionResponseSchema, serialize_submission
 from app.submission.models import SubmissionModel
 from app.user.models import UserModel
@@ -327,3 +328,103 @@ def delete_attachment(
         raise HTTPException(404, detail="Attachment id is incorrect")
     db.delete(attachment)
     db.commit()
+
+
+def rename_topic(
+    course_id: int, old_name: str, new_name: str, user: UserModel, db: Session
+) -> dict:
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course not found")
+    if not _can_manage_course(user, course):
+        raise HTTPException(403, detail="You cannot modify topics in this course")
+
+    old_clean = (old_name or "").strip()
+    new_clean = (new_name or "").strip()
+    if not old_clean or not new_clean:
+        raise HTTPException(400, detail="Topic names cannot be empty")
+
+    # Update all assignments in this course where topic matches old_name
+    assignments = db.scalars(
+        select(AssignmentModel).where(
+            AssignmentModel.course_id == course_id,
+            AssignmentModel.topic == old_clean,
+        )
+    ).all()
+    for a in assignments:
+        a.topic = new_clean
+        db.add(a)
+
+    # Also update any sessions in this course where topic matches old_name
+    sessions = db.scalars(
+        select(SessionModel).where(
+            SessionModel.course_id == course_id,
+            SessionModel.topic == old_clean,
+        )
+    ).all()
+    for s in sessions:
+        s.topic = new_clean
+        db.add(s)
+
+    db.commit()
+    return {
+        "success": True,
+        "old_name": old_clean,
+        "new_name": new_clean,
+        "updated_assignments_count": len(assignments),
+        "updated_sessions_count": len(sessions),
+    }
+
+
+def delete_topic(
+    course_id: int, topic_name: str, fallback_topic: str, user: UserModel, db: Session
+) -> dict:
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course not found")
+    if not _can_manage_course(user, course):
+        raise HTTPException(403, detail="You cannot delete topics in this course")
+
+    target = (topic_name or "").strip()
+    fallback = (fallback_topic or "General").strip() or "General"
+    if not target:
+        raise HTTPException(400, detail="Topic name cannot be empty")
+
+    # Reassign all assignments from deleted topic to fallback topic
+    assignments = db.scalars(
+        select(AssignmentModel).where(
+            AssignmentModel.course_id == course_id,
+            AssignmentModel.topic == target,
+        )
+    ).all()
+    for a in assignments:
+        a.topic = fallback
+        db.add(a)
+
+    # Reassign any sessions from deleted topic to fallback topic
+    sessions = db.scalars(
+        select(SessionModel).where(
+            SessionModel.course_id == course_id,
+            SessionModel.topic == target,
+        )
+    ).all()
+    for s in sessions:
+        s.topic = fallback
+        db.add(s)
+
+    db.commit()
+    return {
+        "success": True,
+        "deleted_topic": target,
+        "fallback_topic": fallback,
+        "affected_assignments_count": len(assignments),
+        "affected_sessions_count": len(sessions),
+    }

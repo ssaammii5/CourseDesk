@@ -10,10 +10,12 @@ import {
     ChevronDown,
     ClipboardList,
     Clock,
+    Edit2,
     FileText,
     FolderKanban,
     Globe,
     Link2,
+    Loader2,
     Paperclip,
     Plus,
     Save,
@@ -26,6 +28,7 @@ import {
     X,
 } from "lucide-react";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { renameCourseTopicRequest, deleteCourseTopicRequest } from "@/lib/api/assignments";
 import type { ClassworkEntry } from "@/types";
 import type { SessionDto } from "@/types/session";
 export interface AssignmentDraftAttachment {
@@ -46,7 +49,18 @@ export interface AssignmentCreateViewProps {
     courseId?: number;
     sessions?: SessionDto[];
     existingTopics?: string[];
+    onTopicRenamed?: (oldName: string, newName: string) => void;
+    onTopicDeleted?: (deletedName: string, fallbackName: string) => void;
 }
+
+const DEFAULT_TOPICS = [
+    "Research & Paper",
+    "Cryptography Labs",
+    "Cryptography Theory",
+    "Software Security",
+    "Examinations",
+    "General",
+];
 
 const POINT_PRESETS = [100, 50, 30, 25, 10, 0];
 type DueOption = "none" | "tomorrow" | "nextweek" | "custom";
@@ -71,14 +85,11 @@ export function AssignmentCreateView({
     initial,
     onClose,
     onSubmit,
+    courseId,
     sessions = [],
-    existingTopics = [
-        "Research & Paper",
-        "Cryptography Labs",
-        "Cryptography Theory",
-        "Software Security",
-        "Examinations",
-    ],
+    existingTopics = DEFAULT_TOPICS,
+    onTopicRenamed,
+    onTopicDeleted,
 }: AssignmentCreateViewProps) {
     const isEditing = Boolean(initial && initial.id > 0);
 
@@ -86,7 +97,130 @@ export function AssignmentCreateView({
     const [titleTouched, setTitleTouched] = useState(false);
     const [instructions, setInstructions] = useState(initial?.description ?? "");
     const [topic, setTopic] = useState(initial?.topic ?? "General");
-    const [customTopicMode, setCustomTopicMode] = useState(false);
+
+    // Dynamic Topic Management
+    const [topicList, setTopicList] = useState<string[]>(() => {
+        let saved: string[] = [];
+        if (typeof window !== "undefined" && courseId) {
+            try {
+                const raw = localStorage.getItem(`coursedesk_topics_${courseId}`);
+                if (raw) saved = JSON.parse(raw);
+            } catch {
+                // ignore
+            }
+        }
+        const combined = Array.from(
+            new Set([...DEFAULT_TOPICS, ...(existingTopics || []), ...saved, initial?.topic || ""])
+        ).filter(Boolean);
+        return combined;
+    });
+
+    const [newTopicInput, setNewTopicInput] = useState("");
+    const [editingTopic, setEditingTopic] = useState<string | null>(null);
+    const [editingTopicValue, setEditingTopicValue] = useState("");
+    const [deletingTopic, setDeletingTopic] = useState<string | null>(null);
+    const [topicActionLoading, setTopicActionLoading] = useState(false);
+    const [topicFeedback, setTopicFeedback] = useState<string | null>(null);
+
+    const showTopicFeedback = (msg: string) => {
+        setTopicFeedback(msg);
+        setTimeout(() => setTopicFeedback(null), 3500);
+    };
+
+    const handleAddTopic = () => {
+        const trimmed = newTopicInput.trim();
+        if (!trimmed) return;
+        if (!topicList.includes(trimmed)) {
+            const nextList = [...topicList, trimmed];
+            setTopicList(nextList);
+            if (typeof window !== "undefined" && courseId) {
+                try {
+                    localStorage.setItem(`coursedesk_topics_${courseId}`, JSON.stringify(nextList));
+                } catch {
+                    // ignore
+                }
+            }
+        }
+        setTopic(trimmed);
+        setNewTopicInput("");
+        showTopicFeedback(`Topic "${trimmed}" added and selected.`);
+    };
+
+    const handleStartRename = (t: string) => {
+        setEditingTopic(t);
+        setEditingTopicValue(t);
+        setDeletingTopic(null);
+    };
+
+    const handleSaveRename = async (oldName: string) => {
+        const trimmed = editingTopicValue.trim();
+        if (!trimmed || trimmed === oldName) {
+            setEditingTopic(null);
+            return;
+        }
+
+        try {
+            setTopicActionLoading(true);
+            if (courseId) {
+                await renameCourseTopicRequest(courseId, oldName, trimmed);
+            }
+
+            const nextList = topicList.map((t) => (t === oldName ? trimmed : t));
+            setTopicList(nextList);
+            if (topic === oldName) {
+                setTopic(trimmed);
+            }
+            if (typeof window !== "undefined" && courseId) {
+                try {
+                    localStorage.setItem(`coursedesk_topics_${courseId}`, JSON.stringify(nextList));
+                } catch {
+                    // ignore
+                }
+            }
+            onTopicRenamed?.(oldName, trimmed);
+            showTopicFeedback(`Renamed "${oldName}" to "${trimmed}" across all assignments.`);
+            setEditingTopic(null);
+        } catch (err: any) {
+            alert(err?.message || "Failed to rename topic");
+        } finally {
+            setTopicActionLoading(false);
+        }
+    };
+
+    const handleConfirmDelete = async (topicToDelete: string) => {
+        if (topicToDelete === "General") {
+            alert("The 'General' topic cannot be deleted as it serves as the default fallback.");
+            setDeletingTopic(null);
+            return;
+        }
+
+        try {
+            setTopicActionLoading(true);
+            if (courseId) {
+                await deleteCourseTopicRequest(courseId, topicToDelete, "General");
+            }
+
+            const nextList = topicList.filter((t) => t !== topicToDelete);
+            setTopicList(nextList);
+            if (topic === topicToDelete) {
+                setTopic("General");
+            }
+            if (typeof window !== "undefined" && courseId) {
+                try {
+                    localStorage.setItem(`coursedesk_topics_${courseId}`, JSON.stringify(nextList));
+                } catch {
+                    // ignore
+                }
+            }
+            onTopicDeleted?.(topicToDelete, "General");
+            showTopicFeedback(`Deleted "${topicToDelete}". Assignments moved to "General".`);
+            setDeletingTopic(null);
+        } catch (err: any) {
+            alert(err?.message || "Failed to delete topic");
+        } finally {
+            setTopicActionLoading(false);
+        }
+    };
 
     const [attachments, setAttachments] = useState<AssignmentDraftAttachment[]>(() => {
         if (!initial?.attachments) return [];
@@ -209,13 +343,6 @@ export function AssignmentCreateView({
         }
         onSubmit(buildEntry(status), attachments);
     };
-
-    // Combine preset topics with existing course topics
-    const allTopics = useMemo(() => {
-        const set = new Set<string>(existingTopics);
-        if (topic.trim()) set.add(topic.trim());
-        return Array.from(set).filter(Boolean);
-    }, [existingTopics, topic]);
 
     return (
         <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 pb-16">
@@ -629,51 +756,198 @@ export function AssignmentCreateView({
                             )}
                         </div>
 
-                        {/* Topic Organization */}
+                        {/* Topic Category Management */}
                         <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                    Topic Category
-                                </h3>
-                                <Tag className="h-4 w-4 text-indigo-500" />
+                                <div>
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Topic Category
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                        Select, modify, or delete topics across course assignments.
+                                    </p>
+                                </div>
+                                <Tag className="h-4 w-4 text-indigo-500 shrink-0" />
                             </div>
 
-                            {/* Preset Topic Badges */}
-                            <div className="flex flex-wrap gap-1.5">
-                                {allTopics.map((t) => (
+                            {/* Status Feedback Notification */}
+                            {topicFeedback && (
+                                <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 p-2.5 text-xs text-emerald-800 dark:text-emerald-200 flex items-center justify-between gap-2 animate-in fade-in duration-200">
+                                    <span className="font-medium">{topicFeedback}</span>
                                     <button
-                                        key={t}
                                         type="button"
-                                        onClick={() => {
-                                            setTopic(t);
-                                            setCustomTopicMode(false);
-                                        }}
-                                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold border transition-all cursor-pointer ${
-                                            topic === t && !customTopicMode
-                                                ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700 shadow-2xs"
-                                                : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                        }`}
+                                        onClick={() => setTopicFeedback(null)}
+                                        className="text-emerald-500 hover:text-emerald-700 cursor-pointer"
                                     >
-                                        {t}
+                                        <X className="h-3.5 w-3.5" />
                                     </button>
-                                ))}
+                                </div>
+                            )}
+
+                            {/* Topic Badges with Inline Rename and Delete */}
+                            <div className="flex flex-wrap gap-2">
+                                {topicList.map((t) => {
+                                    const isSelected = topic === t;
+                                    const isEditingThis = editingTopic === t;
+                                    const isDeletingThis = deletingTopic === t;
+
+                                    if (isEditingThis) {
+                                        return (
+                                            <div
+                                                key={t}
+                                                className="flex items-center gap-1.5 rounded-xl border border-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/60 px-2 py-1 shadow-2xs"
+                                            >
+                                                <input
+                                                    type="text"
+                                                    autoFocus
+                                                    value={editingTopicValue}
+                                                    onChange={(e) => setEditingTopicValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault();
+                                                            handleSaveRename(t);
+                                                        } else if (e.key === "Escape") {
+                                                            setEditingTopic(null);
+                                                        }
+                                                    }}
+                                                    className="w-36 text-xs font-semibold bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 rounded-lg px-2 py-0.5 text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    disabled={topicActionLoading}
+                                                    onClick={() => handleSaveRename(t)}
+                                                    title="Save new topic name everywhere"
+                                                    className="p-1 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer disabled:opacity-50"
+                                                >
+                                                    {topicActionLoading ? (
+                                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                    ) : (
+                                                        <Check className="h-3.5 w-3.5" />
+                                                    )}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={topicActionLoading}
+                                                    onClick={() => setEditingTopic(null)}
+                                                    title="Cancel"
+                                                    className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        );
+                                    }
+
+                                    if (isDeletingThis) {
+                                        return (
+                                            <div
+                                                key={t}
+                                                className="flex items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/50 px-2.5 py-1 text-xs text-rose-700 dark:text-rose-300 shadow-2xs animate-in fade-in duration-150"
+                                            >
+                                                <span className="font-medium text-[11px]">Delete "{t}"?</span>
+                                                <button
+                                                    type="button"
+                                                    disabled={topicActionLoading}
+                                                    onClick={() => handleConfirmDelete(t)}
+                                                    className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[11px] font-bold hover:bg-rose-700 cursor-pointer disabled:opacity-50"
+                                                >
+                                                    {topicActionLoading ? (
+                                                        <Loader2 className="h-3 w-3 animate-spin inline" />
+                                                    ) : (
+                                                        "Confirm"
+                                                    )}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={topicActionLoading}
+                                                    onClick={() => setDeletingTopic(null)}
+                                                    className="p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div
+                                            key={t}
+                                            className={`group inline-flex items-center gap-1 rounded-xl border transition-all ${
+                                                isSelected
+                                                    ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700 shadow-2xs font-semibold"
+                                                    : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40"
+                                            }`}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => setTopic(t)}
+                                                className="px-3 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer"
+                                            >
+                                                {isSelected && <Check className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
+                                                <span>{t}</span>
+                                            </button>
+
+                                            <div className="flex items-center pr-1.5 gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleStartRename(t);
+                                                    }}
+                                                    title={`Rename topic "${t}" everywhere across course`}
+                                                    className="p-1 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 cursor-pointer"
+                                                >
+                                                    <Edit2 className="h-3 w-3" />
+                                                </button>
+                                                {t !== "General" && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setDeletingTopic(t);
+                                                            setEditingTopic(null);
+                                                        }}
+                                                        title={`Delete topic "${t}"`}
+                                                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 cursor-pointer"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
-                            {/* Custom topic toggle / input */}
-                            <div>
-                                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                            {/* Create / Custom Topic Input */}
+                            <div className="pt-1">
+                                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                                     Or type a custom topic name
                                 </label>
-                                <input
-                                    type="text"
-                                    value={topic}
-                                    placeholder="Write down custom topic name..."
-                                    onChange={(e) => {
-                                        setTopic(e.target.value);
-                                        setCustomTopicMode(true);
-                                    }}
-                                    className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
-                                />
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={newTopicInput}
+                                        placeholder="Write down custom topic name..."
+                                        onChange={(e) => setNewTopicInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                handleAddTopic();
+                                            }
+                                        }}
+                                        className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddTopic}
+                                        disabled={!newTopicInput.trim()}
+                                        className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3.5 py-2 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        <span>Add</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

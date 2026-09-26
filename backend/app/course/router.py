@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from app.assignment.dtos import AssignmentResponseSchema
+from app.assignment.dtos import AssignmentResponseSchema, TopicDeleteSchema, TopicRenameSchema
 from app.course import controller
 from app.course.dtos import (
     CoursePeopleResponseSchema,
@@ -8,7 +8,7 @@ from app.course.dtos import (
     CourseSchema,
 )
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdmin, IsAdminOrTeacher, IsAuthenticated
+from app.utils.helpers import DbSession, IsAdmin, IsAdminOrInstructor, IsAdminOrTeacher, IsAuthenticated
 
 course_routes = APIRouter(prefix="/api/courses", tags=["courses"])
 
@@ -53,3 +53,21 @@ def update_course(course_id: int, body: CourseSchema, db: DbSession, _admin: IsA
 @course_routes.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_course(course_id: int, db: DbSession, _admin: IsAdmin):
     return controller.delete_course(course_id, db)
+
+
+@course_routes.put("/{course_id}/topics/rename", status_code=status.HTTP_200_OK)
+def rename_course_topic(
+    course_id: int, body: TopicRenameSchema, db: DbSession, user: IsAdminOrInstructor
+):
+    from app.assignment import controller as assignment_controller
+
+    return assignment_controller.rename_topic(course_id, body.old_name, body.new_name, user, db)
+
+
+@course_routes.post("/{course_id}/topics/delete", status_code=status.HTTP_200_OK)
+def delete_course_topic(
+    course_id: int, body: TopicDeleteSchema, db: DbSession, user: IsAdminOrInstructor
+):
+    from app.assignment import controller as assignment_controller
+
+    return assignment_controller.delete_topic(course_id, body.topic_name, body.fallback_topic, user, db)

@@ -102,3 +102,25 @@ export function uploadAssignmentAttachmentRequest(assignmentId: number, formData
 export function deleteAssignmentAttachmentRequest(assignmentId: number, attachmentId: number): Promise<void> {
     return apiFetch<void>(`/api/assignments/${assignmentId}/attachments/${attachmentId}`, { method: "DELETE" });
 }
+
+export function renameCourseTopicRequest(
+    courseId: number,
+    oldName: string,
+    newName: string,
+): Promise<{ success: boolean; old_name: string; new_name: string; updated_assignments_count: number }> {
+    return apiFetch(`/api/courses/${courseId}/topics/rename`, {
+        method: "PUT",
+        body: JSON.stringify({ oldName, newName }),
+    });
+}
+
+export function deleteCourseTopicRequest(
+    courseId: number,
+    topicName: string,
+    fallbackTopic = "General",
+): Promise<{ success: boolean; deleted_topic: string; fallback_topic: string }> {
+    return apiFetch(`/api/courses/${courseId}/topics/delete`, {
+        method: "POST",
+        body: JSON.stringify({ topicName, fallbackTopic }),
+    });
+}
