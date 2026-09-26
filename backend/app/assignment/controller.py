@@ -87,7 +87,12 @@ def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str |
     mine = next((s for s in assignment.submissions if s.learner_id == user.id), None)
     is_submitted = mine is not None and (mine.status == "Submitted" or mine.submitted_at_utc is not None)
     is_graded = mine is not None and mine.status == "Graded"
-    is_draft = mine is not None and mine.status == "Draft" and not is_submitted
+    has_work = mine is not None and (
+        (mine.attachments and len(mine.attachments) > 0)
+        or bool(mine.answer and mine.answer.strip() and mine.answer != "Submitted via file attachment")
+        or bool(mine.external_url and mine.external_url.strip())
+    )
+    is_draft = mine is not None and mine.status == "Draft" and not is_submitted and has_work
 
     if is_graded:
         return "Graded"
@@ -244,7 +249,7 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
         if l_id not in existing_ids:
             db.add(
                 SubmissionModel(
-                    assignment_id=assignment.id, learner_id=l_id, status="Draft"
+                    assignment_id=assignment.id, learner_id=l_id, status="Assigned"
                 )
             )
 

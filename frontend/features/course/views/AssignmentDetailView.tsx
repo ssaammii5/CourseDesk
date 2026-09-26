@@ -86,7 +86,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
     const turnedIn = status === "Turned in" || status === "Submitted";
     const isMissed = status === "Missed";
     const isGraded = status === "Graded";
-    const isDraft = status === "Draft";
+    const isDraft = status === "Draft" && attachments.length > 0;
     const linkValid = isValidLink(linkValue);
     const linkError = linkTouched && !linkValid;
 

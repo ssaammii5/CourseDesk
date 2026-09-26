@@ -31,11 +31,12 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
             const mine = mySubs.find((s) => s.assignmentId === dto.id);
             if (mine) {
                 submissionId = mine.id;
+                const hasWork = (mine.attachments && mine.attachments.length > 0) || Boolean(mine.answer?.trim() && mine.answer !== "Submitted via file attachment") || Boolean(mine.externalUrl?.trim());
                 if (mine.status === "Graded") {
                     submissionStatus = "Graded";
                 } else if (mine.status === "Submitted" || mine.status === "Turned in") {
                     submissionStatus = "Turned in";
-                } else if (mine.status === "Draft") {
+                } else if (mine.status === "Draft" && hasWork) {
                     submissionStatus = "Draft";
                 } else if (mine.status === "Missed") {
                     submissionStatus = "Missed";

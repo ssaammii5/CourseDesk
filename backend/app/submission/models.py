@@ -18,8 +18,8 @@ class SubmissionModel(Base):
         ForeignKey("user_table.id", ondelete="CASCADE"), index=True
     )
     answer: Mapped[str] = mapped_column(Text, default="")
-    status: Mapped[str] = mapped_column(default="Draft")
-    # Draft | Submitted | Graded
+    status: Mapped[str] = mapped_column(default="Assigned")
+    # Assigned | Draft | Submitted | Graded
     marks: Mapped[Optional[int]] = mapped_column(default=None)
     feedback: Mapped[Optional[str]] = mapped_column(Text, default=None)
     submitted_at_utc: Mapped[Optional[datetime]] = mapped_column(
