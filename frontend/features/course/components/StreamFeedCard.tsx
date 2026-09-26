@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+    ChevronDown,
+    ChevronUp,
     Download,
     EllipsisVertical,
     ExternalLink,
@@ -464,6 +466,41 @@ export function StreamFeedCard({
     );
 
     const [menuOpen, setMenuOpen] = useState(false);
+    const [expanded, setExpanded] = useState(false);
+    const [isOverflowing, setIsOverflowing] = useState(() => {
+        return Boolean(body && (body.length > 320 || body.split("\n").length > 7));
+    });
+    const contentRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const el = contentRef.current;
+        if (!el) return;
+
+        const checkOverflow = () => {
+            // Check if full scroll height exceeds the max collapsed threshold
+            setIsOverflowing(el.scrollHeight > 185);
+        };
+
+        checkOverflow();
+
+        if (typeof window !== "undefined" && "ResizeObserver" in window) {
+            const observer = new ResizeObserver(() => {
+                checkOverflow();
+            });
+            observer.observe(el);
+            return () => observer.disconnect();
+        }
+    }, [body, title]);
+
+    const toggleExpanded = () => {
+        if (expanded && contentRef.current) {
+            const rect = contentRef.current.getBoundingClientRect();
+            if (rect.top < 0) {
+                contentRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+        setExpanded(!expanded);
+    };
 
     return (
         <article
@@ -608,7 +645,35 @@ export function StreamFeedCard({
                             {title}
                         </h4>
                     )}
-                    <FormattedPostContent text={body} />
+                    <div
+                        ref={contentRef}
+                        className={`relative transition-all duration-300 ${
+                            !expanded && isOverflowing
+                                ? "max-h-[175px] overflow-hidden"
+                                : "max-h-none"
+                        }`}
+                    >
+                        <FormattedPostContent text={body} />
+
+                        {!expanded && isOverflowing && (
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/85 to-transparent dark:from-slate-900 dark:via-slate-900/85" />
+                        )}
+                    </div>
+
+                    {isOverflowing && (
+                        <button
+                            type="button"
+                            onClick={toggleExpanded}
+                            className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-400 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 transition-colors cursor-pointer select-none"
+                        >
+                            <span>{expanded ? "Show less" : "See more"}</span>
+                            {expanded ? (
+                                <ChevronUp className="h-3.5 w-3.5" />
+                            ) : (
+                                <ChevronDown className="h-3.5 w-3.5" />
+                            )}
+                        </button>
+                    )}
                 </div>
 
                 {/* Attachments (if any) */}
