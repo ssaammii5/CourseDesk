@@ -420,6 +420,9 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 initial={editing}
                 onClose={closeEditor}
                 onSubmit={handleSubmit}
+                courseId={details.courseId}
+                sessions={sessions}
+                existingTopics={Array.from(new Set(classwork.map((c) => c.topic).filter(Boolean)))}
             />
         );
 
