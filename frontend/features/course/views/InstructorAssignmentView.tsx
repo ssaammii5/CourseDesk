@@ -36,7 +36,7 @@ export interface InstructorAssignmentViewProps {
 }
 
 type TabType = "learner-work" | "instructions";
-type StatusFilter = "All" | "Turned in" | "Assigned" | "Graded";
+type StatusFilter = "All" | "Submitted" | "Assigned" | "Graded";
 
 function formatDateTime(iso?: string | null): string {
     if (!iso) return "No due date";
@@ -94,7 +94,7 @@ export function InstructorAssignmentView({
     }, [loadSubmissions]);
 
     // Counters
-    const turnedInCount = useMemo(
+    const submittedCount = useMemo(
         () => submissions.filter((s) => s.submittedAtUtc && s.status !== "Graded").length,
         [submissions],
     );
@@ -118,7 +118,7 @@ export function InstructorAssignmentView({
             const matchSearch = !q || learnerName.includes(q) || learnerEmail.includes(q) || learnerId.includes(q);
 
             let matchStatus = true;
-            if (statusFilter === "Turned in") {
+            if (statusFilter === "Submitted") {
                 matchStatus = Boolean(s.submittedAtUtc && s.status !== "Graded");
             } else if (statusFilter === "Graded") {
                 matchStatus = s.status === "Graded";
@@ -248,10 +248,10 @@ export function InstructorAssignmentView({
                     <div className="grid grid-cols-3 gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-[#f9fafc] dark:bg-slate-900 p-4 text-center sm:p-6">
                         <div className="border-r border-gray-200 dark:border-slate-800">
                             <span className="block text-3xl font-bold text-[#1a73e8] dark:text-blue-400">
-                                {turnedInCount}
+                                {submittedCount}
                             </span>
                             <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400 sm:text-sm">
-                                Turned in
+                                Submitted
                             </span>
                         </div>
                         <div className="border-r border-gray-200 dark:border-slate-800">
@@ -287,7 +287,7 @@ export function InstructorAssignmentView({
 
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500 dark:text-slate-400">Filter status:</span>
-                            {(["All", "Turned in", "Assigned", "Graded"] as StatusFilter[]).map((st) => (
+                            {(["All", "Submitted", "Assigned", "Graded"] as StatusFilter[]).map((st) => (
                                 <button
                                     key={st}
                                     type="button"
@@ -370,7 +370,7 @@ export function InstructorAssignmentView({
                                                                     : "bg-blue-100 dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300"
                                                                     }`}
                                                             >
-                                                                {isLate ? "Turned in late" : "Turned in"}
+                                                                {isLate ? "Submitted late" : "Submitted"}
                                                             </span>
                                                         ) : (
                                                             <span className="rounded-full bg-gray-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-gray-600 dark:text-slate-300">
@@ -453,7 +453,7 @@ export function InstructorAssignmentView({
                                                     </div>
                                                 ) : (
                                                     <p className="mt-3 text-xs italic text-gray-500 dark:text-slate-400">
-                                                        No submission turned in yet.
+                                                        No submission yet.
                                                     </p>
                                                 )}
 
