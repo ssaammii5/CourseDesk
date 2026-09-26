@@ -262,7 +262,7 @@ def add_submission_attachment(
             uploaded_at_utc=now,
         )
     elif file:
-        file_path, file_size_str, file_mime = _save_upload(file, f"submissions/{submission_id}")
+        file_path, file_mime, file_size_str = save_upload_file(file, f"submissions/{submission_id}")
         attachment = SubmissionAttachmentModel(
             submission_id=submission_id,
             file_name=file.filename or "attachment",
@@ -278,7 +278,7 @@ def add_submission_attachment(
     db.add(attachment)
     db.commit()
     db.refresh(attachment)
-    return serialize_attachment(attachment)
+    return SubmissionAttachmentResponseSchema.model_validate(attachment)
 
 
 def delete_submission_attachment(
