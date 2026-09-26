@@ -267,48 +267,60 @@ export function InstructorCourseworkView({
                 </div>
 
                 {/* KPI Metrics Row */}
-                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter("all")}
+                        className={`group flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "all"
+                                ? "border-blue-500/80 bg-blue-50/60 dark:bg-blue-950/40 ring-2 ring-blue-500/20 shadow-xs"
+                                : "border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/90 dark:hover:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
+                    >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
                             <Layers className="h-5 w-5" />
                         </div>
                         <div>
                             <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.total}</p>
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Assignments</p>
                         </div>
-                    </div>
+                    </button>
 
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(statusFilter === "published" ? "all" : "published")}
+                        className={`group flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "published"
+                                ? "border-emerald-500/80 bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20 shadow-xs"
+                                : "border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/90 dark:hover:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
+                    >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
                             <FileText className="h-5 w-5" />
                         </div>
                         <div>
                             <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.published}</p>
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Published</p>
                         </div>
-                    </div>
+                    </button>
 
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <button
+                        type="button"
+                        onClick={() => setStatusFilter(statusFilter === "draft" ? "all" : "draft")}
+                        className={`group flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                            statusFilter === "draft"
+                                ? "border-amber-500/80 bg-amber-50/60 dark:bg-amber-950/40 ring-2 ring-amber-500/20 shadow-xs"
+                                : "border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-slate-100/90 dark:hover:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
+                    >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
                             <Clock className="h-5 w-5" />
                         </div>
                         <div>
                             <p className="text-xl font-bold text-slate-900 dark:text-white">{metrics.drafts}</p>
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Drafts</p>
                         </div>
-                    </div>
-
-                    <div className="flex items-center gap-3.5 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                            <Users className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                {metrics.totalSubmissions}
-                            </p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Submissions</p>
-                        </div>
-                    </div>
+                    </button>
                 </div>
             </div>
 
