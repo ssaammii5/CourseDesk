@@ -35,7 +35,7 @@ export interface InstructorAssignmentViewProps {
     onRefresh?: () => void;
 }
 
-type TabType = "learner-work" | "instructions";
+type TabType = "learner-work" | "private-comments" | "instructions";
 type StatusFilter = "All" | "Submitted" | "Assigned" | "Graded";
 
 function formatDateTime(iso?: string | null): string {
@@ -61,6 +61,8 @@ export function InstructorAssignmentView({
     const [loadingSubmissions, setLoadingSubmissions] = useState(true);
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
     const [search, setSearch] = useState("");
+    const [selectedLearnerId, setSelectedLearnerId] = useState<number | null>(null);
+    const [commentLearnerSearch, setCommentLearnerSearch] = useState("");
 
     // Grading state per submission id
     const [gradeInputs, setGradeInputs] = useState<Record<number, { marks: string; feedback: string }>>({});
@@ -106,6 +108,27 @@ export function InstructorAssignmentView({
         () => submissions.filter((s) => !s.submittedAtUtc).length,
         [submissions],
     );
+
+    // Active learner for private comments tab
+    const activeLearnerId = selectedLearnerId ?? (submissions[0]?.learnerId ?? submissions[0]?.studentId ?? null);
+    const activeLearner = useMemo(() => {
+        return (
+            submissions.find((s) => (s.learnerId ?? s.studentId) === activeLearnerId) ??
+            submissions[0] ??
+            null
+        );
+    }, [submissions, activeLearnerId]);
+
+    const filteredCommentLearners = useMemo(() => {
+        if (!commentLearnerSearch.trim()) return submissions;
+        const q = commentLearnerSearch.toLowerCase();
+        return submissions.filter((sub) => {
+            const name = (sub.learnerName ?? sub.studentName ?? "").toLowerCase();
+            const email = (sub.learnerEmail ?? sub.studentEmail ?? "").toLowerCase();
+            const id = (sub.learnerAcademicId ?? sub.studentAcademicId ?? "").toLowerCase();
+            return name.includes(q) || email.includes(q) || id.includes(q);
+        });
+    }, [submissions, commentLearnerSearch]);
 
     // Filtered list
     const filteredSubmissions = useMemo(() => {
@@ -209,7 +232,7 @@ export function InstructorAssignmentView({
                             type="button"
                             onClick={() => setTab("learner-work")}
                             className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "learner-work"
-                                ? "text-[#1a73e8] dark:text-blue-400"
+                                ? "text-[#1a73e8] dark:text-blue-400 font-semibold"
                                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                                 }`}
                         >
@@ -225,9 +248,24 @@ export function InstructorAssignmentView({
 
                         <button
                             type="button"
+                            onClick={() => setTab("private-comments")}
+                            className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "private-comments"
+                                ? "text-[#1a73e8] dark:text-blue-400 font-semibold"
+                                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
+                                }`}
+                        >
+                            <MessageSquare className="h-4 w-4" />
+                            Private comments
+                            {tab === "private-comments" && (
+                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                            )}
+                        </button>
+
+                        <button
+                            type="button"
                             onClick={() => setTab("instructions")}
                             className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "instructions"
-                                ? "text-[#1a73e8] dark:text-blue-400"
+                                ? "text-[#1a73e8] dark:text-blue-400 font-semibold"
                                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                                 }`}
                         >
@@ -383,8 +421,20 @@ export function InstructorAssignmentView({
                                                         </p>
                                                     </div>
 
-                                                    {/* Status Badge */}
-                                                    <div className="ml-auto sm:ml-4">
+                                                    {/* Status Badge & Actions */}
+                                                    <div className="ml-auto flex items-center gap-2 sm:ml-4">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedLearnerId(sub.learnerId ?? sub.studentId ?? null);
+                                                                setTab("private-comments");
+                                                            }}
+                                                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-[#1a73e8] transition-colors"
+                                                            title="Open private comments with this learner"
+                                                        >
+                                                            <MessageSquare className="h-3.5 w-3.5 text-[#1a73e8] dark:text-blue-400" />
+                                                            <span className="hidden sm:inline">Comments</span>
+                                                        </button>
                                                         {isGraded ? (
                                                             <span className="rounded-full bg-green-100 dark:bg-emerald-950/60 px-3 py-1 text-xs font-semibold text-[#137333] dark:text-emerald-400">
                                                                 Graded: {sub.marks}/{assignment.maxMarks}
@@ -482,17 +532,6 @@ export function InstructorAssignmentView({
                                                         No submission yet.
                                                     </p>
                                                 )}
-
-                                                {/* Private comments with this learner */}
-                                                <div className="mt-4 border-t border-gray-200/80 dark:border-slate-800 pt-3">
-                                                    <AssignmentComments
-                                                        assignmentId={assignment.id}
-                                                        isPrivate={true}
-                                                        learnerId={sub.learnerId ?? sub.studentId}
-                                                        privateCommentTarget={sub.learnerName ?? sub.studentName ?? "Learner"}
-                                                        compact
-                                                    />
-                                                </div>
                                             </div>
 
                                             {/* Right: Inline Grading Form */}
@@ -585,7 +624,196 @@ export function InstructorAssignmentView({
                 </div>
             )}
 
-            {/* TAB 2: Instructions */}
+            {/* TAB 2: Private comments */}
+            {tab === "private-comments" && (
+                <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8">
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                        {/* Header banner */}
+                        <div className="border-b border-gray-100 dark:border-slate-800 px-6 py-4 bg-gray-50/60 dark:bg-slate-900/60">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                                        <MessageSquare className="h-5 w-5 text-[#1a73e8] dark:text-blue-400" />
+                                        Private Learner Comments
+                                    </h2>
+                                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                                        Direct 1-on-1 private comments and individual feedback with learners for this assignment.
+                                    </p>
+                                </div>
+                                {activeLearner && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setTab("learner-work")}
+                                        className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs font-medium text-[#1a73e8] dark:text-blue-400 hover:underline cursor-pointer"
+                                    >
+                                        <FolderCheck className="h-3.5 w-3.5" />
+                                        <span>View in Learner Work</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {loadingSubmissions ? (
+                            <div className="flex h-64 items-center justify-center">
+                                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
+                            </div>
+                        ) : submissions.length === 0 ? (
+                            <div className="py-16 text-center">
+                                <Users className="mx-auto h-12 w-12 text-gray-300 dark:text-slate-700" />
+                                <p className="mt-3 text-sm font-medium text-gray-700 dark:text-slate-300">
+                                    No learners enrolled yet
+                                </p>
+                                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                                    Once learners join the course, you can message each of them privately here.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-12 min-h-[560px]">
+                                {/* Left roster: Learner list */}
+                                <div className="md:col-span-4 border-r border-gray-200 dark:border-slate-800 flex flex-col bg-gray-50/40 dark:bg-slate-900/40">
+                                    {/* Search input */}
+                                    <div className="p-3 border-b border-gray-200 dark:border-slate-800">
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-slate-500" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search learner..."
+                                                value={commentLearnerSearch}
+                                                onChange={(e) => setCommentLearnerSearch(e.target.value)}
+                                                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Learner items list */}
+                                    <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800 max-h-[560px]">
+                                        {filteredCommentLearners.length === 0 ? (
+                                            <p className="p-6 text-center text-xs text-gray-500 dark:text-slate-400">
+                                                No learner matches &quot;{commentLearnerSearch}&quot;
+                                            </p>
+                                        ) : (
+                                            filteredCommentLearners.map((sub) => {
+                                                const lId = sub.learnerId ?? sub.studentId;
+                                                const lName = sub.learnerName ?? sub.studentName ?? "Learner";
+                                                const lEmail = sub.learnerEmail ?? sub.studentEmail ?? "";
+                                                const lAcadId = sub.learnerAcademicId ?? sub.studentAcademicId ?? "";
+                                                const isSelected = activeLearner && (activeLearner.learnerId ?? activeLearner.studentId) === lId;
+
+                                                return (
+                                                    <button
+                                                        key={sub.id}
+                                                        type="button"
+                                                        onClick={() => setSelectedLearnerId(lId ?? null)}
+                                                        className={`w-full text-left p-3.5 flex items-center gap-3 transition-colors cursor-pointer ${
+                                                            isSelected
+                                                                ? "bg-blue-50/90 dark:bg-blue-950/60 border-l-4 border-l-[#1a73e8]"
+                                                                : "hover:bg-gray-100/70 dark:hover:bg-slate-800/60 border-l-4 border-l-transparent"
+                                                        }`}
+                                                    >
+                                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1a73e8] text-xs font-semibold text-white">
+                                                            {initialOf(lName)}
+                                                        </span>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-center justify-between gap-1">
+                                                                <p className={`truncate text-xs font-semibold ${
+                                                                    isSelected
+                                                                        ? "text-[#1a73e8] dark:text-blue-300"
+                                                                        : "text-gray-900 dark:text-slate-100"
+                                                                }`}>
+                                                                    {lName}
+                                                                </p>
+                                                                {sub.status === "Graded" ? (
+                                                                    <span className="shrink-0 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                                        {sub.marks}/{assignment.maxMarks}
+                                                                    </span>
+                                                                ) : sub.submittedAtUtc ? (
+                                                                    <span className="shrink-0 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                                                                        Submitted
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                            <p className="truncate text-[11px] text-gray-500 dark:text-slate-400">
+                                                                {lAcadId ? `ID: ${lAcadId} • ` : ""}{lEmail}
+                                                            </p>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Right chat panel */}
+                                <div className="md:col-span-8 flex flex-col p-6">
+                                    {activeLearner ? (
+                                        <div className="flex flex-col h-full">
+                                            {/* Active learner banner */}
+                                            <div className="mb-4 pb-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1a73e8] text-sm font-semibold text-white">
+                                                        {initialOf(activeLearner.learnerName ?? activeLearner.studentName ?? "Learner")}
+                                                    </span>
+                                                    <div>
+                                                        <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                                                            {activeLearner.learnerName ?? activeLearner.studentName ?? "Learner"}
+                                                        </h3>
+                                                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                                                            {activeLearner.learnerAcademicId ?? activeLearner.studentAcademicId
+                                                                ? `ID: ${activeLearner.learnerAcademicId ?? activeLearner.studentAcademicId} • `
+                                                                : ""}
+                                                            {activeLearner.learnerEmail ?? activeLearner.studentEmail}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    {activeLearner.status === "Graded" ? (
+                                                        <span className="rounded-full bg-green-100 dark:bg-emerald-950/60 px-2.5 py-1 text-xs font-semibold text-[#137333] dark:text-emerald-400">
+                                                            Graded: {activeLearner.marks}/{assignment.maxMarks}
+                                                        </span>
+                                                    ) : activeLearner.submittedAtUtc ? (
+                                                        <span className="rounded-full bg-blue-100 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-[#174ea6] dark:text-blue-300">
+                                                            Submitted
+                                                        </span>
+                                                    ) : (
+                                                        <span className="rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-300">
+                                                            Assigned
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Comments thread */}
+                                            <div className="flex-1">
+                                                <AssignmentComments
+                                                    key={activeLearner.learnerId ?? activeLearner.studentId ?? activeLearner.id}
+                                                    assignmentId={assignment.id}
+                                                    isPrivate={true}
+                                                    learnerId={activeLearner.learnerId ?? activeLearner.studentId}
+                                                    privateCommentTarget={activeLearner.learnerName ?? activeLearner.studentName ?? "Learner"}
+                                                    compact={false}
+                                                    showTitle={false}
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-1 flex-col items-center justify-center text-center p-8">
+                                            <MessageSquare className="h-10 w-10 text-gray-300 dark:text-slate-600 mb-2" />
+                                            <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                                                Select a learner
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-slate-400 max-w-sm mt-1">
+                                                Choose a learner from the list on the left to review or reply to their private comment thread.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 3: Instructions */}
             {tab === "instructions" && (
                 <div className="mx-auto max-w-[900px] px-4 py-8 sm:px-8">
                     <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8">

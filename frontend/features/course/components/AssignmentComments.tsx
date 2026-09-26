@@ -26,6 +26,7 @@ export interface AssignmentCommentsProps {
     privateCommentTarget?: string;
     compact?: boolean;
     showTitle?: boolean;
+    maxHeightClassName?: string;
 }
 
 function formatCommentDate(iso: string): string {
@@ -76,6 +77,7 @@ export function AssignmentComments({
     privateCommentTarget = "Instructor",
     compact = false,
     showTitle = true,
+    maxHeightClassName,
 }: AssignmentCommentsProps) {
     const { user } = useAuth();
     const [comments, setComments] = useState<CommentDto[]>([]);
@@ -210,12 +212,14 @@ export function AssignmentComments({
             ) : (
                 <div
                     ref={commentsContainerRef}
-                    className={`space-y-2.5 ${
-                        isPrivate
-                            ? "max-h-64 sm:max-h-80 overflow-y-auto overscroll-contain pr-1.5 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]"
+                    className={`space-y-2.5 overflow-y-auto pr-1.5 [scrollbar-width:thin] ${
+                        maxHeightClassName
+                            ? maxHeightClassName
                             : compact
-                            ? "max-h-60 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]"
-                            : ""
+                            ? "max-h-60"
+                            : isPrivate
+                            ? "max-h-[480px]"
+                            : "max-h-[500px]"
                     }`}
                 >
                     {comments.map((c) => {
