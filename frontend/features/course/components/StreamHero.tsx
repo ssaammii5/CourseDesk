@@ -67,16 +67,47 @@ export function StreamHero({
     const meetingPasscode =
         nextSession?.meetingPasscode || course?.meetingPasscode || "";
 
-    const primaryInstructor = useMemo(() => {
-        const names = course?.instructorNames || course?.teacherNames;
-        if (names && names.length > 0) {
-            return names[0];
+    const instructorList = useMemo(() => {
+        const rawNames: string[] = [];
+
+        if (course?.instructorNames && Array.isArray(course.instructorNames)) {
+            rawNames.push(...course.instructorNames);
         }
-        const instructorPerson = details.people.find(
-            (p) => p.role === "Instructor" || (p.role as string) === "Teacher"
+        if (course?.teacherNames && Array.isArray(course.teacherNames)) {
+            rawNames.push(...course.teacherNames);
+        }
+        if (details?.people && Array.isArray(details.people)) {
+            const peopleInstructors = details.people
+                .filter((p) => p.role === "Instructor" || (p.role as string) === "Teacher")
+                .map((p) => p.name);
+            rawNames.push(...peopleInstructors);
+        }
+        if (course?.instructorName) {
+            rawNames.push(...course.instructorName.split(","));
+        }
+        if (course?.teacherName) {
+            rawNames.push(...course.teacherName.split(","));
+        }
+
+        const trimmed = rawNames
+            .map((n) => (typeof n === "string" ? n.trim() : ""))
+            .filter(Boolean);
+
+        // Filter out generic placeholders like "Instructor" or "Teacher" if specific names exist
+        const specific = trimmed.filter(
+            (n) => n.toLowerCase() !== "instructor" && n.toLowerCase() !== "teacher"
         );
-        return instructorPerson?.name || "Instructor";
-    }, [course, details.people]);
+
+        const listToUse = specific.length > 0 ? specific : trimmed;
+        return Array.from(new Set(listToUse));
+    }, [course, details?.people]);
+
+    const instructorNamesLabel =
+        instructorList.length > 0
+            ? instructorList.join(", ")
+            : "No instructor assigned";
+
+    const instructorHeading = instructorList.length > 1 ? "Instructors" : "Instructor";
 
     const learnerCount =
         course?.learnerCount ??
@@ -175,9 +206,12 @@ export function StreamHero({
 
                             {/* Meta information line */}
                             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                                <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                    <GraduationCap className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                                    <span>{primaryInstructor}</span>
+                                <div
+                                    className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300 min-w-0"
+                                    title={instructorNamesLabel}
+                                >
+                                    <GraduationCap className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                                    <span className="truncate max-w-[240px] sm:max-w-md">{instructorNamesLabel}</span>
                                 </div>
                                 <span className="text-slate-300 dark:text-slate-700">•</span>
                                 <div className="flex items-center gap-1.5">
@@ -396,8 +430,15 @@ export function StreamHero({
                             {/* Instructor & Learner Summary */}
                             <div className="grid grid-cols-2 gap-2.5 pt-1">
                                 <div>
-                                    <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Instructor</p>
-                                    <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{primaryInstructor}</p>
+                                    <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">
+                                        {instructorHeading}
+                                    </p>
+                                    <p
+                                        className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100 break-words"
+                                        title={instructorNamesLabel}
+                                    >
+                                        {instructorNamesLabel}
+                                    </p>
                                 </div>
                                 <div>
                                     <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Enrolled</p>

@@ -21,6 +21,7 @@ import type { CourseDto } from "@/lib/api/courses";
 import type { ClassDetails } from "@/types";
 import type { SessionDto, AnnouncementDto } from "@/types/session";
 import type { CourseTab } from "../components/CourseTabs";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StreamViewProps {
     title: string;
@@ -60,6 +61,7 @@ export function StreamView({
     onDeleteAnnouncement,
     onTogglePin,
 }: StreamViewProps) {
+    const { user } = useAuth();
     const canManage = isInstructor ?? isTeacher;
     const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
     const [editingAnnouncement, setEditingAnnouncement] = useState<AnnouncementDto | null>(null);
@@ -186,7 +188,12 @@ export function StreamView({
                     {/* Instructor Modern Composer Bar */}
                     {canManage && (
                         <StreamComposer
-                            authorName={course?.instructorNames?.[0]}
+                            authorName={
+                                user?.name ||
+                                course?.instructorNames?.[0] ||
+                                course?.teacherNames?.[0] ||
+                                details.people.find((p) => p.role === "Instructor" || (p.role as string) === "Teacher")?.name
+                            }
                             onClick={() => {
                                 setEditingAnnouncement(null);
                                 setAnnouncementModalOpen(true);

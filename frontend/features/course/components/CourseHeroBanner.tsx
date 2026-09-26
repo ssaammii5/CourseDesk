@@ -66,16 +66,44 @@ export function CourseHeroBanner({
         nextSession?.meetingPasscode || course?.meetingPasscode || "";
 
     // Instructor names
-    const primaryInstructor = useMemo(() => {
-        const names = course?.instructorNames || course?.teacherNames;
-        if (names && names.length > 0) {
-            return names[0];
+    const instructorList = useMemo(() => {
+        const rawNames: string[] = [];
+
+        if (course?.instructorNames && Array.isArray(course.instructorNames)) {
+            rawNames.push(...course.instructorNames);
         }
-        const instructorPerson = details.people.find(
-            (p) => p.role === "Instructor" || (p.role as string) === "Teacher"
+        if (course?.teacherNames && Array.isArray(course.teacherNames)) {
+            rawNames.push(...course.teacherNames);
+        }
+        if (details?.people && Array.isArray(details.people)) {
+            const peopleInstructors = details.people
+                .filter((p) => p.role === "Instructor" || (p.role as string) === "Teacher")
+                .map((p) => p.name);
+            rawNames.push(...peopleInstructors);
+        }
+        if (course?.instructorName) {
+            rawNames.push(...course.instructorName.split(","));
+        }
+        if (course?.teacherName) {
+            rawNames.push(...course.teacherName.split(","));
+        }
+
+        const trimmed = rawNames
+            .map((n) => (typeof n === "string" ? n.trim() : ""))
+            .filter(Boolean);
+
+        const specific = trimmed.filter(
+            (n) => n.toLowerCase() !== "instructor" && n.toLowerCase() !== "teacher"
         );
-        return instructorPerson?.name || "Instructor";
-    }, [course, details.people]);
+
+        const listToUse = specific.length > 0 ? specific : trimmed;
+        return Array.from(new Set(listToUse));
+    }, [course, details?.people]);
+
+    const instructorNamesLabel =
+        instructorList.length > 0
+            ? instructorList.join(", ")
+            : "No instructor assigned";
 
     // Learner count
     const learnerCount =
@@ -183,9 +211,9 @@ export function CourseHeroBanner({
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/5">
                         {/* Instructor & Learner Meta */}
                         <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-slate-300">
-                            <div className="flex items-center gap-1.5">
-                                <GraduationCap className="h-4 w-4 text-indigo-400" />
-                                <span className="font-medium text-slate-200">{primaryInstructor}</span>
+                            <div className="flex items-center gap-1.5" title={instructorNamesLabel}>
+                                <GraduationCap className="h-4 w-4 shrink-0 text-indigo-400" />
+                                <span className="font-medium text-slate-200 truncate max-w-[240px] sm:max-w-md">{instructorNamesLabel}</span>
                             </div>
 
                             <div className="flex items-center gap-1.5 text-slate-400">
@@ -294,9 +322,11 @@ export function CourseHeroBanner({
                             )}
 
                             <div className="flex justify-between py-2.5">
-                                <span className="text-gray-500 dark:text-slate-400">Instructor(s)</span>
-                                <span className="font-medium text-gray-900 dark:text-slate-100">
-                                    {(course?.instructorNames || course?.teacherNames)?.join(", ") || primaryInstructor}
+                                <span className="text-gray-500 dark:text-slate-400">
+                                    {instructorList.length > 1 ? "Instructors" : "Instructor"}
+                                </span>
+                                <span className="font-medium text-gray-900 dark:text-slate-100 break-words" title={instructorNamesLabel}>
+                                    {instructorNamesLabel}
                                 </span>
                             </div>
 
