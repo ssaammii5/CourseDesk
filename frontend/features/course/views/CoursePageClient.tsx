@@ -13,7 +13,7 @@ import { AssignmentCreateView } from "./AssignmentCreateView";
 import { useAuth } from "@/hooks/useAuth";
 import type { CourseDto } from "@/lib/api/courses";
 import type { CourseDetails, CourseworkEntry, ClassDetails, ClassworkEntry } from "@/types";
-import type { SessionDto, AnnouncementDto } from "@/types/session";
+import type { SessionDto, AnnouncementDto, AnnouncementAttachmentDto } from "@/types/session";
 import type { SubmissionDto } from "@/lib/api/submissions";
 import { loadInstructorCoursework, saveInstructorCoursework } from "@/lib/instructorCoursework";
 import {
@@ -26,7 +26,10 @@ import {
     createAnnouncementRequest,
     updateAnnouncementRequest,
     deleteAnnouncementRequest,
+    uploadAnnouncementAttachmentRequest,
+    deleteAnnouncementAttachmentRequest,
 } from "@/lib/api/announcements";
+import type { DraftAttachment } from "../components/AnnouncementFormModal";
 import { getSubmissionsRequest } from "@/lib/api/submissions";
 
 export interface CoursePageClientProps {
@@ -169,7 +172,10 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         mutateClasswork(classwork.filter((i) => i.id !== entry.id));
 
     const handlePostAnnouncement = useCallback(
-        async (data: { title: string; body: string; isPinned: boolean }) => {
+        async (
+            data: { title: string; body: string; isPinned: boolean },
+            attachments?: DraftAttachment[],
+        ) => {
             try {
                 const created = await createAnnouncementRequest({
                     courseId: details.courseId,
@@ -177,7 +183,29 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     body: data.body,
                     isPinned: data.isPinned,
                 });
-                setApiAnnouncements((prev) => sortAnnouncements([created, ...prev]));
+
+                const uploadedAttachments: AnnouncementAttachmentDto[] = [];
+                if (attachments && attachments.length > 0) {
+                    for (const att of attachments) {
+                        const fd = new FormData();
+                        if (att.kind === "file" && att.file) {
+                            fd.append("file", att.file);
+                        } else if (att.kind === "link" && att.url) {
+                            fd.append("linkUrl", att.url);
+                            fd.append("linkTitle", att.title || att.url);
+                        } else {
+                            continue;
+                        }
+                        const attRes = await uploadAnnouncementAttachmentRequest(created.id, fd);
+                        uploadedAttachments.push(attRes);
+                    }
+                }
+
+                const hydrated: AnnouncementDto = {
+                    ...created,
+                    attachments: uploadedAttachments,
+                };
+                setApiAnnouncements((prev) => sortAnnouncements([hydrated, ...prev]));
             } catch (err) {
                 console.error("Failed to post announcement", err);
             }
@@ -186,15 +214,57 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     );
 
     const handleUpdateAnnouncement = useCallback(
-        async (id: number, data: { title: string; body: string; isPinned: boolean }) => {
+        async (
+            id: number,
+            data: { title: string; body: string; isPinned: boolean },
+            newAttachments?: DraftAttachment[],
+            removedAttachmentIds?: number[],
+        ) => {
             try {
                 const updated = await updateAnnouncementRequest(id, {
                     title: data.title,
                     body: data.body,
                     isPinned: data.isPinned,
                 });
+
+                if (removedAttachmentIds && removedAttachmentIds.length > 0) {
+                    for (const attId of removedAttachmentIds) {
+                        await deleteAnnouncementAttachmentRequest(id, attId);
+                    }
+                }
+
+                const newlyUploaded: AnnouncementAttachmentDto[] = [];
+                if (newAttachments && newAttachments.length > 0) {
+                    for (const att of newAttachments) {
+                        const fd = new FormData();
+                        if (att.kind === "file" && att.file) {
+                            fd.append("file", att.file);
+                        } else if (att.kind === "link" && att.url) {
+                            fd.append("linkUrl", att.url);
+                            fd.append("linkTitle", att.title || att.url);
+                        } else {
+                            continue;
+                        }
+                        const attRes = await uploadAnnouncementAttachmentRequest(id, fd);
+                        newlyUploaded.push(attRes);
+                    }
+                }
+
                 setApiAnnouncements((prev) =>
-                    sortAnnouncements(prev.map((a) => (a.id === id ? updated : a)))
+                    sortAnnouncements(
+                        prev.map((a) => {
+                            if (a.id === id) {
+                                const currentRemaining = (a.attachments || []).filter(
+                                    (att) => !removedAttachmentIds?.includes(att.id),
+                                );
+                                return {
+                                    ...updated,
+                                    attachments: [...currentRemaining, ...newlyUploaded],
+                                };
+                            }
+                            return a;
+                        }),
+                    ),
                 );
             } catch (err) {
                 console.error("Failed to update announcement", err);

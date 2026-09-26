@@ -31,6 +31,17 @@ class AnnouncementCommentResponseSchema(CamelModel):
     updated_at_utc: datetime | None = None
 
 
+class AnnouncementAttachmentResponseSchema(CamelModel):
+    id: int
+    announcement_id: int
+    file_name: str
+    file_type: str
+    file_size: str
+    uploaded_at_utc: datetime
+    kind: str = "file"
+    url: str | None = None
+
+
 class AnnouncementResponseSchema(CamelModel):
     id: int
     course_id: int
@@ -42,3 +53,4 @@ class AnnouncementResponseSchema(CamelModel):
     created_at_utc: datetime
     updated_at_utc: datetime | None = None
     comments: list[AnnouncementCommentResponseSchema] = []
+    attachments: list[AnnouncementAttachmentResponseSchema] = []

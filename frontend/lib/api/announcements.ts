@@ -1,5 +1,6 @@
 import { apiFetch } from "./client";
 import type {
+    AnnouncementAttachmentDto,
     AnnouncementCommentDto,
     AnnouncementDto,
     CreateAnnouncementPayload,
@@ -57,6 +58,25 @@ export function createAnnouncementCommentRequest(
 
 export function deleteAnnouncementCommentRequest(commentId: number): Promise<void> {
     return apiFetch<void>(`/api/announcements/comments/${commentId}`, {
+        method: "DELETE",
+    });
+}
+
+export function uploadAnnouncementAttachmentRequest(
+    announcementId: number,
+    formData: FormData,
+): Promise<AnnouncementAttachmentDto> {
+    return apiFetch<AnnouncementAttachmentDto>(`/api/announcements/${announcementId}/attachments`, {
+        method: "POST",
+        body: formData,
+    });
+}
+
+export function deleteAnnouncementAttachmentRequest(
+    announcementId: number,
+    attachmentId: number,
+): Promise<void> {
+    return apiFetch<void>(`/api/announcements/${announcementId}/attachments/${attachmentId}`, {
         method: "DELETE",
     });
 }

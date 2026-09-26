@@ -1,19 +1,25 @@
 from datetime import UTC, datetime
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.announcement.dtos import (
+    AnnouncementAttachmentResponseSchema,
     AnnouncementCommentResponseSchema,
     AnnouncementResponseSchema,
     AnnouncementSchema,
     AnnouncementUpdateSchema,
     CreateAnnouncementCommentSchema,
 )
-from app.announcement.models import AnnouncementCommentModel, AnnouncementModel
+from app.announcement.models import (
+    AnnouncementAttachmentModel,
+    AnnouncementCommentModel,
+    AnnouncementModel,
+)
 from app.course.models import CourseModel
 from app.user.models import UserModel
+from app.utils.helpers import save_upload_file
 
 
 def _serialize_comment(c: AnnouncementCommentModel) -> AnnouncementCommentResponseSchema:
@@ -41,6 +47,10 @@ def _serialize(a: AnnouncementModel) -> AnnouncementResponseSchema:
         created_at_utc=a.created_at_utc,
         updated_at_utc=a.updated_at_utc,
         comments=[_serialize_comment(c) for c in (a.comments or [])],
+        attachments=[
+            AnnouncementAttachmentResponseSchema.model_validate(att)
+            for att in (a.attachments or [])
+        ],
     )
 
 
@@ -48,6 +58,7 @@ def _announcement_stmt():
     return select(AnnouncementModel).options(
         selectinload(AnnouncementModel.author),
         selectinload(AnnouncementModel.comments).selectinload(AnnouncementCommentModel.author),
+        selectinload(AnnouncementModel.attachments),
     )
 
 
@@ -345,4 +356,78 @@ def delete_announcement_comment(
         raise HTTPException(403, detail="You cannot delete this comment")
 
     db.delete(comment)
+    db.commit()
+
+
+def add_attachment(
+    announcement_id: int,
+    user: UserModel,
+    db: Session,
+    file: UploadFile | None,
+    link_url: str | None,
+    link_title: str | None,
+) -> AnnouncementAttachmentResponseSchema:
+    announcement = db.scalar(
+        _announcement_stmt().where(AnnouncementModel.id == announcement_id)
+    )
+    if not announcement:
+        raise HTTPException(404, detail="Announcement id is incorrect")
+
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == announcement.course_id)
+    )
+    can_manage = (course and _can_manage_course(user, course)) or (announcement.author_id == user.id)
+    if not can_manage:
+        raise HTTPException(403, detail="You cannot add attachments to this announcement")
+
+    if link_url:
+        attachment = AnnouncementAttachmentModel(
+            announcement_id=announcement.id,
+            file_name=link_title or link_url,
+            file_type="Link",
+            file_size="—",
+            kind="link",
+            url=link_url,
+        )
+    elif file is not None:
+        url, file_type, file_size = save_upload_file(file, f"announcements/{announcement.id}")
+        attachment = AnnouncementAttachmentModel(
+            announcement_id=announcement.id,
+            file_name=file.filename or "file",
+            file_type=file_type,
+            file_size=file_size,
+            kind="file",
+            url=url,
+        )
+    else:
+        raise HTTPException(400, detail="No file or link provided")
+
+    db.add(attachment)
+    db.commit()
+    db.refresh(attachment)
+    return AnnouncementAttachmentResponseSchema.model_validate(attachment)
+
+
+def delete_attachment(
+    announcement_id: int, attachment_id: int, user: UserModel, db: Session
+) -> None:
+    announcement = db.get(AnnouncementModel, announcement_id)
+    if not announcement:
+        raise HTTPException(404, detail="Announcement not found")
+
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == announcement.course_id)
+    )
+    can_manage = (course and _can_manage_course(user, course)) or (announcement.author_id == user.id)
+    if not can_manage:
+        raise HTTPException(403, detail="You cannot delete this attachment")
+
+    attachment = db.get(AnnouncementAttachmentModel, attachment_id)
+    if not attachment or attachment.announcement_id != announcement.id:
+        raise HTTPException(404, detail="Attachment id is incorrect")
+    db.delete(attachment)
     db.commit()

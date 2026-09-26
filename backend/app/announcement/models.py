@@ -33,6 +33,32 @@ class AnnouncementModel(Base):
         cascade="all, delete-orphan",
         order_by="AnnouncementCommentModel.created_at_utc.asc()",
     )
+    attachments: Mapped[list["AnnouncementAttachmentModel"]] = relationship(
+        back_populates="announcement",
+        cascade="all, delete-orphan",
+        order_by="AnnouncementAttachmentModel.uploaded_at_utc.asc()",
+    )
+
+
+class AnnouncementAttachmentModel(Base):
+    """Attachments (files, links) for course announcements."""
+
+    __tablename__: str = "announcement_attachment_table"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    announcement_id: Mapped[int] = mapped_column(
+        ForeignKey("announcement_table.id", ondelete="CASCADE"), index=True
+    )
+    file_name: Mapped[str] = mapped_column()
+    file_type: Mapped[str] = mapped_column(default="")
+    file_size: Mapped[str] = mapped_column(default="")
+    uploaded_at_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    kind: Mapped[str] = mapped_column(default="file")
+    url: Mapped[str | None] = mapped_column(default=None)
+
+    announcement: Mapped["AnnouncementModel"] = relationship(back_populates="attachments")
 
 
 class AnnouncementCommentModel(Base):

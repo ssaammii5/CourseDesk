@@ -22,6 +22,7 @@ import type { ClassDetails } from "@/types";
 import type { SessionDto, AnnouncementDto } from "@/types/session";
 import type { CourseTab } from "../components/CourseTabs";
 import { useAuth } from "@/hooks/useAuth";
+import type { DraftAttachment } from "../components/AnnouncementFormModal";
 
 interface StreamViewProps {
     title: string;
@@ -32,15 +33,16 @@ interface StreamViewProps {
     isInstructor?: boolean;
     isTeacher?: boolean;
     onTabChange?: (tab: CourseTab) => void;
-    onPostAnnouncement?: (data: {
-        title: string;
-        body: string;
-        isPinned: boolean;
-    }) => void;
+    onPostAnnouncement?: (
+        data: { title: string; body: string; isPinned: boolean },
+        attachments?: DraftAttachment[],
+    ) => void | Promise<void>;
     onUpdateAnnouncement?: (
         id: number,
-        data: { title: string; body: string; isPinned: boolean }
-    ) => void;
+        data: { title: string; body: string; isPinned: boolean },
+        newAttachments?: DraftAttachment[],
+        removedAttachmentIds?: number[],
+    ) => void | Promise<void>;
     onDeleteAnnouncement?: (id: number) => void;
     onTogglePin?: (id: number, isPinned: boolean) => void;
 }
@@ -334,11 +336,19 @@ export function StreamView({
                     setAnnouncementModalOpen(false);
                     setEditingAnnouncement(null);
                 }}
-                onSubmit={(data) => {
+                onSubmit={async (data) => {
                     if (editingAnnouncement && onUpdateAnnouncement) {
-                        onUpdateAnnouncement(editingAnnouncement.id, data);
+                        await onUpdateAnnouncement(
+                            editingAnnouncement.id,
+                            { title: data.title, body: data.body, isPinned: data.isPinned },
+                            data.attachments.filter((a) => !a.existingId),
+                            data.removedAttachmentIds,
+                        );
                     } else if (onPostAnnouncement) {
-                        onPostAnnouncement(data);
+                        await onPostAnnouncement(
+                            { title: data.title, body: data.body, isPinned: data.isPinned },
+                            data.attachments,
+                        );
                     }
                     setAnnouncementModalOpen(false);
                     setEditingAnnouncement(null);

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, File, Form, UploadFile, status
 
 from app.announcement import controller
 from app.announcement.dtos import (
+    AnnouncementAttachmentResponseSchema,
     AnnouncementCommentResponseSchema,
     AnnouncementResponseSchema,
     AnnouncementSchema,
@@ -92,3 +93,32 @@ def create_announcement_comment(
 )
 def delete_announcement_comment(comment_id: int, db: DbSession, user: IsAuthenticated):
     return controller.delete_announcement_comment(comment_id, user, db)
+
+
+@announcement_routes.post(
+    "/{announcement_id}/attachments",
+    response_model=AnnouncementAttachmentResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_announcement_attachment(
+    announcement_id: int,
+    db: DbSession,
+    user: IsAdminOrTeacher,
+    file: UploadFile | None = File(default=None),
+    link_url: str | None = Form(default=None),
+    link_title: str | None = Form(default=None),
+):
+    return controller.add_attachment(announcement_id, user, db, file, link_url, link_title)
+
+
+@announcement_routes.delete(
+    "/{announcement_id}/attachments/{attachment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_announcement_attachment(
+    announcement_id: int,
+    attachment_id: int,
+    db: DbSession,
+    user: IsAdminOrTeacher,
+):
+    return controller.delete_attachment(announcement_id, attachment_id, user, db)

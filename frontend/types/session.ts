@@ -88,6 +88,17 @@ export interface AnnouncementCommentDto {
     updatedAtUtc?: string | null;
 }
 
+export interface AnnouncementAttachmentDto {
+    id: number;
+    announcementId: number;
+    fileName: string;
+    fileType: string;
+    fileSize: string;
+    uploadedAtUtc: string;
+    kind: "file" | "link";
+    url: string | null;
+}
+
 export interface AnnouncementDto {
     id: number;
     courseId: number;
@@ -99,7 +110,9 @@ export interface AnnouncementDto {
     createdAtUtc: string;
     updatedAtUtc?: string | null;
     comments?: AnnouncementCommentDto[];
+    attachments?: AnnouncementAttachmentDto[];
 }
+
 
 
 export interface CreateAnnouncementPayload {
