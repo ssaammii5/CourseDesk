@@ -27,6 +27,7 @@ export interface PeopleViewProps {
     courseName?: string;
     courseId?: number;
     isInstructor?: boolean;
+    currentUserId?: number;
 }
 
 export function PeopleView({
@@ -34,6 +35,7 @@ export function PeopleView({
     courseName = "Course",
     courseId,
     isInstructor = false,
+    currentUserId,
 }: PeopleViewProps) {
     const searchInputId = useId();
     const [searchQuery, setSearchQuery] = useState("");
@@ -93,11 +95,13 @@ export function PeopleView({
 
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
-            result = result.filter(
-                (p) =>
-                    p.name.toLowerCase().includes(q) ||
-                    (p.email && p.email.toLowerCase().includes(q))
-            );
+            result = result.filter((p) => {
+                if (p.name.toLowerCase().includes(q)) return true;
+                const isPersonInstructor =
+                    p.role === "Instructor" || (p.role as string) === "Teacher";
+                const canSeeEmail = isPersonInstructor || isInstructor || p.id === currentUserId;
+                return Boolean(canSeeEmail && p.email && p.email.toLowerCase().includes(q));
+            });
         }
 
         return [...result].sort((a, b) => {
@@ -326,6 +330,8 @@ export function PeopleView({
                                     people={filteredInstructors}
                                     copiedKey={copiedKey}
                                     onCopyEmail={handleCopy}
+                                    isInstructor={isInstructor}
+                                    currentUserId={currentUserId}
                                 />
                             </div>
                         )}
@@ -350,7 +356,7 @@ export function PeopleView({
                                 </span>
                             </div>
 
-                            {filteredLearners.length > 0 && (
+                            {isInstructor && filteredLearners.length > 0 && (
                                 <button
                                     type="button"
                                     onClick={() => copyAllEmails(filteredLearners, "Learners")}
@@ -402,17 +408,23 @@ export function PeopleView({
                             </div>
                         ) : viewMode === "grid" ? (
                             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {filteredLearners.map((p) => (
-                                    <LearnerCard
-                                        key={p.id}
-                                        person={p}
-                                        isCopied={copiedKey === `lrn-${p.id}`}
-                                        onCopyEmail={() =>
-                                            p.email &&
-                                            handleCopy(p.email, `lrn-${p.id}`, p.email)
-                                        }
-                                    />
-                                ))}
+                                {filteredLearners.map((p) => {
+                                    const isSelf = p.id === currentUserId;
+                                    const canViewEmail = isInstructor || isSelf;
+                                    return (
+                                        <LearnerCard
+                                            key={p.id}
+                                            person={p}
+                                            isCopied={copiedKey === `lrn-${p.id}`}
+                                            canViewEmail={canViewEmail}
+                                            isSelf={isSelf}
+                                            onCopyEmail={() =>
+                                                p.email &&
+                                                handleCopy(p.email, `lrn-${p.id}`, p.email)
+                                            }
+                                        />
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -420,6 +432,8 @@ export function PeopleView({
                                     people={filteredLearners}
                                     copiedKey={copiedKey}
                                     onCopyEmail={handleCopy}
+                                    isInstructor={isInstructor}
+                                    currentUserId={currentUserId}
                                 />
                             </div>
                         )}
@@ -545,11 +559,17 @@ function LearnerCard({
     person,
     isCopied,
     onCopyEmail,
+    canViewEmail,
+    isSelf,
 }: {
     person: ClassPerson;
     isCopied: boolean;
     onCopyEmail: () => void;
+    canViewEmail: boolean;
+    isSelf: boolean;
 }) {
+    const displayEmail = canViewEmail && person.email ? person.email : null;
+
     return (
         <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-700/60">
             <div>
@@ -561,9 +581,16 @@ function LearnerCard({
                         {initialOf(person.name)}
                     </span>
 
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        Learner
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                        {isSelf && (
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                You
+                            </span>
+                        )}
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            Learner
+                        </span>
+                    </div>
                 </div>
 
                 {/* Name & Email */}
@@ -576,40 +603,40 @@ function LearnerCard({
                     </h3>
                     <p
                         className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400"
-                        title={person.email || "No email"}
+                        title={displayEmail || "Enrolled Learner"}
                     >
-                        {person.email || "Enrolled Learner"}
+                        {displayEmail || "Enrolled Learner"}
                     </p>
                 </div>
             </div>
 
             {/* Bottom Actions */}
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
-                {person.email ? (
-                    <a
-                        href={`mailto:${encodeURIComponent(person.email)}`}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400"
-                    >
-                        <Mail className="h-3 w-3" />
-                        <span>Mail</span>
-                    </a>
-                ) : (
-                    <span className="text-[11px] text-slate-400">Enrolled</span>
-                )}
+                {displayEmail ? (
+                    <>
+                        <a
+                            href={`mailto:${encodeURIComponent(displayEmail)}`}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400"
+                        >
+                            <Mail className="h-3 w-3" />
+                            <span>Mail</span>
+                        </a>
 
-                {person.email && (
-                    <button
-                        type="button"
-                        onClick={onCopyEmail}
-                        title="Copy email address"
-                        className="cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                    >
-                        {isCopied ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-500" />
-                        ) : (
-                            <Copy className="h-3.5 w-3.5" />
-                        )}
-                    </button>
+                        <button
+                            type="button"
+                            onClick={onCopyEmail}
+                            title="Copy email address"
+                            className="cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        >
+                            {isCopied ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                            )}
+                        </button>
+                    </>
+                ) : (
+                    <span className="text-[11px] text-slate-400">Enrolled Learner</span>
                 )}
             </div>
         </div>
@@ -621,10 +648,14 @@ function PeopleTable({
     people,
     copiedKey,
     onCopyEmail,
+    isInstructor,
+    currentUserId,
 }: {
     people: ClassPerson[];
     copiedKey: string | null;
     onCopyEmail: (text: string, key: string, label: string) => void;
+    isInstructor?: boolean;
+    currentUserId?: number;
 }) {
     return (
         <div className="overflow-x-auto">
@@ -639,9 +670,12 @@ function PeopleTable({
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm dark:divide-slate-800/80">
                     {people.map((person) => {
-                        const isInstructor =
+                        const isPersonInstructor =
                             person.role === "Instructor" || (person.role as string) === "Teacher";
+                        const isSelf = person.id === currentUserId;
+                        const canViewEmail = isPersonInstructor || isInstructor || isSelf;
                         const isCopied = copiedKey === `tbl-${person.id}`;
+                        const displayEmail = canViewEmail && person.email ? person.email : null;
 
                         return (
                             <tr
@@ -655,14 +689,21 @@ function PeopleTable({
                                         >
                                             {initialOf(person.name)}
                                         </span>
-                                        <span className="font-semibold text-slate-900 dark:text-white">
-                                            {person.name}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-slate-900 dark:text-white">
+                                                {person.name}
+                                            </span>
+                                            {isSelf && (
+                                                <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[10px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                                    You
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </td>
 
                                 <td className="py-3 px-4">
-                                    {isInstructor ? (
+                                    {isPersonInstructor ? (
                                         <span className="inline-flex items-center gap-1 rounded-full border border-purple-200/80 bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/60 dark:text-purple-300">
                                             <GraduationCap className="h-3 w-3" />
                                             Instructor
@@ -675,26 +716,28 @@ function PeopleTable({
                                 </td>
 
                                 <td className="py-3 px-4">
-                                    {person.email ? (
+                                    {displayEmail ? (
                                         <span className="text-xs text-slate-600 dark:text-slate-300">
-                                            {person.email}
+                                            {displayEmail}
                                         </span>
                                     ) : (
-                                        <span className="text-xs text-slate-400 italic">None</span>
+                                        <span className="text-xs text-slate-400 select-none">
+                                            Private
+                                        </span>
                                     )}
                                 </td>
 
                                 <td className="py-3 pl-4 pr-5 text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                        {person.email && (
+                                        {displayEmail ? (
                                             <>
                                                 <button
                                                     type="button"
                                                     onClick={() =>
                                                         onCopyEmail(
-                                                            person.email!,
+                                                            displayEmail,
                                                             `tbl-${person.id}`,
-                                                            person.email!
+                                                            displayEmail
                                                         )
                                                     }
                                                     title="Copy email"
@@ -711,13 +754,15 @@ function PeopleTable({
                                                 </button>
 
                                                 <a
-                                                    href={`mailto:${encodeURIComponent(person.email)}`}
+                                                    href={`mailto:${encodeURIComponent(displayEmail)}`}
                                                     title="Send email"
                                                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-2xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                                                 >
                                                     <Mail className="h-3 w-3" />
                                                 </a>
                                             </>
+                                        ) : (
+                                            <span className="text-xs text-slate-400">—</span>
                                         )}
                                     </div>
                                 </td>

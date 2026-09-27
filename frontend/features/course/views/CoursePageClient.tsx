@@ -512,6 +512,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     courseName={title}
                     courseId={details.courseId}
                     isInstructor={isInstructor}
+                    currentUserId={user?.id}
                 />
             )}
 

@@ -77,16 +77,26 @@ def get_one_course(course_id: int, db: Session) -> CourseResponseSchema:
     return serialize_course(course)
 
 
-def get_course_people(course_id: int, db: Session) -> CoursePeopleResponseSchema:
+def get_course_people(
+    course_id: int, user: UserModel, db: Session
+) -> CoursePeopleResponseSchema:
     course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
+
+    can_view_all_learner_emails = user.role in ("Admin", "Instructor", "Teacher")
+
     instructors = [
         CoursePersonSchema(id=t.id, name=t.name, role="Instructor", email=t.email)
         for t in course.instructors
     ]
     learners = [
-        CoursePersonSchema(id=s.id, name=s.name, role="Learner", email=s.email)
+        CoursePersonSchema(
+            id=s.id,
+            name=s.name,
+            role="Learner",
+            email=s.email if (can_view_all_learner_emails or s.id == user.id) else "",
+        )
         for s in course.learners
     ]
     return CoursePeopleResponseSchema(

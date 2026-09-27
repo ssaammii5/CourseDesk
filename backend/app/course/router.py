@@ -35,7 +35,7 @@ def get_one_course(course_id: int, db: DbSession, user: IsAuthenticated):
 
 @course_routes.get("/{course_id}/people", response_model=CoursePeopleResponseSchema, status_code=status.HTTP_200_OK)
 def get_course_people(course_id: int, db: DbSession, user: IsAuthenticated):
-    return controller.get_course_people(course_id, db)
+    return controller.get_course_people(course_id, user, db)
 
 
 @course_routes.get("/{course_id}/assignments", response_model=list[AssignmentResponseSchema], status_code=status.HTTP_200_OK)
