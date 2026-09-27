@@ -121,6 +121,7 @@ export const CoursePersonSchema = z.object({
     name: z.string(),
     role: RoleSchema,
     avatarClass: z.string(),
+    email: z.string().optional(),
 });
 export type CoursePerson = z.infer<typeof CoursePersonSchema>;
 export const ClassPersonSchema = CoursePersonSchema;

@@ -113,12 +113,14 @@ export function CourseDataClient({ courseId, initialTab }: CourseDataClientProps
                     name: t.name,
                     role: "Instructor" as const,
                     avatarClass: avatarClassFor(t.id),
+                    email: t.email,
                 }));
                 const learnersList = (people.learners || people.students || []).map((s) => ({
                     id: s.id,
                     name: s.name,
                     role: "Learner" as const,
                     avatarClass: avatarClassFor(s.id),
+                    email: s.email,
                 }));
                 const peopleList: CoursePerson[] = [...instructorsList, ...learnersList];
 

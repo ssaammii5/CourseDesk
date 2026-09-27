@@ -506,7 +506,14 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     />
                 ))}
 
-            {tab === "people" && <PeopleView people={details.people} />}
+            {tab === "people" && (
+                <PeopleView
+                    people={details.people}
+                    courseName={title}
+                    courseId={details.courseId}
+                    isInstructor={isInstructor}
+                />
+            )}
 
             {tab === "grades" && isInstructor && (
                 <GradesView
