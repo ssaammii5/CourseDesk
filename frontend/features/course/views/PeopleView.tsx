@@ -14,7 +14,6 @@ import {
     Search,
     Share2,
     ShieldCheck,
-    UserCheck,
     UserPlus,
     Users,
     UserX,
@@ -123,123 +122,10 @@ export function PeopleView({
         (roleFilter === "all" || roleFilter === "instructors" ? filteredInstructors.length : 0) +
         (roleFilter === "all" || roleFilter === "learners" ? filteredLearners.length : 0);
 
-    const allMembersEmails = useMemo(() => {
-        return people
-            .map((p) => p.email)
-            .filter((e): e is string => Boolean(e && e.trim().length > 0));
-    }, [people]);
-
     return (
         <div className="mx-auto w-full max-w-[1240px] px-4 py-8 sm:px-8">
-            {/* Header Hero */}
-            <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-r from-blue-50/60 via-indigo-50/30 to-purple-50/40 p-6 sm:p-8 dark:border-slate-800 dark:from-slate-900/90 dark:via-blue-950/20 dark:to-purple-950/20 shadow-xs">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-100/60 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/60 dark:text-blue-300">
-                            <Users className="h-3.5 w-3.5" />
-                            <span>Course Directory</span>
-                        </div>
-                        <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
-                            Course Members &amp; Roster
-                        </h1>
-                        <p className="mt-1.5 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-                            Connect with teaching staff, instructors, and enrolled learners in{" "}
-                            <span className="font-medium text-slate-800 dark:text-slate-200">
-                                {courseName}
-                            </span>
-                            .
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        {allMembersEmails.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => copyAllEmails(people, "Members")}
-                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition-all dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                                {copiedKey === "all-emails" ? (
-                                    <Check className="h-4 w-4 text-emerald-500" />
-                                ) : (
-                                    <Copy className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                )}
-                                <span>Copy Emails</span>
-                            </button>
-                        )}
-
-                        {allMembersEmails.length > 0 && (
-                            <a
-                                href={`mailto:?bcc=${encodeURIComponent(allMembersEmails.join(","))}&subject=${encodeURIComponent(
-                                    `[${courseName}] Course Announcement / Update`
-                                )}`}
-                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition-all dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                            >
-                                <Mail className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                <span>Email Group</span>
-                            </a>
-                        )}
-
-                        {isInstructor && (
-                            <button
-                                type="button"
-                                onClick={() => setIsInviteModalOpen(true)}
-                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1a73e8] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-600 transition-all dark:bg-blue-600 dark:hover:bg-blue-500"
-                            >
-                                <UserPlus className="h-4 w-4" />
-                                <span>Invite Members</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Stat Cards Strip */}
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="flex items-center gap-4 rounded-2xl border border-white/80 bg-white/70 p-4 shadow-xs backdrop-blur-xs dark:border-slate-800/80 dark:bg-slate-900/70">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-                            <Users className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                Total Members
-                            </p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                {people.length}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 rounded-2xl border border-white/80 bg-white/70 p-4 shadow-xs backdrop-blur-xs dark:border-slate-800/80 dark:bg-slate-900/70">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
-                            <GraduationCap className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                Instructors
-                            </p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                {instructors.length}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 rounded-2xl border border-white/80 bg-white/70 p-4 shadow-xs backdrop-blur-xs dark:border-slate-800/80 dark:bg-slate-900/70">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-                            <UserCheck className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                Enrolled Learners
-                            </p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white">
-                                {learners.length}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Filter & Search Bar */}
-            <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
                 {/* Search */}
                 <div className="relative flex-1">
                     <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
@@ -343,6 +229,19 @@ export function PeopleView({
                             <List className="h-4 w-4" />
                         </button>
                     </div>
+
+                    {/* Invite Members */}
+                    {isInstructor && (
+                        <button
+                            type="button"
+                            onClick={() => setIsInviteModalOpen(true)}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#1a73e8] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-600 transition-all dark:bg-blue-600 dark:hover:bg-blue-500"
+                        >
+                            <UserPlus className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Invite Members</span>
+                            <span className="sm:hidden">Invite</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
