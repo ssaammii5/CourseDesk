@@ -188,42 +188,46 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
     const displayName = resolvedCourseName || course.name;
 
     return (
-        <nav aria-label="Breadcrumbs" className="flex min-w-0 items-center gap-1.5 text-xs">
+        <nav aria-label="Breadcrumbs" className="flex min-w-0 items-center gap-1 sm:gap-1.5 text-xs">
             <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
             <Link
                 href={`/course/${course.id}`}
                 title={displayName}
-                className="max-w-[140px] sm:max-w-[200px] md:max-w-[280px] truncate font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                className="max-w-[85px] xs:max-w-[120px] sm:max-w-[180px] md:max-w-[260px] truncate font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
             >
                 {displayName}
             </Link>
 
             {isAssignmentPage ? (
                 <>
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                    <Link
-                        href={`/course/${course.id}?tab=coursework`}
-                        className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
-                    >
-                        Coursework
-                    </Link>
+                    <span className="hidden md:inline-flex items-center gap-1 sm:gap-1.5">
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                        <Link
+                            href={`/course/${course.id}?tab=coursework`}
+                            className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                        >
+                            Coursework
+                        </Link>
+                    </span>
                     <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                     <span
                         title={assignmentTitle || (assignmentId ? `Assignment #${assignmentId}` : "Assignment")}
-                        className="max-w-[140px] sm:max-w-[220px] md:max-w-[320px] truncate font-semibold text-[#1a73e8] dark:text-blue-400"
+                        className="max-w-[95px] xs:max-w-[140px] sm:max-w-[200px] md:max-w-[300px] truncate font-semibold text-[#1a73e8] dark:text-blue-400"
                     >
                         {assignmentTitle || (assignmentId ? `Assignment #${assignmentId}` : "Assignment")}
                     </span>
                 </>
             ) : isWorkPage ? (
                 <>
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                    <Link
-                        href={`/course/${course.id}?tab=coursework`}
-                        className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
-                    >
-                        Coursework
-                    </Link>
+                    <span className="hidden md:inline-flex items-center gap-1 sm:gap-1.5">
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                        <Link
+                            href={`/course/${course.id}?tab=coursework`}
+                            className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                        >
+                            Coursework
+                        </Link>
+                    </span>
                     <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                     <span className="shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400">
                         Your Work
@@ -231,13 +235,15 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
                 </>
             ) : isSubmissionsPage ? (
                 <>
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                    <Link
-                        href={`/course/${course.id}?tab=coursework`}
-                        className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
-                    >
-                        Coursework
-                    </Link>
+                    <span className="hidden md:inline-flex items-center gap-1 sm:gap-1.5">
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
+                        <Link
+                            href={`/course/${course.id}?tab=coursework`}
+                            className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
+                        >
+                            Coursework
+                        </Link>
+                    </span>
                     <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                     <span className="shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400">
                         Submissions
@@ -248,7 +254,7 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
                     <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                     <Link
                         href={`/course/${course.id}?tab=${activeTabId}`}
-                        className="shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline transition-colors"
+                        className="max-w-[75px] xs:max-w-[120px] sm:max-w-none truncate shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline transition-colors"
                     >
                         {activeTabLabel}
                     </Link>
@@ -474,23 +480,29 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const avatarClass = user?.avatarClass ?? "bg-blue-600";
 
     return (
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-3 sm:px-6 backdrop-blur-md transition-colors">
+        <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-2.5 sm:px-6 backdrop-blur-md transition-colors">
             {/* Left side: Hamburger, Logo, Breadcrumbs */}
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-3 pr-1 sm:pr-3">
                 <button
                     type="button"
                     onClick={onMenuClick}
                     aria-label="Toggle navigation menu"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors active:scale-95 touch-manipulation"
                 >
                     <Menu className="h-5 w-5" />
                 </button>
 
-                <Link href="/" className="group flex shrink-0 items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
+                <Link href="/" className="group flex shrink-0 items-center gap-2">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
                         <GraduationCap className="h-5 w-5" />
                     </span>
-                    <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <span
+                        className={`text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${
+                            classCourse || classCourseId || isTodo || isCalendar || isSettings || isAdminPage
+                                ? "hidden md:inline-block"
+                                : "inline-block"
+                        }`}
+                    >
                         CourseDesk
                     </span>
                 </Link>
@@ -501,9 +513,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 )}
 
                 {!classCourse && !classCourseId && (isTodo || isCalendar || isSettings || isAdminPage) && (
-                    <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:pl-2">
+                    <div className="flex min-w-0 items-center gap-1 sm:gap-1.5 pl-0.5 sm:pl-1">
                         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                        <span className="inline-flex items-center rounded-lg bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                        <span className="inline-flex max-w-[120px] xs:max-w-[160px] sm:max-w-none truncate items-center rounded-lg bg-slate-100/80 dark:bg-slate-800/80 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
                             {isTodo && "To-do"}
                             {isCalendar && "Calendar"}
                             {isSettings && "Settings"}
@@ -520,17 +532,27 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             </div>
 
             {/* Right side: Theme Toggle, Notifications, User Profile Menu */}
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                 {/* Theme Selector (Light, Dark, System) */}
                 <ThemeToggle />
 
                 {/* Notifications Button & Dropdown */}
                 <div ref={notifRef} className="relative">
+                    {/* Backdrop on mobile */}
+                    {notifOpen && (
+                        <div
+                            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] sm:hidden animate-in fade-in duration-150"
+                            onClick={() => setNotifOpen(false)}
+                        />
+                    )}
+
                     <button
                         type="button"
                         aria-label="Notifications"
+                        aria-expanded={notifOpen}
+                        aria-haspopup="true"
                         onClick={toggleNotif}
-                        className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition-all ${
+                        className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition-all touch-manipulation active:scale-95 ${
                             notifOpen
                                 ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-slate-200 dark:ring-slate-700"
                                 : "hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200"
@@ -545,9 +567,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     </button>
 
                     {notifOpen && (
-                        <div className="absolute right-0 top-full z-50 mt-2 w-[400px] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 max-sm:fixed max-sm:inset-x-3 max-sm:top-20 max-sm:w-auto animate-in fade-in zoom-in-95 duration-150">
+                        <div className="absolute right-0 top-full z-50 mt-2 w-[380px] sm:w-[400px] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 max-sm:fixed max-sm:inset-x-3 max-sm:top-18 max-sm:w-auto max-sm:max-h-[calc(100dvh-5.5rem)] animate-in fade-in zoom-in-95 duration-150 flex flex-col">
                             {/* Notification Header */}
-                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+                            <div className="flex shrink-0 items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-semibold text-slate-900 dark:text-white">Notifications</span>
                                     {unreadCount > 0 && (
@@ -579,7 +601,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                             </div>
 
                             {/* Notification List */}
-                            <div className="max-h-[400px] overflow-y-auto no-scrollbar">
+                            <div className="max-h-[380px] max-sm:max-h-[calc(100dvh-11rem)] overflow-y-auto no-scrollbar flex-1">
                                 {notifications.length === 0 ? (
                                     <div className="flex flex-col items-center gap-2.5 px-6 py-12 text-center">
                                         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
@@ -622,8 +644,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                                                 </span>
                                                             )}
                                                             <span className="mt-1 block text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                                                                    {formatRelativeTime(n.createdAtUtc)}
-                                                                </span>
+                                                                {formatRelativeTime(n.createdAtUtc)}
+                                                            </span>
                                                         </span>
                                                     </button>
                                                 </li>
@@ -638,11 +660,21 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
                 {/* Account Trigger & Dropdown Menu */}
                 <div ref={accountRef} className="relative">
+                    {/* Backdrop on mobile */}
+                    {accountOpen && (
+                        <div
+                            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] sm:hidden animate-in fade-in duration-150"
+                            onClick={() => setAccountOpen(false)}
+                        />
+                    )}
+
                     <button
                         type="button"
                         aria-label="User account menu"
+                        aria-expanded={accountOpen}
+                        aria-haspopup="true"
                         onClick={toggleAccount}
-                        className={`flex items-center gap-2 rounded-xl p-1 sm:pr-2.5 border transition-all duration-150 ${
+                        className={`flex items-center gap-1.5 sm:gap-2 rounded-xl p-1 sm:pr-2.5 border transition-all duration-150 touch-manipulation active:scale-95 ${
                             accountOpen
                                 ? "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 ring-1 ring-slate-200 dark:ring-slate-700"
                                 : "border-slate-200/70 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:border-slate-300/70 dark:hover:border-slate-600 shadow-xs"
@@ -663,7 +695,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     </button>
 
                     {accountOpen && (
-                        <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="absolute right-0 top-full z-50 mt-2 w-[280px] sm:w-[310px] max-w-[calc(100vw-1.25rem)] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
                             {/* User Card Header */}
                             <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-4">
                                 <div className="flex items-center gap-3">
@@ -703,7 +735,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                         setAccountOpen(false);
                                         router.push("/settings");
                                     }}
-                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors"
+                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors touch-manipulation"
                                 >
                                     <Settings className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                                     Account Settings
@@ -711,7 +743,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                 <button
                                     type="button"
                                     onClick={handleLogout}
-                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors touch-manipulation"
                                 >
                                     <LogOut className="h-4 w-4 text-rose-500 dark:text-rose-400" />
                                     Sign out

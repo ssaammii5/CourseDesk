@@ -44,9 +44,11 @@ export function ThemeToggle() {
             <button
                 type="button"
                 aria-label={`Current theme: ${theme}. Click to switch theme`}
+                aria-expanded={open}
+                aria-haspopup="true"
                 title={`Theme: ${theme === "system" ? `System (${resolvedTheme})` : theme}`}
                 onClick={() => setOpen((v) => !v)}
-                className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition-all duration-150 ${
+                className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 transition-all duration-150 touch-manipulation active:scale-95 ${
                     open
                         ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-slate-200 dark:ring-slate-700"
                         : "hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-800 dark:hover:text-slate-200"
@@ -56,7 +58,12 @@ export function ThemeToggle() {
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                <>
+                    <div
+                        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] sm:hidden animate-in fade-in duration-150"
+                        onClick={() => setOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full z-50 mt-2 w-38 sm:w-40 max-w-[calc(100vw-1.25rem)] overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200/90 dark:border-slate-800 ring-1 ring-black/5 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
                     <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         Theme
                     </div>
@@ -86,7 +93,8 @@ export function ThemeToggle() {
                             </button>
                         );
                     })}
-                </div>
+                    </div>
+                </>
             )}
         </div>
     );
