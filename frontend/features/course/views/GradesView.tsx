@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
     Award,
+    Check,
     CheckCircle2,
     ChevronRight,
     Clock,
@@ -12,15 +13,23 @@ import {
     Filter,
     HelpCircle,
     Layers,
+    Loader2,
     Percent,
+    RotateCw,
     Search,
     Sparkles,
+    Trash2,
     TrendingUp,
     Users,
     X,
 } from "lucide-react";
 import type { ClassPerson, ClassworkEntry } from "@/types";
-import type { SubmissionDto } from "@/lib/api/submissions";
+import {
+    gradeLearnerSubmissionRequest,
+    gradeSubmissionRequest,
+    ungradeSubmissionRequest,
+    type SubmissionDto,
+} from "@/lib/api/submissions";
 import { initialOf } from "@/lib/utils/format";
 import { avatarClassFor } from "@/lib/utils/theme";
 
@@ -30,6 +39,8 @@ interface GradesViewProps {
     submissions?: SubmissionDto[];
     courseId?: number;
     courseTitle?: string;
+    onRefreshSubmissions?: () => Promise<void> | void;
+    onUpdateSubmission?: (submission: SubmissionDto) => void;
 }
 
 type SortField = "name" | "average" | "submissions";
@@ -49,6 +60,8 @@ export function GradesView({
     submissions = [],
     courseId,
     courseTitle,
+    onRefreshSubmissions,
+    onUpdateSubmission,
 }: GradesViewProps) {
     const router = useRouter();
 
@@ -58,6 +71,14 @@ export function GradesView({
     const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
     const [displayMode, setDisplayMode] = useState<DisplayMode>("percentage");
     const [selectedDetail, setSelectedDetail] = useState<ModalDetail | null>(null);
+
+    // Modal quick-grading state
+    const [gradeInputMarks, setGradeInputMarks] = useState<string>("");
+    const [gradeInputFeedback, setGradeInputFeedback] = useState<string>("");
+    const [isSavingGrade, setIsSavingGrade] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+    const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
 
     // Eligible learners and graded items
     const learners = useMemo(
@@ -97,7 +118,7 @@ export function GradesView({
                         gradedCount += 1;
                         totalEarned += sub.marks;
                         totalPossible += maxMarks;
-                    } else {
+                    } else if (sub.status === "Submitted" || sub.answer || (sub.attachments && sub.attachments.length > 0)) {
                         pendingGradingCount += 1;
                     }
                 }
@@ -107,7 +128,7 @@ export function GradesView({
                     submission: sub,
                     marks: sub?.marks ?? null,
                     maxMarks,
-                    isSubmitted: Boolean(sub),
+                    isSubmitted: Boolean(sub && (sub.status === "Submitted" || sub.status === "Graded" || sub.answer)),
                     isGraded: sub?.marks !== null && sub?.marks !== undefined,
                 };
             });
@@ -188,7 +209,9 @@ export function GradesView({
             learners.forEach((learner) => {
                 const sub = getSubmissionFor(learner.id, col.id);
                 if (sub) {
-                    countSubmitted += 1;
+                    if (sub.status === "Submitted" || sub.status === "Graded" || sub.answer) {
+                        countSubmitted += 1;
+                    }
                     if (sub.marks !== null && sub.marks !== undefined) {
                         sumMarks += sub.marks;
                         countGraded += 1;
@@ -253,6 +276,95 @@ export function GradesView({
         return result;
     }, [learnerRecords, searchQuery, filterStatus, sortField, sortOrder]);
 
+    const openDetailModal = (detail: ModalDetail) => {
+        setSelectedDetail(detail);
+        setGradeInputMarks(
+            detail.submission?.marks !== null && detail.submission?.marks !== undefined
+                ? String(detail.submission.marks)
+                : "",
+        );
+        setGradeInputFeedback(detail.submission?.feedback || "");
+        setSaveSuccessMsg(null);
+        setSaveErrorMsg(null);
+    };
+
+    const handleSaveGrade = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!selectedDetail) return;
+
+        const maxMarks = selectedDetail.assignment.maxMarks ?? 100;
+        const marksNum = parseInt(gradeInputMarks, 10);
+        if (isNaN(marksNum) || marksNum < 0 || marksNum > maxMarks) {
+            setSaveErrorMsg(`Please enter a valid score between 0 and ${maxMarks}.`);
+            return;
+        }
+
+        setIsSavingGrade(true);
+        setSaveErrorMsg(null);
+        setSaveSuccessMsg(null);
+
+        try {
+            let updated: SubmissionDto;
+            if (selectedDetail.submission?.id) {
+                updated = await gradeSubmissionRequest(selectedDetail.submission.id, {
+                    marks: marksNum,
+                    feedback: gradeInputFeedback.trim() || null,
+                });
+            } else {
+                updated = await gradeLearnerSubmissionRequest({
+                    assignmentId: selectedDetail.assignment.id,
+                    learnerId: selectedDetail.learner.id,
+                    marks: marksNum,
+                    feedback: gradeInputFeedback.trim() || null,
+                });
+            }
+
+            setSelectedDetail((prev) => (prev ? { ...prev, submission: updated } : null));
+            onUpdateSubmission?.(updated);
+            setSaveSuccessMsg("Grade saved & recorded to backend successfully!");
+            setTimeout(() => setSaveSuccessMsg(null), 3000);
+            if (onRefreshSubmissions) {
+                void onRefreshSubmissions();
+            }
+        } catch (err) {
+            setSaveErrorMsg(err instanceof Error ? err.message : "Failed to save grade.");
+        } finally {
+            setIsSavingGrade(false);
+        }
+    };
+
+    const handleClearGrade = async () => {
+        if (!selectedDetail?.submission?.id) return;
+        setIsSavingGrade(true);
+        setSaveErrorMsg(null);
+        try {
+            const updated = await ungradeSubmissionRequest(selectedDetail.submission.id);
+            setSelectedDetail((prev) => (prev ? { ...prev, submission: updated } : null));
+            setGradeInputMarks("");
+            setGradeInputFeedback("");
+            onUpdateSubmission?.(updated);
+            setSaveSuccessMsg("Grade cleared.");
+            setTimeout(() => setSaveSuccessMsg(null), 3000);
+            if (onRefreshSubmissions) {
+                void onRefreshSubmissions();
+            }
+        } catch (err) {
+            setSaveErrorMsg(err instanceof Error ? err.message : "Failed to clear grade.");
+        } finally {
+            setIsSavingGrade(false);
+        }
+    };
+
+    const handleManualRefresh = async () => {
+        if (isRefreshing || !onRefreshSubmissions) return;
+        setIsRefreshing(true);
+        try {
+            await onRefreshSubmissions();
+        } finally {
+            setTimeout(() => setIsRefreshing(false), 500);
+        }
+    };
+
     // Export CSV handler
     const handleExportCsv = () => {
         if (learnerRecords.length === 0 || columns.length === 0) return;
@@ -315,11 +427,25 @@ export function GradesView({
                         Gradebook &amp; Analytics
                     </h1>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Track submissions, grade distribution, and individual student progress across all assignments.
+                        Live submission tracking, grade distribution, and individual student progress from the database.
                     </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Refresh from Backend button */}
+                    {onRefreshSubmissions && (
+                        <button
+                            type="button"
+                            onClick={handleManualRefresh}
+                            disabled={isRefreshing}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                            title="Refresh grades from backend"
+                        >
+                            <RotateCw className={`h-3.5 w-3.5 text-slate-500 ${isRefreshing ? "animate-spin" : ""}`} />
+                            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                        </button>
+                    )}
+
                     {/* Toggle Raw vs Percentage */}
                     <button
                         type="button"
@@ -426,7 +552,7 @@ export function GradesView({
                             </div>
                         </div>
                         <div className="mt-3 flex items-baseline gap-2">
-                            <span className="text-3xl font-bold tracking-tight text-slate-900 dark:white">
+                            <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                                 {stats.topScore}%
                             </span>
                             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -702,7 +828,7 @@ export function GradesView({
                                                     <td
                                                         key={col.id}
                                                         onClick={() =>
-                                                            setSelectedDetail({
+                                                            openDetailModal({
                                                                 learner,
                                                                 assignment: col,
                                                                 submission,
@@ -795,14 +921,14 @@ export function GradesView({
                 </div>
             )}
 
-            {/* Quick Inspection Detail Modal */}
+            {/* Quick Inspection & Evaluation Modal */}
             {selectedDetail && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-150"
                     onClick={() => setSelectedDetail(null)}
                 >
                     <div
-                        className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 animate-in zoom-in-95 duration-150"
+                        className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900 animate-in zoom-in-95 duration-150"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
@@ -810,7 +936,7 @@ export function GradesView({
                             <div>
                                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                                     <Award className="h-3.5 w-3.5" />
-                                    <span>Submission Details</span>
+                                    <span>Submission &amp; Evaluation</span>
                                 </span>
                                 <h3 className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
                                     {selectedDetail.assignment.title}
@@ -825,7 +951,20 @@ export function GradesView({
                             </button>
                         </div>
 
-                        {/* Learner Info */}
+                        {/* Status feedback alerts */}
+                        {saveSuccessMsg && (
+                            <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                                <span>{saveSuccessMsg}</span>
+                            </div>
+                        )}
+                        {saveErrorMsg && (
+                            <div className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                                {saveErrorMsg}
+                            </div>
+                        )}
+
+                        {/* Learner Info Card */}
                         <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
                             <span
                                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-2xs ${
@@ -835,7 +974,7 @@ export function GradesView({
                             >
                                 {initialOf(selectedDetail.learner.name)}
                             </span>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                                 <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
                                     {selectedDetail.learner.name}
                                 </h4>
@@ -843,14 +982,7 @@ export function GradesView({
                                     {selectedDetail.learner.email || `Student #${selectedDetail.learner.id}`}
                                 </p>
                             </div>
-                        </div>
-
-                        {/* Submission status and score */}
-                        <div className="mt-4 space-y-3">
-                            <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-800/40">
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                    Evaluation Status
-                                </span>
+                            <div>
                                 {selectedDetail.submission?.marks !== null &&
                                 selectedDetail.submission?.marks !== undefined ? (
                                     <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
@@ -860,83 +992,104 @@ export function GradesView({
                                 ) : selectedDetail.submission ? (
                                     <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
                                         <Clock className="h-3.5 w-3.5" />
-                                        <span>Turned In &bull; Ungraded</span>
+                                        <span>Turned In</span>
                                     </span>
                                 ) : (
                                     <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                        <span>Unsubmitted</span>
+                                        <span>Not Submitted</span>
                                     </span>
                                 )}
                             </div>
-
-                            {selectedDetail.submission?.marks !== null &&
-                                selectedDetail.submission?.marks !== undefined && (
-                                    <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-800/40">
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                            Score Awarded
-                                        </span>
-                                        <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                            {selectedDetail.submission.marks} /{" "}
-                                            {selectedDetail.assignment.maxMarks ?? 100} pts (
-                                            {Math.round(
-                                                (selectedDetail.submission.marks /
-                                                    (selectedDetail.assignment.maxMarks ?? 100)) *
-                                                    100,
-                                            )}
-                                            %)
-                                        </span>
-                                    </div>
-                                )}
-
-                            {/* Feedback if any */}
-                            {selectedDetail.submission?.feedback && (
-                                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
-                                    <span className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
-                                        Instructor Feedback
-                                    </span>
-                                    <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">
-                                        &ldquo;{selectedDetail.submission.feedback}&rdquo;
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Answer preview */}
-                            {selectedDetail.submission?.answer && (
-                                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
-                                    <span className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
-                                        Student Submission Preview
-                                    </span>
-                                    <p className="mt-1 max-h-24 overflow-y-auto whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-300">
-                                        {selectedDetail.submission.answer}
-                                    </p>
-                                </div>
-                            )}
                         </div>
 
-                        {/* Modal Action Buttons */}
-                        <div className="mt-5 flex items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-                            <button
-                                type="button"
-                                onClick={() => setSelectedDetail(null)}
-                                className="cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                            >
-                                Close
-                            </button>
-                            {courseId && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const aid = selectedDetail.assignment.id;
-                                        setSelectedDetail(null);
-                                        router.push(`/course/${courseId}/assignments/${aid}`);
-                                    }}
-                                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700"
-                                >
-                                    <span>Open Assignment</span>
-                                    <ExternalLink className="h-3 w-3" />
-                                </button>
-                            )}
-                        </div>
+                        {/* Student Answer preview (if submitted) */}
+                        {selectedDetail.submission?.answer && (
+                            <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Submitted Answer Preview
+                                </span>
+                                <p className="mt-1 max-h-24 overflow-y-auto whitespace-pre-wrap text-xs text-slate-700 dark:text-slate-300">
+                                    {selectedDetail.submission.answer}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Interactive Grade & Feedback Form (Connected directly to Backend!) */}
+                        <form onSubmit={handleSaveGrade} className="mt-4 space-y-3">
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Score (Max: {selectedDetail.assignment.maxMarks ?? 100} pts)
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={selectedDetail.assignment.maxMarks ?? 100}
+                                        value={gradeInputMarks}
+                                        onChange={(e) => setGradeInputMarks(e.target.value)}
+                                        placeholder={`0 - ${selectedDetail.assignment.maxMarks ?? 100}`}
+                                        className="w-32 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    />
+                                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        / {selectedDetail.assignment.maxMarks ?? 100} points
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Instructor Feedback (Optional)
+                                </label>
+                                <textarea
+                                    value={gradeInputFeedback}
+                                    onChange={(e) => setGradeInputFeedback(e.target.value)}
+                                    rows={2}
+                                    placeholder="Enter constructive feedback for the student..."
+                                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                />
+                            </div>
+
+                            {/* Modal Action Buttons */}
+                            <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+                                <div>
+                                    {selectedDetail.submission?.marks !== null &&
+                                        selectedDetail.submission?.marks !== undefined && (
+                                            <button
+                                                type="button"
+                                                onClick={handleClearGrade}
+                                                disabled={isSavingGrade}
+                                                className="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 disabled:opacity-50"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                <span>Clear Grade</span>
+                                            </button>
+                                        )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedDetail(null)}
+                                        className="cursor-pointer rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                                    >
+                                        Close
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isSavingGrade || !gradeInputMarks.trim()}
+                                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-700 dark:disabled:text-slate-500"
+                                    >
+                                        {isSavingGrade ? (
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                            <Check className="h-3.5 w-3.5" />
+                                        )}
+                                        <span>Save Grade</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

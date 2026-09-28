@@ -89,8 +89,26 @@ export function submitAssignmentRequest(payload: SubmitAssignmentPayload): Promi
     });
 }
 
+export function getCourseSubmissionsRequest(courseId: number): Promise<SubmissionDto[]> {
+    return apiFetch<SubmissionDto[]>(`/api/courses/${courseId}/submissions`, { method: "GET" });
+}
+
 export function gradeSubmissionRequest(id: number, payload: GradeSubmissionPayload): Promise<SubmissionDto> {
     return apiFetch<SubmissionDto>(`/api/submissions/${id}/grade`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export interface GradeLearnerPayload {
+    assignmentId: number;
+    learnerId: number;
+    marks: number;
+    feedback?: string | null;
+}
+
+export function gradeLearnerSubmissionRequest(payload: GradeLearnerPayload): Promise<SubmissionDto> {
+    return apiFetch<SubmissionDto>("/api/submissions/grade-learner", {
         method: "POST",
         body: JSON.stringify(payload),
     });

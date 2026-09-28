@@ -20,6 +20,13 @@ class GradeSubmissionSchema(CamelModel):
     feedback: str | None = None
 
 
+class GradeLearnerSchema(CamelModel):
+    assignment_id: int
+    learner_id: int
+    marks: int = 0
+    feedback: str | None = None
+
+
 class SubmissionAttachmentResponseSchema(CamelModel):
     id: int
     file_name: str

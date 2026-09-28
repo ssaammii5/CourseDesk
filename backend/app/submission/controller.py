@@ -35,8 +35,13 @@ def _submission_stmt():
     )
 
 
-def get_submissions(user: UserModel, db: Session) -> list[SubmissionResponseSchema]:
+def get_submissions(
+    user: UserModel, db: Session, course_id: int | None = None
+) -> list[SubmissionResponseSchema]:
     stmt = _submission_stmt()
+    if course_id is not None:
+        stmt = stmt.join(SubmissionModel.assignment).where(AssignmentModel.course_id == course_id)
+
     if user.role == "Admin":
         submissions = db.scalars(stmt).all()
     elif user.role == "Instructor":
@@ -48,6 +53,12 @@ def get_submissions(user: UserModel, db: Session) -> list[SubmissionResponseSche
             stmt.where(SubmissionModel.learner_id == user.id)
         ).all()
     return [serialize_submission(s) for s in submissions]
+
+
+def get_course_submissions(
+    course_id: int, user: UserModel, db: Session
+) -> list[SubmissionResponseSchema]:
+    return get_submissions(user, db, course_id=course_id)
 
 
 def get_my_submissions(user: UserModel, db: Session) -> list[SubmissionResponseSchema]:
@@ -182,7 +193,7 @@ def grade_submission(
     if not _can_grade(user, submission):
         raise HTTPException(403, detail="You cannot grade this submission")
     if not submission.submitted_at_utc:
-        raise HTTPException(400, detail="Cannot grade work that has not been submitted")
+        submission.submitted_at_utc = datetime.now(UTC)
 
     assignment = submission.assignment
     if body.marks < 0 or (assignment.max_marks > 0 and body.marks > assignment.max_marks):
@@ -428,3 +439,47 @@ def unsubmit_assignment(
     db.commit()
     db.refresh(submission)
     return serialize_submission(submission)
+
+
+def grade_learner_assignment(
+    assignment_id: int,
+    learner_id: int,
+    body: GradeSubmissionSchema,
+    user: UserModel,
+    db: Session,
+) -> SubmissionResponseSchema:
+    assignment = db.scalar(
+        select(AssignmentModel)
+        .options(selectinload(AssignmentModel.course).selectinload(CourseModel.instructors))
+        .where(AssignmentModel.id == assignment_id)
+    )
+    if not assignment:
+        raise HTTPException(404, detail="Assignment not found")
+
+    course = assignment.course
+    can_grade = user.role == "Admin" or (course is not None and any(t.id == user.id for t in course.instructors))
+    if not can_grade:
+        raise HTTPException(403, detail="You cannot grade this assignment")
+
+    learner = db.get(UserModel, learner_id)
+    if not learner:
+        raise HTTPException(404, detail="Learner not found")
+
+    submission = db.scalar(
+        select(SubmissionModel).where(
+            SubmissionModel.assignment_id == assignment_id,
+            SubmissionModel.learner_id == learner_id,
+        )
+    )
+    if not submission:
+        submission = SubmissionModel(
+            assignment_id=assignment_id,
+            learner_id=learner_id,
+            answer="",
+            status="Assigned",
+            submitted_at_utc=datetime.now(UTC),
+        )
+        db.add(submission)
+        db.flush()
+
+    return grade_submission(submission.id, body, user, db)

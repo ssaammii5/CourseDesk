@@ -7,6 +7,7 @@ from app.course.dtos import (
     CourseResponseSchema,
     CourseSchema,
 )
+from app.submission.dtos import SubmissionResponseSchema
 from app.utils.db import get_db
 from app.utils.helpers import DbSession, IsAdmin, IsAdminOrInstructor, IsAdminOrTeacher, IsAuthenticated
 
@@ -43,6 +44,17 @@ def get_course_assignments(course_id: int, db: DbSession, user: IsAuthenticated)
     from app.assignment import controller as assignment_controller
 
     return assignment_controller.get_course_assignments(course_id, user, db)
+
+
+@course_routes.get(
+    "/{course_id}/submissions",
+    response_model=list[SubmissionResponseSchema],
+    status_code=status.HTTP_200_OK,
+)
+def get_course_submissions(course_id: int, db: DbSession, user: IsAuthenticated):
+    from app.submission import controller as submission_controller
+
+    return submission_controller.get_course_submissions(course_id, user, db)
 
 
 @course_routes.put("/{course_id}", response_model=CourseResponseSchema, status_code=status.HTTP_200_OK)

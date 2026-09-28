@@ -3,6 +3,7 @@ from fastapi import APIRouter, File, Form, UploadFile, status
 from app.submission import controller
 from app.submission.dtos import (
     DraftSubmissionSchema,
+    GradeLearnerSchema,
     GradeSubmissionSchema,
     SubmissionAttachmentResponseSchema,
     SubmissionResponseSchema,
@@ -15,8 +16,27 @@ submission_routes = APIRouter(prefix="/api/submissions", tags=["submissions"])
 
 
 @submission_routes.get("", response_model=list[SubmissionResponseSchema], status_code=status.HTTP_200_OK)
-def get_all_submissions(db: DbSession, user: IsAuthenticated):
-    return controller.get_submissions(user, db)
+def get_all_submissions(
+    db: DbSession,
+    user: IsAuthenticated,
+    course_id: int | None = None,
+):
+    return controller.get_submissions(user, db, course_id=course_id)
+
+
+@submission_routes.post("/grade-learner", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
+def grade_learner(
+    body: GradeLearnerSchema,
+    db: DbSession,
+    user: IsAdminOrInstructor,
+):
+    return controller.grade_learner_assignment(
+        body.assignment_id,
+        body.learner_id,
+        GradeSubmissionSchema(marks=body.marks, feedback=body.feedback),
+        user,
+        db,
+    )
 
 
 @submission_routes.get("/my", response_model=list[SubmissionResponseSchema], status_code=status.HTTP_200_OK)

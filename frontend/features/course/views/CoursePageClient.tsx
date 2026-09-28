@@ -34,7 +34,7 @@ import {
     deleteAnnouncementAttachmentRequest,
 } from "@/lib/api/announcements";
 import type { DraftAttachment } from "../components/AnnouncementFormModal";
-import { getSubmissionsRequest } from "@/lib/api/submissions";
+import { getCourseSubmissionsRequest, getSubmissionsRequest } from "@/lib/api/submissions";
 
 export interface CoursePageClientProps {
     title: string;
@@ -135,17 +135,27 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         };
     }, [details.courseId]);
 
+    const refreshSubmissions = useCallback(async () => {
+        try {
+            const data = await getCourseSubmissionsRequest(details.courseId);
+            setSubmissions(data);
+        } catch {
+            try {
+                const data = await getSubmissionsRequest();
+                setSubmissions(data);
+            } catch { }
+        }
+    }, [details.courseId]);
+
     useEffect(() => {
-        let cancelled = false;
-        getSubmissionsRequest()
-            .then((data) => {
-                if (!cancelled) setSubmissions(data);
-            })
-            .catch(() => { });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+        void refreshSubmissions();
+    }, [refreshSubmissions]);
+
+    useEffect(() => {
+        if (tab === "grades") {
+            void refreshSubmissions();
+        }
+    }, [tab, refreshSubmissions]);
 
     const refreshCoursework = useCallback(async () => {
         try {
@@ -523,6 +533,16 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     submissions={submissions}
                     courseId={details.courseId}
                     courseTitle={title}
+                    onRefreshSubmissions={refreshSubmissions}
+                    onUpdateSubmission={(updated: SubmissionDto) => {
+                        setSubmissions((prev) => {
+                            const exists = prev.some((s) => s.id === updated.id);
+                            if (exists) {
+                                return prev.map((s) => (s.id === updated.id ? updated : s));
+                            }
+                            return [...prev, updated];
+                        });
+                    }}
                 />
             )}
         </div>
