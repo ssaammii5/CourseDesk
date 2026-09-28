@@ -166,29 +166,29 @@ export function DueSoonCard() {
     return (
         <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-all dark:border-slate-800 dark:bg-slate-900">
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4.5 dark:border-slate-800">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-100 px-3.5 py-3 dark:border-slate-800 sm:gap-3 sm:px-6 sm:py-4.5">
+                <div className="flex items-center gap-2.5 sm:gap-3">
                     <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg border sm:h-9 sm:w-9 sm:rounded-xl ${
                             isInstructor
                                 ? "border-amber-100 bg-amber-50 text-amber-600 dark:border-amber-900/60 dark:bg-amber-950/70 dark:text-amber-400"
                                 : "border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900/60 dark:bg-blue-950/70 dark:text-blue-400"
                         }`}
                     >
                         {isInstructor ? (
-                            <ClipboardCheck className="h-4.5 w-4.5" />
+                            <ClipboardCheck className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                         ) : (
-                            <Clock className="h-4.5 w-4.5" />
+                            <Clock className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                         )}
                     </div>
                     <div>
-                        <div className="flex items-center gap-2.5">
-                            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                            <h2 className="text-sm font-bold text-slate-900 dark:text-white sm:text-base">
                                 {isInstructor ? "Submissions to Review" : "Upcoming Deadlines"}
                             </h2>
                             {totalCount > 0 && (
                                 <span
-                                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${
+                                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold sm:px-2.5 sm:text-xs ${
                                         isInstructor
                                             ? "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/80 dark:text-amber-300"
                                             : "border-blue-200/80 bg-blue-100 text-blue-800 dark:border-blue-800/60 dark:bg-blue-950/80 dark:text-blue-300"
@@ -228,9 +228,9 @@ export function DueSoonCard() {
                 </div>
             ) : !collapsed && (
                 assignments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center gap-2.5 py-10 px-6 text-center">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-600 shadow-xs dark:border-emerald-900/60 dark:bg-emerald-950/70 dark:text-emerald-400">
-                            <CheckCircle2 className="h-6 w-6" />
+                    <div className="flex flex-col items-center justify-center gap-2.5 py-8 px-4 text-center sm:py-10 sm:px-6">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-600 shadow-xs dark:border-emerald-900/60 dark:bg-emerald-950/70 dark:text-emerald-400 sm:h-12 sm:w-12">
+                            <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                             {isInstructor
@@ -244,38 +244,38 @@ export function DueSoonCard() {
                         </p>
                     </div>
                 ) : (
-                    <div className="p-4 sm:p-5">
-                        <div className="grid grid-cols-1 gap-3">
+                    <div className="p-3 sm:p-5">
+                        <div className="grid grid-cols-1 gap-2 sm:gap-3">
                             {assignments.map((a) => {
                                 const pill = getDeadlinePill(a.deadlineUtc);
                                 return (
                                     <div
                                         key={a.id}
-                                        className="group relative flex flex-col justify-between gap-4 rounded-xl border border-slate-200/70 bg-slate-50/50 p-4 transition-all hover:border-slate-300 hover:bg-white hover:shadow-xs dark:border-slate-750 dark:border-slate-700/60 dark:bg-slate-800/40 dark:hover:border-slate-600 dark:hover:bg-slate-800/70 sm:flex-row sm:items-center"
+                                        className="group relative flex items-center justify-between gap-2.5 rounded-xl border border-slate-200/70 bg-slate-50/50 p-2.5 transition-all hover:border-slate-300 hover:bg-white hover:shadow-xs dark:border-slate-700/60 dark:bg-slate-800/40 dark:hover:border-slate-600 dark:hover:bg-slate-800/70 sm:gap-4 sm:p-4"
                                     >
                                         {/* Left: Icon & Assignment Info */}
-                                        <div className="flex min-w-0 flex-1 items-start gap-3.5">
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 shadow-xs dark:border-blue-900/60 dark:bg-blue-950/70 dark:text-blue-400">
-                                                <ClipboardList className="h-5 w-5" />
+                                        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:items-start sm:gap-3.5">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 shadow-xs dark:border-blue-900/60 dark:bg-blue-950/70 dark:text-blue-400 sm:h-10 sm:w-10 sm:rounded-xl">
+                                                <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5" />
                                             </div>
 
-                                            <div className="min-w-0 space-y-1">
-                                                <div className="flex flex-wrap items-center gap-2">
+                                            <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
+                                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                                                     <Link
                                                         href={`/course/${a.courseId}`}
-                                                        className="inline-flex items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:text-white"
+                                                        className="inline-flex max-w-[120px] truncate items-center rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:text-white sm:max-w-none sm:rounded-md sm:px-2 sm:text-[11px]"
                                                     >
                                                         {a.courseName}
                                                     </Link>
 
                                                     <span
-                                                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] ${pill.color}`}
+                                                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium sm:px-2.5 sm:text-[11px] ${pill.color}`}
                                                     >
                                                         {pill.label}
                                                     </span>
 
                                                     {a.dueTime && (
-                                                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                                        <span className="hidden text-[10px] text-slate-500 dark:text-slate-400 sm:inline sm:text-[11px]">
                                                             at {a.dueTime}
                                                         </span>
                                                     )}
@@ -283,7 +283,7 @@ export function DueSoonCard() {
 
                                                 <Link
                                                     href={`/course/${a.courseId}/assignments/${a.id}`}
-                                                    className="block truncate text-sm font-bold text-slate-900 transition-colors hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400"
+                                                    className="block truncate text-xs font-semibold text-slate-900 transition-colors hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400 sm:text-sm sm:font-bold"
                                                 >
                                                     {a.title}
                                                 </Link>
@@ -291,29 +291,30 @@ export function DueSoonCard() {
                                         </div>
 
                                         {/* Right: Role Action */}
-                                        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200/50 pt-3 dark:border-slate-700/60 sm:border-t-0 sm:pt-0">
+                                        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
                                             {isInstructor ? (
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex items-center gap-1.5 rounded-lg border border-amber-200/70 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/70 dark:text-amber-300">
+                                                <div className="flex items-center gap-1.5 sm:gap-3">
+                                                    <div className="flex items-center gap-1 rounded-md border border-amber-200/70 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/70 dark:text-amber-300 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-xs">
                                                         <span>{a.turnedInCount}</span>
-                                                        <span className="font-medium text-amber-700 dark:text-amber-400">to grade</span>
+                                                        <span className="hidden font-medium text-amber-700 dark:text-amber-400 sm:inline">to grade</span>
                                                     </div>
 
                                                     <Link
                                                         href={`/course/${a.courseId}/assignments/${a.id}`}
-                                                        className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500"
+                                                        className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 sm:px-3.5 sm:py-1.5"
                                                     >
-                                                        <span>Review</span>
+                                                        <span className="hidden sm:inline">Review</span>
                                                         <ArrowRight className="h-3 w-3" />
                                                     </Link>
                                                 </div>
                                             ) : (
                                                 <Link
                                                     href={`/course/${a.courseId}/assignments/${a.id}`}
-                                                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
+                                                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition-all hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 sm:gap-1.5 sm:px-3.5 sm:py-1.5"
                                                 >
-                                                    <span>Open Task</span>
-                                                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                                                    <span className="hidden sm:inline">Open Task</span>
+                                                    <span className="sm:hidden">Open</span>
+                                                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 sm:h-3.5 sm:w-3.5" />
                                                 </Link>
                                             )}
                                         </div>
@@ -324,15 +325,17 @@ export function DueSoonCard() {
 
                         {/* More items indicator */}
                         {remainingCount > 0 && (
-                            <div className="mt-3.5 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-xs dark:border-slate-800 dark:bg-slate-800/50">
+                            <div className="mt-2.5 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-800/50 sm:mt-3.5 sm:px-4 sm:py-2.5">
                                 <span className="font-medium text-slate-600 dark:text-slate-300">
-                                    +{remainingCount} more {isInstructor ? "submissions to review" : "assignments due"}
+                                    +{remainingCount} more {isInstructor ? "submissions" : "assignments"}
+                                    <span className="hidden sm:inline"> {isInstructor ? "to review" : "due"}</span>
                                 </span>
                                 <Link
                                     href="/todo"
                                     className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
                                 >
-                                    {isInstructor ? "Open To-Review Queue →" : "View Full To-Do List →"}
+                                    <span className="hidden sm:inline">{isInstructor ? "Open To-Review Queue →" : "View Full To-Do List →"}</span>
+                                    <span className="sm:hidden">View all →</span>
                                 </Link>
                             </div>
                         )}
