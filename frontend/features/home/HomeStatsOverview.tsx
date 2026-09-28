@@ -35,14 +35,25 @@ function MetricCard({
     badge,
     badgeColor,
 }: MetricCardProps) {
+    const isTextValue = typeof value === "string" && isNaN(Number(value));
+
     const content = (
         <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
             <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div className="min-w-0 flex-1 space-y-1">
+                    <p className="truncate text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         {title}
                     </p>
-                    <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+                    <p
+                        className={`truncate font-bold tracking-tight text-slate-900 dark:text-white ${
+                            isTextValue
+                                ? String(value).length > 8
+                                    ? "text-base sm:text-lg"
+                                    : "text-lg sm:text-xl"
+                                : "text-2xl sm:text-3xl"
+                        }`}
+                        title={String(value)}
+                    >
                         {value}
                     </p>
                 </div>
