@@ -526,7 +526,7 @@ export function CoursesSection() {
                             onDragOver={(e) => handleDragOver(e, c.id)}
                             onDrop={handleDrop}
                             onDragEnd={handleDragEnd}
-                            className={`transition-all duration-200 ${
+                            className={`h-full transition-all duration-200 ${
                                 draggingId === c.id ? "scale-95 opacity-50 ring-2 ring-blue-500 rounded-2xl" : "opacity-100"
                             }`}
                         >
@@ -577,12 +577,13 @@ export function CoursesSection() {
                     {hiddenOpen && (
                         <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                             {hiddenCourses.map((c) => (
-                                <CourseCard
-                                    key={c.id}
-                                    course={c}
-                                    isHidden
-                                    onToggleHide={() => unhideCourse(c.id)}
-                                />
+                                <div key={c.id} className="h-full">
+                                    <CourseCard
+                                        course={c}
+                                        isHidden
+                                        onToggleHide={() => unhideCourse(c.id)}
+                                    />
+                                </div>
                             ))}
                         </div>
                     )}
@@ -667,9 +668,9 @@ export function CourseCard({
                 }
                 router.push(`/course/${course.id}`);
             }}
-            className={`group/card relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
+            className={`group/card relative flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
                 menuOpen
-                    ? "shadow-md"
+                    ? "shadow-md z-20"
                     : "hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl dark:hover:border-slate-700"
             } ${isHidden ? "opacity-75 grayscale-[0.2]" : ""}${
                 canDrag ? " cursor-grab active:cursor-grabbing ring-1 ring-blue-400/50" : ""
@@ -813,7 +814,7 @@ export function CourseCard({
                         className="group/title block"
                         title={course.name}
                     >
-                        <h3 className="line-clamp-2 text-base font-bold text-slate-900 transition-colors group-hover/title:text-blue-600 dark:text-white dark:group-hover/title:text-blue-400">
+                        <h3 className="truncate text-base font-bold text-slate-900 transition-colors group-hover/title:text-blue-600 dark:text-white dark:group-hover/title:text-blue-400">
                             {course.name}
                         </h3>
                     </Link>
