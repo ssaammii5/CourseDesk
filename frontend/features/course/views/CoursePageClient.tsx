@@ -74,20 +74,15 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         return "stream";
     });
 
-    useEffect(() => {
-        const raw = searchParams?.get("tab");
-        const currentQuery = raw === "lectures" ? "curriculum" : (raw as CourseTab | null);
-        const targetTab = currentQuery || initialTab;
-        if (targetTab && VALID_TABS.includes(targetTab)) {
-            if (targetTab === "grades" && !isInstructor) {
-                setTab("coursework");
-            } else {
-                setTab(targetTab);
-            }
-        } else if (!currentQuery && !initialTab) {
+    const [prevQueryTab, setPrevQueryTab] = useState(queryTab);
+    if (queryTab !== prevQueryTab) {
+        setPrevQueryTab(queryTab);
+        if (queryTab && VALID_TABS.includes(queryTab)) {
+            setTab(queryTab === "grades" && !isInstructor ? "coursework" : queryTab);
+        } else {
             setTab("stream");
         }
-    }, [searchParams, initialTab, isInstructor]);
+    }
     const [classwork, setClasswork] = useState<ClassworkEntry[]>(details.classwork);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editing, setEditing] = useState<ClassworkEntry | null>(null);
