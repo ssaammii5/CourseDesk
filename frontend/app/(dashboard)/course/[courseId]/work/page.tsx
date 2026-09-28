@@ -1,6 +1,4 @@
-import { notFound } from "next/navigation";
-import { LearnerWorkView } from "@/features/course";
-import { getLearnerWork } from "@/lib/learnerWork";
+import { redirect } from "next/navigation";
 
 interface LearnerWorkPageProps {
     params: Promise<{ courseId: string }>;
@@ -8,10 +6,5 @@ interface LearnerWorkPageProps {
 
 export default async function LearnerWorkPage({ params }: LearnerWorkPageProps) {
     const { courseId } = await params;
-    const id = Number(courseId);
-    if (!Number.isFinite(id) || id <= 0) notFound();
-
-    const work = getLearnerWork();
-
-    return <LearnerWorkView work={work} courseId={id} />;
+    redirect(`/course/${courseId}?tab=coursework`);
 }

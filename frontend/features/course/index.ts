@@ -17,6 +17,5 @@ export * from "./views/CurriculumView";
 export * from "./views/GradesView";
 export * from "./views/PeopleView";
 export * from "./views/StreamView";
-export * from "./views/LearnerWorkView";
 export * from "./views/InstructorAssignmentView";
 export * from "./views/InstructorCourseworkView";

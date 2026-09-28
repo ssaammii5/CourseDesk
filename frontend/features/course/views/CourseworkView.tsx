@@ -21,7 +21,6 @@ import {
     Paperclip,
     Search,
     Sparkles,
-    SquareUserRound,
     X,
 } from "lucide-react";
 import Link from "next/link";
@@ -246,16 +245,6 @@ export function CourseworkView({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        {courseId !== undefined && (
-                            <button
-                                type="button"
-                                onClick={() => router.push(`/course/${courseId}/work`)}
-                                className="inline-flex cursor-pointer items-center gap-2.5 rounded-xl border border-blue-200/80 dark:border-blue-800/60 bg-blue-50/70 hover:bg-blue-100/80 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 px-4 py-2.5 text-sm font-semibold text-blue-700 dark:text-blue-300 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xs"
-                            >
-                                <SquareUserRound className="h-4 w-4" />
-                                <span>View your work</span>
-                            </button>
-                        )}
                         <button
                             type="button"
                             onClick={toggleAll}

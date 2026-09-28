@@ -183,7 +183,6 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
     }
 
     const isAssignmentPage = Boolean(assignmentId);
-    const isWorkPage = pathname.includes("/work");
     const isSubmissionsPage = pathname.includes("/submissions");
     const displayName = resolvedCourseName || course.name;
 
@@ -215,22 +214,6 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
                         className="max-w-[95px] xs:max-w-[140px] sm:max-w-[200px] md:max-w-[300px] truncate font-semibold text-[#1a73e8] dark:text-blue-400"
                     >
                         {assignmentTitle || (assignmentId ? `Assignment #${assignmentId}` : "Assignment")}
-                    </span>
-                </>
-            ) : isWorkPage ? (
-                <>
-                    <span className="hidden md:inline-flex items-center gap-1 sm:gap-1.5">
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                        <Link
-                            href={`/course/${course.id}?tab=coursework`}
-                            className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
-                        >
-                            Coursework
-                        </Link>
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
-                    <span className="shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400">
-                        Your Work
                     </span>
                 </>
             ) : isSubmissionsPage ? (

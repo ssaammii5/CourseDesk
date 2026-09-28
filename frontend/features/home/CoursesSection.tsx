@@ -531,7 +531,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                     aria-label="View work"
                     onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/course/${course.id}/work`);
+                        router.push(`/course/${course.id}?tab=coursework`);
                     }}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
                 >
