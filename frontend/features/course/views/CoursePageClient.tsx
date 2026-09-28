@@ -360,6 +360,8 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     deadlineUtc,
                     maxMarks,
                     sessionId: entry.sessionId ?? null,
+                    assignMode: entry.assignMode ?? "all",
+                    targetLearnerIds: entry.targetLearnerIds ?? [],
                 });
             } else {
                 const res = await createAssignmentRequest({
@@ -371,6 +373,8 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     deadlineUtc,
                     maxMarks,
                     sessionId: entry.sessionId ?? null,
+                    assignMode: entry.assignMode ?? "all",
+                    targetLearnerIds: entry.targetLearnerIds ?? [],
                 });
                 assignmentId = res.id;
             }

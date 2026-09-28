@@ -104,6 +104,8 @@ export const CourseworkEntrySchema = z.object({
     gradedCount: z.number().optional(),
     assignedCount: z.number().optional(),
     sessionId: z.number().int().nullable().optional(),
+    assignMode: z.enum(["all", "selective", "exclude"]).optional(),
+    targetLearnerIds: z.array(z.number().int()).optional(),
     attachments: z.array(z.object({
         id: z.number().int(),
         fileName: z.string(),

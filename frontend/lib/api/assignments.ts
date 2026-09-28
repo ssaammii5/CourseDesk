@@ -26,6 +26,8 @@ export interface AssignmentDto {
     learnerCount?: number;
     studentCount?: number;
     mySubmissionStatus: string | null; // "Assigned" | "Submitted" | "Graded" (learners only)
+    assignMode?: "all" | "selective" | "exclude";
+    targetLearnerIds?: number[];
     attachments?: AssignmentAttachmentDto[];
 }
 
@@ -38,6 +40,8 @@ export interface CreateAssignmentPayload {
     deadlineUtc: string;
     maxMarks: number;
     sessionId?: number | null;
+    assignMode?: "all" | "selective" | "exclude";
+    targetLearnerIds?: number[];
 }
 
 export interface UpdateAssignmentPayload {
@@ -48,6 +52,8 @@ export interface UpdateAssignmentPayload {
     deadlineUtc: string;
     maxMarks: number;
     sessionId?: number | null;
+    assignMode?: "all" | "selective" | "exclude";
+    targetLearnerIds?: number[];
 }
 
 export interface AssignmentAttachmentDto {

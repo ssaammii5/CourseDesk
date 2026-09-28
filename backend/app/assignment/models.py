@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.utils.db import Base
@@ -31,6 +31,11 @@ class AssignmentModel(Base):
     created_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
+
+    # ── Target audience / Assignment scope ──
+    assign_mode: Mapped[str] = mapped_column(default="all")
+    # all | selective | exclude
+    target_learner_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
 
     # ── NEW: submission format criteria ──
     submission_formats: Mapped[str] = mapped_column(default="file_upload")

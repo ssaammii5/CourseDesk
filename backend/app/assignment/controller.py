@@ -18,6 +18,26 @@ from app.user.models import UserModel
 from app.utils.helpers import save_upload_file
 
 
+def get_target_learner_ids(assignment: AssignmentModel, enrolled_learner_ids: list[int]) -> list[int]:
+    mode = getattr(assignment, "assign_mode", "all") or "all"
+    target_ids = set(getattr(assignment, "target_learner_ids", []) or [])
+    if mode == "selective":
+        return [uid for uid in enrolled_learner_ids if uid in target_ids]
+    elif mode == "exclude":
+        return [uid for uid in enrolled_learner_ids if uid not in target_ids]
+    return enrolled_learner_ids
+
+
+def _is_assignment_assigned_to_user(assignment: AssignmentModel, user: UserModel) -> bool:
+    if user.role in ("Admin", "Instructor"):
+        return True
+    if not assignment.course:
+        return True
+    enrolled_ids = [learner.id for learner in (assignment.course.learners or [])]
+    target_ids = get_target_learner_ids(assignment, enrolled_ids)
+    return user.id in target_ids
+
+
 def serialize_assignment(
     assignment: AssignmentModel, my_status: str | None = None
 ) -> AssignmentResponseSchema:
@@ -25,7 +45,9 @@ def serialize_assignment(
     subs = assignment.submissions or []
     turned_in = len([s for s in subs if s.submitted_at_utc and s.status != "Graded"])
     graded = len([s for s in subs if s.status == "Graded"])
-    total_learners = len(course.learners) if course and course.learners else 0
+    all_enrolled_ids = [l.id for l in (course.learners if course and course.learners else [])]
+    assigned_learners = get_target_learner_ids(assignment, all_enrolled_ids)
+    total_learners = len(assigned_learners)
     assigned = max(0, total_learners - turned_in - graded)
 
     return AssignmentResponseSchema(
@@ -53,6 +75,9 @@ def serialize_assignment(
         learner_count=total_learners,
         student_count=total_learners,
         my_submission_status=my_status,
+        # ── Target audience / Assignment scope ──
+        assign_mode=getattr(assignment, "assign_mode", "all") or "all",
+        target_learner_ids=getattr(assignment, "target_learner_ids", []) or [],
         # ── NEW ──
         session_id=assignment.session_id,
         submission_formats=assignment.submission_formats,
@@ -117,6 +142,7 @@ def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSche
                 AssignmentModel.status == "Published",
             )
         ).all()
+        assignments = [a for a in assignments if _is_assignment_assigned_to_user(a, user)]
     return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
 
 
@@ -136,6 +162,8 @@ def get_course_assignments(
         stmt = stmt.where(AssignmentModel.status == "Published")
 
     assignments = db.scalars(stmt).all()
+    if user.role not in ("Admin", "Instructor"):
+        assignments = [a for a in assignments if _is_assignment_assigned_to_user(a, user)]
     return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
 
 
@@ -145,6 +173,7 @@ def _check_assignment_visible(assignment: AssignmentModel, user: UserModel) -> N
     if (
         user.role == "Learner"
         and assignment.status == "Published"
+        and _is_assignment_assigned_to_user(assignment, user)
     ):
         return
     raise HTTPException(403, detail="You don't have access to this assignment")
@@ -182,6 +211,9 @@ def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> A
     if not _can_manage_course(user, course):
         raise HTTPException(403, detail="You cannot create assignments in this course")
 
+    assign_mode = body.assign_mode if body.assign_mode in ("all", "selective", "exclude") else "all"
+    target_learner_ids = body.target_learner_ids or []
+
     assignment = AssignmentModel(
         course_id=course.id,
         title=body.title,
@@ -195,6 +227,8 @@ def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> A
         # ── NEW ──
         session_id=body.session_id,
         submission_formats=body.submission_formats,
+        assign_mode=assign_mode,
+        target_learner_ids=target_learner_ids,
     )
     db.add(assignment)
     db.commit()
@@ -214,6 +248,9 @@ def update_assignment(
     assignment.max_marks = body.max_marks
     assignment.session_id = body.session_id
     assignment.submission_formats = body.submission_formats
+    if body.assign_mode in ("all", "selective", "exclude"):
+        assignment.assign_mode = body.assign_mode
+    assignment.target_learner_ids = body.target_learner_ids or []
     db.add(assignment)
     db.commit()
 
@@ -235,6 +272,9 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
         .options(selectinload(CourseModel.learners))
         .where(CourseModel.id == assignment.course_id)
     )
+    enrolled_ids = [learner.id for learner in (course.learners if course else [])]
+    target_ids = get_target_learner_ids(assignment, enrolled_ids)
+
     existing_ids = set(
         db.scalars(
             select(SubmissionModel.learner_id).where(
@@ -242,8 +282,7 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
             )
         ).all()
     )
-    learner_ids = [learner.id for learner in (course.learners if course else [])]
-    for l_id in learner_ids:
+    for l_id in target_ids:
         if l_id not in existing_ids:
             db.add(
                 SubmissionModel(
@@ -251,7 +290,7 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
                 )
             )
 
-    if learner_ids:
+    if target_ids:
         from app.notification.controller import create_notifications_bulk
 
         deadline_str = (
@@ -262,7 +301,7 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
         msg = f"Posted in {course.name}" + (f" • Due {deadline_str}" if deadline_str else "")
         create_notifications_bulk(
             db=db,
-            user_ids=learner_ids,
+            user_ids=target_ids,
             title=f"New assignment: {assignment.title}",
             message=msg,
             kind="assignment",

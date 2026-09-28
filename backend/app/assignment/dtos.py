@@ -13,6 +13,8 @@ class AssignmentSchema(CamelModel):
     max_marks: int = 100
     session_id: int | None = None
     submission_formats: str = "file_upload"
+    assign_mode: str = "all"  # all | selective | exclude
+    target_learner_ids: list[int] = []
 
 
 class AssignmentUpdateSchema(CamelModel):
@@ -24,6 +26,8 @@ class AssignmentUpdateSchema(CamelModel):
     max_marks: int = 100
     session_id: int | None = None
     submission_formats: str = "file_upload"
+    assign_mode: str = "all"  # all | selective | exclude
+    target_learner_ids: list[int] = []
 
 
 class AssignmentAttachmentResponseSchema(CamelModel):
@@ -64,6 +68,8 @@ class AssignmentResponseSchema(CamelModel):
     # ── NEW ──
     session_id: int | None = None
     submission_formats: str = "file_upload"
+    assign_mode: str = "all"
+    target_learner_ids: list[int] = []
     attachments: list[AssignmentAttachmentResponseSchema] = []
 
 

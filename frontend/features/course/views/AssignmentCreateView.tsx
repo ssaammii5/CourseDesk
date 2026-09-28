@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
     AlertCircle,
@@ -19,16 +19,21 @@ import {
     Paperclip,
     Plus,
     Save,
+    Search,
     Sparkles,
     Tag,
     Trash2,
     Upload,
+    UserCheck,
+    Users,
     UsersRound,
+    UserX,
     Video,
     X,
 } from "lucide-react";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { renameCourseTopicRequest, deleteCourseTopicRequest } from "@/lib/api/assignments";
+import { getCoursePeopleRequest } from "@/lib/api/courses";
 import type { ClassworkEntry } from "@/types";
 import type { SessionDto } from "@/types/session";
 export interface AssignmentDraftAttachment {
@@ -51,6 +56,7 @@ export interface AssignmentCreateViewProps {
     existingTopics?: string[];
     onTopicRenamed?: (oldName: string, newName: string) => void;
     onTopicDeleted?: (deletedName: string, fallbackName: string) => void;
+    enrolledLearners?: { id: number; name: string; email: string }[];
 }
 
 const DEFAULT_FALLBACK_TOPICS = ["General"];
@@ -119,6 +125,7 @@ export function AssignmentCreateView({
     existingTopics = DEFAULT_FALLBACK_TOPICS,
     onTopicRenamed,
     onTopicDeleted,
+    enrolledLearners,
 }: AssignmentCreateViewProps) {
     const isEditing = Boolean(initial && initial.id > 0);
 
@@ -126,6 +133,74 @@ export function AssignmentCreateView({
     const [titleTouched, setTitleTouched] = useState(false);
     const [instructions, setInstructions] = useState(initial?.description ?? "");
     const [topic, setTopic] = useState(initial?.topic ?? "General");
+
+    // Audience / Assignment Scope (all, selective, exclude)
+    const [assignMode, setAssignMode] = useState<"all" | "selective" | "exclude">(
+        initial?.assignMode ?? "all"
+    );
+    const [targetLearnerIds, setTargetLearnerIds] = useState<number[]>(
+        initial?.targetLearnerIds ?? []
+    );
+    const [enrolledStudents, setEnrolledStudents] = useState<{ id: number; name: string; email: string }[]>(
+        enrolledLearners ?? []
+    );
+    const [loadingLearners, setLoadingLearners] = useState(false);
+    const [isLearnerPickerOpen, setIsLearnerPickerOpen] = useState(false);
+    const [learnerSearch, setLearnerSearch] = useState("");
+
+    useEffect(() => {
+        if (!courseId) return;
+        let cancelled = false;
+        setLoadingLearners(true);
+        getCoursePeopleRequest(courseId)
+            .then((data) => {
+                if (cancelled) return;
+                const list = (data.learners || data.students || []).map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    email: p.email,
+                }));
+                setEnrolledStudents(list);
+            })
+            .catch((err) => {
+                console.error("Failed to load course learners", err);
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingLearners(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [courseId]);
+
+    const toggleLearner = (id: number) => {
+        setTargetLearnerIds((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
+    };
+
+    const selectAllLearners = () => {
+        setTargetLearnerIds(enrolledStudents.map((s) => s.id));
+    };
+
+    const clearAllLearners = () => {
+        setTargetLearnerIds([]);
+    };
+
+    const filteredLearners = useMemo(() => {
+        if (!learnerSearch.trim()) return enrolledStudents;
+        const q = learnerSearch.toLowerCase();
+        return enrolledStudents.filter(
+            (s) => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
+        );
+    }, [enrolledStudents, learnerSearch]);
+
+    const effectiveAssignedCount = useMemo(() => {
+        if (assignMode === "all") return enrolledStudents.length;
+        if (assignMode === "selective") return targetLearnerIds.length;
+        if (assignMode === "exclude") return Math.max(0, enrolledStudents.length - targetLearnerIds.length);
+        return enrolledStudents.length;
+    }, [assignMode, enrolledStudents.length, targetLearnerIds.length]);
 
     // Dynamic Topic Management
     const [topicList, setTopicList] = useState<string[]>(() => {
@@ -399,6 +474,8 @@ export function AssignmentCreateView({
         deadlineUtc: dueDate ? dueDate.toISOString() : undefined,
         maxMarks: points,
         sessionId: selectedSessionId === "none" ? null : selectedSessionId,
+        assignMode,
+        targetLearnerIds,
     });
 
     const submit = (status: "Assigned" | "Draft") => {
@@ -684,14 +761,198 @@ export function AssignmentCreateView({
                                 </div>
                             </div>
 
+                            {/* Assign To (Who receives this assignment) */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                                    Learners Assigned
-                                </label>
-                                <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                    <UsersRound className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                    <span>All enrolled learners in course</span>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        Assign To
+                                    </label>
+                                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                        {loadingLearners ? "Loading..." : `${enrolledStudents.length} enrolled`}
+                                    </span>
                                 </div>
+
+                                {/* Mode Selector Buttons */}
+                                <div className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 p-1 text-xs">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setAssignMode("all");
+                                            setIsLearnerPickerOpen(false);
+                                        }}
+                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${
+                                            assignMode === "all"
+                                                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 font-semibold shadow-xs"
+                                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                        }`}
+                                    >
+                                        All learners
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setAssignMode("selective");
+                                            setIsLearnerPickerOpen(true);
+                                        }}
+                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${
+                                            assignMode === "selective"
+                                                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 font-semibold shadow-xs"
+                                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                        }`}
+                                    >
+                                        Selective
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setAssignMode("exclude");
+                                            setIsLearnerPickerOpen(true);
+                                        }}
+                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${
+                                            assignMode === "exclude"
+                                                ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold shadow-xs"
+                                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                        }`}
+                                    >
+                                        All except
+                                    </button>
+                                </div>
+
+                                {/* Audience Status Pill & Trigger */}
+                                <div className="mt-2.5">
+                                    {assignMode === "all" ? (
+                                        <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/30 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                                            <UsersRound className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <span>All {enrolledStudents.length} enrolled learners assigned</span>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsLearnerPickerOpen((prev) => !prev)}
+                                            className={`w-full flex items-center justify-between gap-2.5 rounded-2xl border px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
+                                                assignMode === "selective"
+                                                    ? "border-indigo-200/80 dark:border-indigo-800/50 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                                                    : "border-amber-200/80 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2 truncate">
+                                                {assignMode === "selective" ? (
+                                                    <UserCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                                ) : (
+                                                    <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                                )}
+                                                <span className="truncate">
+                                                    {assignMode === "selective"
+                                                        ? `${targetLearnerIds.length} of ${enrolledStudents.length} learners selected`
+                                                        : `All except ${targetLearnerIds.length} learners (${effectiveAssignedCount} assigned)`}
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                {isLearnerPickerOpen ? "Hide list" : "Select learners"}
+                                            </span>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Expandable Learner Picker */}
+                                {assignMode !== "all" && isLearnerPickerOpen && (
+                                    <div className="mt-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/80 p-3 space-y-3 animate-in fade-in duration-150">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                                {assignMode === "selective"
+                                                    ? "Select learners to include"
+                                                    : "Select learners to exclude"}
+                                            </span>
+                                            <div className="flex items-center gap-2 text-[11px]">
+                                                <button
+                                                    type="button"
+                                                    onClick={selectAllLearners}
+                                                    className="cursor-pointer font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                >
+                                                    Select all
+                                                </button>
+                                                <span className="text-slate-300 dark:text-slate-700">•</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={clearAllLearners}
+                                                    className="cursor-pointer font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
+                                                >
+                                                    Clear
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Search Filter */}
+                                        <div className="relative">
+                                            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                value={learnerSearch}
+                                                onChange={(e) => setLearnerSearch(e.target.value)}
+                                                placeholder="Search student by name or email..."
+                                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1.5 pl-8 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+                                            />
+                                        </div>
+
+                                        {/* Students Checklist List */}
+                                        <div className="max-h-52 overflow-y-auto space-y-1 pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+                                            {filteredLearners.length === 0 ? (
+                                                <p className="py-3 text-center text-xs text-slate-400 italic">
+                                                    {enrolledStudents.length === 0
+                                                        ? "No learners enrolled in this course yet."
+                                                        : "No matching learners found."}
+                                                </p>
+                                            ) : (
+                                                filteredLearners.map((student) => {
+                                                    const isChecked = targetLearnerIds.includes(student.id);
+                                                    return (
+                                                        <label
+                                                            key={student.id}
+                                                            className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-colors text-left select-none ${
+                                                                isChecked
+                                                                    ? assignMode === "selective"
+                                                                        ? "bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200"
+                                                                        : "bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200"
+                                                                    : "hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
+                                                            }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isChecked}
+                                                                onChange={() => toggleLearner(student.id)}
+                                                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                            />
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="text-xs font-semibold truncate leading-tight">
+                                                                    {student.name}
+                                                                </p>
+                                                                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                                                    {student.email}
+                                                                </p>
+                                                            </div>
+                                                        </label>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+
+                                        {/* Done button */}
+                                        <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-slate-700/80">
+                                            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                                {assignMode === "selective"
+                                                    ? `${targetLearnerIds.length} of ${enrolledStudents.length} selected`
+                                                    : `${targetLearnerIds.length} excluded (${effectiveAssignedCount} assigned)`}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsLearnerPickerOpen(false)}
+                                                className="cursor-pointer rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 text-xs font-semibold transition-colors"
+                                            >
+                                                Done
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Associated Session (if sessions available) */}
