@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { API_URL } from "@/lib/api/client";
+import { extractPlainTextExcerpt } from "./CourseworkView";
 import type { CourseworkEntry } from "@/types";
 import type { SubmissionDto } from "@/lib/api/submissions";
 
@@ -495,6 +497,7 @@ export function InstructorCourseworkView({
                                         const gradedCount = stats ? stats.graded : (entry.gradedCount ?? 0);
                                         const totalCount = stats ? stats.total : (entry.submissionCount ?? (turnedInCount + gradedCount));
                                         const hasSubs = totalCount > 0 || (entry.turnedInCount ?? 0) > 0 || (entry.gradedCount ?? 0) > 0;
+                                        const plainDesc = extractPlainTextExcerpt(entry.description, 180);
 
                                         return (
                                             <div
@@ -555,6 +558,47 @@ export function InstructorCourseworkView({
                                                         >
                                                             {entry.title}
                                                         </button>
+
+                                                        {plainDesc && (
+                                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-1 max-w-2xl">
+                                                                {plainDesc}
+                                                            </p>
+                                                        )}
+
+                                                        {entry.attachments && entry.attachments.length > 0 && (
+                                                            <div className="mt-2.5 flex flex-wrap gap-2">
+                                                                {entry.attachments.map((att) => {
+                                                                    const rawUrl = att.url;
+                                                                    const fileUrl = rawUrl?.startsWith("http")
+                                                                        ? rawUrl
+                                                                        : rawUrl
+                                                                        ? `${API_URL}${rawUrl}`
+                                                                        : undefined;
+
+                                                                    return fileUrl ? (
+                                                                        <a
+                                                                            key={att.id}
+                                                                            href={fileUrl}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                                        >
+                                                                            <Paperclip className="h-3 w-3 text-blue-500 shrink-0" />
+                                                                            <span className="truncate max-w-[180px]">{att.fileName}</span>
+                                                                        </a>
+                                                                    ) : (
+                                                                        <span
+                                                                            key={att.id}
+                                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-400"
+                                                                        >
+                                                                            <Paperclip className="h-3 w-3 text-slate-400 shrink-0" />
+                                                                            <span className="truncate max-w-[180px]">{att.fileName}</span>
+                                                                        </span>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 

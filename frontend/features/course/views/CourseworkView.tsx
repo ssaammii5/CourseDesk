@@ -26,7 +26,6 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/lib/api/client";
-import { RichTextContent } from "@/components/ui";
 import type { CourseworkEntry } from "@/types";
 
 export interface CourseworkViewProps {
@@ -77,6 +76,24 @@ function formatDateTime(iso?: string, fallback = ""): string {
     } catch {
         return fallback;
     }
+}
+
+export function extractPlainTextExcerpt(htmlOrMarkdown?: string, maxLen = 160): string {
+    if (!htmlOrMarkdown) return "";
+    const plain = htmlOrMarkdown
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<\/p>/gi, " ")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (plain.length <= maxLen) return plain;
+    return plain.slice(0, maxLen).trim() + "...";
 }
 
 export function CourseworkView({
@@ -576,6 +593,8 @@ function CourseworkItemCard({
     const tagClass = "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-800/40";
     const label = "Assignment";
 
+    const plainDescription = extractPlainTextExcerpt(entry.description, 220);
+
     return (
         <div
             className={`group rounded-2xl border transition-all duration-200 ${expanded
@@ -619,6 +638,11 @@ function CourseworkItemCard({
                     <h3 className="mt-1 text-[15px] font-semibold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {entry.title}
                     </h3>
+                    {plainDescription && (
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-1 max-w-2xl">
+                            {plainDescription}
+                        </p>
+                    )}
                 </div>
 
                 {/* Status & Due Date Info */}
@@ -683,15 +707,14 @@ function CourseworkItemCard({
                         </div>
                     )}
 
-                    {/* Description */}
-                    <div>
-                        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                            Instructions & Overview
-                        </h4>
-                        <div className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                            <RichTextContent text={entry.description} fallback="No specific instructions provided for this assignment." />
+                    {/* Concise Description */}
+                    {plainDescription && (
+                        <div>
+                            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-2">
+                                {plainDescription}
+                            </p>
                         </div>
-                    </div>
+                    )}
 
                     {/* Attachments */}
                     {entry.attachments && entry.attachments.length > 0 && (
