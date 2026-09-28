@@ -5,3 +5,4 @@ export * from "./IconButton";
 export * from "./StatusBadge";
 export * from "./VideoPlayer";
 export * from "./RichTextEditor";
+export * from "./RichTextContent";

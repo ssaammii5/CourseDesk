@@ -188,6 +188,20 @@ export function RichTextEditor({
         }
     }, []);
 
+    // Track the last value emitted locally by the editor to prevent clobbering innerHTML while typing
+    const lastHtmlRef = useRef<string>(value);
+
+    // Set default paragraph separator to <p> for standard, predictable formatting
+    useEffect(() => {
+        if (typeof document !== "undefined") {
+            try {
+                document.execCommand("defaultParagraphSeparator", false, "p");
+            } catch {
+                // ignore
+            }
+        }
+    }, []);
+
     // Calculate word & character counts from editor and emit onChange
     const handleInput = useCallback(() => {
         if (!editorRef.current) return;
@@ -197,33 +211,65 @@ export function RichTextEditor({
         setCharCount(text.length);
         checkActiveFormats();
 
+        const currentHtml = editorRef.current.innerHTML;
+        // Treat empty paragraph or whitespace as empty
+        const isEmpty = !clean || currentHtml === "<p><br></p>" || currentHtml === "<br>";
+        const valToEmit = isEmpty ? "" : currentHtml;
+
+        // If user cleared everything, reset innerHTML to "" so CSS :empty matches for placeholder
+        if (isEmpty && currentHtml !== "") {
+            editorRef.current.innerHTML = "";
+        }
+
+        lastHtmlRef.current = valToEmit;
         if (onChange) {
-            const currentHtml = editorRef.current.innerHTML;
-            // Treat empty paragraph or whitespace as empty
-            if (currentHtml === "<p><br></p>" || currentHtml === "<br>" || !clean) {
-                onChange("");
-            } else {
-                onChange(currentHtml);
-            }
+            onChange(valToEmit);
         }
     }, [checkActiveFormats, onChange]);
 
-    // Synchronize initial or external value changes safely
+    // Synchronize initial or external value changes safely without destroying caret while user is typing
     useEffect(() => {
         if (!editorRef.current) return;
+
+        // If the new value matches what was just emitted from local user input, skip clobbering DOM!
+        if (value === lastHtmlRef.current) {
+            return;
+        }
+
+        const currentContent = editorRef.current.innerHTML;
+        // If raw currentContent already matches value, sync ref and skip
+        if (value === currentContent) {
+            lastHtmlRef.current = value;
+            return;
+        }
+
         const normalized = normalizeContentToHtml(value);
-        if (editorRef.current.innerHTML !== normalized) {
-            // Only update DOM if content actually differs to preserve caret during local typing
-            const currentContent = editorRef.current.innerHTML;
-            if (currentContent !== normalized && (normalized || currentContent !== "<p><br></p>")) {
-                editorRef.current.innerHTML = normalized;
-                const text = editorRef.current.innerText || "";
-                const clean = text.trim();
-                setWordCount(clean ? clean.split(/\s+/).length : 0);
-                setCharCount(text.length);
+        if (currentContent !== normalized && (normalized || currentContent !== "<p><br></p>")) {
+            editorRef.current.innerHTML = normalized;
+            const text = editorRef.current.innerText || "";
+            const clean = text.trim();
+            setWordCount(clean ? clean.split(/\s+/).length : 0);
+            setCharCount(text.length);
+        }
+        lastHtmlRef.current = value;
+    }, [value]);
+
+    const handleFocus = () => {
+        if (typeof document !== "undefined") {
+            try {
+                document.execCommand("defaultParagraphSeparator", false, "p");
+            } catch {
+                // ignore
             }
         }
-    }, [value]);
+        checkActiveFormats();
+    };
+
+    const handlePaste = () => {
+        setTimeout(() => {
+            handleInput();
+        }, 0);
+    };
 
     useEffect(() => {
         if (autoFocus && editorRef.current) {
@@ -732,9 +778,11 @@ export function RichTextEditor({
                 contentEditable={!readOnly}
                 suppressContentEditableWarning
                 onInput={handleInput}
-                onKeyUp={handleInput}
+                onKeyUp={checkActiveFormats}
                 onMouseUp={checkActiveFormats}
                 onKeyDown={handleKeyDown}
+                onFocus={handleFocus}
+                onPaste={handlePaste}
                 onBlur={onBlur}
                 data-placeholder={placeholder}
                 style={{ minHeight, maxHeight }}

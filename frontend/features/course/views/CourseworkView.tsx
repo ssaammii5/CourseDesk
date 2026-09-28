@@ -26,6 +26,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/lib/api/client";
+import { RichTextContent } from "@/components/ui";
 import type { CourseworkEntry } from "@/types";
 
 export interface CourseworkViewProps {
@@ -687,9 +688,9 @@ function CourseworkItemCard({
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
                             Instructions & Overview
                         </h4>
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line">
-                            {entry.description || "No specific instructions provided for this assignment."}
-                        </p>
+                        <div className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                            <RichTextContent text={entry.description} fallback="No specific instructions provided for this assignment." />
+                        </div>
                     </div>
 
                     {/* Attachments */}

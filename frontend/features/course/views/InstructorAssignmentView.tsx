@@ -29,6 +29,7 @@ import {
 } from "@/lib/api/submissions";
 import { initialOf } from "@/lib/utils/format";
 import { API_URL } from "@/lib/api/client";
+import { RichTextContent } from "@/components/ui";
 import { AssignmentComments } from "../components/AssignmentComments";
 
 export interface InstructorAssignmentViewProps {
@@ -933,10 +934,10 @@ export function InstructorAssignmentView({
 
                         {/* Description */}
                         <div className="mt-6">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Instructions:</h3>
-                            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-slate-300">
-                                {assignment.description || "No description provided."}
-                            </p>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">Instructions:</h3>
+                            <div className="mt-2 text-sm leading-relaxed text-gray-700 dark:text-slate-300">
+                                <RichTextContent text={assignment.description} fallback="No description provided." />
+                            </div>
                         </div>
 
                         {/* Attachments */}

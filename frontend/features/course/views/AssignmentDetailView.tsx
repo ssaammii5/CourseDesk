@@ -21,7 +21,7 @@ import {
     X,
 } from "lucide-react";
 import Link from "next/link";
-import { IconButton } from "@/components/ui";
+import { IconButton, RichTextContent } from "@/components/ui";
 import {
     deleteSubmissionAttachmentRequest,
     getOrCreateDraftSubmissionRequest,
@@ -308,9 +308,9 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     <div className="mt-5 border-t border-gray-300 dark:border-slate-800" />
 
                     {/* Description */}
-                    <p className="mt-7 whitespace-pre-line text-sm leading-6 text-gray-800 dark:text-slate-300">
-                        {detail.description}
-                    </p>
+                    <div className="mt-7 text-sm leading-relaxed text-gray-800 dark:text-slate-300">
+                        <RichTextContent text={detail.description} fallback="No description provided." />
+                    </div>
 
                     {/* Attachments */}
                     {detail.attachments.length > 0 && (
