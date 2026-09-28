@@ -30,6 +30,11 @@ export interface AssignmentDetail {
     submission: AssignmentSubmission;
     privateCommentTarget: string;
     courseId?: number;
+    deadlineUtc?: string | null;
+    createdAtUtc?: string | null;
+    kind?: string | null;
+    topic?: string | null;
+    courseName?: string | null;
 }
 
 const assignmentDetails: AssignmentDetail[] = [
