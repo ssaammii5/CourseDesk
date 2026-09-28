@@ -17,6 +17,7 @@ import type { SessionDto, AnnouncementDto, AnnouncementAttachmentDto } from "@/t
 import type { SubmissionDto } from "@/lib/api/submissions";
 import {
     createAssignmentRequest,
+    deleteAssignmentAttachmentRequest,
     deleteAssignmentRequest,
     getCourseAssignmentsRequest,
     publishAssignmentRequest,
@@ -358,6 +359,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     kind: "Assignment",
                     deadlineUtc,
                     maxMarks,
+                    sessionId: entry.sessionId ?? null,
                 });
             } else {
                 const res = await createAssignmentRequest({
@@ -368,8 +370,23 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     kind: "Assignment",
                     deadlineUtc,
                     maxMarks,
+                    sessionId: entry.sessionId ?? null,
                 });
                 assignmentId = res.id;
+            }
+
+            // Clean up removed attachments if editing
+            if (isEditing && editing?.attachments) {
+                const currentIds = new Set(attachments.map((a) => a.id).filter(Boolean));
+                for (const oldAtt of editing.attachments) {
+                    if (!currentIds.has(oldAtt.id)) {
+                        try {
+                            await deleteAssignmentAttachmentRequest(assignmentId, oldAtt.id);
+                        } catch (delErr) {
+                            console.error(`Failed to delete removed attachment ${oldAtt.id}`, delErr);
+                        }
+                    }
+                }
             }
 
             for (const att of attachments) {
@@ -389,7 +406,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 await uploadAssignmentAttachmentRequest(assignmentId, fd);
             }
 
-            if (entry.status === "Assigned") {
+            if (entry.status === "Assigned" && (!isEditing || editing?.status === "Draft")) {
                 await publishAssignmentRequest(assignmentId);
             }
 
@@ -438,6 +455,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     if (editorOpen)
         return (
             <AssignmentCreateView
+                key={editing?.id ?? "new"}
                 courseName={title}
                 initial={editing}
                 onClose={closeEditor}

@@ -8,6 +8,7 @@ export interface AssignmentDto {
     program: string | null;
     department: string | null;
     session: string | null;
+    sessionId?: number | null;
     title: string;
     description: string;
     topic: string;
@@ -36,6 +37,7 @@ export interface CreateAssignmentPayload {
     kind?: string;
     deadlineUtc: string;
     maxMarks: number;
+    sessionId?: number | null;
 }
 
 export interface UpdateAssignmentPayload {
@@ -45,6 +47,7 @@ export interface UpdateAssignmentPayload {
     kind?: string;
     deadlineUtc: string;
     maxMarks: number;
+    sessionId?: number | null;
 }
 
 export interface AssignmentAttachmentDto {

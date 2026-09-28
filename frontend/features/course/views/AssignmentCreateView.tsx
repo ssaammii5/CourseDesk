@@ -69,6 +69,35 @@ function formatShort(d: Date): string {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+function toLocalDatetimeInputValue(utcIsoString?: string): string {
+    if (!utcIsoString) return "";
+    try {
+        const d = new Date(utcIsoString);
+        if (isNaN(d.getTime())) return "";
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const year = d.getFullYear();
+        const month = pad(d.getMonth() + 1);
+        const day = pad(d.getDate());
+        const hours = pad(d.getHours());
+        const minutes = pad(d.getMinutes());
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+        return "";
+    }
+}
+
+function defaultCustomDate(): string {
+    const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    d.setHours(23, 59, 0, 0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 function isValidLink(value: string): boolean {
     const trimmed = value.trim();
     if (!trimmed) return false;
@@ -226,7 +255,7 @@ export function AssignmentCreateView({
         if (!initial?.attachments) return [];
         return initial.attachments.map((att) => ({
             id: att.id,
-            title: att.fileName,
+            title: att.fileName || (att as any).title || "Attachment",
             kind: (att.kind === "link" ? "link" : "file") as "file" | "link",
             fileType: att.fileType,
             url: att.url ?? undefined,
@@ -237,18 +266,15 @@ export function AssignmentCreateView({
     const [due, setDue] = useState<DueOption>(initial?.deadlineUtc ? "custom" : "nextweek");
     const [customDate, setCustomDate] = useState(() => {
         if (!initial?.deadlineUtc) {
-            const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-            return d.toISOString().slice(0, 16);
+            return defaultCustomDate();
         }
-        try {
-            return new Date(initial.deadlineUtc).toISOString().slice(0, 16);
-        } catch {
-            return "";
-        }
+        return toLocalDatetimeInputValue(initial.deadlineUtc) || defaultCustomDate();
     });
 
     // Associated session
-    const [selectedSessionId, setSelectedSessionId] = useState<number | "none">("none");
+    const [selectedSessionId, setSelectedSessionId] = useState<number | "none">(
+        initial?.sessionId ?? "none"
+    );
 
     const [assignMenuOpen, setAssignMenuOpen] = useState(false);
     const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -333,6 +359,7 @@ export function AssignmentCreateView({
         kind: initial?.kind ?? "assignment",
         deadlineUtc: dueDate ? dueDate.toISOString() : undefined,
         maxMarks: points,
+        sessionId: selectedSessionId === "none" ? null : selectedSessionId,
     });
 
     const submit = (status: "Assigned" | "Draft") => {

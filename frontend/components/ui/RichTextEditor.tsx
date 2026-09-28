@@ -188,8 +188,9 @@ export function RichTextEditor({
         }
     }, []);
 
-    // Track the last value emitted locally by the editor to prevent clobbering innerHTML while typing
-    const lastHtmlRef = useRef<string>(value);
+    // Track whether editor has mounted and the last value emitted locally by the editor to prevent clobbering innerHTML while typing
+    const isMountedRef = useRef(false);
+    const lastHtmlRef = useRef<string>("");
 
     // Set default paragraph separator to <p> for standard, predictable formatting
     useEffect(() => {
@@ -230,6 +231,19 @@ export function RichTextEditor({
     // Synchronize initial or external value changes safely without destroying caret while user is typing
     useEffect(() => {
         if (!editorRef.current) return;
+
+        // On first mount, populate innerHTML with normalized value and sync metrics
+        if (!isMountedRef.current) {
+            isMountedRef.current = true;
+            const normalized = normalizeContentToHtml(value);
+            editorRef.current.innerHTML = normalized;
+            const text = editorRef.current.innerText || "";
+            const clean = text.trim();
+            setWordCount(clean ? clean.split(/\s+/).length : 0);
+            setCharCount(text.length);
+            lastHtmlRef.current = value;
+            return;
+        }
 
         // If the new value matches what was just emitted from local user input, skip clobbering DOM!
         if (value === lastHtmlRef.current) {

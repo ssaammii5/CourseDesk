@@ -66,6 +66,7 @@ export function mapAssignmentToCoursework(
         turnedInCount: dto.turnedInCount,
         gradedCount: dto.gradedCount,
         assignedCount: dto.assignedCount,
+        sessionId: dto.sessionId,
         attachments: dto.attachments,
     };
 }
