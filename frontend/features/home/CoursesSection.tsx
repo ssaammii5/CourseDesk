@@ -4,15 +4,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import {
     ArrowRight,
+    BookOpen,
     Check,
     ChevronDown,
     ClipboardList,
+    Copy,
     EllipsisVertical,
     Eye,
     EyeOff,
     GripVertical,
+    LayoutGrid,
+    List,
+    Megaphone,
     Pencil,
+    Search,
     Users,
+    Video,
+    X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,19 +28,22 @@ import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
 import { avatarClassFor, emojiFor, headerColorFor } from "@/lib/utils/theme";
 import { initialOf } from "@/lib/utils/format";
 import type { HomeCourse } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
 
-type SortMode = "custom" | "alphabetical";
+type SortMode = "custom" | "alphabetical" | "students";
+type ViewMode = "grid" | "list";
 
 interface CoursesLayout {
     order: number[];
     hiddenIds: number[];
     sort: SortMode;
+    view?: ViewMode;
 }
 
-const STORAGE_KEY = "coursedesk.courses.layout.v1";
+const STORAGE_KEY = "coursedesk.courses.layout.v2";
 
 function defaultLayout(ids: number[]): CoursesLayout {
-    return { order: ids, hiddenIds: [], sort: "custom" };
+    return { order: ids, hiddenIds: [], sort: "custom", view: "grid" };
 }
 
 function loadLayout(ids: number[]): CoursesLayout {
@@ -53,7 +64,8 @@ function loadLayout(ids: number[]): CoursesLayout {
         return {
             order: [...savedOrder, ...missingIds],
             hiddenIds,
-            sort: parsed.sort === "alphabetical" ? "alphabetical" : "custom",
+            sort: parsed.sort === "alphabetical" || parsed.sort === "students" ? parsed.sort : "custom",
+            view: parsed.view === "list" ? "list" : "grid",
         };
     } catch {
         return fallback;
@@ -92,18 +104,25 @@ function mapCourseToHomeCourse(c: CourseDto): HomeCourse {
         emoji: emojiFor(c.id),
         instructorAvatarClass: avatarClassFor(c.id),
         teacherAvatarClass: avatarClassFor(c.id),
+        meetingUrl: c.meetingUrl,
+        meetingProvider: c.meetingProvider,
     };
 }
 
 export function CoursesSection() {
+    const { user } = useAuth();
+    const isInstructor = user?.role === "Instructor" || user?.role === "Admin";
+
     const [homeCourses, setHomeCourses] = useState<HomeCourse[]>([]);
     const [layout, setLayout] = useState<CoursesLayout>(() => defaultLayout([]));
     const [hydrated, setHydrated] = useState(false);
-    const [hiddenOpen, setHiddenOpen] = useState(true);
+    const [hiddenOpen, setHiddenOpen] = useState(false);
     const [draggingId, setDraggingId] = useState<number | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-    // Fetch the user's courses, then restore the persisted layout.
+    // Fetch user courses and restore layout
     useEffect(() => {
         let cancelled = false;
         const load = () => {
@@ -112,7 +131,9 @@ export function CoursesSection() {
                     if (cancelled) return;
                     const mapped = dtos.map(mapCourseToHomeCourse);
                     setHomeCourses(mapped);
-                    setLayout(loadLayout(mapped.map((c) => c.id)));
+                    const loaded = loadLayout(mapped.map((c) => c.id));
+                    setLayout(loaded);
+                    if (loaded.view) setViewMode(loaded.view);
                     setHydrated(true);
                 })
                 .catch(() => {
@@ -134,38 +155,70 @@ export function CoursesSection() {
     useEffect(() => {
         if (!hydrated) return;
         try {
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+            window.localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify({ ...layout, view: viewMode }),
+            );
         } catch {
-            // Storage unavailable — keep state in memory only.
+            // Storage unavailable
         }
-    }, [hydrated, layout]);
+    }, [hydrated, layout, viewMode]);
 
     const hiddenSet = useMemo(() => new Set(layout.hiddenIds), [layout.hiddenIds]);
 
     const visibleCourses = useMemo(() => {
-        const ordered = layout.order
+        let ordered = layout.order
             .map((id) => homeCourses.find((c) => c.id === id))
             .filter((c): c is HomeCourse => c !== undefined && !hiddenSet.has(c.id));
+
         if (layout.sort === "alphabetical") {
-            return [...ordered].sort((a, b) => a.name.localeCompare(b.name));
+            ordered = [...ordered].sort((a, b) => a.name.localeCompare(b.name));
+        } else if (layout.sort === "students") {
+            ordered = [...ordered].sort(
+                (a, b) => (b.studentCount ?? b.learnerCount ?? 0) - (a.studentCount ?? a.learnerCount ?? 0),
+            );
         }
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            return ordered.filter(
+                (c) =>
+                    c.name.toLowerCase().includes(query) ||
+                    (c.subject && c.subject.toLowerCase().includes(query)) ||
+                    (c.instructorName && c.instructorName.toLowerCase().includes(query)),
+            );
+        }
+
         return ordered;
-    }, [homeCourses, layout.order, layout.sort, hiddenSet]);
+    }, [homeCourses, layout.order, layout.sort, hiddenSet, searchQuery]);
 
     const hiddenCourses = useMemo(() => {
-        const ordered = layout.order
+        let ordered = layout.order
             .map((id) => homeCourses.find((c) => c.id === id))
             .filter((c): c is HomeCourse => c !== undefined && hiddenSet.has(c.id));
-        if (layout.sort === "alphabetical") {
-            return [...ordered].sort((a, b) => a.name.localeCompare(b.name));
-        }
-        return ordered;
-    }, [homeCourses, layout.order, layout.sort, hiddenSet]);
 
-    const canDrag = isEditing && layout.sort === "custom";
+        if (layout.sort === "alphabetical") {
+            ordered = [...ordered].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            return ordered.filter(
+                (c) =>
+                    c.name.toLowerCase().includes(query) ||
+                    (c.subject && c.subject.toLowerCase().includes(query)) ||
+                    (c.instructorName && c.instructorName.toLowerCase().includes(query)),
+            );
+        }
+
+        return ordered;
+    }, [homeCourses, layout.order, layout.sort, hiddenSet, searchQuery]);
+
+    const canDrag = isEditing && layout.sort === "custom" && viewMode === "grid";
 
     const enterEditMode = () => {
         setIsEditing(true);
+        setViewMode("grid");
         setLayout((prev) => (prev.sort === "alphabetical" ? { ...prev, sort: "custom" } : prev));
     };
 
@@ -183,7 +236,8 @@ export function CoursesSection() {
         setLayout((prev) => ({ ...prev, hiddenIds: prev.hiddenIds.filter((x) => x !== id) }));
 
     const handleSortChange = (value: string) => {
-        const sort: SortMode = value === "alphabetical" ? "alphabetical" : "custom";
+        const sort: SortMode =
+            value === "alphabetical" ? "alphabetical" : value === "students" ? "students" : "custom";
         setLayout((prev) => ({ ...prev, sort }));
     };
 
@@ -217,71 +271,179 @@ export function CoursesSection() {
 
     if (!hydrated) {
         return (
-            <section className="rounded-xl bg-[#f9fafc] dark:bg-slate-900 px-6 py-5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors">
-                <div className="flex justify-center py-10">
-                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#1a73e8] dark:border-blue-400 border-t-transparent" />
+            <section
+                id="courses-section"
+                className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+            >
+                <div className="flex items-center justify-center py-16">
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-blue-600 border-t-transparent dark:border-blue-400" />
                 </div>
             </section>
         );
     }
 
     return (
-        <section className="rounded-xl bg-[#f9fafc] dark:bg-slate-900 px-6 py-5 shadow-sm border border-slate-200/60 dark:border-slate-800 transition-colors">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-slate-100">My Courses</h2>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <section
+            id="courses-section"
+            className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all dark:border-slate-800 dark:bg-slate-900 sm:p-7"
+        >
+            {/* Header row */}
+            <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900/60 dark:bg-blue-950/70 dark:text-blue-400">
+                        <BookOpen className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2.5">
+                            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                                {isInstructor ? "Courses You Instruct" : "My Enrolled Courses"}
+                            </h2>
+                            <span className="inline-flex items-center rounded-full border border-slate-200/80 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-200">
+                                {visibleCourses.length}
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {isInstructor
+                                ? "Manage your syllabus, coursework, and live classrooms."
+                                : "Access your active classes, coursework, and live sessions."}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Controls: Search, Sort, View, Reorder */}
+                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                    {/* Search filter input */}
+                    <div className="relative min-w-[180px] max-w-xs flex-1 sm:w-56 sm:flex-initial">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                        <input
+                            type="text"
+                            placeholder="Filter courses..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-8.5 pr-8 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 dark:focus:border-blue-400 dark:focus:bg-slate-800"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* View Switcher: Grid vs List */}
+                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/70 p-1 dark:border-slate-700 dark:bg-slate-800">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("grid")}
+                            aria-label="Grid view"
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
+                                viewMode === "grid"
+                                    ? "bg-white text-blue-600 shadow-xs dark:bg-slate-700 dark:text-blue-300 dark:shadow-none"
+                                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                            }`}
+                        >
+                            <LayoutGrid className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("list")}
+                            aria-label="List view"
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
+                                viewMode === "list"
+                                    ? "bg-white text-blue-600 shadow-xs dark:bg-slate-700 dark:text-blue-300 dark:shadow-none"
+                                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                            }`}
+                        >
+                            <List className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+
+                    {/* Sort Dropdown */}
                     <div className="relative">
                         <select
                             aria-label="Sort courses"
                             value={layout.sort}
                             onChange={(e) => handleSortChange(e.target.value)}
-                            className="cursor-pointer appearance-none rounded-full border border-gray-400 dark:border-slate-700 bg-transparent dark:bg-slate-800 py-2 pl-4 pr-9 text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                            className="cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-750"
                         >
-                            <option value="custom" className="dark:bg-slate-800 dark:text-slate-100">Custom order</option>
-                            <option value="alphabetical" className="dark:bg-slate-800 dark:text-slate-100">Alphabetical (A–Z)</option>
+                            <option value="custom" className="bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100">
+                                Custom Order
+                            </option>
+                            <option value="alphabetical" className="bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100">
+                                Alphabetical (A–Z)
+                            </option>
+                            <option value="students" className="bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100">
+                                Most Learners
+                            </option>
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1a73e8] dark:text-blue-400" />
+                        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
                     </div>
+
+                    {/* Drag & Reorder button */}
                     <button
                         type="button"
                         onClick={isEditing ? exitEditMode : enterEditMode}
-                        className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isEditing
-                            ? "border-[#1a63d8] bg-[#1a63d8] text-white hover:bg-[#1554b5]"
-                            : "border-gray-400 dark:border-slate-700 text-[#1a73e8] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800"
-                            }`}
+                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all shadow-xs ${
+                            isEditing
+                                ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-600 dark:text-white"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-750"
+                        }`}
                     >
-                        {isEditing ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-                        {isEditing ? "Done" : "Edit"}
+                        {isEditing ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                        <span>{isEditing ? "Done" : "Reorder"}</span>
                     </button>
                 </div>
             </div>
 
+            {/* Reorder edit notification banner */}
             {isEditing && (
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#e8f0fe] dark:bg-blue-950/50 px-4 py-2.5">
-                    <p className="text-sm text-[#174ea6] dark:text-blue-300">
-                        {canDrag
-                            ? "Edit mode: drag cards to rearrange your courses."
-                            : 'Edit mode: switch sorting to "Custom order" to drag cards.'}
-                    </p>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3 dark:border-blue-900/60 dark:bg-blue-950/50">
+                    <div className="flex items-center gap-2 text-xs font-medium text-blue-900 dark:text-blue-200">
+                        <GripVertical className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span>
+                            {canDrag
+                                ? "Drag and drop the cards to customize your preferred course layout."
+                                : "Switch sorting to \"Custom Order\" and Grid view to drag cards."}
+                        </span>
+                    </div>
                     <button
                         type="button"
                         onClick={exitEditMode}
-                        className="cursor-pointer text-sm font-medium text-[#1a73e8] hover:underline"
+                        className="text-xs font-bold text-blue-700 hover:underline dark:text-blue-400"
                     >
-                        Done
+                        Finish Reordering
                     </button>
                 </div>
             )}
 
+            {/* Courses Display */}
             {visibleCourses.length === 0 ? (
-                <p className="py-10 text-center text-sm text-gray-600 dark:text-slate-400">
-                    {homeCourses.length === 0
-                        ? "You are not enrolled in any courses."
-                        : "All of your courses are hidden. Expand the Hidden courses section below to unhide them."}
-                </p>
-            ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-500">
+                        <BookOpen className="h-6 w-6" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        {searchQuery
+                            ? `No courses matching "${searchQuery}"`
+                            : homeCourses.length === 0
+                                ? "You are not enrolled in any courses yet."
+                                : "All courses are currently hidden."}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {searchQuery
+                            ? "Try searching with a different term."
+                            : homeCourses.length === 0
+                                ? "Once you are enrolled or assigned courses, they will appear right here."
+                                : "Expand the Hidden Courses drawer below to unhide your courses."}
+                    </p>
+                </div>
+            ) : viewMode === "grid" ? (
+                /* Grid View */
                 <div
-                    className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
+                    className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                 >
@@ -293,37 +455,63 @@ export function CoursesSection() {
                             onDragOver={(e) => handleDragOver(e, c.id)}
                             onDrop={handleDrop}
                             onDragEnd={handleDragEnd}
-                            className={`transition-opacity duration-150 ${draggingId === c.id ? "opacity-50" : "opacity-100"}`}
+                            className={`transition-all duration-200 ${
+                                draggingId === c.id ? "scale-95 opacity-50 ring-2 ring-blue-500 rounded-2xl" : "opacity-100"
+                            }`}
                         >
-                            <CourseCard course={c} canDrag={canDrag} onToggleHide={() => hideCourse(c.id)} />
+                            <CourseCard
+                                course={c}
+                                canDrag={canDrag}
+                                onToggleHide={() => hideCourse(c.id)}
+                            />
                         </div>
+                    ))}
+                </div>
+            ) : (
+                /* Compact List View */
+                <div className="mt-6 divide-y divide-slate-100 rounded-xl border border-slate-200/80 overflow-hidden dark:divide-slate-800 dark:border-slate-800">
+                    {visibleCourses.map((c) => (
+                        <CourseListRow
+                            key={c.id}
+                            course={c}
+                            onToggleHide={() => hideCourse(c.id)}
+                        />
                     ))}
                 </div>
             )}
 
+            {/* Hidden Courses Drawer */}
             {hiddenCourses.length > 0 && (
-                <div className="mt-6 border-t border-gray-300/60 dark:border-slate-800 pt-4">
+                <div className="mt-8 border-t border-slate-200/70 pt-5 dark:border-slate-800">
                     <button
                         type="button"
                         onClick={() => setHiddenOpen((v) => !v)}
                         aria-expanded={hiddenOpen}
-                        className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-2 hover:bg-gray-900/5 dark:hover:bg-slate-800/60 transition-colors"
+                        className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
                     >
-                        <span className="flex items-center gap-3 text-base font-medium text-gray-800 dark:text-slate-200">
-                            <EyeOff className="h-5 w-5 text-gray-600 dark:text-slate-400" />
-                            Hidden courses
-                            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-300/80 dark:bg-slate-800 px-1.5 text-xs font-semibold text-gray-700 dark:text-slate-300">
+                        <span className="flex items-center gap-3 text-sm font-bold text-slate-800 dark:text-slate-200">
+                            <EyeOff className="h-4.5 w-4.5 text-slate-500 dark:text-slate-400" />
+                            <span>Hidden Courses</span>
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300">
                                 {hiddenCourses.length}
                             </span>
                         </span>
                         <ChevronDown
-                            className={`h-5 w-5 text-gray-700 dark:text-slate-400 transition-transform duration-200 ${hiddenOpen ? "rotate-180" : ""}`}
+                            className={`h-4.5 w-4.5 text-slate-500 transition-transform duration-200 ${
+                                hiddenOpen ? "rotate-180" : ""
+                            }`}
                         />
                     </button>
+
                     {hiddenOpen && (
-                        <div className="mt-4 grid grid-cols-1 gap-5 pb-1 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                             {hiddenCourses.map((c) => (
-                                <CourseCard key={c.id} course={c} isHidden onToggleHide={() => unhideCourse(c.id)} />
+                                <CourseCard
+                                    key={c.id}
+                                    course={c}
+                                    isHidden
+                                    onToggleHide={() => unhideCourse(c.id)}
+                                />
                             ))}
                         </div>
                     )}
@@ -340,9 +528,15 @@ interface CourseCardProps {
     onToggleHide: () => void;
 }
 
-export function CourseCard({ course, isHidden = false, canDrag = false, onToggleHide }: CourseCardProps) {
+export function CourseCard({
+    course,
+    isHidden = false,
+    canDrag = false,
+    onToggleHide,
+}: CourseCardProps) {
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -357,6 +551,19 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
             document.removeEventListener("pointerdown", handleOutsideClick);
         };
     }, [menuOpen]);
+
+    const handleCopyLink = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setMenuOpen(false);
+        const url = `${window.location.origin}/course/${course.id}`;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            });
+        }
+    };
 
     const instructors =
         course.instructorNames && course.instructorNames.length > 0
@@ -389,9 +596,13 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                 }
                 router.push(`/course/${course.id}`);
             }}
-            className={`group/card relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all duration-300 ${
-                menuOpen ? "shadow-md" : "hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl"
-            } ${isHidden ? "opacity-75 grayscale-[0.2]" : ""}${canDrag ? " cursor-grab active:cursor-grabbing" : ""}`}
+            className={`group/card relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
+                menuOpen
+                    ? "shadow-md"
+                    : "hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl dark:hover:border-slate-700"
+            } ${isHidden ? "opacity-75 grayscale-[0.2]" : ""}${
+                canDrag ? " cursor-grab active:cursor-grabbing ring-1 ring-blue-400/50" : ""
+            }`}
         >
             {/* Header Banner */}
             <div
@@ -400,13 +611,13 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                     background: `linear-gradient(135deg, ${course.headerColor} 0%, ${course.headerColor}e6 100%)`,
                 }}
             >
-                {/* Decorative ambient orb */}
-                <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/10 blur-xl" />
+                {/* Decorative ambient radial orb */}
+                <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-xl" />
 
                 {/* Watermark emoji */}
                 <span
                     aria-hidden
-                    className="pointer-events-none absolute -bottom-1 right-3 select-none text-5xl opacity-20 transition-transform duration-300 group-hover/card:scale-110"
+                    className="pointer-events-none absolute -bottom-2 right-3 select-none text-5xl opacity-20 transition-transform duration-300 group-hover/card:scale-115"
                 >
                     {course.emoji}
                 </span>
@@ -426,12 +637,52 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                                 e.stopPropagation();
                                 setMenuOpen((v) => !v);
                             }}
-                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm transition-all hover:bg-black/35 hover:scale-105 active:scale-95"
+                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/35 active:scale-95"
                         >
                             <EllipsisVertical className="h-4 w-4" />
                         </button>
+
                         {menuOpen && (
-                            <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 shadow-xl">
+                            <div className="absolute right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-800">
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setMenuOpen(false);
+                                        router.push(`/course/${course.id}?tab=coursework`);
+                                    }}
+                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                                >
+                                    <ClipboardList className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                    Coursework
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setMenuOpen(false);
+                                        router.push(`/course/${course.id}?tab=stream`);
+                                    }}
+                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                                >
+                                    <Megaphone className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                    Announcements
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleCopyLink}
+                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                                >
+                                    <Copy className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                    {copied ? "Link Copied!" : "Copy Course Link"}
+                                </button>
+
+                                <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
+
                                 <button
                                     type="button"
                                     onClick={(e) => {
@@ -440,27 +691,42 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                                         setMenuOpen(false);
                                         onToggleHide();
                                     }}
-                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
+                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                                 >
                                     {isHidden ? (
                                         <Eye className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                                     ) : (
                                         <EyeOff className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                                     )}
-                                    {isHidden ? "Unhide course" : "Hide course"}
+                                    {isHidden ? "Unhide Course" : "Hide Course"}
                                 </button>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Drag to reorder indicator */}
-                {canDrag && (
-                    <div className="pointer-events-none relative z-10 inline-flex w-fit items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
-                        <GripVertical className="h-3 w-3" />
-                        Drag to reorder
-                    </div>
-                )}
+                {/* Drag to reorder indicator or Live Meeting pill */}
+                <div className="relative z-10 flex items-center justify-between">
+                    {canDrag ? (
+                        <div className="inline-flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+                            <GripVertical className="h-3 w-3" />
+                            Drag to reorder
+                        </div>
+                    ) : course.meetingUrl ? (
+                        <a
+                            href={course.meetingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-xs backdrop-blur-sm transition-transform hover:scale-105"
+                        >
+                            <Video className="h-3 w-3 animate-pulse" />
+                            Live Session
+                        </a>
+                    ) : (
+                        <div />
+                    )}
+                </div>
             </div>
 
             {/* Card Body */}
@@ -473,7 +739,7 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                         className="group/title block"
                         title={course.name}
                     >
-                        <h3 className="truncate text-base font-bold text-slate-900 dark:text-white transition-colors group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400">
+                        <h3 className="line-clamp-2 text-base font-bold text-slate-900 transition-colors group-hover/title:text-blue-600 dark:text-white dark:group-hover/title:text-blue-400">
                             {course.name}
                         </h3>
                     </Link>
@@ -486,15 +752,16 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                             <span
                                 key={idx}
                                 title={name}
-                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-white dark:ring-slate-900 shadow-sm ${avatarBgColors[idx % avatarBgColors.length]
-                                    }`}
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-white shadow-xs dark:ring-slate-900 ${
+                                    avatarBgColors[idx % avatarBgColors.length]
+                                }`}
                             >
                                 {initialOf(name)}
                             </span>
                         ))}
                         {instructors.length > 3 && (
                             <span
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 ring-2 ring-white dark:ring-slate-900 shadow-sm"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700 ring-2 ring-white shadow-xs dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-900"
                                 title={instructors.slice(3).join(", ")}
                             >
                                 +{instructors.length - 3}
@@ -502,22 +769,25 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
                         )}
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                             {instructors.length > 1 ? "Instructors" : "Instructor"}
                         </p>
-                        <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300" title={instructorText}>
+                        <p
+                            className="truncate text-xs font-medium text-slate-700 dark:text-slate-300"
+                            title={instructorText}
+                        >
                             {instructorText}
                         </p>
                     </div>
                 </div>
 
                 {/* Meta Stats Row */}
-                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
                         <Users className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                         {studentTotal.toLocaleString()} {studentTotal === 1 ? "learner" : "learners"}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         Active
                     </span>
@@ -525,29 +795,106 @@ export function CourseCard({ course, isHidden = false, canDrag = false, onToggle
             </div>
 
             {/* Card Footer Actions */}
-            <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 px-5 py-3">
+            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-5 py-3 dark:border-slate-800 dark:bg-slate-950/60">
                 <button
                     type="button"
-                    aria-label="View work"
+                    aria-label="View coursework"
                     onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/course/${course.id}?tab=coursework`);
                     }}
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
                 >
                     <ClipboardList className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                    View Work
+                    Coursework
                 </button>
+
                 <Link
                     href={`/course/${course.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 hover:shadow-sm"
                 >
                     Enter Course
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/card:translate-x-0.5" />
                 </Link>
             </div>
         </article>
+    );
+}
+
+interface CourseListRowProps {
+    course: HomeCourse;
+    onToggleHide: () => void;
+}
+
+function CourseListRow({ course, onToggleHide }: CourseListRowProps) {
+    const router = useRouter();
+    const studentTotal = course.studentCount ?? course.learnerCount ?? 0;
+
+    return (
+        <div
+            onClick={() => router.push(`/course/${course.id}`)}
+            className="group flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between"
+        >
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl shadow-xs"
+                    style={{
+                        background: `linear-gradient(135deg, ${course.headerColor} 0%, ${course.headerColor}dd 100%)`,
+                    }}
+                >
+                    {course.emoji}
+                </div>
+
+                <div className="min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            {course.subject || "Course"}
+                        </span>
+                        {course.meetingUrl && (
+                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                <Video className="h-3 w-3" />
+                                Live
+                            </span>
+                        )}
+                    </div>
+                    <h4 className="truncate text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                        {course.name}
+                    </h4>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                        {course.instructorName || "No instructor assigned"}
+                    </p>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 border-t border-slate-100 sm:border-t-0 sm:pt-0 dark:border-slate-800">
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{studentTotal.toLocaleString()}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/course/${course.id}?tab=coursework`);
+                        }}
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    >
+                        Coursework
+                    </button>
+                    <Link
+                        href={`/course/${course.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
+                    >
+                        <span>Enter</span>
+                        <ArrowRight className="h-3 w-3" />
+                    </Link>
+                </div>
+            </div>
+        </div>
     );
 }
 
