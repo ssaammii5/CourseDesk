@@ -385,6 +385,31 @@ export function AssignmentCreateView({
         return toLocalDatetimeInputValue(initial.deadlineUtc) || defaultCustomDate();
     });
 
+    const [datePart, timePart] = useMemo(() => {
+        if (!customDate) {
+            const def = defaultCustomDate();
+            return [def.split("T")[0], "23:59"];
+        }
+        const [d, t] = customDate.split("T");
+        return [d || defaultCustomDate().split("T")[0], t || "23:59"];
+    }, [customDate]);
+
+    const handleDateChange = (newDate: string) => {
+        if (!newDate) {
+            setCustomDate("");
+            return;
+        }
+        // Initial time is 11:59 PM (23:59) by default on any date
+        const time = timePart && timePart !== "00:00" ? timePart : "23:59";
+        setCustomDate(`${newDate}T${time}`);
+    };
+
+    const handleTimeChange = (newTime: string) => {
+        const time = newTime || "23:59";
+        const date = datePart || defaultCustomDate().split("T")[0];
+        setCustomDate(`${date}T${time}`);
+    };
+
     // Associated session
     const [selectedSessionId, setSelectedSessionId] = useState<number | "none">(
         initial?.sessionId ?? "none"
@@ -538,11 +563,10 @@ export function AssignmentCreateView({
                             <button
                                 type="button"
                                 onClick={() => submit("Assigned")}
-                                className={`inline-flex items-center gap-2 rounded-l-xl px-5 py-2.5 text-xs font-bold text-white transition-all ${
-                                    titleValid
+                                className={`inline-flex items-center gap-2 rounded-l-xl px-5 py-2.5 text-xs font-bold text-white transition-all ${titleValid
                                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 cursor-pointer active:scale-95"
                                         : "bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed"
-                                }`}
+                                    }`}
                             >
                                 <Sparkles className="h-3.5 w-3.5" />
                                 <span>{isEditing ? "Update Assignment" : "Assign & Publish"}</span>
@@ -551,11 +575,10 @@ export function AssignmentCreateView({
                                 type="button"
                                 aria-label="More assign options"
                                 onClick={() => setAssignMenuOpen((v) => !v)}
-                                className={`inline-flex items-center rounded-r-xl border-l border-white/20 px-2 py-2.5 text-white transition-colors ${
-                                    titleValid
+                                className={`inline-flex items-center rounded-r-xl border-l border-white/20 px-2 py-2.5 text-white transition-colors ${titleValid
                                         ? "bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
                                         : "bg-slate-400 dark:bg-slate-700 cursor-not-allowed"
-                                }`}
+                                    }`}
                             >
                                 <ChevronDown className="h-4 w-4" />
                             </button>
@@ -606,11 +629,10 @@ export function AssignmentCreateView({
                                 placeholder="Write down your assignment title..."
                                 onChange={(e) => setTitle(e.target.value)}
                                 onBlur={() => setTitleTouched(true)}
-                                className={`w-full rounded-2xl border px-4 py-3.5 text-base sm:text-lg font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
-                                    showTitleError
+                                className={`w-full rounded-2xl border px-4 py-3.5 text-base sm:text-lg font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${showTitleError
                                         ? "border-rose-400 bg-rose-50/50 dark:bg-rose-950/20 focus:border-rose-500 focus:ring-rose-500/20"
                                         : "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-indigo-500/20"
-                                }`}
+                                    }`}
                             />
                             {showTitleError && (
                                 <p className="mt-2 text-xs font-medium text-rose-600 dark:rose-400 flex items-center gap-1.5">
@@ -780,11 +802,10 @@ export function AssignmentCreateView({
                                             setAssignMode("all");
                                             setIsLearnerPickerOpen(false);
                                         }}
-                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${
-                                            assignMode === "all"
+                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${assignMode === "all"
                                                 ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 font-semibold shadow-xs"
                                                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                                        }`}
+                                            }`}
                                     >
                                         All learners
                                     </button>
@@ -794,11 +815,10 @@ export function AssignmentCreateView({
                                             setAssignMode("selective");
                                             setIsLearnerPickerOpen(true);
                                         }}
-                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${
-                                            assignMode === "selective"
+                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${assignMode === "selective"
                                                 ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 font-semibold shadow-xs"
                                                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                                        }`}
+                                            }`}
                                     >
                                         Selective
                                     </button>
@@ -808,11 +828,10 @@ export function AssignmentCreateView({
                                             setAssignMode("exclude");
                                             setIsLearnerPickerOpen(true);
                                         }}
-                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${
-                                            assignMode === "exclude"
+                                        className={`cursor-pointer rounded-xl py-2 px-1 text-center font-medium transition-all ${assignMode === "exclude"
                                                 ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-semibold shadow-xs"
                                                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                                        }`}
+                                            }`}
                                     >
                                         All except
                                     </button>
@@ -829,11 +848,10 @@ export function AssignmentCreateView({
                                         <button
                                             type="button"
                                             onClick={() => setIsLearnerPickerOpen((prev) => !prev)}
-                                            className={`w-full flex items-center justify-between gap-2.5 rounded-2xl border px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
-                                                assignMode === "selective"
+                                            className={`w-full flex items-center justify-between gap-2.5 rounded-2xl border px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer ${assignMode === "selective"
                                                     ? "border-indigo-200/80 dark:border-indigo-800/50 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
                                                     : "border-amber-200/80 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex items-center gap-2 truncate">
                                                 {assignMode === "selective" ? (
@@ -908,13 +926,12 @@ export function AssignmentCreateView({
                                                     return (
                                                         <label
                                                             key={student.id}
-                                                            className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-colors text-left select-none ${
-                                                                isChecked
+                                                            className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition-colors text-left select-none ${isChecked
                                                                     ? assignMode === "selective"
                                                                         ? "bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200"
                                                                         : "bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200"
                                                                     : "hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             <input
                                                                 type="checkbox"
@@ -992,11 +1009,10 @@ export function AssignmentCreateView({
                                 <button
                                     type="button"
                                     onClick={() => setPoints(points > 0 ? 0 : 100)}
-                                    className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
-                                        points === 0
+                                    className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${points === 0
                                             ? "border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
                                             : "border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400"
-                                    }`}
+                                        }`}
                                 >
                                     {points === 0 ? "✓ Ungraded" : "Mark as Ungraded"}
                                 </button>
@@ -1009,11 +1025,10 @@ export function AssignmentCreateView({
                                         key={p}
                                         type="button"
                                         onClick={() => setPoints(p)}
-                                        className={`rounded-xl py-2 text-xs font-semibold border transition-all cursor-pointer ${
-                                            points === p
+                                        className={`rounded-xl py-2 text-xs font-semibold border transition-all cursor-pointer ${points === p
                                                 ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700 shadow-2xs"
                                                 : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                        }`}
+                                            }`}
                                     >
                                         {p === 0 ? "Ungraded" : `Marks: ${p}`}
                                     </button>
@@ -1059,12 +1074,24 @@ export function AssignmentCreateView({
                                     <button
                                         key={opt.id}
                                         type="button"
-                                        onClick={() => setDue(opt.id)}
-                                        className={`rounded-xl py-2 px-2.5 text-xs font-semibold border transition-all text-center cursor-pointer ${
-                                            due === opt.id
+                                        onClick={() => {
+                                            setDue(opt.id);
+                                            if (opt.id === "custom") {
+                                                if (!customDate) {
+                                                    setCustomDate(defaultCustomDate());
+                                                } else {
+                                                    const [d] = customDate.split("T");
+                                                    const date = d || defaultCustomDate().split("T")[0];
+                                                    // Ensure initial time is 11:59 PM on any date
+                                                    const time = timePart && timePart !== "00:00" ? timePart : "23:59";
+                                                    setCustomDate(`${date}T${time}`);
+                                                }
+                                            }
+                                        }}
+                                        className={`rounded-xl py-2 px-2.5 text-xs font-semibold border transition-all text-center cursor-pointer ${due === opt.id
                                                 ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700 shadow-2xs"
                                                 : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                        }`}
+                                            }`}
                                     >
                                         {opt.label}
                                     </button>
@@ -1072,16 +1099,43 @@ export function AssignmentCreateView({
                             </div>
 
                             {due === "custom" && (
-                                <div className="space-y-1.5 pt-1">
-                                    <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                                        Select Date & Time
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        value={customDate}
-                                        onChange={(e) => setCustomDate(e.target.value)}
-                                        className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none"
-                                    />
+                                <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                <Calendar className="h-3 w-3 text-indigo-500" />
+                                                <span>Due Date</span>
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={datePart}
+                                                onChange={(e) => handleDateChange(e.target.value)}
+                                                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                                <Clock className="h-3 w-3 text-indigo-500" />
+                                                <span>Due Time (11:59 PM default)</span>
+                                            </label>
+                                            <input
+                                                type="time"
+                                                value={timePart || "23:59"}
+                                                onChange={(e) => handleTimeChange(e.target.value)}
+                                                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-indigo-500 focus:outline-none cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
+                                        <span>Initial time is 11:59 PM for any chosen date</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleTimeChange("23:59")}
+                                            className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold cursor-pointer"
+                                        >
+                                            Reset to 11:59 PM
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
@@ -1209,11 +1263,10 @@ export function AssignmentCreateView({
                                     return (
                                         <div
                                             key={t}
-                                            className={`group inline-flex items-center gap-1 rounded-xl border transition-all ${
-                                                isSelected
+                                            className={`group inline-flex items-center gap-1 rounded-xl border transition-all ${isSelected
                                                     ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700 shadow-2xs font-semibold"
                                                     : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40"
-                                            }`}
+                                                }`}
                                         >
                                             <button
                                                 type="button"
