@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+    BookOpen,
     Check,
     ChevronDown,
     ClipboardCheck,
@@ -13,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { getAssignmentsRequest, type AssignmentDto } from "@/lib/api/assignments";
+import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
 
 const REVIEWED_STORAGE_KEY = "coursedesk.instructor.reviewed_assignments.v1";
 
@@ -111,6 +113,9 @@ export function TodoView() {
     const [instructorTab, setInstructorTab] = useState<InstructorTab>("to-review");
     const [learnerTab, setLearnerTab] = useState<LearnerTab>("assigned");
     const [courseFilter, setCourseFilter] = useState("all");
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [courses, setCourses] = useState<CourseDto[]>([]);
     const [assignments, setAssignments] = useState<AssignmentDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [reviewedIds, setReviewedIds] = useState<number[]>([]);
@@ -127,20 +132,59 @@ export function TodoView() {
     }, []);
 
     useEffect(() => {
+        if (!dropdownOpen) return;
+        const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setDropdownOpen(false);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("touchstart", handleClickOutside);
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("touchstart", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [dropdownOpen]);
+
+    const loadData = () => {
         let cancelled = false;
         setLoading(true);
-        getAssignmentsRequest()
-            .then((data) => {
-                if (!cancelled) setAssignments(data);
+        Promise.all([
+            getMyCoursesRequest().catch(() => [] as CourseDto[]),
+            getAssignmentsRequest().catch(() => [] as AssignmentDto[]),
+        ])
+            .then(([coursesData, assignmentsData]) => {
+                if (cancelled) return;
+                setCourses(coursesData);
+                setAssignments(assignmentsData);
             })
             .catch(() => {
-                if (!cancelled) setAssignments([]);
+                if (cancelled) return;
+                setCourses([]);
+                setAssignments([]);
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
             });
         return () => {
             cancelled = true;
+        };
+    };
+
+    useEffect(() => {
+        const cleanup = loadData();
+        const handleCoursesUpdated = () => {
+            loadData();
+        };
+        window.addEventListener("coursedesk:courses-updated", handleCoursesUpdated);
+        return () => {
+            cleanup();
+            window.removeEventListener("coursedesk:courses-updated", handleCoursesUpdated);
         };
     }, []);
 
@@ -159,20 +203,35 @@ export function TodoView() {
     const toggleSection = (id: string) =>
         setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
 
-    // Course options for filter dropdown
+    // Course options for filter dropdown (all enrolled/instructed courses + any unique assignment courses)
     const courseOptions = useMemo(() => {
-        const set = new Set<string>();
-        for (const a of assignments) {
-            if (a.courseName) set.add(a.courseName);
+        const map = new Map<string, string>();
+        for (const c of courses) {
+            map.set(String(c.id), c.name);
         }
-        return Array.from(set);
-    }, [assignments]);
+        for (const a of assignments) {
+            if (a.courseName && !map.has(String(a.courseId))) {
+                map.set(String(a.courseId), a.courseName);
+            }
+        }
+        return Array.from(map.entries())
+            .map(([id, name]) => ({ id, name }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [courses, assignments]);
 
     // Filter assignments by selected course
     const filteredAssignments = useMemo(() => {
         if (courseFilter === "all") return assignments;
-        return assignments.filter((a) => a.courseName === courseFilter);
+        return assignments.filter(
+            (a) => String(a.courseId) === courseFilter || a.courseName === courseFilter,
+        );
     }, [assignments, courseFilter]);
+
+    const selectedCourseLabel = useMemo(() => {
+        if (courseFilter === "all") return "All courses";
+        const found = courseOptions.find((c) => c.id === courseFilter);
+        return found ? found.name : "All courses";
+    }, [courseFilter, courseOptions]);
 
     // Split assignments for instructor: To Review vs Reviewed
     const instructorToReview = useMemo(
@@ -347,20 +406,115 @@ export function TodoView() {
                         </p>
                     </div>
 
-                    <div className="relative w-full sm:max-w-xs">
-                        <select
-                            value={courseFilter}
-                            onChange={(e) => setCourseFilter(e.target.value)}
-                            className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-9 text-sm font-medium text-gray-800 shadow-sm focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    {/* Custom Course Filter Dropdown Button & Menu */}
+                    <div ref={dropdownRef} className="relative w-full sm:w-72">
+                        <button
+                            type="button"
+                            onClick={() => setDropdownOpen((v) => !v)}
+                            aria-expanded={dropdownOpen}
+                            aria-haspopup="listbox"
+                            className={`group flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border bg-white px-3.5 py-2.5 text-sm font-semibold shadow-xs transition-all hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:bg-slate-900 dark:hover:border-slate-600 dark:hover:bg-slate-800 ${
+                                dropdownOpen
+                                    ? "border-blue-500 ring-2 ring-blue-500/20 dark:border-blue-400"
+                                    : "border-slate-200 dark:border-slate-700"
+                            }`}
                         >
-                            <option value="all">All courses</option>
-                            {courseOptions.map((c) => (
-                                <option key={c} value={c} className="bg-white text-gray-900 dark:bg-slate-900 dark:text-slate-100">
-                                    {c}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
+                            <div className="flex min-w-0 items-center gap-2">
+                                <BookOpen className="h-4 w-4 shrink-0 text-slate-400 transition-colors group-hover:text-blue-600 dark:text-slate-400 dark:group-hover:text-blue-400" />
+                                <span className="truncate text-left text-slate-800 dark:text-slate-100">
+                                    {selectedCourseLabel}
+                                </span>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-1.5">
+                                {courseFilter === "all" ? (
+                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                        {assignments.length}
+                                    </span>
+                                ) : (
+                                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                        {filteredAssignments.length}
+                                    </span>
+                                )}
+                                <ChevronDown
+                                    className={`h-4 w-4 text-slate-400 transition-transform duration-200 dark:text-slate-400 ${
+                                        dropdownOpen ? "rotate-180 text-blue-600 dark:text-blue-400" : ""
+                                    }`}
+                                />
+                            </div>
+                        </button>
+
+                        {/* Floating Dropdown Menu */}
+                        {dropdownOpen && (
+                            <div
+                                role="listbox"
+                                className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl backdrop-blur-xl transition-all dark:border-slate-700 dark:bg-slate-900/95 sm:left-auto sm:right-0 sm:w-80"
+                            >
+                                <div className="max-h-64 overflow-y-auto space-y-0.5 overscroll-contain">
+                                    <button
+                                        type="button"
+                                        role="option"
+                                        aria-selected={courseFilter === "all"}
+                                        onClick={() => {
+                                            setCourseFilter("all");
+                                            setDropdownOpen(false);
+                                        }}
+                                        className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                                            courseFilter === "all"
+                                                ? "bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300"
+                                                : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                                        }`}
+                                    >
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <span className="truncate">All courses</span>
+                                            {courseFilter === "all" && (
+                                                <Check className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                                            )}
+                                        </div>
+                                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                            {assignments.length}
+                                        </span>
+                                    </button>
+
+                                    {courseOptions.map((c) => {
+                                        const count = assignments.filter(
+                                            (a) => String(a.courseId) === c.id || a.courseName === c.name,
+                                        ).length;
+                                        const isSelected = courseFilter === c.id;
+
+                                        return (
+                                            <button
+                                                key={c.id}
+                                                type="button"
+                                                role="option"
+                                                aria-selected={isSelected}
+                                                onClick={() => {
+                                                    setCourseFilter(c.id);
+                                                    setDropdownOpen(false);
+                                                }}
+                                                className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                                                    isSelected
+                                                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300"
+                                                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                                                }`}
+                                            >
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    <span className="truncate">{c.name}</span>
+                                                    {isSelected && (
+                                                        <Check className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                                                    )}
+                                                </div>
+                                                {count > 0 && (
+                                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                                        {count}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -478,12 +632,12 @@ export function TodoView() {
                                                                             </span>
                                                                             <span className="text-gray-500 dark:text-slate-400">Assigned</span>
                                                                         </div>
-                                                                        <div className="h-6 w-px bg-gray-200" />
+                                                                        <div className="h-6 w-px bg-gray-200 dark:bg-slate-750 dark:bg-slate-700" />
                                                                         <div className="text-center">
-                                                                            <span className="block text-sm font-bold text-[#137333]">
+                                                                            <span className="block text-sm font-bold text-[#137333] dark:text-emerald-400">
                                                                                 {assignment.gradedCount ?? 0}
                                                                             </span>
-                                                                            <span className="text-gray-500">Graded</span>
+                                                                            <span className="text-gray-500 dark:text-slate-400">Graded</span>
                                                                         </div>
                                                                     </div>
 
@@ -496,8 +650,8 @@ export function TodoView() {
                                                                                 : "Mark as reviewed"
                                                                         }
                                                                         className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${isReviewed
-                                                                            ? "border border-gray-300 text-gray-700 hover:bg-gray-100"
-                                                                            : "bg-[#e8f0fe] text-[#174ea6] hover:bg-[#d2e3fc]"
+                                                                            ? "border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                                                                            : "bg-[#e8f0fe] text-[#174ea6] hover:bg-[#d2e3fc] dark:bg-blue-950/70 dark:text-blue-300 dark:hover:bg-blue-900/60"
                                                                             }`}
                                                                     >
                                                                         {isReviewed ? (
@@ -517,15 +671,15 @@ export function TodoView() {
                                                                 <div className="flex items-center gap-2 text-xs">
                                                                     <span
                                                                         className={`rounded-full px-3 py-1 font-medium ${assignment.mySubmissionStatus === "Graded"
-                                                                            ? "bg-green-100 text-[#137333]"
+                                                                            ? "bg-green-100 text-[#137333] dark:bg-emerald-950/60 dark:text-emerald-300"
                                                                             : assignment.mySubmissionStatus === "Submitted"
-                                                                                ? "bg-blue-100 text-[#174ea6]"
-                                                                                : "bg-gray-100 text-gray-700"
+                                                                                ? "bg-blue-100 text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300"
+                                                                                : "bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300"
                                                                             }`}
                                                                     >
                                                                         {assignment.mySubmissionStatus ?? "Assigned"}
                                                                     </span>
-                                                                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                                                                    <ExternalLink className="h-4 w-4 text-gray-400 dark:text-slate-400" />
                                                                 </div>
                                                             )}
                                                         </div>
