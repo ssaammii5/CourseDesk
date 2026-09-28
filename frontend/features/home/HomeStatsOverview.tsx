@@ -100,7 +100,7 @@ export function HomeStatsOverview({
 }: HomeStatsOverviewProps) {
     if (isInstructor) {
         return (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                     title="Active Courses"
                     value={courseCount}
@@ -165,7 +165,7 @@ export function HomeStatsOverview({
 
     // Learner Overview
     return (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
                 title="Enrolled Courses"
                 value={courseCount}
