@@ -5,6 +5,7 @@ import {
     ChevronDown,
     ChevronUp,
     CornerDownRight,
+    EllipsisVertical,
     Loader2,
     MessageSquare,
     Send,
@@ -75,6 +76,7 @@ export function AnnouncementComments({
     const [commentText, setCommentText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [activeMenuCommentId, setActiveMenuCommentId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -199,10 +201,9 @@ export function AnnouncementComments({
                                 const authorName = comment.userName || "Participant";
                                 const isInstructor =
                                     comment.userRole === "Instructor" || comment.userRole === "Admin";
-                                const canDelete =
-                                    canManage ||
-                                    user?.role === "Admin" ||
-                                    (user?.id && user.id === comment.userId);
+                                const canDelete = Boolean(
+                                    user?.id && user.id === comment.userId
+                                );
                                 const { relative, exact } = formatRelativeTime(comment.createdAtUtc);
 
                                 return (
@@ -242,19 +243,52 @@ export function AnnouncementComments({
                                         </div>
 
                                         {canDelete && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeleteComment(comment.id)}
-                                                disabled={deletingId === comment.id}
-                                                title="Delete comment"
-                                                className="opacity-0 transition-opacity group-hover/comment:opacity-100 flex h-6 w-6 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 disabled:opacity-50"
-                                            >
-                                                {deletingId === comment.id ? (
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                ) : (
-                                                    <Trash2 className="h-3 w-3" />
+                                            <div className="relative shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setActiveMenuCommentId((prev) =>
+                                                            prev === comment.id ? null : comment.id
+                                                        )
+                                                    }
+                                                    disabled={deletingId === comment.id}
+                                                    title="Comment options"
+                                                    className={`flex h-6 w-6 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700/60 dark:hover:text-slate-300 disabled:opacity-50 transition-opacity ${
+                                                        activeMenuCommentId === comment.id
+                                                            ? "opacity-100 bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300"
+                                                            : "opacity-0 group-hover/comment:opacity-100"
+                                                    }`}
+                                                >
+                                                    {deletingId === comment.id ? (
+                                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                                    ) : (
+                                                        <EllipsisVertical className="h-3.5 w-3.5" />
+                                                    )}
+                                                </button>
+
+                                                {activeMenuCommentId === comment.id && (
+                                                    <>
+                                                        <div
+                                                            className="fixed inset-0 z-30"
+                                                            onClick={() => setActiveMenuCommentId(null)}
+                                                        />
+                                                        <div className="absolute right-0 top-7 z-40 w-32 rounded-xl border border-slate-200 bg-white p-1 shadow-lg backdrop-blur-md dark:border-slate-700 dark:bg-slate-800 animate-in fade-in zoom-in-95 duration-100">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setActiveMenuCommentId(null);
+                                                                    handleDeleteComment(comment.id);
+                                                                }}
+                                                                disabled={deletingId === comment.id}
+                                                                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                                <span>Delete</span>
+                                                            </button>
+                                                        </div>
+                                                    </>
                                                 )}
-                                            </button>
+                                            </div>
                                         )}
                                     </div>
                                 );

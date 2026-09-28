@@ -355,25 +355,8 @@ def delete_announcement_comment(
     if not comment:
         raise HTTPException(404, detail="Comment not found")
 
-    announcement = db.scalar(
-        select(AnnouncementModel).where(AnnouncementModel.id == comment.announcement_id)
-    )
-    if not announcement:
-        raise HTTPException(404, detail="Announcement not found")
-
-    course = db.scalar(
-        select(CourseModel)
-        .options(selectinload(CourseModel.instructors))
-        .where(CourseModel.id == announcement.course_id)
-    )
-
-    can_delete = (
-        user.role == "Admin"
-        or comment.user_id == user.id
-        or (course and _can_manage_course(user, course))
-    )
-    if not can_delete:
-        raise HTTPException(403, detail="You cannot delete this comment")
+    if comment.user_id != user.id:
+        raise HTTPException(403, detail="Only the person who commented can remove this comment")
 
     db.delete(comment)
     db.commit()
