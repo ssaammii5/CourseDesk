@@ -521,6 +521,8 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     people={details.people}
                     items={classwork}
                     submissions={submissions}
+                    courseId={details.courseId}
+                    courseTitle={title}
                 />
             )}
         </div>
