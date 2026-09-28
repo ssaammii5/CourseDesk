@@ -102,3 +102,23 @@ export function updateCourseRequest(id: number, payload: CoursePayload): Promise
 export function deleteCourseRequest(id: number): Promise<void> {
     return apiFetch<void>(`/api/courses/${id}`, { method: "DELETE" });
 }
+
+export interface CoursePreferencesDto {
+    hiddenCourseIds: number[];
+    courseOrder: number[];
+    sortMode: "custom" | "alphabetical" | "students";
+    viewMode: "grid" | "list";
+}
+
+export function getCoursePreferencesRequest(): Promise<CoursePreferencesDto> {
+    return apiFetch<CoursePreferencesDto>("/api/courses/preferences", { method: "GET" });
+}
+
+export function updateCoursePreferencesRequest(
+    payload: CoursePreferencesDto,
+): Promise<CoursePreferencesDto> {
+    return apiFetch<CoursePreferencesDto>("/api/courses/preferences", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}

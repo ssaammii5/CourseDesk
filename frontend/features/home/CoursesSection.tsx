@@ -24,7 +24,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
+import {
+    getMyCoursesRequest,
+    getCoursePreferencesRequest,
+    updateCoursePreferencesRequest,
+    type CourseDto,
+} from "@/lib/api/courses";
 import { avatarClassFor, emojiFor, headerColorFor } from "@/lib/utils/theme";
 import { initialOf } from "@/lib/utils/format";
 import type { HomeCourse } from "@/types";
@@ -122,26 +127,71 @@ export function CoursesSection() {
     const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-    // Fetch user courses and restore layout
+    const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Fetch user courses and restore layout from backend + local cache
     useEffect(() => {
         let cancelled = false;
-        const load = () => {
-            getMyCoursesRequest()
-                .then((dtos) => {
-                    if (cancelled) return;
-                    const mapped = dtos.map(mapCourseToHomeCourse);
-                    setHomeCourses(mapped);
-                    const loaded = loadLayout(mapped.map((c) => c.id));
-                    setLayout(loaded);
-                    if (loaded.view) setViewMode(loaded.view);
-                    setHydrated(true);
-                })
-                .catch(() => {
-                    if (!cancelled) {
-                        setHomeCourses([]);
-                        setHydrated(true);
+        const load = async () => {
+            try {
+                const [dtos, backendPref] = await Promise.all([
+                    getMyCoursesRequest(),
+                    getCoursePreferencesRequest().catch(() => null),
+                ]);
+                if (cancelled) return;
+                const mapped = dtos.map(mapCourseToHomeCourse);
+                setHomeCourses(mapped);
+
+                const courseIds = mapped.map((c) => c.id);
+                const localLayout = loadLayout(courseIds);
+
+                let finalLayout = localLayout;
+                if (backendPref) {
+                    const knownIds = new Set(courseIds);
+                    const backendOrder = Array.isArray(backendPref.courseOrder)
+                        ? backendPref.courseOrder.filter((id): id is number => typeof id === "number" && knownIds.has(id))
+                        : [];
+                    const missingIds = courseIds.filter((id) => !backendOrder.includes(id));
+                    const backendHidden = Array.isArray(backendPref.hiddenCourseIds)
+                        ? backendPref.hiddenCourseIds.filter((id): id is number => typeof id === "number" && knownIds.has(id))
+                        : [];
+
+                    // If backend preferences exist, use them; if empty, fallback to localLayout
+                    if (
+                        backendOrder.length > 0 ||
+                        backendHidden.length > 0 ||
+                        backendPref.sortMode !== "custom" ||
+                        backendPref.viewMode !== "grid"
+                    ) {
+                        finalLayout = {
+                            order: [...backendOrder, ...missingIds],
+                            hiddenIds: backendHidden,
+                            sort:
+                                backendPref.sortMode === "alphabetical" || backendPref.sortMode === "students"
+                                    ? backendPref.sortMode
+                                    : "custom",
+                            view: backendPref.viewMode === "list" ? "list" : "grid",
+                        };
+                    } else if (localLayout.hiddenIds.length > 0 || localLayout.order.length > 0) {
+                        // Migrate local preferences to backend
+                        updateCoursePreferencesRequest({
+                            hiddenCourseIds: localLayout.hiddenIds,
+                            courseOrder: localLayout.order,
+                            sortMode: localLayout.sort,
+                            viewMode: localLayout.view ?? "grid",
+                        }).catch(() => {});
                     }
-                });
+                }
+
+                setLayout(finalLayout);
+                if (finalLayout.view) setViewMode(finalLayout.view);
+                setHydrated(true);
+            } catch {
+                if (!cancelled) {
+                    setHomeCourses([]);
+                    setHydrated(true);
+                }
+            }
         };
 
         load();
@@ -162,6 +212,27 @@ export function CoursesSection() {
         } catch {
             // Storage unavailable
         }
+
+        // Sync to backend database (debounced to prevent excessive writes during drag & drop)
+        if (syncTimeoutRef.current) {
+            clearTimeout(syncTimeoutRef.current);
+        }
+        syncTimeoutRef.current = setTimeout(() => {
+            updateCoursePreferencesRequest({
+                hiddenCourseIds: layout.hiddenIds,
+                courseOrder: layout.order,
+                sortMode: layout.sort,
+                viewMode,
+            }).catch(() => {
+                // Silently fallback to local storage
+            });
+        }, 400);
+
+        return () => {
+            if (syncTimeoutRef.current) {
+                clearTimeout(syncTimeoutRef.current);
+            }
+        };
     }, [hydrated, layout, viewMode]);
 
     const hiddenSet = useMemo(() => new Set(layout.hiddenIds), [layout.hiddenIds]);
@@ -606,21 +677,24 @@ export function CourseCard({
         >
             {/* Header Banner */}
             <div
-                className="relative flex h-28 flex-col justify-between overflow-hidden px-5 py-3.5"
+                className="relative flex h-28 flex-col justify-between rounded-t-2xl px-5 py-3.5"
                 style={{
                     background: `linear-gradient(135deg, ${course.headerColor} 0%, ${course.headerColor}e6 100%)`,
                 }}
             >
-                {/* Decorative ambient radial orb */}
-                <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-xl" />
+                {/* Decorative background with clipping */}
+                <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-t-2xl">
+                    {/* Decorative ambient radial orb */}
+                    <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-xl" />
 
-                {/* Watermark emoji */}
-                <span
-                    aria-hidden
-                    className="pointer-events-none absolute -bottom-2 right-3 select-none text-5xl opacity-20 transition-transform duration-300 group-hover/card:scale-115"
-                >
-                    {course.emoji}
-                </span>
+                    {/* Watermark emoji */}
+                    <span
+                        aria-hidden
+                        className="absolute -bottom-2 right-3 select-none text-5xl opacity-20 transition-transform duration-300 group-hover/card:scale-115"
+                    >
+                        {course.emoji}
+                    </span>
+                </div>
 
                 {/* Top Row: Tag / Category & Menu */}
                 <div className="relative z-10 flex items-center justify-between">
@@ -628,7 +702,7 @@ export function CourseCard({
                         {course.subject || "Course"}
                     </span>
 
-                    <div ref={menuRef} className="relative z-20" onClick={(e) => e.stopPropagation()}>
+                    <div ref={menuRef} className="relative z-30" onClick={(e) => e.stopPropagation()}>
                         <button
                             type="button"
                             aria-label="More options"
@@ -643,7 +717,27 @@ export function CourseCard({
                         </button>
 
                         {menuOpen && (
-                            <div className="absolute right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-800">
+                            <div className="absolute right-0 top-full z-50 mt-1.5 w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-2xl dark:border-slate-700 dark:bg-slate-800 animate-in fade-in zoom-in-95 duration-100">
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setMenuOpen(false);
+                                        onToggleHide();
+                                    }}
+                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-semibold text-slate-800 transition-colors hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-700"
+                                >
+                                    {isHidden ? (
+                                        <Eye className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                                    ) : (
+                                        <EyeOff className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                                    )}
+                                    {isHidden ? "Unhide Course" : "Hide Course"}
+                                </button>
+
+                                <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
+
                                 <button
                                     type="button"
                                     onClick={(e) => {
@@ -679,26 +773,6 @@ export function CourseCard({
                                 >
                                     <Copy className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                                     {copied ? "Link Copied!" : "Copy Course Link"}
-                                </button>
-
-                                <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
-
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setMenuOpen(false);
-                                        onToggleHide();
-                                    }}
-                                    className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-                                >
-                                    {isHidden ? (
-                                        <Eye className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                    ) : (
-                                        <EyeOff className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                    )}
-                                    {isHidden ? "Unhide Course" : "Hide Course"}
                                 </button>
                             </div>
                         )}
@@ -892,6 +966,18 @@ function CourseListRow({ course, onToggleHide }: CourseListRowProps) {
                         <span>Enter</span>
                         <ArrowRight className="h-3 w-3" />
                     </Link>
+                    <button
+                        type="button"
+                        title="Hide course"
+                        aria-label="Hide course"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleHide();
+                        }}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                    >
+                        <EyeOff className="h-3.5 w-3.5" />
+                    </button>
                 </div>
             </div>
         </div>

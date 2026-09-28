@@ -30,6 +30,9 @@ class UserModel(Base):
     instructor_details: Mapped[Optional["InstructorDetailsModel"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    course_preferences: Mapped[Optional["UserCoursePreferenceModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "UserCoursePreferenceModel", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class LearnerDetailsModel(Base):

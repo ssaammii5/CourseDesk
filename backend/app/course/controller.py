@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -5,10 +7,11 @@ from sqlalchemy.orm import Session, selectinload
 from app.course.dtos import (
     CoursePeopleResponseSchema,
     CoursePersonSchema,
+    CoursePreferencesSchema,
     CourseResponseSchema,
     CourseSchema,
 )
-from app.course.models import CourseModel
+from app.course.models import CourseModel, UserCoursePreferenceModel
 from app.user.models import UserModel
 
 
@@ -190,3 +193,54 @@ def delete_course(course_id: int, db: Session) -> None:
         raise HTTPException(404, detail="Course id is incorrect")
     db.delete(course)
     db.commit()
+
+
+def get_user_course_preferences(user: UserModel, db: Session) -> CoursePreferencesSchema:
+    pref = db.scalar(
+        select(UserCoursePreferenceModel).where(UserCoursePreferenceModel.user_id == user.id)
+    )
+    if not pref:
+        return CoursePreferencesSchema(
+            hidden_course_ids=[],
+            course_order=[],
+            sort_mode="custom",
+            view_mode="grid",
+        )
+    return CoursePreferencesSchema(
+        hidden_course_ids=pref.hidden_course_ids or [],
+        course_order=pref.course_order or [],
+        sort_mode=pref.sort_mode or "custom",
+        view_mode=pref.view_mode or "grid",
+    )
+
+
+def update_user_course_preferences(
+    user: UserModel, body: CoursePreferencesSchema, db: Session
+) -> CoursePreferencesSchema:
+    pref = db.scalar(
+        select(UserCoursePreferenceModel).where(UserCoursePreferenceModel.user_id == user.id)
+    )
+    if not pref:
+        pref = UserCoursePreferenceModel(
+            user_id=user.id,
+            hidden_course_ids=body.hidden_course_ids,
+            course_order=body.course_order,
+            sort_mode=body.sort_mode,
+            view_mode=body.view_mode,
+        )
+        db.add(pref)
+    else:
+        pref.hidden_course_ids = body.hidden_course_ids
+        pref.course_order = body.course_order
+        pref.sort_mode = body.sort_mode
+        pref.view_mode = body.view_mode
+        pref.updated_at_utc = datetime.now(UTC)
+
+    db.commit()
+    db.refresh(pref)
+    return CoursePreferencesSchema(
+        hidden_course_ids=pref.hidden_course_ids or [],
+        course_order=pref.course_order or [],
+        sort_mode=pref.sort_mode or "custom",
+        view_mode=pref.view_mode or "grid",
+    )

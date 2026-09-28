@@ -4,6 +4,7 @@ from app.assignment.dtos import AssignmentResponseSchema, TopicDeleteSchema, Top
 from app.course import controller
 from app.course.dtos import (
     CoursePeopleResponseSchema,
+    CoursePreferencesSchema,
     CourseResponseSchema,
     CourseSchema,
 )
@@ -22,6 +23,20 @@ def get_all_courses(db: DbSession, _admin: IsAdmin):
 @course_routes.get("/my", response_model=list[CourseResponseSchema], status_code=status.HTTP_200_OK)
 def get_my_courses(db: DbSession, user: IsAuthenticated):
     return controller.get_my_courses(user, db)
+
+
+@course_routes.get(
+    "/preferences", response_model=CoursePreferencesSchema, status_code=status.HTTP_200_OK
+)
+def get_course_preferences(db: DbSession, user: IsAuthenticated):
+    return controller.get_user_course_preferences(user, db)
+
+
+@course_routes.put(
+    "/preferences", response_model=CoursePreferencesSchema, status_code=status.HTTP_200_OK
+)
+def update_course_preferences(body: CoursePreferencesSchema, db: DbSession, user: IsAuthenticated):
+    return controller.update_user_course_preferences(user, body, db)
 
 
 @course_routes.post("", response_model=CourseResponseSchema, status_code=status.HTTP_201_CREATED)

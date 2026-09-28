@@ -60,3 +60,10 @@ class CoursePeopleResponseSchema(CamelModel):
     learners: list[CoursePersonSchema] = []
     teachers: list[CoursePersonSchema] = []
     students: list[CoursePersonSchema] = []
+
+
+class CoursePreferencesSchema(CamelModel):
+    hidden_course_ids: list[int] = []
+    course_order: list[int] = []
+    sort_mode: str = "custom"
+    view_mode: str = "grid"

@@ -1,6 +1,7 @@
+from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import Column, ForeignKey, Table, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.user.models import UserModel
@@ -56,3 +57,21 @@ class CourseModel(Base):
     announcements: Mapped[list["AnnouncementModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         back_populates="course", cascade="all, delete-orphan"
     )
+
+
+class UserCoursePreferenceModel(Base):
+    __tablename__: str = "user_course_preference_table"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_table.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    hidden_course_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
+    course_order: Mapped[list[int]] = mapped_column(JSON, default=list)
+    sort_mode: Mapped[str] = mapped_column(default="custom")
+    view_mode: Mapped[str] = mapped_column(default="grid")
+    updated_at_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    user: Mapped["UserModel"] = relationship(back_populates="course_preferences")
