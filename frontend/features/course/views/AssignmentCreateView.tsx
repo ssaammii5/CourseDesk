@@ -53,14 +53,14 @@ export interface AssignmentCreateViewProps {
     onTopicDeleted?: (deletedName: string, fallbackName: string) => void;
 }
 
-const DEFAULT_TOPICS = [
+const DEFAULT_FALLBACK_TOPICS = ["General"];
+const LEGACY_SAMPLE_TOPICS = new Set([
     "Research & Paper",
     "Cryptography Labs",
     "Cryptography Theory",
     "Software Security",
     "Examinations",
-    "General",
-];
+]);
 
 const POINT_PRESETS = [100, 50, 30, 25, 10, 0];
 type DueOption = "none" | "tomorrow" | "nextweek" | "custom";
@@ -116,7 +116,7 @@ export function AssignmentCreateView({
     onSubmit,
     courseId,
     sessions = [],
-    existingTopics = DEFAULT_TOPICS,
+    existingTopics = DEFAULT_FALLBACK_TOPICS,
     onTopicRenamed,
     onTopicDeleted,
 }: AssignmentCreateViewProps) {
@@ -129,18 +129,39 @@ export function AssignmentCreateView({
 
     // Dynamic Topic Management
     const [topicList, setTopicList] = useState<string[]>(() => {
-        let saved: string[] = [];
+        let saved: string[] | null = null;
+        let deleted: string[] = [];
         if (typeof window !== "undefined" && courseId) {
             try {
                 const raw = localStorage.getItem(`coursedesk_topics_${courseId}`);
                 if (raw) saved = JSON.parse(raw);
+                const rawDel = localStorage.getItem(`coursedesk_deleted_topics_${courseId}`);
+                if (rawDel) deleted = JSON.parse(rawDel);
             } catch {
                 // ignore
             }
         }
+        const deletedSet = new Set(deleted);
+        const existingSet = new Set((existingTopics || []).filter(Boolean));
+
+        // Base topics from saved custom list or currently existing topics in course
+        const sourceList = saved ?? Array.from(new Set(["General", ...(existingTopics || [])]));
+
+        // Filter out deleted topics and legacy demo topics that are not used by any assignment
         const combined = Array.from(
-            new Set([...DEFAULT_TOPICS, ...(existingTopics || []), ...saved, initial?.topic || ""])
-        ).filter(Boolean);
+            new Set([...sourceList, initial?.topic || "General"])
+        ).filter((t) => {
+            if (!t) return false;
+            if (deletedSet.has(t)) return false;
+            if (LEGACY_SAMPLE_TOPICS.has(t) && !existingSet.has(t) && initial?.topic !== t) {
+                return false;
+            }
+            return true;
+        });
+
+        if (!combined.includes("General")) {
+            combined.unshift("General");
+        }
         return combined;
     });
 
@@ -165,6 +186,12 @@ export function AssignmentCreateView({
             if (typeof window !== "undefined" && courseId) {
                 try {
                     localStorage.setItem(`coursedesk_topics_${courseId}`, JSON.stringify(nextList));
+                    const rawDel = localStorage.getItem(`coursedesk_deleted_topics_${courseId}`);
+                    if (rawDel) {
+                        const delList: string[] = JSON.parse(rawDel);
+                        const nextDel = delList.filter((d) => d !== trimmed);
+                        localStorage.setItem(`coursedesk_deleted_topics_${courseId}`, JSON.stringify(nextDel));
+                    }
                 } catch {
                     // ignore
                 }
@@ -202,6 +229,12 @@ export function AssignmentCreateView({
             if (typeof window !== "undefined" && courseId) {
                 try {
                     localStorage.setItem(`coursedesk_topics_${courseId}`, JSON.stringify(nextList));
+                    const rawDel = localStorage.getItem(`coursedesk_deleted_topics_${courseId}`);
+                    const delList: string[] = rawDel ? JSON.parse(rawDel) : [];
+                    if (!delList.includes(oldName)) {
+                        delList.push(oldName);
+                        localStorage.setItem(`coursedesk_deleted_topics_${courseId}`, JSON.stringify(delList));
+                    }
                 } catch {
                     // ignore
                 }
@@ -237,6 +270,12 @@ export function AssignmentCreateView({
             if (typeof window !== "undefined" && courseId) {
                 try {
                     localStorage.setItem(`coursedesk_topics_${courseId}`, JSON.stringify(nextList));
+                    const rawDel = localStorage.getItem(`coursedesk_deleted_topics_${courseId}`);
+                    const delList: string[] = rawDel ? JSON.parse(rawDel) : [];
+                    if (!delList.includes(topicToDelete)) {
+                        delList.push(topicToDelete);
+                        localStorage.setItem(`coursedesk_deleted_topics_${courseId}`, JSON.stringify(delList));
+                    }
                 } catch {
                     // ignore
                 }

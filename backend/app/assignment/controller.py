@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from fastapi import HTTPException, UploadFile
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.assignment.dtos import (
@@ -351,11 +351,14 @@ def rename_topic(
     if not old_clean or not new_clean:
         raise HTTPException(400, detail="Topic names cannot be empty")
 
-    # Update all assignments in this course where topic matches old_name
+    # Update all assignments in this course where topic matches old_clean
     assignments = db.scalars(
         select(AssignmentModel).where(
             AssignmentModel.course_id == course_id,
-            AssignmentModel.topic == old_clean,
+            or_(
+                AssignmentModel.topic == old_clean,
+                func.trim(func.lower(AssignmentModel.topic)) == old_clean.lower(),
+            ),
         )
     ).all()
     for a in assignments:
@@ -366,7 +369,10 @@ def rename_topic(
     sessions = db.scalars(
         select(SessionModel).where(
             SessionModel.course_id == course_id,
-            SessionModel.topic == old_clean,
+            or_(
+                SessionModel.topic == old_clean,
+                func.trim(func.lower(SessionModel.topic)) == old_clean.lower(),
+            ),
         )
     ).all()
     for s in sessions:
@@ -405,7 +411,10 @@ def delete_topic(
     assignments = db.scalars(
         select(AssignmentModel).where(
             AssignmentModel.course_id == course_id,
-            AssignmentModel.topic == target,
+            or_(
+                AssignmentModel.topic == target,
+                func.trim(func.lower(AssignmentModel.topic)) == target.lower(),
+            ),
         )
     ).all()
     for a in assignments:
@@ -416,7 +425,10 @@ def delete_topic(
     sessions = db.scalars(
         select(SessionModel).where(
             SessionModel.course_id == course_id,
-            SessionModel.topic == target,
+            or_(
+                SessionModel.topic == target,
+                func.trim(func.lower(SessionModel.topic)) == target.lower(),
+            ),
         )
     ).all()
     for s in sessions:

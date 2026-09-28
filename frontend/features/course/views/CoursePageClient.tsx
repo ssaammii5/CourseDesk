@@ -444,12 +444,14 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         setClasswork((prev) =>
             prev.map((cw) => (cw.topic === oldName ? { ...cw, topic: newName } : cw))
         );
+        void refreshCoursework();
     };
 
     const handleTopicDeleted = (deletedName: string, fallbackName: string) => {
         setClasswork((prev) =>
             prev.map((cw) => (cw.topic === deletedName ? { ...cw, topic: fallbackName } : cw))
         );
+        void refreshCoursework();
     };
 
     if (editorOpen)
