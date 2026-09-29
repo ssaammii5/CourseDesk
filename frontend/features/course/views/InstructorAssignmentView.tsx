@@ -311,7 +311,7 @@ export function InstructorAssignmentView({
                                 {submissions.length}
                             </span>
                             {tab === "learner-work" && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
                             )}
                         </button>
 
@@ -326,7 +326,7 @@ export function InstructorAssignmentView({
                             <MessageSquare className="h-4 w-4" />
                             Private comments
                             {tab === "private-comments" && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
                             )}
                         </button>
 
@@ -341,7 +341,7 @@ export function InstructorAssignmentView({
                             <FileText className="h-4 w-4" />
                             Instructions
                             {tab === "instructions" && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
+                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
                             )}
                         </button>
                     </nav>
@@ -414,7 +414,7 @@ export function InstructorAssignmentView({
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search learner name or ID…"
-                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
+                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] dark:focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-[#1a73e8] dark:focus:ring-blue-500"
                             />
                         </div>
 
@@ -661,7 +661,7 @@ export function InstructorAssignmentView({
                                                                 }))
                                                             }
                                                             placeholder="Add qualitative feedback…"
-                                                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-gray-800 dark:text-slate-200 focus:border-[#1a73e8] focus:outline-none"
+                                                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-gray-800 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] dark:focus:border-blue-500 focus:outline-none"
                                                         />
                                                     </div>
 
@@ -671,8 +671,8 @@ export function InstructorAssignmentView({
                                                             disabled={savingGradeId === sub.id}
                                                             onClick={() => handleSaveGrade(sub.id)}
                                                             className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold text-white transition-colors ${savedSuccessId === sub.id
-                                                                ? "bg-[#137333]"
-                                                                : "bg-[#1a73e8] hover:bg-[#1554b5]"
+                                                                ? "bg-[#137333] dark:bg-emerald-600"
+                                                                : "bg-[#1a73e8] hover:bg-[#1554b5] dark:bg-blue-600 dark:hover:bg-blue-500"
                                                                 }`}
                                                         >
                                                             {savedSuccessId === sub.id ? (
@@ -771,7 +771,7 @@ export function InstructorAssignmentView({
                                                 placeholder="Search learner..."
                                                 value={commentLearnerSearch}
                                                 onChange={(e) => setCommentLearnerSearch(e.target.value)}
-                                                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none"
+                                                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] dark:focus:border-blue-500 focus:outline-none"
                                             />
                                         </div>
                                     </div>
@@ -797,7 +797,7 @@ export function InstructorAssignmentView({
                                                         onClick={() => setSelectedLearnerId(lId ?? null)}
                                                         className={`w-full text-left p-3.5 flex items-center gap-3 transition-colors cursor-pointer ${
                                                             isSelected
-                                                                ? "bg-blue-50/90 dark:bg-blue-950/60 border-l-4 border-l-[#1a73e8]"
+                                                                ? "bg-blue-50/90 dark:bg-blue-950/60 border-l-4 border-l-[#1a73e8] dark:border-l-blue-500"
                                                                 : "hover:bg-gray-100/70 dark:hover:bg-slate-800/60 border-l-4 border-l-transparent"
                                                         }`}
                                                     >

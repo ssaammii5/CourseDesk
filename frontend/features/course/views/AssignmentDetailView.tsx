@@ -706,7 +706,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 !readOnly && !turnedIn && !isMissed && !isGraded && (
                                     <div
                                         onClick={openFilePicker}
-                                        className="mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-5 text-center cursor-pointer transition-colors hover:border-blue-400 hover:bg-blue-50/40 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-blue-500"
+                                        className="mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-5 text-center cursor-pointer transition-colors hover:border-blue-400 hover:bg-blue-50/40 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-blue-500 dark:hover:bg-blue-950/30"
                                     >
                                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-2xs dark:bg-slate-800 text-blue-600 dark:text-blue-400 mb-2">
                                             <UploadCloud className="h-5 w-5" />
@@ -736,7 +736,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                         type="button"
                                         disabled={uploading || submittingWork}
                                         onClick={() => setAddMenuOpen((v) => !v)}
-                                        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-800 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750"
+                                        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-800 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700"
                                     >
                                         <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                         <span>Add or Create</span>
@@ -745,11 +745,11 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                     {addMenuOpen && (
                                         <>
                                             <div className="fixed inset-0 z-20" onClick={() => setAddMenuOpen(false)} />
-                                            <div className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-850">
+                                            <div className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-800">
                                                 <button
                                                     type="button"
                                                     onClick={openFilePicker}
-                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-800 hover:bg-slate-100/80 transition-colors dark:text-slate-200 dark:hover:bg-slate-800"
+                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-800 hover:bg-slate-100/80 transition-colors dark:text-slate-200 dark:hover:bg-slate-700"
                                                 >
                                                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
                                                         <Paperclip className="h-3.5 w-3.5" />
@@ -762,7 +762,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                                 <button
                                                     type="button"
                                                     onClick={openLinkDialog}
-                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-800 hover:bg-slate-100/80 transition-colors dark:text-slate-200 dark:hover:bg-slate-800"
+                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-800 hover:bg-slate-100/80 transition-colors dark:text-slate-200 dark:hover:bg-slate-700"
                                                 >
                                                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
                                                         <Link2 className="h-3.5 w-3.5" />
@@ -802,7 +802,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                             type="button"
                                             disabled={submittingWork}
                                             onClick={() => setUnsubmitOpen(true)}
-                                            className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-750"
+                                            className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                                         >
                                             {submittingWork ? "Updating…" : "Unsubmit"}
                                         </button>
@@ -885,7 +885,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             </p>
 
                             {attachments.length > 0 && (
-                                <div className="mt-4 max-h-48 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/70 p-3 space-y-2 dark:border-slate-800 dark:bg-slate-850">
+                                <div className="mt-4 max-h-48 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/70 p-3 space-y-2 dark:border-slate-800 dark:bg-slate-800/60 custom-scrollbar">
                                     {attachments.map((att) => {
                                         const visual = getFileVisual(att.title, att.kind);
                                         const Icon = visual.icon;
@@ -904,7 +904,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             )}
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-850/60">
+                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/40">
                             <button
                                 type="button"
                                 onClick={() => setTurnInOpen(false)}
@@ -940,7 +940,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             </p>
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-850/60">
+                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/40">
                             <button
                                 type="button"
                                 onClick={() => setUnsubmitOpen(false)}
@@ -1001,7 +1001,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-850/60">
+                        <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/40">
                             <button
                                 type="button"
                                 onClick={closeLinkDialog}
@@ -1049,7 +1049,7 @@ function ReferenceMaterialCard({
     const fileUrl = rawUrl?.startsWith("http") ? rawUrl : rawUrl ? `${API_URL}${rawUrl}` : undefined;
 
     return (
-        <div className="group flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 transition-all hover:border-blue-300 hover:bg-white hover:shadow-2xs dark:border-slate-800 dark:bg-slate-850 dark:hover:border-blue-500/50 dark:hover:bg-slate-800">
+        <div className="group flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50/60 p-3 transition-all hover:border-blue-300 hover:bg-white hover:shadow-2xs dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-blue-500/50 dark:hover:bg-slate-800/80">
             <button
                 type="button"
                 onClick={onPreview}
@@ -1114,7 +1114,7 @@ function WorkAttachmentItem({
     const url = rawUrl?.startsWith("http") ? rawUrl : rawUrl ? `${API_URL}${rawUrl}` : undefined;
 
     return (
-        <div className="group flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50/70 p-2.5 transition-all hover:border-slate-300 hover:bg-white hover:shadow-2xs dark:border-slate-800 dark:bg-slate-850 dark:hover:border-slate-700 dark:hover:bg-slate-800">
+        <div className="group flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50/70 p-2.5 transition-all hover:border-slate-300 hover:bg-white hover:shadow-2xs dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700 dark:hover:bg-slate-800/80">
             {isLink && url ? (
                 <a
                     href={url}
@@ -1299,9 +1299,9 @@ function FileViewerModal({
                 {/* Content Area */}
                 <div className="min-h-0 flex-1 overflow-auto bg-slate-100/70 dark:bg-slate-950/70">
                     {!url ? (
-                        <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500">
-                            <FileText className="h-10 w-10 text-slate-300 mb-2" />
-                            <p className="text-sm font-medium">No download or preview URL is available for this item.</p>
+                        <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
+                            <FileText className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-2" />
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No download or preview URL is available for this item.</p>
                         </div>
                     ) : isImage ? (
                         <div className="flex min-h-full items-center justify-center p-6">
@@ -1315,11 +1315,11 @@ function FileViewerModal({
                         <iframe src={url} title={attachment.title} className="h-full w-full border-0" />
                     ) : isText ? (
                         error ? (
-                            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500">
-                                <p className="text-sm font-medium text-rose-600">{error}</p>
+                            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
+                                <p className="text-sm font-medium text-rose-600 dark:text-rose-400">{error}</p>
                             </div>
                         ) : text === null ? (
-                            <div className="flex h-full items-center justify-center p-8 text-slate-500 text-sm">
+                            <div className="flex h-full items-center justify-center p-8 text-slate-500 dark:text-slate-400 text-sm">
                                 Loading preview…
                             </div>
                         ) : (
@@ -1329,29 +1329,29 @@ function FileViewerModal({
                         )
                     ) : isDocx ? (
                         error ? (
-                            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500">
-                                <p className="text-sm font-medium text-rose-600">{error}</p>
+                            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
+                                <p className="text-sm font-medium text-rose-600 dark:text-rose-400">{error}</p>
                             </div>
                         ) : (
-                            <div ref={docxRef} className="mx-auto min-h-full max-w-3xl bg-white p-8 shadow-sm dark:bg-slate-900" />
+                            <div ref={docxRef} className="mx-auto min-h-full max-w-3xl bg-white p-8 shadow-sm dark:bg-slate-900 dark:text-slate-100" />
                         )
                     ) : isZip ? (
                         error ? (
-                            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500">
-                                <p className="text-sm font-medium text-rose-600">{error}</p>
+                            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
+                                <p className="text-sm font-medium text-rose-600 dark:text-rose-400">{error}</p>
                             </div>
                         ) : zipEntries === null ? (
-                            <div className="flex h-full items-center justify-center p-8 text-slate-500 text-sm">
+                            <div className="flex h-full items-center justify-center p-8 text-slate-500 dark:text-slate-400 text-sm">
                                 Loading archive contents…
                             </div>
                         ) : (
                             <ul className="divide-y divide-slate-200 bg-white p-4 dark:divide-slate-800 dark:bg-slate-900">
                                 {zipEntries.length === 0 && (
-                                    <li className="p-4 text-xs text-slate-500">This archive is empty.</li>
+                                    <li className="p-4 text-xs text-slate-500 dark:text-slate-400">This archive is empty.</li>
                                 )}
                                 {zipEntries.map((name) => (
                                     <li key={name} className="flex items-center gap-3 p-3 text-xs text-slate-800 dark:text-slate-200">
-                                        <Paperclip className="h-4 w-4 shrink-0 text-slate-400" />
+                                        <Paperclip className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                                         <span className="truncate">{name}</span>
                                     </li>
                                 ))}
@@ -1359,7 +1359,7 @@ function FileViewerModal({
                         )
                     ) : (
                         <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-                            <FileText className="h-12 w-12 text-slate-400" />
+                            <FileText className="h-12 w-12 text-slate-400 dark:text-slate-600" />
                             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                                 In-browser preview is not available for this file type.
                             </p>

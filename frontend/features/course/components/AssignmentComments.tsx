@@ -174,17 +174,17 @@ export function AssignmentComments({
             {/* Header */}
             {showTitle && (
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 text-gray-800">
+                    <div className="flex items-center gap-2.5 text-gray-800 dark:text-slate-200">
                         {isPrivate ? (
-                            <UserRound className={compact ? "h-4 w-4 text-gray-600" : "h-5 w-5 text-gray-700"} />
+                            <UserRound className={compact ? "h-4 w-4 text-gray-600 dark:text-slate-400" : "h-5 w-5 text-gray-700 dark:text-slate-300"} />
                         ) : (
-                            <UsersRound className={compact ? "h-4 w-4 text-gray-600" : "h-5 w-5 text-gray-700"} />
+                            <UsersRound className={compact ? "h-4 w-4 text-gray-600 dark:text-slate-400" : "h-5 w-5 text-gray-700 dark:text-slate-300"} />
                         )}
-                        <span className={`font-medium ${compact ? "text-xs" : "text-sm text-gray-900"}`}>
+                        <span className={`font-medium ${compact ? "text-xs" : "text-sm text-gray-900 dark:text-slate-100"}`}>
                             {isPrivate ? "Private comments" : "Class comments"}
                         </span>
                         {comments.length > 0 && (
-                            <span className="rounded-full bg-gray-200/80 px-2 py-0.5 text-xs font-semibold text-gray-700">
+                            <span className="rounded-full bg-gray-200/80 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:text-slate-300">
                                 {comments.length}
                             </span>
                         )}
@@ -193,7 +193,7 @@ export function AssignmentComments({
             )}
 
             {error && (
-                <div className="rounded-lg bg-red-50 p-2.5 text-xs text-red-700">
+                <div className="rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/50 p-2.5 text-xs text-red-700 dark:text-red-300">
                     {error}
                 </div>
             )}
@@ -201,10 +201,10 @@ export function AssignmentComments({
             {/* Comments List */}
             {loading ? (
                 <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400 dark:text-slate-500" />
                 </div>
             ) : comments.length === 0 ? (
-                <div className={`rounded-lg border border-dashed border-gray-200 bg-gray-50/50 p-3 text-center text-gray-500 ${compact ? "py-2 text-[11px]" : "py-4 text-xs"}`}>
+                <div className={`rounded-lg border border-dashed border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 p-3 text-center text-gray-500 dark:text-slate-400 ${compact ? "py-2 text-[11px]" : "py-4 text-xs"}`}>
                     {isPrivate
                         ? "No private comments yet. Only you and your instructor see these."
                         : "No class comments yet. Start a discussion with your class."}
@@ -212,7 +212,7 @@ export function AssignmentComments({
             ) : (
                 <div
                     ref={commentsContainerRef}
-                    className={`space-y-2.5 overflow-y-auto pr-1.5 [scrollbar-width:thin] ${
+                    className={`space-y-2.5 overflow-y-auto pr-1.5 custom-scrollbar ${
                         maxHeightClassName
                             ? maxHeightClassName
                             : compact
@@ -233,10 +233,10 @@ export function AssignmentComments({
                                 key={c.id}
                                 className={`group flex gap-3 rounded-lg transition-colors ${
                                     isPrivate
-                                        ? "bg-white/85 p-2.5 border border-gray-200/70 shadow-2xs hover:bg-white"
+                                        ? "bg-white/85 dark:bg-slate-800/80 p-2.5 border border-gray-200/70 dark:border-slate-700/60 shadow-2xs hover:bg-white dark:hover:bg-slate-800"
                                         : compact
-                                        ? "p-2 hover:bg-gray-100/60"
-                                        : "p-2.5 hover:bg-gray-50/80"
+                                        ? "p-2 hover:bg-gray-100/60 dark:hover:bg-slate-800/60"
+                                        : "p-2.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/60"
                                 }`}
                             >
                                 <div
@@ -303,7 +303,7 @@ export function AssignmentComments({
                             setIsExpanded(true);
                             setTimeout(() => textareaRef.current?.focus(), 50);
                         }}
-                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-full border border-gray-300 bg-white text-gray-500 transition-all hover:border-gray-400 hover:bg-gray-50/70 hover:shadow-xs focus:border-[#1a73e8] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-750 ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}`}
+                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-full border border-gray-300 bg-white text-gray-500 transition-all hover:border-gray-400 hover:bg-gray-50/70 hover:shadow-xs focus:border-[#1a73e8] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-700 ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}`}
                     >
                         <div
                             className={`flex shrink-0 items-center justify-center rounded-full ${compact ? "h-5 w-5 text-[10px]" : "h-6 w-6 text-xs"} ${getAvatarColor(user?.name || "Me")}`}
@@ -344,7 +344,7 @@ export function AssignmentComments({
                                         setText("");
                                     }}
                                     disabled={submitting}
-                                    className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200/60 transition-colors dark:text-slate-400 dark:hover:bg-slate-700"
+                                    className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200/60 transition-colors dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
                                 >
                                     Cancel
                                 </button>
@@ -352,7 +352,7 @@ export function AssignmentComments({
                                     type="button"
                                     onClick={() => void handleSubmit()}
                                     disabled={!text.trim() || submitting}
-                                    className="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#1a73e8] px-3 py-1 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#1557b0] disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex cursor-pointer items-center gap-1.5 rounded-md bg-[#1a73e8] px-3 py-1 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#1557b0] dark:bg-blue-600 dark:hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {submitting ? (
                                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
