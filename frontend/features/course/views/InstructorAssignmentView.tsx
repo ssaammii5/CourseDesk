@@ -237,49 +237,52 @@ export function InstructorAssignmentView({
         <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-slate-950 pb-16">
             {/* Top Bar with Navigation & Tabs */}
             <header className="sticky top-16 z-30 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-4 pt-4 sm:px-8">
-                    <div className="flex items-center justify-between">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (typeof window !== "undefined" && window.history.length > 1) {
-                                    router.back();
-                                } else {
-                                    router.push(`/course/${courseId}?tab=coursework`);
-                                }
-                            }}
-                            className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                            Back
-                        </button>
-                        <span className="text-xs text-gray-500 dark:text-slate-400">
-                            Course:{" "}
-                            <Link
-                                href={`/course/${courseId}?tab=coursework`}
-                                className="font-medium text-gray-800 dark:text-slate-200 hover:text-[#1a73e8] dark:hover:text-blue-400 hover:underline transition-colors"
+                <div className="mx-auto flex max-w-[1200px] flex-col px-4 pt-2.5 sm:px-8">
+                    {/* Compact Header Row */}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (typeof window !== "undefined" && window.history.length > 1) {
+                                        router.back();
+                                    } else {
+                                        router.push(`/course/${courseId}?tab=coursework`);
+                                    }
+                                }}
+                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-slate-100 transition-colors shrink-0"
                             >
-                                {assignment.courseName}
-                            </Link>
-                        </span>
-                    </div>
+                                <ArrowLeft className="h-3.5 w-3.5" />
+                                <span>Back</span>
+                            </button>
 
-                    <div className="flex items-center justify-between pb-1">
-                        <div>
-                            <h1 className="text-xl font-semibold text-gray-900 dark:text-slate-100 sm:text-2xl">
-                                {assignment.title}
-                            </h1>
-                            <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
-                                Due {formatDateTime(assignment.deadlineUtc)} • {assignment.maxMarks > 0 ? `Marks: ${assignment.maxMarks}` : "Ungraded"}
-                                {assignment.topic && ` • ${assignment.topic}`}
-                            </p>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-slate-100 truncate">
+                                        {assignment.title}
+                                    </h1>
+                                    <span className="hidden sm:inline-flex rounded-md bg-gray-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:text-slate-300">
+                                        <Link
+                                            href={`/course/${courseId}?tab=coursework`}
+                                            className="hover:text-[#1a73e8] dark:hover:text-blue-400 transition-colors truncate max-w-[180px]"
+                                        >
+                                            {assignment.courseName}
+                                        </Link>
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate">
+                                    Due {formatDateTime(assignment.deadlineUtc)} • {assignment.maxMarks > 0 ? `Marks: ${assignment.maxMarks}` : "Ungraded"}
+                                    {assignment.topic && ` • ${assignment.topic}`}
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                             <button
                                 type="button"
                                 onClick={handleToggleAssignmentUngraded}
                                 disabled={togglingUngraded}
-                                className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                                className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-60 ${
                                     assignment.maxMarks === 0
                                         ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
                                         : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
@@ -295,53 +298,53 @@ export function InstructorAssignmentView({
                         </div>
                     </div>
 
-                    {/* Tabs */}
-                    <nav className="flex gap-8 border-t border-gray-100 dark:border-slate-800">
+                    {/* Compact Tabs */}
+                    <nav className="flex gap-6 border-t border-gray-100 dark:border-slate-800">
                         <button
                             type="button"
                             onClick={() => setTab("learner-work")}
-                            className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "learner-work"
+                            className={`relative flex cursor-pointer items-center gap-1.5 py-2 text-xs sm:text-sm font-medium transition-colors ${tab === "learner-work"
                                 ? "text-[#1a73e8] dark:text-blue-400 font-semibold"
                                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                                 }`}
                         >
-                            <Users className="h-4 w-4" />
-                            Learner work
-                            <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-2 py-0.5 text-xs font-semibold text-[#174ea6] dark:text-blue-300">
+                            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span>Learner work</span>
+                            <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-1.5 py-0.2 text-[11px] font-semibold text-[#174ea6] dark:text-blue-300">
                                 {submissions.length}
                             </span>
                             {tab === "learner-work" && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
+                                <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
                             )}
                         </button>
 
                         <button
                             type="button"
                             onClick={() => setTab("private-comments")}
-                            className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "private-comments"
+                            className={`relative flex cursor-pointer items-center gap-1.5 py-2 text-xs sm:text-sm font-medium transition-colors ${tab === "private-comments"
                                 ? "text-[#1a73e8] dark:text-blue-400 font-semibold"
                                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                                 }`}
                         >
-                            <MessageSquare className="h-4 w-4" />
-                            Private comments
+                            <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span>Private comments</span>
                             {tab === "private-comments" && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
+                                <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
                             )}
                         </button>
 
                         <button
                             type="button"
                             onClick={() => setTab("instructions")}
-                            className={`relative flex cursor-pointer items-center gap-2 py-3 text-sm font-medium transition-colors ${tab === "instructions"
+                            className={`relative flex cursor-pointer items-center gap-1.5 py-2 text-xs sm:text-sm font-medium transition-colors ${tab === "instructions"
                                 ? "text-[#1a73e8] dark:text-blue-400 font-semibold"
                                 : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200"
                                 }`}
                         >
-                            <FileText className="h-4 w-4" />
-                            Instructions
+                            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span>Instructions</span>
                             {tab === "instructions" && (
-                                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
+                                <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-t-full bg-[#1a73e8] dark:bg-blue-500" />
                             )}
                         </button>
                     </nav>
@@ -350,22 +353,22 @@ export function InstructorAssignmentView({
 
             {/* TAB 1: Learner Work */}
             {tab === "learner-work" && (
-                <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8">
-                    {/* Summary Counters Banner */}
-                    <div className="grid grid-cols-3 gap-2 sm:gap-4 rounded-2xl border border-gray-200 dark:border-slate-800 bg-[#f9fafc] dark:bg-slate-900 p-2 sm:p-3 text-center shadow-xs">
+                <div className="mx-auto max-w-[1200px] px-4 py-4 sm:px-8 sm:py-5">
+                    {/* Summary Counters Banner - Streamlined */}
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-[#f9fafc] dark:bg-slate-900 p-1.5 text-center shadow-2xs">
                         <button
                             type="button"
                             onClick={() => setStatusFilter(statusFilter === "Submitted" ? "All" : "Submitted")}
-                            className={`group rounded-xl p-3 sm:p-4 transition-all cursor-pointer text-center ${
+                            className={`group flex items-center justify-center gap-2 rounded-lg py-2 px-2.5 transition-all cursor-pointer text-center ${
                                 statusFilter === "Submitted"
-                                    ? "bg-blue-50/80 dark:bg-blue-950/50 ring-2 ring-[#1a73e8] shadow-xs"
-                                    : "hover:bg-white dark:hover:bg-slate-800/80"
+                                    ? "bg-blue-50/90 dark:bg-blue-950/60 ring-2 ring-[#1a73e8] dark:ring-blue-500 shadow-2xs text-[#1a73e8] dark:text-blue-400"
+                                    : "hover:bg-white dark:hover:bg-slate-800/80 text-gray-700 dark:text-slate-300"
                             }`}
                         >
-                            <span className="block text-3xl sm:text-4xl font-bold text-[#1a73e8] dark:text-blue-400 group-hover:scale-105 transition-transform">
+                            <span className="text-xl sm:text-2xl font-bold text-[#1a73e8] dark:text-blue-400 group-hover:scale-105 transition-transform">
                                 {submittedCount}
                             </span>
-                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300 sm:text-sm mt-1 block">
+                            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wide">
                                 Submitted
                             </span>
                         </button>
@@ -373,16 +376,16 @@ export function InstructorAssignmentView({
                         <button
                             type="button"
                             onClick={() => setStatusFilter(statusFilter === "Assigned" ? "All" : "Assigned")}
-                            className={`group rounded-xl p-3 sm:p-4 transition-all cursor-pointer text-center ${
+                            className={`group flex items-center justify-center gap-2 rounded-lg py-2 px-2.5 transition-all cursor-pointer text-center ${
                                 statusFilter === "Assigned"
-                                    ? "bg-slate-200/70 dark:bg-slate-800 ring-2 ring-slate-400 dark:ring-slate-500 shadow-xs"
-                                    : "hover:bg-white dark:hover:bg-slate-800/80"
+                                    ? "bg-slate-200/80 dark:bg-slate-800 ring-2 ring-slate-400 dark:ring-slate-500 shadow-2xs text-gray-800 dark:text-slate-100"
+                                    : "hover:bg-white dark:hover:bg-slate-800/80 text-gray-700 dark:text-slate-300"
                             }`}
                         >
-                            <span className="block text-3xl sm:text-4xl font-bold text-gray-700 dark:text-slate-200 group-hover:scale-105 transition-transform">
+                            <span className="text-xl sm:text-2xl font-bold text-gray-700 dark:text-slate-200 group-hover:scale-105 transition-transform">
                                 {assignedCount}
                             </span>
-                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300 sm:text-sm mt-1 block">
+                            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wide">
                                 Assigned
                             </span>
                         </button>
@@ -390,23 +393,23 @@ export function InstructorAssignmentView({
                         <button
                             type="button"
                             onClick={() => setStatusFilter(statusFilter === "Graded" ? "All" : "Graded")}
-                            className={`group rounded-xl p-3 sm:p-4 transition-all cursor-pointer text-center ${
+                            className={`group flex items-center justify-center gap-2 rounded-lg py-2 px-2.5 transition-all cursor-pointer text-center ${
                                 statusFilter === "Graded"
-                                    ? "bg-emerald-50/80 dark:bg-emerald-950/50 ring-2 ring-[#137333] dark:ring-emerald-500 shadow-xs"
-                                    : "hover:bg-white dark:hover:bg-slate-800/80"
+                                    ? "bg-emerald-50/90 dark:bg-emerald-950/60 ring-2 ring-[#137333] dark:ring-emerald-500 shadow-2xs text-[#137333] dark:text-emerald-400"
+                                    : "hover:bg-white dark:hover:bg-slate-800/80 text-gray-700 dark:text-slate-300"
                             }`}
                         >
-                            <span className="block text-3xl sm:text-4xl font-bold text-[#137333] dark:text-emerald-400 group-hover:scale-105 transition-transform">
+                            <span className="text-xl sm:text-2xl font-bold text-[#137333] dark:text-emerald-400 group-hover:scale-105 transition-transform">
                                 {gradedCount}
                             </span>
-                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-slate-300 sm:text-sm mt-1 block">
+                            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wide">
                                 Graded
                             </span>
                         </button>
                     </div>
 
                     {/* Filter & Search Bar */}
-                    <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mt-3.5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="relative w-full sm:max-w-xs">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
                             <input
@@ -414,7 +417,7 @@ export function InstructorAssignmentView({
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Search learner name or ID…"
-                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] dark:focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-[#1a73e8] dark:focus:ring-blue-500"
+                                className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-1.5 pl-9 pr-3 text-xs sm:text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] dark:focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-[#1a73e8] dark:focus:ring-blue-500"
                             />
                         </div>
 
@@ -717,10 +720,10 @@ export function InstructorAssignmentView({
 
             {/* TAB 2: Private comments */}
             {tab === "private-comments" && (
-                <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8">
+                <div className="mx-auto max-w-[1200px] px-4 py-4 sm:px-8 sm:py-5">
                     <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                         {/* Header banner */}
-                        <div className="border-b border-gray-100 dark:border-slate-800 px-6 py-4 bg-gray-50/60 dark:bg-slate-900/60">
+                        <div className="border-b border-gray-100 dark:border-slate-800 px-5 py-3 bg-gray-50/60 dark:bg-slate-900/60">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <div>
                                     <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
@@ -906,8 +909,8 @@ export function InstructorAssignmentView({
 
             {/* TAB 3: Instructions */}
             {tab === "instructions" && (
-                <div className="mx-auto max-w-[900px] px-4 py-8 sm:px-8">
-                    <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8">
+                <div className="mx-auto max-w-[900px] px-4 py-4 sm:px-8 sm:py-5">
+                    <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
                             <div>
                                 <span className="text-xs font-semibold uppercase tracking-wider text-[#1a73e8] dark:text-blue-400">
