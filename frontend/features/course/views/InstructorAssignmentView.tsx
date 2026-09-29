@@ -969,7 +969,7 @@ export function InstructorAssignmentView({
                             </div>
                         )}
 
-                        {/* Class comments */}
+                        {/* Comments / Discussion */}
                         <div className="mt-8 border-t border-gray-100 dark:border-slate-800 pt-6">
                             <AssignmentComments
                                 assignmentId={assignment.id}

@@ -595,7 +595,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                             </div>
                         )}
 
-                        {/* Class Discussion Card */}
+                        {/* Discussion Card */}
                         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:p-8">
                             <div className="mb-6 flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
@@ -603,10 +603,10 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 </div>
                                 <div>
                                     <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                                        Class Discussion
+                                        Discussion
                                     </h2>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Ask questions or share ideas with your teacher and fellow classmates.
+                                        Ask questions or share ideas with your teacher and fellow learners.
                                     </p>
                                 </div>
                             </div>

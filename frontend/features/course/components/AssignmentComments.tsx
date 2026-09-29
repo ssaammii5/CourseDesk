@@ -167,7 +167,7 @@ export function AssignmentComments({
         return false;
     };
 
-    const targetLabel = isPrivate ? privateCommentTarget : "Class";
+    const targetLabel = isPrivate ? privateCommentTarget : "Discussion";
 
     return (
         <div className={`flex flex-col ${compact ? "gap-2.5 text-xs" : "gap-4 text-sm"}`}>
@@ -181,7 +181,7 @@ export function AssignmentComments({
                             <UsersRound className={compact ? "h-4 w-4 text-gray-600 dark:text-slate-400" : "h-5 w-5 text-gray-700 dark:text-slate-300"} />
                         )}
                         <span className={`font-medium ${compact ? "text-xs" : "text-sm text-gray-900 dark:text-slate-100"}`}>
-                            {isPrivate ? "Private comments" : "Class comments"}
+                            {isPrivate ? "Private comments" : "Comments"}
                         </span>
                         {comments.length > 0 && (
                             <span className="rounded-full bg-gray-200/80 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:text-slate-300">
@@ -207,7 +207,7 @@ export function AssignmentComments({
                 <div className={`rounded-lg border border-dashed border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 p-3 text-center text-gray-500 dark:text-slate-400 ${compact ? "py-2 text-[11px]" : "py-4 text-xs"}`}>
                     {isPrivate
                         ? "No private comments yet. Only you and your instructor see these."
-                        : "No class comments yet. Start a discussion with your class."}
+                        : "No comments yet. Start a discussion here."}
                 </div>
             ) : (
                 <div
@@ -313,7 +313,7 @@ export function AssignmentComments({
                         <span className="truncate text-left text-gray-500 dark:text-slate-400">
                             {isPrivate
                                 ? `Add private comment to ${targetLabel}…`
-                                : "Add class comment…"}
+                                : "Add a comment…"}
                         </span>
                     </button>
                 ) : (
@@ -328,7 +328,7 @@ export function AssignmentComments({
                             placeholder={
                                 isPrivate
                                     ? `Add private comment to ${targetLabel}…`
-                                    : "Add class comment…"
+                                    : "Add a comment…"
                             }
                             className={`w-full resize-none border-0 bg-transparent p-3 text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500 ${compact ? "text-xs" : "text-sm"}`}
                         />
