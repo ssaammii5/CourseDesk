@@ -616,7 +616,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                     </div>
 
                     {/* Right Column: "Your Work" Hub & Private Comments */}
-                    <div className="space-y-6 lg:col-span-4 lg:sticky lg:top-20">
+                    <div className="space-y-6 lg:col-span-4 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-y-auto lg:pr-1.5 custom-scrollbar overscroll-y-contain">
                         {/* "Your Work" Card */}
                         <div
                             onDragOver={handleDragOver}
@@ -691,7 +691,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
 
                             {/* Attachments List */}
                             {attachments.length > 0 ? (
-                                <div className="mt-4 space-y-2.5">
+                                <div className="mt-4 space-y-2.5 max-h-56 sm:max-h-64 overflow-y-auto pr-1 custom-scrollbar">
                                     {attachments.map((att) => (
                                         <WorkAttachmentItem
                                             key={att.id}
@@ -1126,7 +1126,7 @@ function WorkAttachmentItem({
                         <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-semibold text-slate-800 transition-colors group-hover:text-blue-600 dark:text-slate-200 dark:group-hover:text-blue-400">
+                        <p title={attachment.title} className="truncate text-xs font-semibold text-slate-800 transition-colors group-hover:text-blue-600 dark:text-slate-200 dark:group-hover:text-blue-400">
                             {attachment.title}
                         </p>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400">External link</span>
@@ -1142,7 +1142,7 @@ function WorkAttachmentItem({
                         <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-semibold text-slate-800 transition-colors group-hover:text-blue-600 dark:text-slate-200 dark:group-hover:text-blue-400">
+                        <p title={attachment.title} className="truncate text-xs font-semibold text-slate-800 transition-colors group-hover:text-blue-600 dark:text-slate-200 dark:group-hover:text-blue-400">
                             {attachment.title}
                         </p>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400">
