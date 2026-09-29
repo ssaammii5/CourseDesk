@@ -834,15 +834,15 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
 
                         {/* Private Comments Card */}
                         {!readOnly && (
-                            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                                <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                                <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 pb-2.5 sm:pb-3 dark:border-slate-800">
                                     <div className="flex items-center gap-2">
-                                        <Lock className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                                        <Lock className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" />
                                         <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                                             Private Comments
                                         </h2>
                                     </div>
-                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[180px] sm:max-w-none">
                                         Only visible to {instructorLabel}
                                     </span>
                                 </div>

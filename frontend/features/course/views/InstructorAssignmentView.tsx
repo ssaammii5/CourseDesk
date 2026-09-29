@@ -5,6 +5,8 @@ import {
     ArrowLeft,
     Check,
     CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
     Clock,
     Download,
     ExternalLink,
@@ -66,6 +68,7 @@ export function InstructorAssignmentView({
     const [search, setSearch] = useState("");
     const [selectedLearnerId, setSelectedLearnerId] = useState<number | null>(null);
     const [commentLearnerSearch, setCommentLearnerSearch] = useState("");
+    const [mobileCommentPane, setMobileCommentPane] = useState<"roster" | "chat">("roster");
 
     // Grading state per submission id
     const [gradeInputs, setGradeInputs] = useState<Record<number, { marks: string; feedback: string }>>({});
@@ -299,7 +302,7 @@ export function InstructorAssignmentView({
                     </div>
 
                     {/* Compact Tabs */}
-                    <nav className="flex gap-6 border-t border-gray-100 dark:border-slate-800">
+                    <nav className="flex gap-4 sm:gap-6 border-t border-gray-100 dark:border-slate-800 overflow-x-auto no-scrollbar">
                         <button
                             type="button"
                             onClick={() => setTab("learner-work")}
@@ -499,6 +502,7 @@ export function InstructorAssignmentView({
                                                             type="button"
                                                             onClick={() => {
                                                                 setSelectedLearnerId(sub.learnerId ?? sub.studentId ?? null);
+                                                                setMobileCommentPane("chat");
                                                                 setTab("private-comments");
                                                             }}
                                                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-[#1a73e8] transition-colors"
@@ -720,14 +724,14 @@ export function InstructorAssignmentView({
 
             {/* TAB 2: Private comments */}
             {tab === "private-comments" && (
-                <div className="mx-auto max-w-[1200px] px-4 py-4 sm:px-8 sm:py-5">
-                    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                <div className="mx-auto max-w-[1200px] px-3 py-3 sm:px-8 sm:py-5">
+                    <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                         {/* Header banner */}
-                        <div className="border-b border-gray-100 dark:border-slate-800 px-5 py-3 bg-gray-50/60 dark:bg-slate-900/60">
+                        <div className="border-b border-gray-100 dark:border-slate-800 px-4 py-3 sm:px-5 bg-gray-50/60 dark:bg-slate-900/60">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <div>
-                                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-                                        <MessageSquare className="h-5 w-5 text-[#1a73e8] dark:text-blue-400" />
+                                    <h2 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                                        <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-[#1a73e8] dark:text-blue-400 shrink-0" />
                                         Private Learner Comments
                                     </h2>
                                     <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
@@ -738,7 +742,7 @@ export function InstructorAssignmentView({
                                     <button
                                         type="button"
                                         onClick={() => setTab("learner-work")}
-                                        className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs font-medium text-[#1a73e8] dark:text-blue-400 hover:underline cursor-pointer"
+                                        className="self-start sm:self-auto hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-[#1a73e8] dark:text-blue-400 hover:underline cursor-pointer"
                                     >
                                         <FolderCheck className="h-3.5 w-3.5" />
                                         <span>View in Learner Work</span>
@@ -762,9 +766,13 @@ export function InstructorAssignmentView({
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-12 min-h-[560px]">
+                            <div className="grid grid-cols-1 md:grid-cols-12 min-h-[480px] sm:min-h-[560px]">
                                 {/* Left roster: Learner list */}
-                                <div className="md:col-span-4 border-r border-gray-200 dark:border-slate-800 flex flex-col bg-gray-50/40 dark:bg-slate-900/40">
+                                <div
+                                    className={`md:col-span-4 border-r border-gray-200 dark:border-slate-800 flex flex-col bg-gray-50/40 dark:bg-slate-900/40 ${
+                                        mobileCommentPane === "chat" ? "hidden md:flex" : "flex"
+                                    }`}
+                                >
                                     {/* Search input */}
                                     <div className="p-3 border-b border-gray-200 dark:border-slate-800">
                                         <div className="relative">
@@ -780,7 +788,7 @@ export function InstructorAssignmentView({
                                     </div>
 
                                     {/* Learner items list */}
-                                    <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800 max-h-[560px]">
+                                    <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800 max-h-[520px] sm:max-h-[560px]">
                                         {filteredCommentLearners.length === 0 ? (
                                             <p className="p-6 text-center text-xs text-gray-500 dark:text-slate-400">
                                                 No learner matches &quot;{commentLearnerSearch}&quot;
@@ -797,8 +805,11 @@ export function InstructorAssignmentView({
                                                     <button
                                                         key={sub.id}
                                                         type="button"
-                                                        onClick={() => setSelectedLearnerId(lId ?? null)}
-                                                        className={`w-full text-left p-3.5 flex items-center gap-3 transition-colors cursor-pointer ${
+                                                        onClick={() => {
+                                                            setSelectedLearnerId(lId ?? null);
+                                                            setMobileCommentPane("chat");
+                                                        }}
+                                                        className={`w-full text-left p-3 sm:p-3.5 flex items-center gap-3 transition-colors cursor-pointer ${
                                                             isSelected
                                                                 ? "bg-blue-50/90 dark:bg-blue-950/60 border-l-4 border-l-[#1a73e8] dark:border-l-blue-500"
                                                                 : "hover:bg-gray-100/70 dark:hover:bg-slate-800/60 border-l-4 border-l-transparent"
@@ -830,6 +841,7 @@ export function InstructorAssignmentView({
                                                                 {lAcadId ? `ID: ${lAcadId} • ` : ""}{lEmail}
                                                             </p>
                                                         </div>
+                                                        <ChevronRight className="h-4 w-4 text-gray-400 dark:text-slate-600 shrink-0 md:hidden" />
                                                     </button>
                                                 );
                                             })
@@ -838,20 +850,46 @@ export function InstructorAssignmentView({
                                 </div>
 
                                 {/* Right chat panel */}
-                                <div className="md:col-span-8 flex flex-col p-6">
+                                <div
+                                    className={`md:col-span-8 flex flex-col p-3.5 sm:p-5 md:p-6 ${
+                                        mobileCommentPane === "roster" ? "hidden md:flex" : "flex"
+                                    }`}
+                                >
+                                    {/* Mobile back navigation bar */}
+                                    <div className="md:hidden flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-slate-800">
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileCommentPane("roster")}
+                                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a73e8] dark:text-blue-400 bg-blue-50/80 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/40 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                            <span>All Learners ({submissions.length})</span>
+                                        </button>
+                                        {activeLearner && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setTab("learner-work")}
+                                                className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 hover:text-[#1a73e8] dark:text-slate-400 dark:hover:text-blue-400 cursor-pointer"
+                                            >
+                                                <FolderCheck className="h-3.5 w-3.5" />
+                                                <span>View Work</span>
+                                            </button>
+                                        )}
+                                    </div>
+
                                     {activeLearner ? (
                                         <div className="flex flex-col h-full">
                                             {/* Active learner banner */}
-                                            <div className="mb-4 pb-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1a73e8] text-sm font-semibold text-white">
+                                            <div className="mb-3.5 pb-3 sm:mb-4 sm:pb-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                                                    <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-[#1a73e8] text-xs sm:text-sm font-semibold text-white">
                                                         {initialOf(activeLearner.learnerName ?? activeLearner.studentName ?? "Learner")}
                                                     </span>
-                                                    <div>
-                                                        <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                                                    <div className="min-w-0">
+                                                        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-slate-100 truncate">
                                                             {activeLearner.learnerName ?? activeLearner.studentName ?? "Learner"}
                                                         </h3>
-                                                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                                                        <p className="text-[11px] sm:text-xs text-gray-500 dark:text-slate-400 truncate">
                                                             {activeLearner.learnerAcademicId ?? activeLearner.studentAcademicId
                                                                 ? `ID: ${activeLearner.learnerAcademicId ?? activeLearner.studentAcademicId} • `
                                                                 : ""}
@@ -859,17 +897,17 @@ export function InstructorAssignmentView({
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
+                                                <div className="shrink-0 text-right">
                                                     {activeLearner.status === "Graded" ? (
-                                                        <span className="rounded-full bg-green-100 dark:bg-emerald-950/60 px-2.5 py-1 text-xs font-semibold text-[#137333] dark:text-emerald-400">
+                                                        <span className="rounded-full bg-green-100 dark:bg-emerald-950/60 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-[#137333] dark:text-emerald-400 whitespace-nowrap">
                                                             {assignment.maxMarks > 0 ? `Graded: ${activeLearner.marks}/${assignment.maxMarks}` : "Reviewed"}
                                                         </span>
                                                     ) : activeLearner.submittedAtUtc ? (
-                                                        <span className="rounded-full bg-blue-100 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-[#174ea6] dark:text-blue-300">
+                                                        <span className="rounded-full bg-blue-100 dark:bg-blue-950/60 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-[#174ea6] dark:text-blue-300 whitespace-nowrap">
                                                             Submitted
                                                         </span>
                                                     ) : (
-                                                        <span className="rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-300">
+                                                        <span className="rounded-full bg-gray-100 dark:bg-slate-800 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-medium text-gray-600 dark:text-slate-300 whitespace-nowrap">
                                                             Assigned
                                                         </span>
                                                     )}
@@ -890,13 +928,13 @@ export function InstructorAssignmentView({
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-1 flex-col items-center justify-center text-center p-8">
+                                        <div className="flex flex-1 flex-col items-center justify-center text-center p-6 sm:p-8">
                                             <MessageSquare className="h-10 w-10 text-gray-300 dark:text-slate-600 mb-2" />
                                             <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
                                                 Select a learner
                                             </p>
                                             <p className="text-xs text-gray-500 dark:text-slate-400 max-w-sm mt-1">
-                                                Choose a learner from the list on the left to review or reply to their private comment thread.
+                                                Choose a learner from the list to review or reply to their private comment thread.
                                             </p>
                                         </div>
                                     )}
