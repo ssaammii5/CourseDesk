@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { ExternalLink } from "lucide-react";
 
 export interface RichTextContentProps {
@@ -317,12 +317,6 @@ export function RichTextContent({
     fallback = "No instructions provided.",
     className = "",
 }: RichTextContentProps) {
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
     const content = useMemo(() => {
         if (!text || !text.trim()) {
             return (
@@ -334,7 +328,9 @@ export function RichTextContent({
 
         const isHtml = /<[a-z][\s\S]*>/i.test(text);
 
-        if (isMounted && isHtml && typeof window !== "undefined") {
+        // When running in the browser (client-side), parse HTML immediately on the first render
+        // without waiting for an async useEffect, preventing any flash of raw HTML markup.
+        if (typeof window !== "undefined" && isHtml) {
             try {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(text, "text/html");
@@ -351,15 +347,28 @@ export function RichTextContent({
             }
         }
 
+        // On the server during SSR (if text is HTML), strip the HTML tags
+        // so raw markup like <p> or <div> never flashes or shows on screen as plaintext.
+        if (typeof window === "undefined" && isHtml) {
+            const stripped = text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+            return (
+                <div className="space-y-1">
+                    <p className="my-1.5 leading-relaxed text-slate-800 dark:text-slate-200">
+                        {stripped}
+                    </p>
+                </div>
+            );
+        }
+
         return (
             <div className="space-y-1">
                 {renderMarkdownOrPlainText(text)}
             </div>
         );
-    }, [text, fallback, isMounted]);
+    }, [text, fallback]);
 
     return (
-        <div className={`text-sm text-slate-800 dark:text-slate-200 ${className}`}>
+        <div suppressHydrationWarning className={`text-sm text-slate-800 dark:text-slate-200 ${className}`}>
             {content}
         </div>
     );
