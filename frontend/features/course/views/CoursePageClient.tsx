@@ -54,7 +54,13 @@ function sortAnnouncements(list: AnnouncementDto[]): AnnouncementDto[] {
     });
 }
 
-const VALID_TABS: CourseTab[] = ["stream", "curriculum", "coursework", "classwork", "people", "grades"];
+function normalizeCourseTab(raw: string | null | undefined): CourseTab | null {
+    if (!raw) return null;
+    if (raw === "curriculum" || raw === "lectures" || raw === "videos") return "video";
+    return raw as CourseTab;
+}
+
+const VALID_TABS: CourseTab[] = ["stream", "video", "curriculum", "coursework", "classwork", "people", "grades"];
 
 export function CoursePageClient({ title, details, course, initialTab }: CoursePageClientProps) {
     const { user } = useAuth();
@@ -62,14 +68,13 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     const isTeacher = isInstructor;
     const searchParams = useSearchParams();
     const rawTab = searchParams ? searchParams.get("tab") : null;
-    const queryTab = rawTab === "lectures" ? "curriculum" : (rawTab as CourseTab | null);
+    const queryTab = normalizeCourseTab(rawTab);
 
     const [tab, setTab] = useState<CourseTab>(() => {
-        const startRaw = queryTab || initialTab;
-        const startTab = startRaw === ("lectures" as unknown) ? "curriculum" : startRaw;
-        if (startTab && VALID_TABS.includes(startTab)) {
-            if (startTab === "grades" && !isInstructor) return "coursework";
-            return startTab;
+        const startRaw = normalizeCourseTab(queryTab || initialTab);
+        if (startRaw && VALID_TABS.includes(startRaw)) {
+            if (startRaw === "grades" && !isInstructor) return "coursework";
+            return startRaw;
         }
         return "stream";
     });
@@ -83,6 +88,14 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
             setTab("stream");
         }
     }
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && rawTab && (rawTab === "curriculum" || rawTab === "lectures" || rawTab === "videos")) {
+            const url = new URL(window.location.href);
+            url.searchParams.set("tab", "video");
+            window.history.replaceState(null, "", url.toString());
+        }
+    }, [rawTab]);
     const [classwork, setClasswork] = useState<ClassworkEntry[]>(details.classwork);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editing, setEditing] = useState<ClassworkEntry | null>(null);
@@ -470,16 +483,17 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
         );
 
     const handleTabChange = (nextTab: ClassTab) => {
-        setTab(nextTab);
+        const resolvedTab = (nextTab === "curriculum" || (nextTab as string) === "lectures" || (nextTab as string) === "videos") ? "video" : nextTab;
+        setTab(resolvedTab);
         if (typeof window !== "undefined") {
             const url = new URL(window.location.href);
-            if (nextTab === "stream") {
+            if (resolvedTab === "stream") {
                 url.searchParams.delete("tab");
             } else {
-                url.searchParams.set("tab", nextTab);
+                url.searchParams.set("tab", resolvedTab);
             }
             window.history.replaceState(null, "", url.toString());
-            window.dispatchEvent(new CustomEvent("coursedesk:tab-changed", { detail: { tab: nextTab } }));
+            window.dispatchEvent(new CustomEvent("coursedesk:tab-changed", { detail: { tab: resolvedTab } }));
         }
     };
 
@@ -504,7 +518,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 />
             )}
 
-            {tab === "curriculum" && (
+            {(tab === "video" || tab === "curriculum") && (
                 <CurriculumView
                     sessions={sessions}
                     isInstructor={isInstructor}

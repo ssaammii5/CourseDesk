@@ -333,7 +333,7 @@ export function CurriculumView({
         // Group real sessions by topic
         const groupMap: Record<string, SessionDto[]> = {};
         for (const s of sessions) {
-            const topicKey = s.topic ? s.topic.trim() : "General Lectures";
+            const topicKey = s.topic ? s.topic.trim() : "General Videos";
             if (!groupMap[topicKey]) {
                 groupMap[topicKey] = [];
             }
@@ -1551,3 +1551,5 @@ export function CurriculumView({
 }
 
 export const LecturesView = CurriculumView;
+export const VideoView = CurriculumView;
+export const VideosView = CurriculumView;

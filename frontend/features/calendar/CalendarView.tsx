@@ -164,7 +164,7 @@ export function CalendarView() {
                 date: d,
                 time: formatEventTime(d),
                 kind: "session",
-                link: `/course/${s.courseId}?tab=curriculum`,
+                link: `/course/${s.courseId}?tab=video`,
                 status: s.status,
             });
         }

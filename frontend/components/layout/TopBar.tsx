@@ -156,13 +156,17 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
     let activeTabId = "stream";
 
     if (
+        pathname.includes("/video") ||
+        pathname.includes("/videos") ||
         pathname.includes("/curriculum") ||
         pathname.includes("/lectures") ||
+        tabParam === "video" ||
+        tabParam === "videos" ||
         tabParam === "curriculum" ||
         tabParam === "lectures"
     ) {
-        activeTabLabel = "Lectures";
-        activeTabId = "curriculum";
+        activeTabLabel = "Videos";
+        activeTabId = "video";
     } else if (
         pathname.includes("/coursework") ||
         pathname.includes("/classwork") ||
@@ -421,8 +425,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         if (n.link) {
             let target = n.link;
             target = target.replace(/\/course\/(\d+)\/coursework\/?$/, "/course/$1?tab=coursework");
-            target = target.replace(/\/course\/(\d+)\/curriculum\/?$/, "/course/$1?tab=curriculum");
-            target = target.replace(/\/course\/(\d+)\/lectures\/?$/, "/course/$1?tab=curriculum");
+            target = target.replace(/\/course\/(\d+)\/curriculum\/?$/, "/course/$1?tab=video");
+            target = target.replace(/\/course\/(\d+)\/lectures\/?$/, "/course/$1?tab=video");
+            target = target.replace(/\/course\/(\d+)\/videos?\/?$/, "/course/$1?tab=video");
             target = target.replace(/\/course\/(\d+)\/submissions\/?$/, "/course/$1?tab=coursework");
             target = target.replace(/\/course\/(\d+)\/people\/?$/, "/course/$1?tab=people");
             target = target.replace(/\/course\/(\d+)\/grades\/?$/, "/course/$1?tab=grades");

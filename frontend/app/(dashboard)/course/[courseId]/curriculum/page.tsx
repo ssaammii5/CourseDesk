@@ -6,5 +6,5 @@ interface CurriculumPageProps {
 
 export default async function CurriculumPage({ params }: CurriculumPageProps) {
     const { courseId } = await params;
-    redirect(`/course/${courseId}?tab=curriculum`);
+    redirect(`/course/${courseId}?tab=video`);
 }

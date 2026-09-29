@@ -9,12 +9,12 @@ import {
     type LucideIcon,
 } from "lucide-react";
 
-export type CourseTab = "stream" | "curriculum" | "coursework" | "classwork" | "people" | "grades";
+export type CourseTab = "stream" | "video" | "curriculum" | "coursework" | "classwork" | "people" | "grades";
 export type ClassTab = CourseTab;
 
 export const COURSE_TABS: { id: CourseTab; label: string; icon: LucideIcon }[] = [
     { id: "stream", label: "Stream", icon: Layers },
-    { id: "curriculum", label: "Lectures", icon: Video },
+    { id: "video", label: "Videos", icon: Video },
     { id: "coursework", label: "Coursework", icon: ClipboardList },
     { id: "people", label: "People", icon: Users },
 ];
@@ -30,7 +30,7 @@ export type ClassTabsProps = CourseTabsProps;
 
 export function CourseTabs({ tab, onTabChange, isInstructor, isTeacher = false }: CourseTabsProps) {
     const showGrades = isInstructor ?? isTeacher;
-    const activeTabKey = tab === "classwork" ? "coursework" : tab;
+    const activeTabKey = tab === "classwork" ? "coursework" : (tab === "curriculum" || (tab as string) === "lectures") ? "video" : tab;
     const tabs: { id: CourseTab; label: string; icon: LucideIcon }[] = showGrades
         ? [...COURSE_TABS, { id: "grades", label: "Grades", icon: Award }]
         : [...COURSE_TABS];

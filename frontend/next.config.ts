@@ -65,12 +65,22 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/course/:courseId/curriculum",
-        destination: "/course/:courseId?tab=curriculum",
+        destination: "/course/:courseId?tab=video",
         permanent: false,
       },
       {
         source: "/course/:courseId/lectures",
-        destination: "/course/:courseId?tab=curriculum",
+        destination: "/course/:courseId?tab=video",
+        permanent: false,
+      },
+      {
+        source: "/course/:courseId/video",
+        destination: "/course/:courseId?tab=video",
+        permanent: false,
+      },
+      {
+        source: "/course/:courseId/videos",
+        destination: "/course/:courseId?tab=video",
         permanent: false,
       },
       {
