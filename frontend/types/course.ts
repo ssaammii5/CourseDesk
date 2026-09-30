@@ -40,6 +40,7 @@ export const AssignmentSchema = z.object({
     status: AssignmentStatusSchema,
     createdById: z.number().int(),
     createdAtUtc: z.iso.datetime(),
+    allowLateSubmissions: z.boolean().optional(),
 });
 export type Assignment = z.infer<typeof AssignmentSchema>;
 
@@ -106,6 +107,7 @@ export const CourseworkEntrySchema = z.object({
     sessionId: z.number().int().nullable().optional(),
     assignMode: z.enum(["all", "selective", "exclude"]).optional(),
     targetLearnerIds: z.array(z.number().int()).optional(),
+    allowLateSubmissions: z.boolean().optional(),
     attachments: z.array(z.object({
         id: z.number().int(),
         fileName: z.string(),

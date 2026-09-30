@@ -176,8 +176,10 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
     const [isDraggingOver, setIsDraggingOver] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const isPastDue = detail.deadlineUtc ? new Date(detail.deadlineUtc).getTime() < Date.now() : false;
+    const isClosedDeadline = isPastDue && detail.allowLateSubmissions === false;
     const turnedIn = status === "Turned in" || status === "Submitted";
-    const isMissed = status === "Missed";
+    const isMissed = status === "Missed" || (isClosedDeadline && !turnedIn && status !== "Graded");
     const isGraded = status === "Graded";
     const isDraft = (status === "Draft" || attachments.length > 0) && !turnedIn && !isGraded && !isMissed;
     const linkValid = isValidLink(linkValue);
@@ -358,6 +360,11 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
     };
 
     const confirmUnsubmit = async () => {
+        if (isPastDue) {
+            alert("Cannot unsubmit work after the deadline has passed.");
+            setUnsubmitOpen(false);
+            return;
+        }
         setUnsubmitOpen(false);
         setSubmittingWork(true);
         setStatus("Assigned");
@@ -380,15 +387,13 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
         } catch (err) {
             console.error("Unsubmit failed", err);
             setStatus("Turned in");
+            alert(err instanceof Error ? err.message : "Failed to unsubmit work.");
         } finally {
             setSubmittingWork(false);
         }
     };
 
     const instructorLabel = detail.instructorName || detail.teacherName || "Instructor";
-
-    // Format deadline badge and overdue detection
-    const isPastDue = detail.deadlineUtc ? new Date(detail.deadlineUtc).getTime() < Date.now() : false;
 
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-slate-50/60 dark:bg-slate-950">
@@ -674,6 +679,19 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 </div>
                             )}
 
+                            {/* Late Submission Allowed Notice */}
+                            {!turnedIn && !isMissed && !isGraded && isPastDue && (
+                                <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200/80 bg-amber-50/80 p-3.5 text-xs text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
+                                    <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold text-amber-900 dark:text-amber-200">Past Due Date</p>
+                                        <p className="mt-0.5 leading-relaxed text-amber-700/90 dark:text-amber-300/90">
+                                            The due date has passed, but late submissions are still accepted. Your work will be marked as late.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Graded Mini Badge in Sidebar */}
                             {isGraded && (
                                 <div className="mt-4 flex items-center justify-between rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/40">
@@ -800,11 +818,20 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                     ) : turnedIn ? (
                                         <button
                                             type="button"
-                                            disabled={submittingWork}
-                                            onClick={() => setUnsubmitOpen(true)}
-                                            className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                            disabled={submittingWork || isPastDue}
+                                            onClick={() => !isPastDue && setUnsubmitOpen(true)}
+                                            className={`w-full rounded-xl border py-2.5 text-sm font-semibold transition-all ${
+                                                isPastDue
+                                                    ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500"
+                                                    : "border-slate-300 bg-white text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-400 hover:text-blue-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                            }`}
+                                            title={isPastDue ? "Cannot unsubmit work after the due date has passed" : undefined}
                                         >
-                                            {submittingWork ? "Updating…" : "Unsubmit"}
+                                            {submittingWork
+                                                ? "Updating…"
+                                                : isPastDue
+                                                ? "Unsubmit Locked (Past Due)"
+                                                : "Unsubmit"}
                                         </button>
                                     ) : (
                                         <button
@@ -815,18 +842,33 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                         >
                                             {submittingWork
                                                 ? "Submitting…"
-                                                : attachments.length > 0
-                                                    ? "Turn In"
-                                                    : "Mark as Done"}
+                                                : isPastDue
+                                                    ? attachments.length > 0
+                                                        ? "Turn In (Late)"
+                                                        : "Mark as Done (Late)"
+                                                    : attachments.length > 0
+                                                        ? "Turn In"
+                                                        : "Mark as Done"}
                                         </button>
                                     )}
                                 </div>
                             )}
 
+                            {turnedIn && isPastDue && (
+                                <p className="mt-3 text-center text-[11px] text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 font-medium">
+                                    <Clock className="h-3 w-3 shrink-0" />
+                                    <span>Due date has passed. Submissions can no longer be unsubmitted.</span>
+                                </p>
+                            )}
+                            {turnedIn && !isPastDue && (
+                                <p className="mt-3 text-center text-[11px] text-slate-500 dark:text-slate-400">
+                                    You can unsubmit and make changes any time before the deadline.
+                                </p>
+                            )}
                             {!turnedIn && !isMissed && !isGraded && (
                                 <p className="mt-3 text-center text-[11px] text-slate-500 dark:text-slate-400">
                                     {isPastDue
-                                        ? "This assignment is past its due date."
+                                        ? "This assignment is past its due date. Late submission is allowed."
                                         : "You can unsubmit and make changes any time before the deadline."}
                                 </p>
                             )}
@@ -925,7 +967,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
             )}
 
             {/* Unsubmit confirmation modal */}
-            {!readOnly && unsubmitOpen && (
+            {!readOnly && unsubmitOpen && !isPastDue && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
                     <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
                         <div className="p-6">

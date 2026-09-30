@@ -23,6 +23,15 @@ from app.user.models import UserModel
 from app.utils.helpers import save_upload_file
 
 
+def is_deadline_passed(deadline: datetime | None) -> bool:
+    if not deadline:
+        return False
+    now = datetime.now(UTC)
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=UTC)
+    return now > deadline
+
+
 def _submission_stmt():
     return select(SubmissionModel).options(
         selectinload(SubmissionModel.assignment)
@@ -107,10 +116,16 @@ def submit_assignment(
         raise HTTPException(400, detail="Assignment is not published")
 
     now = datetime.now(UTC)
-    if assignment.deadline_utc is not None and now > assignment.deadline_utc:
+    deadline = assignment.deadline_utc
+    deadline_passed = is_deadline_passed(deadline)
+    allow_late = getattr(assignment, "allow_late_submissions", True)
+    if allow_late is None:
+        allow_late = True
+
+    if deadline_passed and not allow_late:
         raise HTTPException(
             400,
-            detail="Submission deadline has passed. This assignment is missed and cannot be submitted."
+            detail="Submission deadline has passed. This assignment is not accepting late submissions."
         )
 
     submission = db.scalar(
@@ -130,7 +145,7 @@ def submit_assignment(
     submission.answer = body.answer
     submission.status = "Submitted"
     submission.submitted_at_utc = now
-    submission.is_late = False
+    submission.is_late = deadline_passed
     # ── NEW ──
     submission.private_note = body.private_note
     submission.external_url = body.external_url
@@ -298,6 +313,17 @@ def add_submission_attachment(
         raise HTTPException(403, detail="You cannot edit this submission")
     if submission.status == "Graded":
         raise HTTPException(400, detail="Cannot edit a submission that has already been graded")
+    if submission.status in ("Submitted", "Turned in"):
+        raise HTTPException(400, detail="Cannot edit a submission that has already been turned in. Please unsubmit first.")
+
+    assignment = submission.assignment
+    if assignment:
+        deadline_passed = is_deadline_passed(assignment.deadline_utc)
+        allow_late = getattr(assignment, "allow_late_submissions", True)
+        if allow_late is None:
+            allow_late = True
+        if deadline_passed and not allow_late:
+            raise HTTPException(400, detail="Submission deadline has passed. Submissions are closed.")
 
     now = datetime.now(UTC)
     if link_url:
@@ -345,6 +371,17 @@ def delete_submission_attachment(
         raise HTTPException(403, detail="You cannot edit this submission")
     if submission.status == "Graded":
         raise HTTPException(400, detail="Cannot edit a submission that has already been graded")
+    if submission.status in ("Submitted", "Turned in"):
+        raise HTTPException(400, detail="Cannot edit a submission that has already been turned in. Please unsubmit first.")
+
+    assignment = submission.assignment
+    if assignment:
+        deadline_passed = is_deadline_passed(assignment.deadline_utc)
+        allow_late = getattr(assignment, "allow_late_submissions", True)
+        if allow_late is None:
+            allow_late = True
+        if deadline_passed and not allow_late:
+            raise HTTPException(400, detail="Submission deadline has passed. Submissions are closed.")
 
     attachment = db.get(SubmissionAttachmentModel, attachment_id)
     if not attachment or attachment.submission_id != submission_id:
@@ -379,6 +416,13 @@ def get_or_create_draft_submission(
 
     if assignment.course and not any(s.id == user.id for s in assignment.course.learners):
         raise HTTPException(403, detail="You are not enrolled in this course")
+
+    deadline_passed = is_deadline_passed(assignment.deadline_utc)
+    allow_late = getattr(assignment, "allow_late_submissions", True)
+    if allow_late is None:
+        allow_late = True
+    if deadline_passed and not allow_late:
+        raise HTTPException(400, detail="Submission deadline has passed. Submissions are closed.")
 
     submission = db.scalar(
         _submission_stmt().where(
@@ -422,8 +466,8 @@ def unsubmit_assignment(
     if submission.status == "Graded":
         raise HTTPException(400, detail="Cannot unsubmit work that has already been graded")
 
-    now = datetime.now(UTC)
-    if submission.assignment and submission.assignment.deadline_utc is not None and now > submission.assignment.deadline_utc:
+    deadline = submission.assignment.deadline_utc if submission.assignment else None
+    if is_deadline_passed(deadline):
         raise HTTPException(400, detail="Cannot unsubmit work after the deadline has passed.")
 
     submission.status = "Draft"

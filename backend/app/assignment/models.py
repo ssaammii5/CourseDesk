@@ -41,6 +41,8 @@ class AssignmentModel(Base):
     submission_formats: Mapped[str] = mapped_column(default="file_upload")
     # comma-separated: file_upload, github_link, live_url, figma_link, text
 
+    allow_late_submissions: Mapped[bool] = mapped_column(default=True)
+
     course: Mapped["CourseModel"] = relationship(back_populates="assignments")  # type: ignore[name-defined]  # noqa: F821
     session: Mapped[Optional["SessionModel"]] = relationship(back_populates="assignments")  # type: ignore[name-defined]  # noqa: F821
     created_by: Mapped["UserModel"] = relationship()  # type: ignore[name-defined]  # noqa: F821

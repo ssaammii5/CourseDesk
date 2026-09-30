@@ -15,6 +15,7 @@ class AssignmentSchema(CamelModel):
     submission_formats: str = "file_upload"
     assign_mode: str = "all"  # all | selective | exclude
     target_learner_ids: list[int] = []
+    allow_late_submissions: bool = True
 
 
 class AssignmentUpdateSchema(CamelModel):
@@ -28,6 +29,7 @@ class AssignmentUpdateSchema(CamelModel):
     submission_formats: str = "file_upload"
     assign_mode: str = "all"  # all | selective | exclude
     target_learner_ids: list[int] = []
+    allow_late_submissions: bool = True
 
 
 class AssignmentAttachmentResponseSchema(CamelModel):
@@ -70,6 +72,7 @@ class AssignmentResponseSchema(CamelModel):
     submission_formats: str = "file_upload"
     assign_mode: str = "all"
     target_learner_ids: list[int] = []
+    allow_late_submissions: bool = True
     attachments: list[AssignmentAttachmentResponseSchema] = []
 
 

@@ -50,7 +50,8 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
                     submissionStatus = "Missed";
                 } else {
                     const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
-                    submissionStatus = isPast ? "Missed" : "Assigned";
+                    const isClosed = isPast && dto.allowLateSubmissions === false;
+                    submissionStatus = isClosed ? "Missed" : "Assigned";
                 }
                 submissionAttachments = (mine.attachments ?? []).map((att) => ({
                     id: att.id,
@@ -62,11 +63,13 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
                 }));
             } else {
                 const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
-                submissionStatus = isPast ? "Missed" : "Assigned";
+                const isClosed = isPast && dto.allowLateSubmissions === false;
+                submissionStatus = isClosed ? "Missed" : "Assigned";
             }
         } catch {
             const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
-            submissionStatus = isPast ? "Missed" : "Assigned";
+            const isClosed = isPast && dto.allowLateSubmissions === false;
+            submissionStatus = isClosed ? "Missed" : "Assigned";
         }
     }
 
@@ -105,6 +108,7 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
         kind: dto.kind,
         topic: dto.topic,
         courseName: dto.courseName,
+        allowLateSubmissions: dto.allowLateSubmissions ?? true,
     };
 }
 

@@ -370,6 +370,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     sessionId: entry.sessionId ?? null,
                     assignMode: entry.assignMode ?? "all",
                     targetLearnerIds: entry.targetLearnerIds ?? [],
+                    allowLateSubmissions: entry.allowLateSubmissions ?? true,
                 });
             } else {
                 const res = await createAssignmentRequest({
@@ -383,6 +384,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     sessionId: entry.sessionId ?? null,
                     assignMode: entry.assignMode ?? "all",
                     targetLearnerIds: entry.targetLearnerIds ?? [],
+                    allowLateSubmissions: entry.allowLateSubmissions ?? true,
                 });
                 assignmentId = res.id;
             }
@@ -447,7 +449,8 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 assignmentStatusMap[cw.id] = cw.status;
             } else {
                 const isPast = cw.deadlineUtc ? new Date(cw.deadlineUtc).getTime() < Date.now() : false;
-                assignmentStatusMap[cw.id] = isPast ? "Missed" : "Assigned";
+                const isClosed = isPast && cw.allowLateSubmissions === false;
+                assignmentStatusMap[cw.id] = isClosed ? "Missed" : "Assigned";
             }
         }
     }

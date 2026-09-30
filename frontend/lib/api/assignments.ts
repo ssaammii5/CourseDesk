@@ -28,6 +28,7 @@ export interface AssignmentDto {
     mySubmissionStatus: string | null; // "Assigned" | "Submitted" | "Graded" (learners only)
     assignMode?: "all" | "selective" | "exclude";
     targetLearnerIds?: number[];
+    allowLateSubmissions?: boolean;
     attachments?: AssignmentAttachmentDto[];
 }
 
@@ -42,6 +43,7 @@ export interface CreateAssignmentPayload {
     sessionId?: number | null;
     assignMode?: "all" | "selective" | "exclude";
     targetLearnerIds?: number[];
+    allowLateSubmissions?: boolean;
 }
 
 export interface UpdateAssignmentPayload {
@@ -54,6 +56,7 @@ export interface UpdateAssignmentPayload {
     sessionId?: number | null;
     assignMode?: "all" | "selective" | "exclude";
     targetLearnerIds?: number[];
+    allowLateSubmissions?: boolean;
 }
 
 export interface AssignmentAttachmentDto {

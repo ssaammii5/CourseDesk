@@ -46,7 +46,8 @@ export function mapAssignmentToCoursework(
             status = "Missed";
         } else {
             const isPast = dto.deadlineUtc ? new Date(dto.deadlineUtc).getTime() < Date.now() : false;
-            status = isPast ? "Missed" : "Assigned";
+            const isClosed = isPast && dto.allowLateSubmissions === false;
+            status = isClosed ? "Missed" : "Assigned";
         }
     } else {
         status = dto.status === "Draft" ? "Draft" : "Assigned";
@@ -69,6 +70,7 @@ export function mapAssignmentToCoursework(
         sessionId: dto.sessionId,
         assignMode: dto.assignMode ?? "all",
         targetLearnerIds: dto.targetLearnerIds ?? [],
+        allowLateSubmissions: dto.allowLateSubmissions ?? true,
         attachments: dto.attachments,
     };
 }

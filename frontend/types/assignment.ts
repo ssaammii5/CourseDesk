@@ -36,4 +36,5 @@ export interface AssignmentDetail {
     kind?: string | null;
     topic?: string | null;
     courseName?: string | null;
+    allowLateSubmissions?: boolean;
 }

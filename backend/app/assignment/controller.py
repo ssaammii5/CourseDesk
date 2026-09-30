@@ -78,6 +78,9 @@ def serialize_assignment(
         # ── Target audience / Assignment scope ──
         assign_mode=getattr(assignment, "assign_mode", "all") or "all",
         target_learner_ids=getattr(assignment, "target_learner_ids", []) or [],
+        allow_late_submissions=getattr(assignment, "allow_late_submissions", True)
+        if getattr(assignment, "allow_late_submissions", True) is not None
+        else True,
         # ── NEW ──
         session_id=assignment.session_id,
         submission_formats=assignment.submission_formats,
@@ -229,6 +232,7 @@ def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> A
         submission_formats=body.submission_formats,
         assign_mode=assign_mode,
         target_learner_ids=target_learner_ids,
+        allow_late_submissions=body.allow_late_submissions if body.allow_late_submissions is not None else True,
     )
     db.add(assignment)
     db.commit()
@@ -251,6 +255,8 @@ def update_assignment(
     if body.assign_mode in ("all", "selective", "exclude"):
         assignment.assign_mode = body.assign_mode
     assignment.target_learner_ids = body.target_learner_ids or []
+    if body.allow_late_submissions is not None:
+        assignment.allow_late_submissions = body.allow_late_submissions
     db.add(assignment)
     db.commit()
 

@@ -41,6 +41,7 @@ export type StatusFilter = "all" | "assigned" | "draft" | "submitted" | "graded"
 export function getEffectiveStage(
     status?: string,
     deadlineUtc?: string,
+    allowLateSubmissions?: boolean,
 ): AssignmentStage {
     if (status === "Graded") return "Graded";
     if (status === "Submitted" || status === "Turned in") return "Submitted";
@@ -49,7 +50,9 @@ export function getEffectiveStage(
     if (deadlineUtc) {
         const due = new Date(deadlineUtc).getTime();
         if (!isNaN(due) && due < Date.now()) {
-            return "Missed";
+            if (allowLateSubmissions === false) {
+                return "Missed";
+            }
         }
     }
     return "Assigned";
@@ -132,7 +135,7 @@ export function CourseworkView({
 
         for (const item of published) {
             const rawStatus = assignmentStatusMap[item.id] || item.status;
-            const stage = getEffectiveStage(rawStatus, item.deadlineUtc);
+            const stage = getEffectiveStage(rawStatus, item.deadlineUtc, item.allowLateSubmissions);
 
             if (stage === "Assigned") assigned++;
             else if (stage === "Draft") draft++;
@@ -155,7 +158,7 @@ export function CourseworkView({
     const filteredItems = useMemo(() => {
         return published.filter((item) => {
             const rawStatus = assignmentStatusMap[item.id] || item.status;
-            const stage = getEffectiveStage(rawStatus, item.deadlineUtc);
+            const stage = getEffectiveStage(rawStatus, item.deadlineUtc, item.allowLateSubmissions);
 
             // Search query
             if (searchQuery.trim()) {
@@ -495,7 +498,7 @@ export function CourseworkView({
                     const totalInTopic = group.entries.length;
                     const completedInTopic = group.entries.filter((e) => {
                         const status = assignmentStatusMap[e.id] || e.status;
-                        const stage = getEffectiveStage(status, e.deadlineUtc);
+                        const stage = getEffectiveStage(status, e.deadlineUtc, e.allowLateSubmissions);
                         return stage === "Graded" || stage === "Submitted";
                     }).length;
 
@@ -586,7 +589,7 @@ function CourseworkItemCard({
     onToggle: () => void;
     onCopyLink: () => void;
 }) {
-    const stage = getEffectiveStage(effectiveStatus, entry.deadlineUtc);
+    const stage = getEffectiveStage(effectiveStatus, entry.deadlineUtc, entry.allowLateSubmissions);
 
     const Icon = FileText;
     const iconClass = "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/40";

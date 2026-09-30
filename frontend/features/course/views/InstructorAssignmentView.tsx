@@ -236,6 +236,33 @@ export function InstructorAssignmentView({
         }
     };
 
+    const [togglingLateSubmissions, setTogglingLateSubmissions] = useState(false);
+    const handleToggleLateSubmissions = async () => {
+        try {
+            setTogglingLateSubmissions(true);
+            const currentAllow = assignment.allowLateSubmissions ?? true;
+            const nextAllow = !currentAllow;
+            await updateAssignmentRequest(assignment.id, {
+                title: assignment.title,
+                description: assignment.description,
+                topic: assignment.topic || "General",
+                kind: assignment.kind || "Assignment",
+                deadlineUtc: assignment.deadlineUtc,
+                maxMarks: assignment.maxMarks,
+                sessionId: assignment.sessionId ?? null,
+                assignMode: assignment.assignMode ?? "all",
+                targetLearnerIds: assignment.targetLearnerIds ?? [],
+                allowLateSubmissions: nextAllow,
+            });
+            assignment.allowLateSubmissions = nextAllow;
+            onRefresh?.();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to update late submission setting.");
+        } finally {
+            setTogglingLateSubmissions(false);
+        }
+    };
+
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-slate-950 pb-16">
             {/* Top Bar with Navigation & Tabs */}
@@ -281,6 +308,26 @@ export function InstructorAssignmentView({
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <button
+                                type="button"
+                                onClick={handleToggleLateSubmissions}
+                                disabled={togglingLateSubmissions}
+                                className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-60 flex items-center gap-1.5 ${
+                                    (assignment.allowLateSubmissions ?? true)
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                        : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                                }`}
+                                title={(assignment.allowLateSubmissions ?? true) ? "Submissions are currently accepted after due date. Click to close after due date." : "Submissions are currently closed after due date. Click to accept late submissions."}
+                            >
+                                <Clock className="h-3 w-3 shrink-0" />
+                                <span>
+                                    {togglingLateSubmissions
+                                        ? "Updating…"
+                                        : (assignment.allowLateSubmissions ?? true)
+                                        ? "Accepting Late Submissions"
+                                        : "Closed After Due Date"}
+                                </span>
+                            </button>
                             <button
                                 type="button"
                                 onClick={handleToggleAssignmentUngraded}
@@ -971,6 +1018,18 @@ export function InstructorAssignmentView({
                                     Due {formatDateTime(assignment.deadlineUtc)}
                                 </p>
                             </div>
+                        </div>
+
+                        {/* Late submissions policy banner */}
+                        <div className="mt-3 flex items-center gap-2">
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                                (assignment.allowLateSubmissions ?? true)
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                    : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+                            }`}>
+                                <Clock className="h-3 w-3 shrink-0" />
+                                {(assignment.allowLateSubmissions ?? true) ? "Late Submissions Allowed" : "Submissions Closed After Due Date"}
+                            </span>
                         </div>
 
                         {/* Description */}

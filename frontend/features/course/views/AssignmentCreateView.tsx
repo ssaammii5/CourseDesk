@@ -378,6 +378,9 @@ export function AssignmentCreateView({
 
     const [points, setPoints] = useState(initial?.maxMarks ?? 100);
     const [due, setDue] = useState<DueOption>(initial?.deadlineUtc ? "custom" : "nextweek");
+    const [allowLateSubmissions, setAllowLateSubmissions] = useState<boolean>(
+        initial?.allowLateSubmissions ?? true
+    );
     const [customDate, setCustomDate] = useState(() => {
         if (!initial?.deadlineUtc) {
             return defaultCustomDate();
@@ -501,6 +504,7 @@ export function AssignmentCreateView({
         sessionId: selectedSessionId === "none" ? null : selectedSessionId,
         assignMode,
         targetLearnerIds,
+        allowLateSubmissions,
     });
 
     const submit = (status: "Assigned" | "Draft") => {
@@ -1144,6 +1148,38 @@ export function AssignmentCreateView({
                                     <Clock className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
                                     <span>Due on {formatShort(dueDate)}</span>
                                 </p>
+                            )}
+
+                            {due !== "none" && (
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="space-y-0.5">
+                                            <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                                <span>Close submissions after due date</span>
+                                            </label>
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                {!allowLateSubmissions
+                                                    ? "Submissions are closed once the deadline passes. No late work accepted."
+                                                    : "Students may turn in work after the deadline (marked as late)."}
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={!allowLateSubmissions}
+                                            onClick={() => setAllowLateSubmissions((prev) => !prev)}
+                                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                !allowLateSubmissions ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
+                                            }`}
+                                        >
+                                            <span
+                                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                                    !allowLateSubmissions ? "translate-x-4" : "translate-x-0"
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
 
