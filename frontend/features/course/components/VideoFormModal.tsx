@@ -18,7 +18,11 @@ import {
 } from "lucide-react";
 import type { SessionDto } from "@/types/session";
 import { extractYouTubeId, parseVideoUrl } from "@/lib/utils/video";
-import { createVideoSessionRequest, updateVideoSessionRequest } from "@/lib/api/sessions";
+import {
+    createVideoSessionRequest,
+    deleteSessionRequest,
+    updateVideoSessionRequest,
+} from "@/lib/api/sessions";
 
 
 interface VideoFormModalProps {
@@ -28,6 +32,7 @@ interface VideoFormModalProps {
     existingTopics?: string[];
     onClose: () => void;
     onSuccess: (session: SessionDto) => void;
+    onDelete?: (sessionId: number) => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -52,6 +57,7 @@ export function VideoFormModal({
     existingTopics = [],
     onClose,
     onSuccess,
+    onDelete,
 }: VideoFormModalProps) {
     const isEditing = Boolean(initialData);
 
@@ -64,6 +70,8 @@ export function VideoFormModal({
     const [existingFiles, setExistingFiles] = useState<ExistingFileItem[]>([]);
     const [newFiles, setNewFiles] = useState<File[]>([]);
     const [removedMaterialIds, setRemovedMaterialIds] = useState<number[]>([]);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [isDragging, setIsDragging] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,6 +83,8 @@ export function VideoFormModal({
         if (open) {
             setErrorMessage(null);
             setIsSubmitting(false);
+            setShowDeleteConfirm(false);
+            setIsDeleting(false);
             if (initialData) {
                 setVideoUrl(initialData.videoUrl || "");
                 setTitle(initialData.title || "");
@@ -207,6 +217,25 @@ export function VideoFormModal({
         if (e.target.files && e.target.files.length > 0) {
             handleFilesSelect(e.target.files);
             e.target.value = "";
+        }
+    };
+
+    const handleDeleteVideo = async () => {
+        if (!initialData?.id) return;
+        try {
+            setIsDeleting(true);
+            await deleteSessionRequest(initialData.id);
+            if (onDelete) {
+                onDelete(initialData.id);
+            }
+            onClose();
+        } catch (err: unknown) {
+            const msg =
+                err instanceof Error ? err.message : "Failed to delete video. Please try again.";
+            setErrorMessage(msg);
+            setShowDeleteConfirm(false);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -607,31 +636,87 @@ export function VideoFormModal({
                         />
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={isSubmitting}
-                            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="inline-flex items-center gap-2 rounded-xl bg-[#1a73e8] hover:bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    <span>Saving Video...</span>
-                                </>
+                    {/* Action Buttons & Delete Confirmation */}
+                    {showDeleteConfirm ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/80 bg-rose-50/90 dark:bg-rose-950/50">
+                            <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300">
+                                <AlertCircle className="h-4 w-4 shrink-0" />
+                                <span className="text-xs font-semibold">
+                                    Delete this entire video lecture permanently?
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={isDeleting}
+                                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteVideo}
+                                    disabled={isDeleting}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            <span>Confirm Delete</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            {isEditing ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    disabled={isSubmitting || isDeleting}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 px-3.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                                    title="Delete this video lecture"
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span>Delete Video</span>
+                                </button>
                             ) : (
-                                <span>{isEditing ? "Save Changes" : "Add Video"}</span>
+                                <div />
                             )}
-                        </button>
-                    </div>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    disabled={isSubmitting || isDeleting}
+                                    className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || isDeleting}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-[#1a73e8] hover:bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            <span>Saving Video...</span>
+                                        </>
+                                    ) : (
+                                        <span>{isEditing ? "Save Changes" : "Add Video"}</span>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </form>
             </div>
         </div>

@@ -339,6 +339,15 @@ export function CurriculumView({
         setSelectedSessionId(saved.id);
     };
 
+    const handleVideoModalDelete = (deletedId: number) => {
+        if (onSessionsChange) {
+            onSessionsChange();
+        }
+        if (selectedSessionId === deletedId) {
+            setSelectedSessionId(null);
+        }
+    };
+
     // Delete session handler
     const confirmDeleteSession = (session: SessionDto) => {
         setSessionToDelete(session);
@@ -454,6 +463,7 @@ export function CurriculumView({
                         existingTopics={allTopicTitles}
                         onClose={() => setVideoModalOpen(false)}
                         onSuccess={handleVideoModalSuccess}
+                        onDelete={handleVideoModalDelete}
                     />
                 )}
             </div>
@@ -482,14 +492,25 @@ export function CurriculumView({
                     {canManage && (
                         <div className="flex items-center gap-2">
                             {currentSession && (
-                                <button
-                                    type="button"
-                                    onClick={() => openEditVideoModal(currentSession)}
-                                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer"
-                                >
-                                    <Edit3 className="h-3.5 w-3.5 text-slate-500" />
-                                    <span>Edit Video</span>
-                                </button>
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => openEditVideoModal(currentSession)}
+                                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer"
+                                    >
+                                        <Edit3 className="h-3.5 w-3.5 text-slate-500" />
+                                        <span>Edit Video</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => confirmDeleteSession(currentSession)}
+                                        className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/30 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-900/50 transition-colors cursor-pointer"
+                                        title="Delete this lecture video"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <span>Delete Video</span>
+                                    </button>
+                                </>
                             )}
                             <button
                                 type="button"
@@ -1272,6 +1293,7 @@ export function CurriculumView({
                     existingTopics={allTopicTitles}
                     onClose={() => setVideoModalOpen(false)}
                     onSuccess={handleVideoModalSuccess}
+                    onDelete={handleVideoModalDelete}
                 />
             )}
 
