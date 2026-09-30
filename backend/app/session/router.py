@@ -65,6 +65,7 @@ def create_video_session(
     topic: str = Form(default="General Videos"),
     duration_minutes: int = Form(default=45),
     file: UploadFile | None = File(default=None),
+    files: list[UploadFile] = File(default=[]),
 ):
     return controller.create_video_session(
         course_id=course_id,
@@ -74,6 +75,7 @@ def create_video_session(
         topic=topic,
         duration_minutes=duration_minutes,
         file=file,
+        files=files,
         user=user,
         db=db,
     )
@@ -105,6 +107,9 @@ def update_video_session(
     topic: str | None = Form(default=None),
     duration_minutes: int | None = Form(default=None),
     file: UploadFile | None = File(default=None),
+    files: list[UploadFile] = File(default=[]),
+    remove_file: bool = Form(default=False),
+    remove_material_ids: str | None = Form(default=None),
 ):
     return controller.update_video_session(
         session_id=session_id,
@@ -116,6 +121,9 @@ def update_video_session(
         topic=topic,
         duration_minutes=duration_minutes,
         file=file,
+        files=files,
+        remove_file=remove_file,
+        remove_material_ids=remove_material_ids,
     )
 
 

@@ -33,7 +33,11 @@ import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { VideoFormModal } from "../components/VideoFormModal";
 import { UploadHandoutModal } from "../components/UploadHandoutModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
-import { deleteSessionMaterialRequest, deleteSessionRequest } from "@/lib/api/sessions";
+import {
+    deleteSessionMaterialRequest,
+    deleteSessionRequest,
+    updateVideoSessionRequest,
+} from "@/lib/api/sessions";
 
 
 export interface CurriculumViewProps {
@@ -359,7 +363,13 @@ export function CurriculumView({
                     onSessionsChange();
                 }
             } else if (materialToDelete && currentSession) {
-                await deleteSessionMaterialRequest(currentSession.id, materialToDelete.id);
+                if (materialToDelete.id >= 9999000) {
+                    const formData = new FormData();
+                    formData.append("remove_file", "true");
+                    await updateVideoSessionRequest(currentSession.id, formData);
+                } else {
+                    await deleteSessionMaterialRequest(currentSession.id, materialToDelete.id);
+                }
                 setMaterialToDelete(null);
                 setDeleteModalOpen(false);
                 if (onSessionsChange) {
@@ -971,7 +981,7 @@ export function CurriculumView({
                                                                 </>
                                                             )}
 
-                                                            {canManage && mat.id < 9999000 && (
+                                                            {canManage && (
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => confirmDeleteMaterial(mat)}

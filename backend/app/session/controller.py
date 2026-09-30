@@ -251,6 +251,7 @@ def create_video_session(
     file: UploadFile | None,
     user: UserModel,
     db: Session,
+    files: list[UploadFile] | None = None,
 ) -> SessionResponseSchema:
     course = db.scalar(
         select(CourseModel)
@@ -275,14 +276,23 @@ def create_video_session(
     ) or 0
     session_number = max_num + 1
 
+    upload_list: list[UploadFile] = []
+    if file and file.filename:
+        upload_list.append(file)
+    if files:
+        for f in files:
+            if f and f.filename and f not in upload_list:
+                upload_list.append(f)
+
     file_url = None
     file_name = None
     file_type = None
     file_size = None
 
-    if file and file.filename:
-        file_url, file_type, file_size = save_upload_file(file, f"sessions/{course_id}")
-        file_name = file.filename
+    if upload_list:
+        first_f = upload_list[0]
+        file_url, file_type, file_size = save_upload_file(first_f, f"sessions/{course_id}")
+        file_name = first_f.filename
 
     video_provider = _detect_video_provider(video_url)
 
@@ -315,6 +325,20 @@ def create_video_session(
         )
         session.materials.append(material)
 
+    for idx, extra_f in enumerate(upload_list[1:], start=2):
+        extra_url, extra_type, extra_size = save_upload_file(extra_f, f"sessions/{course_id}")
+        extra_mat = SessionMaterialModel(
+            title=extra_f.filename or f"Lecture Handout {idx}",
+            kind="file",
+            url=extra_url,
+            file_name=extra_f.filename or "file",
+            file_type=extra_type or "FILE",
+            file_size=extra_size or "—",
+            description="Attached lecture file",
+            sort_order=idx,
+        )
+        session.materials.append(extra_mat)
+
     db.add(session)
     db.flush()
 
@@ -346,6 +370,9 @@ def update_video_session(
     topic: str | None = None,
     duration_minutes: int | None = None,
     file: UploadFile | None = None,
+    files: list[UploadFile] | None = None,
+    remove_file: bool = False,
+    remove_material_ids: str | None = None,
 ) -> SessionResponseSchema:
     session = db.scalar(_session_stmt().where(SessionModel.id == session_id))
     if not session:
@@ -372,25 +399,70 @@ def update_video_session(
         session.duration_minutes = duration_minutes
         session.video_duration_minutes = duration_minutes
 
-    if file and file.filename:
-        file_url, file_type, file_size = save_upload_file(file, f"sessions/{session.course_id}")
-        session.file_url = file_url
-        session.file_name = file.filename
-        session.file_type = file_type
-        session.file_size = file_size
+    # Remove specific material IDs
+    if remove_material_ids:
+        try:
+            ids_to_remove = {int(x.strip()) for x in remove_material_ids.split(",") if x.strip()}
+        except ValueError:
+            ids_to_remove = set()
+        for mat in list(session.materials):
+            if mat.id in ids_to_remove:
+                if session.file_url == mat.url:
+                    session.file_url = None
+                    session.file_name = None
+                    session.file_type = None
+                    session.file_size = None
+                db.delete(mat)
 
-        material = SessionMaterialModel(
-            session_id=session.id,
-            title=session.file_name,
-            kind="file",
-            url=file_url,
-            file_name=session.file_name,
-            file_type=file_type,
-            file_size=file_size,
-            description="Attached lecture file",
-            sort_order=len(session.materials) + 1,
-        )
-        db.add(material)
+    # Remove primary file if requested
+    if remove_file:
+        old_url = session.file_url
+        session.file_url = None
+        session.file_name = None
+        session.file_type = None
+        session.file_size = None
+        if old_url:
+            for mat in list(session.materials):
+                if mat.url == old_url:
+                    db.delete(mat)
+
+    # Add any new files
+    upload_list: list[UploadFile] = []
+    if file and file.filename:
+        upload_list.append(file)
+    if files:
+        for f in files:
+            if f and f.filename and f not in upload_list:
+                upload_list.append(f)
+
+    if upload_list:
+        for idx, f in enumerate(upload_list):
+            f_url, f_type, f_size = save_upload_file(f, f"sessions/{session.course_id}")
+            if not session.file_url:
+                session.file_url = f_url
+                session.file_name = f.filename
+                session.file_type = f_type
+                session.file_size = f_size
+            mat = SessionMaterialModel(
+                session_id=session.id,
+                title=f.filename or f"Lecture Handout {len(session.materials) + 1}",
+                kind="file",
+                url=f_url,
+                file_name=f.filename or "file",
+                file_type=f_type or "FILE",
+                file_size=f_size or "—",
+                description="Attached lecture file",
+                sort_order=len(session.materials) + 1 + idx,
+            )
+            db.add(mat)
+
+    # If primary file was cleared but materials remain, point file_url to the first remaining material
+    if not session.file_url and session.materials:
+        first_remaining = session.materials[0]
+        session.file_url = first_remaining.url
+        session.file_name = first_remaining.file_name or first_remaining.title
+        session.file_type = first_remaining.file_type
+        session.file_size = first_remaining.file_size
 
     db.add(session)
     db.commit()
@@ -465,6 +537,13 @@ def delete_material(
     )
     if not course or not _can_manage_course(user, course):
         raise HTTPException(403, detail="You cannot manage this session")
+
+    if session.file_url and session.file_url == material.url:
+        session.file_url = None
+        session.file_name = None
+        session.file_type = None
+        session.file_size = None
+        db.add(session)
 
     db.delete(material)
     db.commit()

@@ -9,7 +9,9 @@ import {
     FolderPlus,
     Loader2,
     Play,
+    Plus,
     Tag,
+    Trash2,
     UploadCloud,
     Video,
     X,
@@ -36,6 +38,13 @@ function formatBytes(bytes: number): string {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
+interface ExistingFileItem {
+    id: number;
+    name: string;
+    size?: string | null;
+    url?: string | null;
+}
+
 export function VideoFormModal({
     open,
     courseId,
@@ -52,12 +61,9 @@ export function VideoFormModal({
     const [customTopic, setCustomTopic] = useState("");
     const [description, setDescription] = useState("");
     const [durationMinutes, setDurationMinutes] = useState(45);
-    const [file, setFile] = useState<File | null>(null);
-    const [existingFile, setExistingFile] = useState<{
-        name: string;
-        size?: string | null;
-        url?: string | null;
-    } | null>(null);
+    const [existingFiles, setExistingFiles] = useState<ExistingFileItem[]>([]);
+    const [newFiles, setNewFiles] = useState<File[]>([]);
+    const [removedMaterialIds, setRemovedMaterialIds] = useState<number[]>([]);
 
     const [isDragging, setIsDragging] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,23 +88,32 @@ export function VideoFormModal({
                 }
                 setDescription(initialData.description || "");
                 setDurationMinutes(initialData.durationMinutes || 45);
-                setFile(null);
-                if (initialData.fileName || initialData.fileUrl) {
-                    setExistingFile({
+                setNewFiles([]);
+                setRemovedMaterialIds([]);
+
+                const existingList: ExistingFileItem[] = [];
+                if (initialData.materials && initialData.materials.length > 0) {
+                    initialData.materials.forEach((m) => {
+                        existingList.push({
+                            id: m.id,
+                            name: m.fileName || m.title,
+                            size: m.fileSize,
+                            url: m.url,
+                        });
+                    });
+                }
+                if (
+                    initialData.fileUrl &&
+                    !existingList.some((m) => m.url === initialData.fileUrl)
+                ) {
+                    existingList.unshift({
+                        id: 9999000 + initialData.id,
                         name: initialData.fileName || "Attached file",
                         size: initialData.fileSize,
                         url: initialData.fileUrl,
                     });
-                } else if (initialData.materials && initialData.materials.length > 0) {
-                    const firstMat = initialData.materials[0];
-                    setExistingFile({
-                        name: firstMat.fileName || firstMat.title,
-                        size: firstMat.fileSize,
-                        url: firstMat.url,
-                    });
-                } else {
-                    setExistingFile(null);
                 }
+                setExistingFiles(existingList);
             } else {
                 setVideoUrl("");
                 setTitle("");
@@ -106,8 +121,9 @@ export function VideoFormModal({
                 setCustomTopic("");
                 setDescription("");
                 setDurationMinutes(45);
-                setFile(null);
-                setExistingFile(null);
+                setExistingFiles([]);
+                setNewFiles([]);
+                setRemovedMaterialIds([]);
             }
         }
     }, [open, initialData, existingTopics]);
@@ -117,26 +133,80 @@ export function VideoFormModal({
     const ytId = extractYouTubeId(videoUrl);
     const parsed = videoUrl ? parseVideoUrl(videoUrl) : null;
 
-    const handleFileSelect = (selectedFile: File) => {
-        if (selectedFile.size > 50 * 1024 * 1024) {
-            setErrorMessage("File exceeds the maximum limit of 50 MB.");
-            return;
+    const handleFilesSelect = (selectedFiles: FileList | File[]) => {
+        const valid: File[] = [];
+        let oversized = false;
+        Array.from(selectedFiles).forEach((f) => {
+            if (f.size > 50 * 1024 * 1024) {
+                oversized = true;
+            } else {
+                if (!newFiles.some((nf) => nf.name === f.name && nf.size === f.size)) {
+                    valid.push(f);
+                }
+            }
+        });
+
+        if (oversized) {
+            setErrorMessage("One or more files exceed the 50 MB limit and were skipped.");
+        } else {
+            setErrorMessage(null);
         }
-        setErrorMessage(null);
-        setFile(selectedFile);
+
+        if (valid.length > 0) {
+            setNewFiles((prev) => [...prev, ...valid]);
+        }
+    };
+
+    const handleRemoveNewFile = (index: number) => {
+        setNewFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleRemoveExistingFile = (item: ExistingFileItem) => {
+        setExistingFiles((prev) => prev.filter((f) => f.id !== item.id));
+        setRemovedMaterialIds((prev) => [...prev, item.id]);
+    };
+
+    const handleUndoRemoveExisting = () => {
+        if (initialData) {
+            const existingList: ExistingFileItem[] = [];
+            if (initialData.materials && initialData.materials.length > 0) {
+                initialData.materials.forEach((m) => {
+                    existingList.push({
+                        id: m.id,
+                        name: m.fileName || m.title,
+                        size: m.fileSize,
+                        url: m.url,
+                    });
+                });
+            }
+            if (
+                initialData.fileUrl &&
+                !existingList.some((m) => m.url === initialData.fileUrl)
+            ) {
+                existingList.unshift({
+                    id: 9999000 + initialData.id,
+                    name: initialData.fileName || "Attached file",
+                    size: initialData.fileSize,
+                    url: initialData.fileUrl,
+                });
+            }
+            setExistingFiles(existingList);
+            setRemovedMaterialIds([]);
+        }
     };
 
     const onDrop = (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setIsDragging(false);
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleFileSelect(e.dataTransfer.files[0]);
+            handleFilesSelect(e.dataTransfer.files);
         }
     };
 
     const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            handleFileSelect(e.target.files[0]);
+            handleFilesSelect(e.target.files);
+            e.target.value = "";
         }
     };
 
@@ -169,8 +239,17 @@ export function VideoFormModal({
             formData.append("topic", resolvedTopic);
             formData.append("duration_minutes", String(durationMinutes || 45));
 
-            if (file) {
-                formData.append("file", file);
+            newFiles.forEach((f) => {
+                formData.append("files", f);
+            });
+
+            if (isEditing) {
+                if (removedMaterialIds.length > 0) {
+                    formData.append("remove_material_ids", removedMaterialIds.join(","));
+                }
+                if (existingFiles.length === 0 && initialData?.fileUrl && newFiles.length === 0) {
+                    formData.append("remove_file", "true");
+                }
             }
 
             let result: SessionDto;
@@ -368,67 +447,118 @@ export function VideoFormModal({
                         />
                     </div>
 
-                    {/* Lecture File / Handout Attachment */}
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                            <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                            Lecture Handout / File (PDF, Slides, Code, Notes)
-                        </label>
+                    {/* Lecture Files & Handouts Attachment */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                Lecture Handouts &amp; Files (PDF, Slides, Code, Notes)
+                            </label>
+                            <span className="text-[11px] font-medium text-slate-400">
+                                {existingFiles.length + newFiles.length > 0
+                                    ? `${existingFiles.length + newFiles.length} ${
+                                          existingFiles.length + newFiles.length === 1 ? "file" : "files"
+                                      }`
+                                    : "Optional"}
+                            </span>
+                        </div>
 
-                        {/* Existing Attached File in Edit Mode */}
-                        {existingFile && !file && (
-                            <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 mb-2">
-                                <div className="flex items-center gap-2.5 truncate">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                                        <FileText className="h-4 w-4" />
+                        {/* Existing Files List */}
+                        {existingFiles.length > 0 && (
+                            <div className="space-y-1.5">
+                                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                    Current Handouts ({existingFiles.length})
+                                </p>
+                                {existingFiles.map((ef) => (
+                                    <div
+                                        key={ef.id}
+                                        className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-2.5 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-2.5 truncate">
+                                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </div>
+                                            <div className="truncate">
+                                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                                    {ef.name}
+                                                </p>
+                                                {ef.size && (
+                                                    <span className="text-[10px] text-slate-400">
+                                                        {ef.size} • Attached handout
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveExistingFile(ef)}
+                                            className="inline-flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-medium px-2 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                            title="Remove this file"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                            <span>Remove</span>
+                                        </button>
                                     </div>
-                                    <div className="truncate">
-                                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                            {existingFile.name}
-                                        </p>
-                                        {existingFile.size && (
-                                            <span className="text-[11px] text-slate-400">
-                                                {existingFile.size} • Existing file
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Undo removed materials notice */}
+                        {removedMaterialIds.length > 0 && (
+                            <div className="flex items-center justify-between rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/30 p-2.5 text-xs text-amber-800 dark:text-amber-300">
+                                <span>
+                                    {removedMaterialIds.length}{" "}
+                                    {removedMaterialIds.length === 1 ? "file" : "files"} will be removed on save.
+                                </span>
                                 <button
                                     type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="text-xs text-[#1a73e8] dark:text-blue-400 hover:underline font-medium cursor-pointer"
+                                    onClick={handleUndoRemoveExisting}
+                                    className="font-semibold underline hover:text-amber-950 dark:hover:text-amber-100 cursor-pointer ml-2"
                                 >
-                                    Replace
+                                    Undo
                                 </button>
                             </div>
                         )}
 
-                        {/* Newly Selected File */}
-                        {file ? (
-                            <div className="flex items-center justify-between rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 p-3">
-                                <div className="flex items-center gap-2.5 truncate">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400">
-                                        <FileText className="h-4 w-4" />
+                        {/* Newly Selected Files List */}
+                        {newFiles.length > 0 && (
+                            <div className="space-y-1.5">
+                                <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                                    New Files to Upload ({newFiles.length})
+                                </p>
+                                {newFiles.map((nf, idx) => (
+                                    <div
+                                        key={`${nf.name}-${idx}`}
+                                        className="flex items-center justify-between rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 p-2.5"
+                                    >
+                                        <div className="flex items-center gap-2.5 truncate">
+                                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400">
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </div>
+                                            <div className="truncate">
+                                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                                    {nf.name}
+                                                </p>
+                                                <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
+                                                    {formatBytes(nf.size)} • Ready to upload
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveNewFile(idx)}
+                                            className="rounded-full p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                                            title="Cancel file"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
                                     </div>
-                                    <div className="truncate">
-                                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                            {file.name}
-                                        </p>
-                                        <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
-                                            {formatBytes(file.size)} • Ready to upload
-                                        </span>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setFile(null)}
-                                    className="rounded-full p-1 text-slate-400 hover:text-rose-500 transition-colors"
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
+                                ))}
                             </div>
-                        ) : (
-                            /* Dropzone */
+                        )}
+
+                        {/* Dropzone & "Add More Files" Area */}
+                        {existingFiles.length === 0 && newFiles.length === 0 ? (
                             <div
                                 onDragOver={(e) => {
                                     e.preventDefault();
@@ -445,17 +575,32 @@ export function VideoFormModal({
                             >
                                 <UploadCloud className="h-7 w-7 text-slate-400 dark:text-slate-500 mb-1" />
                                 <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                    Click or drag &amp; drop lecture file here
+                                    Click or drag &amp; drop files here (multiple files supported)
                                 </p>
                                 <p className="text-[11px] text-slate-400 mt-0.5">
-                                    PDF, PPTX, DOCX, ZIP, or code handouts up to 50 MB
+                                    PDF, PPTX, DOCX, ZIP, or code handouts up to 50 MB each
                                 </p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-blue-400 dark:border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-semibold text-[#1a73e8] dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/50 transition-colors cursor-pointer"
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    <span>Add More Files</span>
+                                </button>
+                                <span className="text-[11px] text-slate-400">
+                                    Select or drop multiple files (PDF, PPTX, ZIP, Code)
+                                </span>
                             </div>
                         )}
 
                         <input
                             ref={fileInputRef}
                             type="file"
+                            multiple
                             onChange={onFileChange}
                             className="hidden"
                             accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg"
