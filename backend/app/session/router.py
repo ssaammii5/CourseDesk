@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, status
+from fastapi import APIRouter, File, Form, UploadFile, status
 
 from app.session import controller
 from app.session.dtos import (
@@ -50,6 +50,35 @@ def create_session(body: SessionSchema, db: DbSession, user: IsAdminOrInstructor
     return controller.create_session(body, user, db)
 
 
+@session_routes.post(
+    "/video",
+    response_model=SessionResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_video_session(
+    db: DbSession,
+    user: IsAdminOrInstructor,
+    course_id: int = Form(...),
+    title: str = Form(...),
+    video_url: str = Form(...),
+    description: str = Form(default=""),
+    topic: str = Form(default="General Videos"),
+    duration_minutes: int = Form(default=45),
+    file: UploadFile | None = File(default=None),
+):
+    return controller.create_video_session(
+        course_id=course_id,
+        title=title,
+        video_url=video_url,
+        description=description,
+        topic=topic,
+        duration_minutes=duration_minutes,
+        file=file,
+        user=user,
+        db=db,
+    )
+
+
 @session_routes.put(
     "/{session_id}",
     response_model=SessionResponseSchema,
@@ -59,6 +88,35 @@ def update_session(
     session_id: int, body: SessionUpdateSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.update_session(session_id, body, user, db)
+
+
+@session_routes.put(
+    "/{session_id}/video",
+    response_model=SessionResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def update_video_session(
+    session_id: int,
+    db: DbSession,
+    user: IsAdminOrInstructor,
+    title: str | None = Form(default=None),
+    video_url: str | None = Form(default=None),
+    description: str | None = Form(default=None),
+    topic: str | None = Form(default=None),
+    duration_minutes: int | None = Form(default=None),
+    file: UploadFile | None = File(default=None),
+):
+    return controller.update_video_session(
+        session_id=session_id,
+        user=user,
+        db=db,
+        title=title,
+        video_url=video_url,
+        description=description,
+        topic=topic,
+        duration_minutes=duration_minutes,
+        file=file,
+    )
 
 
 @session_routes.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -82,9 +140,10 @@ def add_material(
     url: str | None = Form(default=None),
     description: str = Form(default=""),
     sort_order: int = Form(default=0),
+    file: UploadFile | None = File(default=None),
 ):
     return controller.add_material(
-        session_id, user, db, title, kind, url, description, sort_order
+        session_id, user, db, title, kind, url, description, sort_order, file
     )
 
 

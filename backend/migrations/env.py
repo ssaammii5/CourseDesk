@@ -12,6 +12,7 @@ import app.academic.models
 import app.announcement.models       # ← NEW
 import app.assignment.models
 import app.auth.models
+import app.comment.models
 import app.course.models
 import app.notification.models
 import app.session.models            # ← NEW

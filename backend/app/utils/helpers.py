@@ -106,16 +106,33 @@ def human_readable_size(num_bytes: int) -> str:
     return f"{size:.1f} GB"
 
 
-def save_upload_file(file: UploadFile, subdir: str) -> tuple[str, str, str]:
-    """Persist an uploaded file to disk. Returns (url, file_type, file_size)."""
-    target_dir = os.path.join(settings.UPLOAD_DIR, subdir)
+def save_upload_file(file: UploadFile, subdir: str, max_size_bytes: int = 50 * 1024 * 1024) -> tuple[str, str, str]:
+    """Persist an uploaded file to disk securely. Returns (url, file_type, file_size)."""
+    clean_subdir = os.path.normpath(subdir).lstrip("/\\")
+    base_upload_dir = os.path.abspath(settings.UPLOAD_DIR)
+    target_dir = os.path.abspath(os.path.join(base_upload_dir, clean_subdir))
+    
+    # Ensure directory boundary check to prevent path traversal
+    if not target_dir.startswith(base_upload_dir + os.path.sep) and target_dir != base_upload_dir:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid destination path")
+    
     os.makedirs(target_dir, exist_ok=True)
-    original_name = file.filename or "file"
-    ext = os.path.splitext(original_name)[1]
+    safe_name = os.path.basename(file.filename or "file")
+    raw_ext = os.path.splitext(safe_name)[1].lower()
+    # Strip any directory traversal characters from extension
+    ext = "".join(c for c in raw_ext if c.isalnum() or c == ".")
     unique_name = f"{uuid.uuid4().hex}{ext}"
     file_path = os.path.join(target_dir, unique_name)
+    
     contents = file.file.read()
+    if len(contents) > max_size_bytes:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of {human_readable_size(max_size_bytes)}",
+        )
+    
     with open(file_path, "wb") as f:
         f.write(contents)
-    file_type = (ext.lstrip(".") or "file").upper()
-    return f"/uploads/{subdir}/{unique_name}", file_type, human_readable_size(len(contents))
+    
+    file_type = (ext.lstrip(".") or "FILE").upper()
+    return f"/uploads/{clean_subdir}/{unique_name}", file_type, human_readable_size(len(contents))

@@ -1014,7 +1014,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 Add link
                             </h3>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                Enter a web link (e.g. Google Docs, Figma, GitHub, YouTube)
+                                Enter a web link (e.g. Google Docs, Figma, GitHub, Website)
                             </p>
 
                             <div className="mt-4">

@@ -105,11 +105,9 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     const [apiAnnouncements, setApiAnnouncements] = useState<AnnouncementDto[]>([]);
     const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
 
-    useEffect(() => {
-        let cancelled = false;
+    const reloadSessions = useCallback(() => {
         getCourseSessionsRequest(details.courseId)
             .then((data) => {
-                if (cancelled) return;
                 setSessions(data);
                 const now = Date.now();
                 const upcoming = data
@@ -127,10 +125,11 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                 setNextSession(upcoming[0] ?? null);
             })
             .catch(() => { });
-        return () => {
-            cancelled = true;
-        };
     }, [details.courseId]);
+
+    useEffect(() => {
+        reloadSessions();
+    }, [reloadSessions]);
 
     useEffect(() => {
         let cancelled = false;
@@ -530,6 +529,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     courseTitle={title}
                     courseId={details.courseId}
                     classwork={classwork}
+                    onSessionsChange={reloadSessions}
                 />
             )}
 

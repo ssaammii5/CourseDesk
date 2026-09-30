@@ -50,6 +50,10 @@ class SessionSchema(CamelModel):
     video_url: str | None = None
     video_provider: str = ""
     video_duration_minutes: int | None = None
+    file_url: str | None = None
+    file_name: str | None = None
+    file_type: str | None = None
+    file_size: str | None = None
     status: str = "Scheduled"
 
 
@@ -67,6 +71,10 @@ class SessionUpdateSchema(CamelModel):
     video_url: str | None = None
     video_provider: str | None = None
     video_duration_minutes: int | None = None
+    file_url: str | None = None
+    file_name: str | None = None
+    file_type: str | None = None
+    file_size: str | None = None
     status: str | None = None
 
 
@@ -86,6 +94,10 @@ class SessionResponseSchema(CamelModel):
     video_url: str | None = None
     video_provider: str = ""
     video_duration_minutes: int | None = None
+    file_url: str | None = None
+    file_name: str | None = None
+    file_type: str | None = None
+    file_size: str | None = None
     status: str = "Scheduled"
     created_at_utc: datetime
     materials: list[SessionMaterialResponseSchema] = []

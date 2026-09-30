@@ -34,6 +34,10 @@ export interface SessionDto {
     videoUrl: string | null;
     videoProvider: string;
     videoDurationMinutes: number | null;
+    fileUrl?: string | null;
+    fileName?: string | null;
+    fileType?: string | null;
+    fileSize?: string | null;
     status: string;
     createdAtUtc: string;
     materials: SessionMaterial[];

@@ -1,5 +1,5 @@
-from fastapi import HTTPException
-from sqlalchemy import select
+from fastapi import HTTPException, UploadFile
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.assignment.models import AssignmentModel
@@ -17,6 +17,20 @@ from app.session.models import (
     SessionVideoMarkerModel,
 )
 from app.user.models import UserModel
+from app.utils.helpers import save_upload_file
+
+
+def _detect_video_provider(url: str | None) -> str:
+    if not url:
+        return ""
+    lower = url.lower()
+    if "youtube.com" in lower or "youtu.be" in lower:
+        return "youtube"
+    if "vimeo.com" in lower:
+        return "vimeo"
+    if "zoom.us" in lower:
+        return "zoom"
+    return "direct"
 
 
 def _serialize_session(session: SessionModel) -> SessionResponseSchema:
@@ -36,6 +50,10 @@ def _serialize_session(session: SessionModel) -> SessionResponseSchema:
         video_url=session.video_url,
         video_provider=session.video_provider,
         video_duration_minutes=session.video_duration_minutes,
+        file_url=session.file_url,
+        file_name=session.file_name,
+        file_type=session.file_type,
+        file_size=session.file_size,
         status=session.status,
         created_at_utc=session.created_at_utc,
         materials=[
@@ -47,8 +65,7 @@ def _serialize_session(session: SessionModel) -> SessionResponseSchema:
                 timestamp_seconds=mk.timestamp_seconds,
                 label=mk.label,
             )
-            for mk in session.video_markers
-            if hasattr(session, "video_markers")
+            for mk in (session.video_markers or [])
         ],
         assignment_ids=[a.id for a in session.assignments],
         assignment_titles=[a.title for a in session.assignments],
@@ -58,6 +75,7 @@ def _serialize_session(session: SessionModel) -> SessionResponseSchema:
 def _session_stmt():
     return select(SessionModel).options(
         selectinload(SessionModel.materials),
+        selectinload(SessionModel.video_markers),
         selectinload(SessionModel.assignments),
     )
 
@@ -221,6 +239,164 @@ def delete_session(session_id: int, user: UserModel, db: Session) -> None:
     db.commit()
 
 
+# ── Video Setup (YouTube, title, description, file) ─────────────────────────
+
+def create_video_session(
+    course_id: int,
+    title: str,
+    video_url: str,
+    description: str,
+    topic: str,
+    duration_minutes: int,
+    file: UploadFile | None,
+    user: UserModel,
+    db: Session,
+) -> SessionResponseSchema:
+    course = db.scalar(
+        select(CourseModel)
+        .options(
+            selectinload(CourseModel.instructors),
+            selectinload(CourseModel.learners),
+        )
+        .where(CourseModel.id == course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    if not _can_manage_course(user, course):
+        raise HTTPException(403, detail="You cannot manage sessions in this course")
+
+    if not title or not title.strip():
+        raise HTTPException(400, detail="Video title is required")
+    if not video_url or not video_url.strip():
+        raise HTTPException(400, detail="Video URL is required")
+
+    max_num = db.scalar(
+        select(func.max(SessionModel.session_number)).where(SessionModel.course_id == course_id)
+    ) or 0
+    session_number = max_num + 1
+
+    file_url = None
+    file_name = None
+    file_type = None
+    file_size = None
+
+    if file and file.filename:
+        file_url, file_type, file_size = save_upload_file(file, f"sessions/{course_id}")
+        file_name = file.filename
+
+    video_provider = _detect_video_provider(video_url)
+
+    session = SessionModel(
+        course_id=course_id,
+        session_number=session_number,
+        title=title.strip(),
+        topic=topic.strip() if topic else "General Videos",
+        description=description or "",
+        video_url=video_url.strip(),
+        video_provider=video_provider,
+        video_duration_minutes=duration_minutes or 45,
+        duration_minutes=duration_minutes or 45,
+        file_url=file_url,
+        file_name=file_name,
+        file_type=file_type,
+        file_size=file_size,
+        status="Completed",
+    )
+    if file_url:
+        material = SessionMaterialModel(
+            title=file_name or "Lecture Handout",
+            kind="file",
+            url=file_url,
+            file_name=file_name or "file",
+            file_type=file_type or "FILE",
+            file_size=file_size or "—",
+            description="Attached lecture file",
+            sort_order=1,
+        )
+        session.materials.append(material)
+
+    db.add(session)
+    db.flush()
+
+    learner_ids = [s.id for s in (course.learners or [])]
+    if learner_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        create_notifications_bulk(
+            db=db,
+            user_ids=learner_ids,
+            title=f"New video lecture: {session.title}",
+            message=f"{session.title} was uploaded in {course.name}",
+            kind="session",
+            link=f"/course/{course_id}?tab=video",
+        )
+
+    db.commit()
+    db.refresh(session)
+    return get_session(session.id, user, db)
+
+
+def update_video_session(
+    session_id: int,
+    user: UserModel,
+    db: Session,
+    title: str | None = None,
+    video_url: str | None = None,
+    description: str | None = None,
+    topic: str | None = None,
+    duration_minutes: int | None = None,
+    file: UploadFile | None = None,
+) -> SessionResponseSchema:
+    session = db.scalar(_session_stmt().where(SessionModel.id == session_id))
+    if not session:
+        raise HTTPException(404, detail="Session id is incorrect")
+
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == session.course_id)
+    )
+    if not course or not _can_manage_course(user, course):
+        raise HTTPException(403, detail="You cannot manage this session")
+
+    if title is not None and title.strip():
+        session.title = title.strip()
+    if video_url is not None and video_url.strip():
+        session.video_url = video_url.strip()
+        session.video_provider = _detect_video_provider(video_url)
+    if description is not None:
+        session.description = description
+    if topic is not None:
+        session.topic = topic.strip()
+    if duration_minutes is not None:
+        session.duration_minutes = duration_minutes
+        session.video_duration_minutes = duration_minutes
+
+    if file and file.filename:
+        file_url, file_type, file_size = save_upload_file(file, f"sessions/{session.course_id}")
+        session.file_url = file_url
+        session.file_name = file.filename
+        session.file_type = file_type
+        session.file_size = file_size
+
+        material = SessionMaterialModel(
+            session_id=session.id,
+            title=session.file_name,
+            kind="file",
+            url=file_url,
+            file_name=session.file_name,
+            file_type=file_type,
+            file_size=file_size,
+            description="Attached lecture file",
+            sort_order=len(session.materials) + 1,
+        )
+        db.add(material)
+
+    db.add(session)
+    db.commit()
+    return get_session(session_id, user, db)
+
+
 # ── Materials ──────────────────────────────────────────────────────────────
 
 def add_material(
@@ -232,6 +408,7 @@ def add_material(
     url: str | None = None,
     description: str = "",
     sort_order: int = 0,
+    file: UploadFile | None = None,
 ) -> SessionMaterialResponseSchema:
     session = db.get(SessionModel, session_id)
     if not session:
@@ -245,11 +422,22 @@ def add_material(
     if not course or not _can_manage_course(user, course):
         raise HTTPException(403, detail="You cannot manage this session")
 
+    file_name = ""
+    file_type = ""
+    file_size = ""
+    if file and file.filename:
+        url, file_type, file_size = save_upload_file(file, f"sessions/{session.course_id}")
+        file_name = file.filename
+        kind = "file"
+
     material = SessionMaterialModel(
         session_id=session_id,
-        title=title,
+        title=title or file_name or "Lecture Handout",
         kind=kind,
         url=url,
+        file_name=file_name,
+        file_type=file_type,
+        file_size=file_size,
         description=description,
         sort_order=sort_order,
     )

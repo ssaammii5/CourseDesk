@@ -44,6 +44,12 @@ class SessionModel(Base):
     video_provider: Mapped[str] = mapped_column(default="")  # youtube | vimeo | zoom | direct
     video_duration_minutes: Mapped[Optional[int]] = mapped_column(default=None)
 
+    # ── attached file / handout ──
+    file_url: Mapped[Optional[str]] = mapped_column(default=None)
+    file_name: Mapped[Optional[str]] = mapped_column(default=None)
+    file_type: Mapped[Optional[str]] = mapped_column(default=None)
+    file_size: Mapped[Optional[str]] = mapped_column(default=None)
+
     # ── status ──
     status: Mapped[str] = mapped_column(default="Scheduled")
     # Scheduled | Live | Completed | Cancelled
@@ -55,6 +61,9 @@ class SessionModel(Base):
     # ── relationships ──
     course: Mapped["CourseModel"] = relationship(back_populates="sessions")  # type: ignore[name-defined]  # noqa: F821
     materials: Mapped[list["SessionMaterialModel"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+    video_markers: Mapped[list["SessionVideoMarkerModel"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
     )
     assignments: Mapped[list["AssignmentModel"]] = relationship(back_populates="session")  # type: ignore[name-defined]  # noqa: F821
@@ -97,4 +106,4 @@ class SessionVideoMarkerModel(Base):
     timestamp_seconds: Mapped[int] = mapped_column()
     label: Mapped[str] = mapped_column()
 
-    session: Mapped["SessionModel"] = relationship()
+    session: Mapped["SessionModel"] = relationship(back_populates="video_markers")

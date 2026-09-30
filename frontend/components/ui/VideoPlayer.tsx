@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, Maximize2, Minimize2, Play } from "lucide-react";
+import { ExternalLink, Play } from "lucide-react";
 import {
     parseVideoUrl,
     formatTimestamp,
@@ -18,7 +18,6 @@ interface VideoPlayerProps {
 export function VideoPlayer({ url, title, markers = [] }: VideoPlayerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [speed, setSpeed] = useState(1);
-    const [theater, setTheater] = useState(false);
     const parsed = parseVideoUrl(url);
 
     const isEmbeddable =
@@ -32,11 +31,8 @@ export function VideoPlayer({ url, title, markers = [] }: VideoPlayerProps) {
     }, [speed]);
 
     return (
-        <div
-            className={`overflow-hidden rounded-xl border border-gray-200 bg-black ${theater ? "fixed inset-0 z-50 rounded-none" : ""
-                }`}
-        >
-            <div className={`relative ${theater ? "h-full" : "aspect-video"}`}>
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-black">
+            <div className="relative aspect-video">
                 {isEmbeddable ? (
                     <iframe
                         src={parsed.embedUrl}
@@ -88,19 +84,6 @@ export function VideoPlayer({ url, title, markers = [] }: VideoPlayerProps) {
                         </button>
                     ))}
                 </div>
-
-                <button
-                    type="button"
-                    onClick={() => setTheater((v) => !v)}
-                    title={theater ? "Exit theater mode" : "Theater mode"}
-                    className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
-                >
-                    {theater ? (
-                        <Minimize2 className="h-4 w-4" />
-                    ) : (
-                        <Maximize2 className="h-4 w-4" />
-                    )}
-                </button>
             </div>
 
             {markers.length > 0 && (

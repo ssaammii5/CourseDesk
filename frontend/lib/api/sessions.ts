@@ -28,6 +28,13 @@ export function createSessionRequest(payload: CreateSessionPayload): Promise<Ses
     });
 }
 
+export function createVideoSessionRequest(formData: FormData): Promise<SessionDto> {
+    return apiFetch<SessionDto>("/api/sessions/video", {
+        method: "POST",
+        body: formData,
+    });
+}
+
 export function updateSessionRequest(
     sessionId: number,
     payload: UpdateSessionPayload,
@@ -35,6 +42,16 @@ export function updateSessionRequest(
     return apiFetch<SessionDto>(`/api/sessions/${sessionId}`, {
         method: "PUT",
         body: JSON.stringify(payload),
+    });
+}
+
+export function updateVideoSessionRequest(
+    sessionId: number,
+    formData: FormData,
+): Promise<SessionDto> {
+    return apiFetch<SessionDto>(`/api/sessions/${sessionId}/video`, {
+        method: "PUT",
+        body: formData,
     });
 }
 
