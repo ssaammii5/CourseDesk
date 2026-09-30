@@ -61,33 +61,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // On first load, restore the session from the stored access token.
     useEffect(() => {
-        let cancelled = false;
+        let isMounted = true;
+
+        // Safety fallback: if anything hangs (e.g. stalled network), fall back to unauthenticated after 4s
+        const safetyTimeout = window.setTimeout(() => {
+            if (isMounted) {
+                setStatus((prev) => (prev === "loading" ? "unauthenticated" : prev));
+            }
+        }, 4000);
 
         const bootstrap = async () => {
-            const token = getAccessToken();
-            if (!token) {
-                if (!cancelled) setStatus("unauthenticated");
-                return;
-            }
-
             try {
-                const me = await getMeRequest();
-                if (!cancelled) {
-                    setUser(toCurrentUser(me));
-                    setStatus("authenticated");
+                const token = getAccessToken();
+                if (!token) {
+                    if (isMounted) setStatus("unauthenticated");
+                    return;
+                }
+
+                try {
+                    const me = await getMeRequest();
+                    if (isMounted) {
+                        setUser(toCurrentUser(me));
+                        setStatus("authenticated");
+                    }
+                } catch {
+                    clearSession();
+                    if (isMounted) {
+                        setUser(null);
+                        setStatus("unauthenticated");
+                    }
                 }
             } catch {
-                if (!cancelled) {
-                    clearSession();
+                if (isMounted) {
                     setUser(null);
                     setStatus("unauthenticated");
                 }
+            } finally {
+                window.clearTimeout(safetyTimeout);
             }
         };
 
         void bootstrap();
         return () => {
-            cancelled = true;
+            isMounted = false;
+            window.clearTimeout(safetyTimeout);
         };
     }, []);
 

@@ -58,7 +58,12 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     };
 
     const doFetch = (token: string | null) =>
-        fetch(`${API_URL}${path}`, { ...rest, body, headers: buildHeaders(token) });
+        fetch(`${API_URL}${path}`, {
+            ...rest,
+            body,
+            headers: buildHeaders(token),
+            signal: rest.signal ?? (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(10000) : undefined),
+        });
 
     let response = await doFetch(auth ? getAccessToken() : null);
 

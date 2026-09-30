@@ -40,10 +40,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
 
     if (status === "unauthenticated") {
-        if (pathname === "/") {
-            return <LoginView />;
-        }
-        return null;
+        return <LoginView />;
     }
 
     return (
