@@ -101,11 +101,13 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
     const [editing, setEditing] = useState<ClassworkEntry | null>(null);
 
     const [sessions, setSessions] = useState<SessionDto[]>([]);
+    const [isLoadingSessions, setIsLoadingSessions] = useState(true);
     const [nextSession, setNextSession] = useState<SessionDto | null>(null);
     const [apiAnnouncements, setApiAnnouncements] = useState<AnnouncementDto[]>([]);
     const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
 
     const reloadSessions = useCallback(() => {
+        setIsLoadingSessions(true);
         getCourseSessionsRequest(details.courseId)
             .then((data) => {
                 setSessions(data);
@@ -124,7 +126,10 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
                     );
                 setNextSession(upcoming[0] ?? null);
             })
-            .catch(() => { });
+            .catch(() => { })
+            .finally(() => {
+                setIsLoadingSessions(false);
+            });
     }, [details.courseId]);
 
     useEffect(() => {
@@ -523,6 +528,7 @@ export function CoursePageClient({ title, details, course, initialTab }: CourseP
             {(tab === "video" || tab === "curriculum") && (
                 <CurriculumView
                     sessions={sessions}
+                    isLoading={isLoadingSessions}
                     isInstructor={isInstructor}
                     isTeacher={isTeacher}
                     assignmentStatusMap={assignmentStatusMap}

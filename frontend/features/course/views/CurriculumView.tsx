@@ -15,6 +15,7 @@ import {
     FileSpreadsheet,
     FileText,
     Filter,
+    Loader2,
     MoreVertical,
     Paperclip,
     Play,
@@ -42,6 +43,7 @@ import {
 
 export interface CurriculumViewProps {
     sessions?: SessionDto[];
+    isLoading?: boolean;
     isInstructor?: boolean;
     isTeacher?: boolean;
     assignmentStatusMap?: Record<number, string>;
@@ -61,6 +63,7 @@ interface LectureTopicGroup {
 
 export function CurriculumView({
     sessions = [],
+    isLoading = false,
     isInstructor,
     isTeacher = false,
     assignmentStatusMap = {},
@@ -422,6 +425,18 @@ export function CurriculumView({
         });
         return Array.from(set);
     }, [sessions]);
+
+    // ── LOADING STATE ───────────────────────────────────────────────────────
+    if (isLoading) {
+        return (
+            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 bg-[#f8fafc] dark:bg-slate-950">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#1a73e8]" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading lecture videos...</p>
+                </div>
+            </div>
+        );
+    }
 
     // ── EMPTY STATE ─────────────────────────────────────────────────────────
     if (!sessions || sessions.length === 0) {
