@@ -104,14 +104,14 @@ def serialize_submission(submission) -> "SubmissionResponseSchema":
         learner_name=learner.name if learner else None,
         learner_email=learner.email if learner else None,
         learner_academic_id=details.learner_id if details else None,
-        learner_department=details.department if details else None,
-        learner_program=details.current_program if details else None,
+        learner_department=None,
+        learner_program=None,
         student_id=submission.learner_id,
         student_name=learner.name if learner else None,
         student_email=learner.email if learner else None,
         student_academic_id=details.learner_id if details else None,
-        student_department=details.department if details else None,
-        student_program=details.current_program if details else None,
+        student_department=None,
+        student_program=None,
         answer=submission.answer,
         status=submission.status if submission.status in ("Submitted", "Graded") else (
             "Draft" if (

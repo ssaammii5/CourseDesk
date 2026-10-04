@@ -270,7 +270,7 @@ def seed() -> None:
         create_user(
             UserSchema(name="Admin User", email=ADMIN["email"], password=ADMIN["password"], role="Admin"), db
         )
-        for name, email, instructor_id, designation, department in INSTRUCTORS:
+        for name, email, instructor_id, _designation, _department in INSTRUCTORS:
             create_user(
                 UserSchema(
                     name=name,
@@ -278,12 +278,12 @@ def seed() -> None:
                     password="Instructor@123",
                     role="Instructor",
                     instructor_details=InstructorDetailsSchema(
-                        instructor_id=instructor_id, designation=designation, department=department
+                        instructor_id=instructor_id
                     ),
                 ),
                 db,
             )
-        for name, email, learner_id, department, program, semester in LEARNERS:
+        for name, email, learner_id, _department, _program, _semester in LEARNERS:
             create_user(
                 UserSchema(
                     name=name,
@@ -292,10 +292,6 @@ def seed() -> None:
                     role="Learner",
                     learner_details=LearnerDetailsSchema(
                         learner_id=learner_id,
-                        department=department,
-                        current_program=program,
-                        session="2021-2022",
-                        semester_session=semester,
                         nationality="Bangladeshi",
                     ),
                 ),

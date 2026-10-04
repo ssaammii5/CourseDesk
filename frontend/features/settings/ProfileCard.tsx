@@ -192,7 +192,7 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
                         </div>
 
                         <div>
-                            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Learning Track &amp; Program</h3>
+                            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Learner Identification</h3>
                             <div className="grid gap-5 md:grid-cols-2">
                                 <Field
                                     label="Learner ID"
@@ -205,9 +205,6 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
                                     disabled={readOnly}
                                     error={errors.learnerId || errors.studentId}
                                 />
-                                <Field label="Category / Domain" value={form.department} onChange={(v) => setField("department", v)} disabled={readOnly} />
-                                <SelectField label="Learning Track / Level" value={form.currentProgram} onChange={(v) => setField("currentProgram", v as ProgramType)} options={PROGRAM_TYPES} disabled={readOnly} placeholder="Select track type" />
-                                <Field label="Cohort / Schedule" value={form.session || form.semesterSession || ""} onChange={(v) => setField("session", v)} disabled={readOnly} />
                             </div>
                         </div>
 

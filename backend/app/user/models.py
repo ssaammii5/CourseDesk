@@ -49,10 +49,6 @@ class LearnerDetailsModel(Base):
     nationality: Mapped[str] = mapped_column(default="")
     learner_id: Mapped[str] = mapped_column(default="", index=True)
     reg_no: Mapped[str] = mapped_column(default="")
-    department: Mapped[str] = mapped_column(default="")
-    current_program: Mapped[str] = mapped_column(default="Undergraduate")
-    session: Mapped[str] = mapped_column(default="")
-    semester_session: Mapped[str] = mapped_column(default="")
     street: Mapped[str] = mapped_column(default="")
     city: Mapped[str] = mapped_column(default="")
     state: Mapped[str] = mapped_column(default="")
@@ -70,7 +66,5 @@ class InstructorDetailsModel(Base):
         ForeignKey("user_table.id", ondelete="CASCADE"), unique=True
     )
     instructor_id: Mapped[str] = mapped_column(default="", index=True)
-    designation: Mapped[str] = mapped_column(default="")
-    department: Mapped[str] = mapped_column(default="")
 
     user: Mapped["UserModel"] = relationship(back_populates="instructor_details")

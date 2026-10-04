@@ -49,10 +49,6 @@ function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
                 learnerId: lDetails.learnerId ?? lDetails.studentId ?? "",
                 studentId: lDetails.learnerId ?? lDetails.studentId ?? "",
                 regNo: lDetails.regNo ?? "",
-                department: lDetails.department ?? "",
-                currentProgram: (lDetails.currentProgram ?? "Undergraduate") as any,
-                session: lDetails.session ?? "",
-                semesterSession: lDetails.semesterSession ?? "",
                 address: {
                     street: lDetails.address?.street ?? "",
                     city: lDetails.address?.city ?? "",
@@ -66,8 +62,6 @@ function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
             ? {
                 instructorId: iDetails.instructorId ?? iDetails.teacherId ?? "",
                 teacherId: iDetails.instructorId ?? iDetails.teacherId ?? "",
-                designation: (iDetails.designation ?? "Assistant Professor") as any,
-                department: iDetails.department ?? "",
             }
             : undefined,
         studentDetails: lDetails as any,
@@ -211,18 +205,12 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     }, [program, department, existingCourses, academicDepartments]);
 
     const filteredInstructors = useMemo(() => {
-        if (!instructorDeptFilter) return [];
-        return allInstructors.filter((t) =>
-            matchDept(t.instructorDetails?.department || t.teacherDetails?.department, instructorDeptFilter)
-        );
-    }, [allInstructors, instructorDeptFilter, academicDepartments]);
+        return allInstructors;
+    }, [allInstructors]);
 
     const combinedLearnerSessionOptions = useMemo(() => {
-        const fromLearners = allLearners
-            .map((s) => (s.learnerDetails?.semesterSession || s.studentDetails?.semesterSession) ?? "")
-            .filter(Boolean);
-        return Array.from(new Set([...sessionOptions, ...fromLearners])).sort();
-    }, [sessionOptions, allLearners]);
+        return sessionOptions;
+    }, [sessionOptions]);
 
     const totalEnrolledCount = useMemo(() => {
         const groupIds = new Set(enrolledGroups.flatMap((g) => g.learnerIds));
@@ -231,59 +219,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
     }, [enrolledGroups, manualLearnerIds]);
 
     const buildGroupsFromLearnerIds = (ids: number[]): { groups: EnrolledGroup[]; manual: number[] } => {
-        const groupMap = new Map<string, EnrolledGroup>();
-        const manual: number[] = [];
-        for (const id of ids) {
-            const learner = allLearners.find((s) => s.id === id);
-            const d = learner?.learnerDetails || learner?.studentDetails;
-            if (!d) {
-                manual.push(id);
-                continue;
-            }
-            const prog = d.currentProgram ?? "";
-            const dept = d.department ?? "";
-            const sess = d.semesterSession ?? "";
-            if (!prog || !dept || !sess) {
-                manual.push(id);
-                continue;
-            }
-            const key = `${prog}|${dept}|${sess}`;
-            if (!groupMap.has(key)) {
-                groupMap.set(key, { program: prog, department: dept, session: sess, learnerIds: [] });
-            }
-            groupMap.get(key)!.learnerIds.push(id);
-        }
-        return { groups: Array.from(groupMap.values()), manual };
+        return { groups: [], manual: ids };
     };
-
-    useEffect(() => {
-        if (!learnerProgram || !learnerDept || !learnerSession) {
-            lastAppliedGroupFilter.current = "";
-            return;
-        }
-        const filterKey = `${learnerProgram}|${learnerDept}|${learnerSession}`;
-        if (filterKey === lastAppliedGroupFilter.current) return;
-        const matched = allLearners.filter((s) => {
-            const d = s.learnerDetails || s.studentDetails;
-            return (
-                d?.currentProgram === learnerProgram &&
-                matchDept(d?.department, learnerDept) &&
-                d?.semesterSession === learnerSession
-            );
-        });
-        if (matched.length > 0) {
-            lastAppliedGroupFilter.current = filterKey;
-            const groupIds = matched.map((s) => s.id);
-            setEnrolledGroups((prev) => {
-                const exists = prev.some(
-                    (g) => g.program === learnerProgram && g.department === learnerDept && g.session === learnerSession
-                );
-                if (exists) return prev;
-                return [...prev, { program: learnerProgram, department: learnerDept, session: learnerSession, learnerIds: groupIds }];
-            });
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [learnerProgram, learnerDept, learnerSession, allLearners, academicDepartments]);
 
     useEffect(() => {
         if (open) {
@@ -694,51 +631,31 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                 </span>
                             )}
                         </h3>
-                        <div className="mb-3">
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                Filter by Category / Domain
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={instructorDeptFilter}
-                                    onChange={(e) => handleInstructorDeptChange(e.target.value)}
-                                    className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 pr-10 text-[15px] text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                >
-                                    <option value="" disabled>Select category / domain</option>
-                                    {departmentOptions.map((d) => (
-                                        <option key={d.value} value={d.value}>{d.label}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                            </div>
+                        <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-800 dark:bg-slate-800/40">
+                            {filteredInstructors.length === 0 ? (
+                                <p className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No active instructors available.</p>
+                            ) : (
+                                filteredInstructors.map((t) => {
+                                    const details = t.instructorDetails || t.teacherDetails;
+                                    return (
+                                        <label key={t.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800/60">
+                                            <input
+                                                type="checkbox"
+                                                checked={instructorIds.includes(t.id)}
+                                                onChange={() => toggleInstructor(t.id)}
+                                                className="h-4 w-4 accent-[#1a73e8]"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{t.name}</span>
+                                                <span className="block text-xs text-gray-500 dark:text-slate-400">
+                                                    {details?.instructorId || details?.teacherId || t.email}
+                                                </span>
+                                            </div>
+                                        </label>
+                                    );
+                                })
+                            )}
                         </div>
-                        {instructorDeptFilter && (
-                            <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-800 dark:bg-slate-800/40">
-                                {filteredInstructors.length === 0 ? (
-                                    <p className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No active instructors in {instructorDeptFilter}.</p>
-                                ) : (
-                                    filteredInstructors.map((t) => {
-                                        const details = t.instructorDetails || t.teacherDetails;
-                                        return (
-                                            <label key={t.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800/60">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={instructorIds.includes(t.id)}
-                                                    onChange={() => toggleInstructor(t.id)}
-                                                    className="h-4 w-4 accent-[#1a73e8]"
-                                                />
-                                                <div className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{t.name}</span>
-                                                    <span className="block text-xs text-gray-500 dark:text-slate-400">
-                                                        {details?.instructorId || details?.teacherId || "N/A"} • {details?.department ?? "N/A"} • {details?.designation ?? "Instructor"}
-                                                    </span>
-                                                </div>
-                                            </label>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        )}
                         {instructorIds.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-2">
                                 {instructorIds.map((id) => {
@@ -765,52 +682,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                 </span>
                             )}
                         </h3>
-                        <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-slate-300">Cohort & Track Enrollment</p>
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                <div className="relative">
-                                    <select
-                                        value={learnerProgram}
-                                        onChange={(e) => handleLearnerProgramChange(e.target.value)}
-                                        className="w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                    >
-                                        <option value="" disabled>Select track</option>
-                                        {programOptions.map((p) => (
-                                            <option key={p} value={p}>{p}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                                </div>
-                                <div className="relative">
-                                    <select
-                                        value={learnerDept}
-                                        onChange={(e) => handleLearnerDeptChange(e.target.value)}
-                                        disabled={!learnerProgram}
-                                        className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!learnerProgram ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50" : ""}`}
-                                    >
-                                        <option value="" disabled>Select category</option>
-                                        {departmentOptions.map((d) => (
-                                            <option key={d.value} value={d.value}>{d.label}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                                </div>
-                                <div className="relative">
-                                    <select
-                                        value={learnerSession}
-                                        onChange={(e) => handleLearnerSessionChange(e.target.value)}
-                                        disabled={!learnerDept}
-                                        className={`w-full appearance-none rounded-md border border-gray-400/80 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8] ${!learnerDept ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50" : ""}`}
-                                    >
-                                        <option value="" disabled>Select cohort / schedule</option>
-                                        {combinedLearnerSessionOptions.map((s) => (
-                                            <option key={s} value={s}>{s}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                                </div>
-                            </div>
-                        </div>
+
 
                         <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4 dark:border-slate-800 dark:bg-slate-800/40">
                             <p className="mb-3 text-sm font-medium text-gray-700 dark:text-slate-300">Individual Learner Enrollment</p>
@@ -903,7 +775,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                 <div className="min-w-0 flex-1">
                                                     <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{student.name}</span>
                                                     <span className="block text-xs text-gray-500 dark:text-slate-400">
-                                                        {details?.learnerId || details?.studentId || "N/A"} • {details?.department ?? "N/A"} • {details?.semesterSession ?? "N/A"}
+                                                        {details?.learnerId || details?.studentId || "N/A"} • {student.email}
                                                     </span>
                                                 </div>
                                                 <button

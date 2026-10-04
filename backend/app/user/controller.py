@@ -31,10 +31,6 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
             nationality=d.nationality,
             learner_id=d.learner_id,
             reg_no=d.reg_no,
-            department=d.department,
-            current_program=d.current_program,
-            session=d.session,
-            semester_session=d.semester_session,
             address=UserAddressSchema(
                 street=d.street, city=d.city, state=d.state, zip=d.zip, country=d.country
             ),
@@ -43,7 +39,7 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
     if user.instructor_details:
         t = user.instructor_details
         instructor_details = InstructorDetailsSchema(
-            instructor_id=t.instructor_id, designation=t.designation, department=t.department
+            instructor_id=t.instructor_id
         )
     return UserResponseSchema(
         id=user.id,
@@ -77,10 +73,6 @@ def _build_learner_details(user_id: int, data: LearnerDetailsSchema) -> LearnerD
         nationality=data.nationality,
         learner_id=data.learner_id,
         reg_no=data.reg_no,
-        department=data.department,
-        current_program=data.current_program,
-        session=data.session,
-        semester_session=data.semester_session,
         street=data.address.street,
         city=data.address.city,
         state=data.address.state,
@@ -93,8 +85,6 @@ def _build_instructor_details(user_id: int, data: InstructorDetailsSchema) -> In
     return InstructorDetailsModel(
         user_id=user_id,
         instructor_id=data.instructor_id,
-        designation=data.designation,
-        department=data.department,
     )
 
 
@@ -161,10 +151,6 @@ def _apply_learner_details(
         d.nationality = data.nationality
         d.learner_id = data.learner_id
         d.reg_no = data.reg_no
-        d.department = data.department
-        d.current_program = data.current_program
-        d.session = data.session
-        d.semester_session = data.semester_session
         d.street = data.address.street
         d.city = data.address.city
         d.state = data.address.state
@@ -179,8 +165,6 @@ def _apply_instructor_details(
 ) -> None:
     if user.instructor_details:
         user.instructor_details.instructor_id = data.instructor_id
-        user.instructor_details.designation = data.designation
-        user.instructor_details.department = data.department
     else:
         user.instructor_details = _build_instructor_details(user.id, data)
 

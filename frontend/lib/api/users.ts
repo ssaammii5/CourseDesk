@@ -17,10 +17,9 @@ export interface LearnerDetails {
     learnerId?: string;
     studentId?: string;
     regNo?: string;
-    department?: string;
-    currentProgram?: string;
-    session?: string;
-    semesterSession?: string;
+    headline?: string;
+    organization?: string;
+    bio?: string;
     address?: UserAddress;
 }
 export type StudentDetails = LearnerDetails;
@@ -28,8 +27,9 @@ export type StudentDetails = LearnerDetails;
 export interface InstructorDetails {
     instructorId?: string;
     teacherId?: string;
-    designation?: string;
-    department?: string;
+    headline?: string;
+    organization?: string;
+    bio?: string;
 }
 export type TeacherDetails = InstructorDetails;
 

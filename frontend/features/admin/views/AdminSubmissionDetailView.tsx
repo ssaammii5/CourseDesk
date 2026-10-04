@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import {
     ArrowLeft,
     BookOpen,
-    Building2,
     CalendarRange,
     ClipboardList,
     Clock,
@@ -78,8 +77,6 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
 
     const learnerEmail = submission.learnerEmail ?? submission.studentEmail ?? "—";
     const learnerAcademicId = submission.learnerAcademicId ?? submission.studentAcademicId ?? "—";
-    const learnerDepartment = submission.learnerDepartment ?? submission.studentDepartment ?? "—";
-    const learnerProgram = submission.learnerProgram ?? submission.studentProgram ?? "—";
     const learnerName = submission.learnerName ?? submission.studentName ?? "Unknown Learner";
     const courseSession = submission.session ?? "—";
 
@@ -301,8 +298,6 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                                 <InfoRow icon={<UserRound className="h-4 w-4" />} label="Name" value={learnerName} />
                                 <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={learnerEmail} />
                                 <InfoRow icon={<ClipboardList className="h-4 w-4" />} label="Learner ID" value={learnerAcademicId} />
-                                <InfoRow icon={<Building2 className="h-4 w-4" />} label="Department" value={learnerDepartment} />
-                                <InfoRow icon={<GraduationCap className="h-4 w-4" />} label="Program" value={learnerProgram} />
                             </dl>
                             {(submission.learnerEmail || submission.studentEmail) && (
                                 <a

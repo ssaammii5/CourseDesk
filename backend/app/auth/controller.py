@@ -92,7 +92,6 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
     db.add(
         LearnerDetailsModel(
             user_id=new_user.id,
-            current_program="Undergraduate",
         )
     )
     db.commit()

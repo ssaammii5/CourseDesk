@@ -30,10 +30,6 @@ export interface LearnerDetails {
     learnerId?: string;
     studentId?: string;
     regNo?: string;
-    department?: string;
-    currentProgram?: LearnerProgramType;
-    session?: string;
-    semesterSession?: string;
     headline?: string;
     organization?: string;
     bio?: string;
@@ -59,8 +55,6 @@ export type TeacherDesignation = InstructorDesignation;
 export interface InstructorDetails {
     instructorId?: string;
     teacherId?: string;
-    designation?: InstructorDesignation;
-    department?: string;
     headline?: string;
     organization?: string;
     bio?: string;

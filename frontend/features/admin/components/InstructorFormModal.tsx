@@ -2,29 +2,12 @@
 
 import { useState, useEffect } from "react";
 import type { AdminUser, InstructorDetails } from "@/types";
-import { INSTRUCTOR_DEPARTMENTS } from "@/lib/adminData";
-import { Field, SelectField } from "@/components/ui";
+import { Field } from "@/components/ui";
 import { X } from "lucide-react";
-
-const DESIGNATION_TYPES: string[] = [
-    "Lead Instructor",
-    "Senior Instructor",
-    "Staff Engineer",
-    "Principal Designer",
-    "Course Creator",
-    "Industry Mentor",
-    "Workshop Lead",
-    "Lecturer",
-    "Professor",
-];
-
-const DEPARTMENT_OPTIONS: string[] = [...INSTRUCTOR_DEPARTMENTS];
 
 const EMPTY_DETAILS: InstructorDetails = {
     instructorId: "",
     teacherId: "",
-    designation: "Lead Instructor",
-    department: "",
 };
 
 export interface InstructorFormModalProps {
@@ -81,7 +64,6 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Enter a valid email.";
         const insId = details.instructorId || details.teacherId;
         if (!insId?.trim()) next.instructorId = "Instructor ID is required.";
-        if (!details.department) next.department = "Domain / Category is required.";
         return next;
     };
 
@@ -175,22 +157,6 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                 onChange={(v) => setField("instructorId", v)}
                                 placeholder="e.g., INS-101"
                                 error={errors.instructorId}
-                            />
-                            <SelectField
-                                label="Title / Role"
-                                value={details.designation ?? "Lead Instructor"}
-                                onChange={(v) => setField("designation", v as any)}
-                                options={DESIGNATION_TYPES}
-                                placeholder="Select title"
-                            />
-                            <SelectField
-                                label="Primary Domain / Category"
-                                required
-                                value={details.department ?? ""}
-                                onChange={(v) => setField("department", v)}
-                                options={DEPARTMENT_OPTIONS}
-                                error={errors.department}
-                                placeholder="Select domain or category"
                             />
                             <Field
                                 label="Organization / Institution"

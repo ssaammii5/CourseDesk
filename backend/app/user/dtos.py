@@ -21,17 +21,11 @@ class LearnerDetailsSchema(CamelModel):
     nationality: str = ""
     learner_id: str = ""
     reg_no: str = ""
-    department: str = ""
-    current_program: str = "Undergraduate"
-    session: str = ""
-    semester_session: str = ""
     address: UserAddressSchema = UserAddressSchema()
 
 
 class InstructorDetailsSchema(CamelModel):
     instructor_id: str = ""
-    designation: str = ""
-    department: str = ""
 
 
 # Backwards compatibility aliases
