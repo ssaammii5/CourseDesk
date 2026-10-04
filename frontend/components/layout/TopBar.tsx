@@ -390,10 +390,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const isInstructors = pathname === "/instructors" || pathname === "/teachers";
     const isLearners = pathname === "/learners" || pathname === "/students";
     const isCourses = pathname === "/courses";
-    const isAcademics = pathname === "/academics";
+    const isCategories = pathname === "/categories" || pathname === "/academics";
     const isAssignments = pathname === "/assignments";
     const isSubmissions = pathname === "/submissions";
-    const isAdminPage = isInstructors || isLearners || isCourses || isAcademics || isAssignments || isSubmissions || isAppSettings;
+    const isAdminPage = isInstructors || isLearners || isCourses || isCategories || isAssignments || isSubmissions || isAppSettings;
 
     const toggleAccount = () => {
         setNotifOpen(false);
@@ -510,7 +510,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                             {isInstructors && "Instructors"}
                             {isLearners && "Learners"}
                             {isCourses && "Courses"}
-                            {isAcademics && "Categories & Tracks"}
+                            {isCategories && "Categories & Tracks"}
                             {isAssignments && "Assignments"}
                             {isSubmissions && "Submissions"}
                             {isAppSettings && "App Settings"}

@@ -29,6 +29,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/academics",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/academics/:path*",
+        destination: "/categories/:path*",
+        permanent: true,
+      },
+      {
         source: "/class/:courseId/classwork",
         destination: "/course/:courseId?tab=coursework",
         permanent: true,

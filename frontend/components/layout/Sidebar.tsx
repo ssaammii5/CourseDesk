@@ -199,8 +199,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                         />
                         <NavItem
                             open={open}
-                            active={pathname === "/academics"}
-                            href="/academics"
+                            active={pathname === "/categories" || pathname === "/academics"}
+                            href="/categories"
                             icon={<Tag className="h-[18px] w-[18px]" />}
                             label="Categories & Tracks"
                         />

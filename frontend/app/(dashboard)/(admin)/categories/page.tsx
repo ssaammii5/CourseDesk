@@ -1,5 +1,5 @@
 import { AdminAcademicsView } from "@/features/admin";
 
-export default function AcademicsPage() {
+export default function CategoriesPage() {
     return <AdminAcademicsView />;
 }
