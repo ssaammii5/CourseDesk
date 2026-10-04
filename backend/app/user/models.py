@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy import DateTime, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.utils.db import Base
@@ -47,7 +47,11 @@ class LearnerDetailsModel(Base):
     date_of_birth: Mapped[str] = mapped_column(default="")
     mobile: Mapped[str] = mapped_column(default="")
     nationality: Mapped[str] = mapped_column(default="")
-    learner_id: Mapped[str] = mapped_column(default="", index=True)
+    learner_id: Mapped[str] = mapped_column(
+        server_default=text("generate_base32_id('LRN', 6)"),
+        unique=True,
+        index=True,
+    )
     reg_no: Mapped[str] = mapped_column(default="")
     street: Mapped[str] = mapped_column(default="")
     city: Mapped[str] = mapped_column(default="")
@@ -65,6 +69,10 @@ class InstructorDetailsModel(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user_table.id", ondelete="CASCADE"), unique=True
     )
-    instructor_id: Mapped[str] = mapped_column(default="", index=True)
+    instructor_id: Mapped[str] = mapped_column(
+        server_default=text("generate_base32_id('INS', 6)"),
+        unique=True,
+        index=True,
+    )
 
     user: Mapped["UserModel"] = relationship(back_populates="instructor_details")

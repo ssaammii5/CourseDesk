@@ -98,8 +98,6 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
         if (!name.trim()) next.name = "Full name is required.";
         if (!email.trim()) next.email = "Email is required.";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Enter a valid email.";
-        const lid = details.learnerId || details.studentId;
-        if (!lid?.trim()) next.learnerId = "Learner ID is required.";
         return next;
     };
 
@@ -108,7 +106,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
         const errs = validate();
         setErrors(errs);
         if (Object.keys(errs).length > 0) {
-            setSaveError("Please fill in all required fields (Name, Email, and Learner ID).");
+            setSaveError("Please fill in all required fields (Full Name and Email).");
             return;
         }
 
@@ -205,11 +203,10 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
                                 label="Learner ID"
-                                required
-                                value={details.learnerId ?? details.studentId ?? ""}
-                                onChange={(v) => setField("learnerId", v)}
-                                placeholder="Enter learner ID"
-                                error={errors.learnerId}
+                                value={details.learnerId || details.studentId || (user ? "" : "Auto-defined by system (e.g., LRN-7M9K2P)")}
+                                onChange={() => {}}
+                                placeholder="Auto-defined by system (e.g., LRN-7M9K2P)"
+                                disabled
                             />
                             <Field
                                 label="Organization / Company"

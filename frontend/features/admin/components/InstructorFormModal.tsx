@@ -62,8 +62,6 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
         if (!name.trim()) next.name = "Full name is required.";
         if (!email.trim()) next.email = "Email is required.";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Enter a valid email.";
-        const insId = details.instructorId || details.teacherId;
-        if (!insId?.trim()) next.instructorId = "Instructor ID is required.";
         return next;
     };
 
@@ -152,11 +150,10 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                         <div className="grid gap-5 md:grid-cols-2">
                             <Field
                                 label="Instructor ID"
-                                required
-                                value={details.instructorId ?? details.teacherId ?? ""}
-                                onChange={(v) => setField("instructorId", v)}
-                                placeholder="Enter instructor ID"
-                                error={errors.instructorId}
+                                value={details.instructorId || details.teacherId || (user ? "" : "Auto-defined by system (e.g., INS-4W8N3X)")}
+                                onChange={() => {}}
+                                placeholder="Auto-defined by system (e.g., INS-4W8N3X)"
+                                disabled
                             />
                             <Field
                                 label="Organization / Institution"

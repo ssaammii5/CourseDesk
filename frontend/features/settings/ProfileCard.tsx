@@ -129,8 +129,6 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
     const validate = () => {
         const next: Record<string, string> = {};
         if (!form.fullName.trim()) next.fullName = "Full name is required.";
-        const idVal = form.learnerId || form.studentId || "";
-        if (user?.role === "Learner" && !idVal.trim()) next.learnerId = "Learner ID is required.";
         if (!form.permanentAddress.country) next.country = "Country is required.";
         return next;
     };
@@ -196,14 +194,9 @@ export function ProfileCard({ user, userName, readOnly }: ProfileCardProps) {
                             <div className="grid gap-5 md:grid-cols-2">
                                 <Field
                                     label="Learner ID"
-                                    value={form.learnerId || form.studentId || ""}
-                                    onChange={(v) => {
-                                        setField("learnerId", v);
-                                        setField("studentId", v);
-                                    }}
-                                    required={user?.role === "Learner"}
-                                    disabled={readOnly}
-                                    error={errors.learnerId || errors.studentId}
+                                    value={form.learnerId || form.studentId || "Auto-defined by system"}
+                                    onChange={() => {}}
+                                    disabled
                                 />
                             </div>
                         </div>
