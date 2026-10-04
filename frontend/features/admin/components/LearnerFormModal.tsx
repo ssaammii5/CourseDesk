@@ -172,7 +172,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                 required
                                 value={name}
                                 onChange={(v) => { setName(v); clearError("name"); }}
-                                placeholder="e.g., Alex Johnson"
+                                placeholder="Enter full name"
                                 error={errors.name}
                             />
                             <Field
@@ -181,7 +181,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                 type="email"
                                 value={email}
                                 onChange={(v) => { setEmail(v); clearError("email"); }}
-                                placeholder="learner@coursedesk.com"
+                                placeholder="Enter email"
                                 error={errors.email}
                             />
                         </div>
@@ -208,20 +208,20 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                 required
                                 value={details.learnerId ?? details.studentId ?? ""}
                                 onChange={(v) => setField("learnerId", v)}
-                                placeholder="e.g., LRN-2001"
+                                placeholder="Enter learner ID"
                                 error={errors.learnerId}
                             />
                             <Field
                                 label="Organization / Company"
                                 value={details.organization ?? ""}
                                 onChange={(v) => setField("organization", v)}
-                                placeholder="e.g., Acme Tech, Independent"
+                                placeholder="Enter organization or company"
                             />
                             <Field
                                 label="Professional Role / Headline"
                                 value={details.headline ?? ""}
                                 onChange={(v) => setField("headline", v)}
-                                placeholder="e.g., Aspiring Full-Stack Developer"
+                                placeholder="Enter professional role or headline"
                             />
                         </div>
                     </section>
@@ -235,37 +235,37 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                 type="tel"
                                 value={details.mobile ?? ""}
                                 onChange={(v) => setField("mobile", v)}
-                                placeholder="+1 (555) 000-0000"
+                                placeholder="Enter mobile number"
                             />
                             <Field
                                 label="Nationality"
                                 value={details.nationality ?? ""}
                                 onChange={(v) => setField("nationality", v)}
-                                placeholder="e.g., American, Canadian, etc."
+                                placeholder="Enter nationality"
                             />
                             <Field
                                 label="Street Address"
                                 value={details.address?.street ?? ""}
                                 onChange={(v) => setAddressField("street", v)}
-                                placeholder="123 Main St"
+                                placeholder="Enter street address"
                             />
                             <Field
                                 label="City"
                                 value={details.address?.city ?? ""}
                                 onChange={(v) => setAddressField("city", v)}
-                                placeholder="San Francisco"
+                                placeholder="Enter city"
                             />
                             <Field
                                 label="State / Province"
                                 value={details.address?.state ?? ""}
                                 onChange={(v) => setAddressField("state", v)}
-                                placeholder="CA"
+                                placeholder="Enter state or province"
                             />
                             <Field
                                 label="ZIP / Postal Code"
                                 value={details.address?.zip ?? ""}
                                 onChange={(v) => setAddressField("zip", v)}
-                                placeholder="94105"
+                                placeholder="Enter ZIP or postal code"
                             />
                             <SelectField
                                 label="Country"

@@ -119,7 +119,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                 required
                                 value={name}
                                 onChange={(v) => { setName(v); clearError("name"); }}
-                                placeholder="e.g., Sarah Jenkins"
+                                placeholder="Enter full name"
                                 error={errors.name}
                             />
                             <Field
@@ -128,7 +128,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                 type="email"
                                 value={email}
                                 onChange={(v) => { setEmail(v); clearError("email"); }}
-                                placeholder="instructor@coursedesk.com"
+                                placeholder="Enter email"
                                 error={errors.email}
                             />
                         </div>
@@ -155,14 +155,14 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                 required
                                 value={details.instructorId ?? details.teacherId ?? ""}
                                 onChange={(v) => setField("instructorId", v)}
-                                placeholder="e.g., INS-101"
+                                placeholder="Enter instructor ID"
                                 error={errors.instructorId}
                             />
                             <Field
                                 label="Organization / Institution"
                                 value={details.organization ?? ""}
                                 onChange={(v) => setField("organization", v)}
-                                placeholder="e.g., Google, Stripe, Independent"
+                                placeholder="Enter organization or institution"
                             />
                         </div>
                     </section>
