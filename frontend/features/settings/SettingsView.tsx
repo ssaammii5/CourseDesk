@@ -31,12 +31,15 @@ export function SettingsView({
     const [tab, setTab] = useState<SettingsTab>("profile");
 
     const isInstructor = role === "Instructor";
+    const isAdmin = role === "Admin";
     const displayName = userName || user?.name || "User";
     const displayEmail = user?.email || "";
     const avatarUrl =
         isInstructor
             ? (user?.instructorDetails?.avatar || (user?.instructorDetails as any)?.teacherDetails?.avatar)
-            : (user?.learnerDetails?.avatar || (user?.learnerDetails as any)?.studentDetails?.avatar);
+            : !isAdmin
+            ? (user?.learnerDetails?.avatar || (user?.learnerDetails as any)?.studentDetails?.avatar)
+            : undefined;
 
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-gray-50/50 pb-16 dark:bg-slate-950">
@@ -64,12 +67,16 @@ export function SettingsView({
                                     </h1>
                                     <span
                                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                                            isInstructor
+                                            isAdmin
+                                                ? "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300"
+                                                : isInstructor
                                                 ? "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300"
                                                 : "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300"
                                         }`}
                                     >
-                                        {isInstructor ? (
+                                        {isAdmin ? (
+                                            <Shield className="h-3.5 w-3.5" />
+                                        ) : isInstructor ? (
                                             <Briefcase className="h-3.5 w-3.5" />
                                         ) : (
                                             <GraduationCap className="h-3.5 w-3.5" />

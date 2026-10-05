@@ -14,6 +14,7 @@ import {
     Mail,
     MapPin,
     Plus,
+    Shield,
     Sparkles,
     Trash2,
     Upload,
@@ -173,9 +174,13 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
 
     const role = me?.role || initialUser?.role || "Learner";
     const isInstructor = role === "Instructor";
+    const isAdmin = role === "Admin";
+    const isLearner = !isInstructor && !isAdmin;
     const systemId = isInstructor
         ? (me?.instructorDetails?.instructorId || (me?.instructorDetails as any)?.teacherId || "")
-        : (me?.learnerDetails?.learnerId || (me?.learnerDetails as any)?.studentId || "");
+        : isLearner
+        ? (me?.learnerDetails?.learnerId || (me?.learnerDetails as any)?.studentId || "")
+        : "";
 
     const handleCopyId = () => {
         if (!systemId) return;
@@ -399,11 +404,15 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                                     {fullNameDisplay}
                                 </h2>
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                    isInstructor
+                                    isAdmin
+                                        ? "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300"
+                                        : isInstructor
                                         ? "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300"
                                         : "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300"
                                 }`}>
-                                    {isInstructor ? (
+                                    {isAdmin ? (
+                                        <Shield className="h-3 w-3" />
+                                    ) : isInstructor ? (
                                         <Briefcase className="h-3 w-3" />
                                     ) : (
                                         <GraduationCap className="h-3 w-3" />
@@ -563,7 +572,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                         </div>
                     </div>
                 </div>
-            ) : (
+            ) : isLearner ? (
                 /* Learner Specific Details: Bio, Academic & Address */
                 <>
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-6">
@@ -736,10 +745,11 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                         </div>
                     </div>
                 </>
-            )}
+            ) : null}
 
-            {/* Links Section (Both Instructor & Learner) */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-6">
+            {/* Links Section (Instructor & Learner only, not Admin) */}
+            {!isAdmin && (
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h3 className="text-base font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
@@ -845,6 +855,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                     </div>
                 )}
             </div>
+            )}
 
             {/* Sticky Save Bar */}
             {!readOnly && (
