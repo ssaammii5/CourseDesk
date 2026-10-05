@@ -84,8 +84,15 @@ class SignupResponseSchema(CamelModel):
     message: str = "Please verify your email address to complete registration."
 
 
+class VerifyOtpSchema(CamelModel):
+    email: EmailStr
+    code: str
+
+
 class VerifyEmailSchema(CamelModel):
-    token: str
+    token: str = ""
+    email: str | None = None
+    code: str | None = None
 
 
 class VerifyEmailResponseSchema(CamelModel):
@@ -98,7 +105,7 @@ class ResendVerificationSchema(CamelModel):
 
 
 class ResendVerificationResponseSchema(CamelModel):
-    message: str = "If an account exists, a verification link has been sent"
+    message: str = "If an account exists, a new verification code has been sent"
 
 
 from app.user.dtos import (

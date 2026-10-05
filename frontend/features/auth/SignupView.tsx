@@ -1,10 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Check, Clock, Layers, Loader2, Lock, Mail, RefreshCw, Send, User } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Clock, KeyRound, Layers, Loader2, Lock, Mail, RefreshCw, Send, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { resendVerificationRequest, signupRequest } from "@/lib/api/auth";
+import { resendVerificationRequest, signupRequest, verifyEmailRequest } from "@/lib/api/auth";
 
 export function SignupView() {
     const router = useRouter();
@@ -22,6 +22,13 @@ export function SignupView() {
     const [resending, setResending] = useState(false);
     const [resendStatus, setResendStatus] = useState<string | null>(null);
     const [resendCooldown, setResendCooldown] = useState(0);
+
+    // 6-digit OTP states
+    const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+    const [otpError, setOtpError] = useState<string | null>(null);
+    const [verifyingOtp, setVerifyingOtp] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const clearError = (key: string) =>
         setErrors((prev) => {
@@ -47,13 +54,88 @@ export function SignupView() {
         return next;
     };
 
+    const handleOtpChange = (index: number, val: string) => {
+        const cleanVal = val.replace(/\D/g, "");
+        if (!cleanVal && val) return;
+
+        const newOtp = [...otp];
+        newOtp[index] = cleanVal.slice(-1);
+        setOtp(newOtp);
+        setOtpError(null);
+
+        // Auto-advance to next input
+        if (cleanVal && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+
+        // Auto-submit if all 6 digits entered
+        const fullCode = newOtp.join("");
+        if (fullCode.length === 6 && !newOtp.includes("")) {
+            void verifyOtpCode(fullCode);
+        }
+    };
+
+    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace" && !otp[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        } else if (e.key === "ArrowLeft" && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        } else if (e.key === "ArrowRight" && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleOtpPaste = (e: React.ClipboardEvent) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+        if (!pasted) return;
+
+        const newOtp = ["", "", "", "", "", ""];
+        for (let i = 0; i < pasted.length; i++) {
+            newOtp[i] = pasted[i];
+        }
+        setOtp(newOtp);
+        setOtpError(null);
+
+        const nextFocusIndex = Math.min(pasted.length, 5);
+        inputRefs.current[nextFocusIndex]?.focus();
+
+        if (pasted.length === 6) {
+            void verifyOtpCode(pasted);
+        }
+    };
+
+    const verifyOtpCode = async (codeToVerify: string) => {
+        if (verifyingOtp || codeToVerify.length !== 6) return;
+        setVerifyingOtp(true);
+        setOtpError(null);
+        try {
+            await verifyEmailRequest(codeToVerify, email.trim());
+            setOtpVerified(true);
+            setTimeout(() => {
+                router.push("/?verified=true");
+            }, 1200);
+        } catch (err) {
+            setOtpError(
+                err instanceof Error && err.message
+                    ? err.message
+                    : "Invalid verification code. Please try again."
+            );
+        } finally {
+            setVerifyingOtp(false);
+        }
+    };
+
     const handleResend = async () => {
         if (!email.trim() || resending || resendCooldown > 0) return;
         setResending(true);
         setResendStatus(null);
+        setOtpError(null);
         try {
             const res = await resendVerificationRequest(email.trim());
-            setResendStatus(res.message || "Verification link sent! Check your inbox.");
+            setResendStatus(res.message || "A new 6-digit code has been sent to your email!");
+            setOtp(["", "", "", "", "", ""]);
+            inputRefs.current[0]?.focus();
             setResendCooldown(60);
             const interval = setInterval(() => {
                 setResendCooldown((prev) => {
@@ -68,7 +150,7 @@ export function SignupView() {
             setResendStatus(
                 err instanceof Error && err.message
                     ? err.message
-                    : "Failed to resend verification link. Please try again."
+                    : "Failed to resend code. Please try again."
             );
         } finally {
             setResending(false);
@@ -96,74 +178,153 @@ export function SignupView() {
     };
 
     if (success) {
+        if (otpVerified) {
+            return (
+                <div className="flex min-h-dvh items-center justify-center bg-white px-4 py-12 dark:bg-slate-950">
+                    <div className="flex flex-col items-center text-center max-w-md w-full rounded-3xl border border-gray-100 bg-white p-8 sm:p-10 shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 shadow-inner mb-6">
+                            <CheckCircle2 className="h-10 w-10 animate-in zoom-in" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 sm:text-3xl">
+                            Email Verified!
+                        </h2>
+                        <p className="mt-3 text-sm text-gray-600 dark:text-slate-400">
+                            Your account has been verified and activated. Redirecting you to sign in...
+                        </p>
+                        <div className="mt-6 flex items-center justify-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Loading sign in page...</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="flex min-h-dvh items-center justify-center bg-white px-4 py-12 dark:bg-slate-950">
-                <div className="flex flex-col items-center text-center max-w-lg w-full rounded-3xl border border-gray-100 bg-white p-8 sm:p-10 shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in">
-                    <div className="relative mb-6">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shadow-inner">
-                            <Mail className="h-10 w-10" />
+                <div className="relative flex flex-col items-center text-center max-w-lg w-full rounded-3xl border border-gray-100 bg-white p-8 sm:p-10 shadow-2xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in">
+                    {/* Top change email button */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSuccess(false);
+                            setOtp(["", "", "", "", "", ""]);
+                            setOtpError(null);
+                        }}
+                        className="absolute left-6 top-6 flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 transition"
+                    >
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        <span>Edit Details</span>
+                    </button>
+
+                    <div className="relative mb-5 mt-2">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shadow-inner">
+                            <KeyRound className="h-8 w-8" />
                         </div>
-                        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-white ring-4 ring-white dark:ring-slate-900">
-                            <Clock className="h-4 w-4" />
+                        <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white dark:ring-slate-900">
+                            <Sparkles className="h-3.5 w-3.5" />
                         </span>
                     </div>
 
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100 sm:text-3xl">
-                        Verify your email address
+                        Enter 6-Digit Code
                     </h2>
                     
-                    <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-400">
-                        We&apos;ve sent a verification link to{" "}
+                    <p className="mt-2.5 text-sm text-gray-600 dark:text-slate-400 max-w-sm">
+                        We sent a 6-digit confirmation code to{" "}
                         <strong className="font-semibold text-gray-900 dark:text-slate-200">
                             {email}
                         </strong>
-                        . Please open the link in your email to activate your account before signing in.
+                        .
                     </p>
 
-                    <div className="mt-6 w-full rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-left dark:border-blue-900/40 dark:bg-blue-950/30">
-                        <p className="text-xs text-blue-900 dark:text-blue-200">
-                            <strong className="font-semibold">Important:</strong> The verification link is valid for <strong>24 hours</strong>. If you don&apos;t see the email, please check your spam or junk folder.
-                        </p>
+                    {/* 6 OTP Cells */}
+                    <div
+                        className="flex items-center justify-center gap-2 sm:gap-3 my-6"
+                        onPaste={handleOtpPaste}
+                    >
+                        {otp.map((digit, idx) => (
+                            <input
+                                key={idx}
+                                ref={(el) => {
+                                    inputRefs.current[idx] = el;
+                                }}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                maxLength={1}
+                                autoComplete={idx === 0 ? "one-time-code" : "off"}
+                                value={digit}
+                                onChange={(e) => handleOtpChange(idx, e.target.value)}
+                                onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                autoFocus={idx === 0}
+                                className={`h-13 w-11 sm:h-16 sm:w-13 rounded-2xl border text-center text-2xl font-bold font-mono transition-all outline-none ${
+                                    otpError
+                                        ? "border-red-400 bg-red-50/50 text-red-700 focus:ring-4 focus:ring-red-500/10 dark:border-red-800 dark:bg-red-950/30"
+                                        : digit
+                                        ? "border-blue-600 bg-white text-blue-700 shadow-sm ring-2 ring-blue-500/20 dark:border-blue-500 dark:bg-slate-800 dark:text-blue-300"
+                                        : "border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-500/15 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-100"
+                                }`}
+                            />
+                        ))}
                     </div>
 
+                    {otpError && (
+                        <div className="mb-4 w-full rounded-xl bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900 animate-in fade-in">
+                            {otpError}
+                        </div>
+                    )}
+
                     {resendStatus && (
-                        <div className="mt-4 w-full rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 animate-in fade-in">
+                        <div className="mb-4 w-full rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 animate-in fade-in">
                             {resendStatus}
                         </div>
                     )}
 
-                    <div className="mt-8 flex w-full flex-col gap-3">
+                    <div className="w-full space-y-3">
                         <button
                             type="button"
-                            onClick={handleResend}
-                            disabled={resending || resendCooldown > 0}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                            onClick={() => verifyOtpCode(otp.join(""))}
+                            disabled={verifyingOtp || otp.join("").length !== 6}
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/25 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
                         >
-                            {resending ? (
+                            {verifyingOtp ? (
                                 <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    <span>Sending Link...</span>
-                                </>
-                            ) : resendCooldown > 0 ? (
-                                <>
-                                    <Clock className="h-4 w-4" />
-                                    <span>Resend in {resendCooldown}s</span>
+                                    <span>Verifying Code...</span>
                                 </>
                             ) : (
-                                <>
-                                    <Send className="h-4 w-4" />
-                                    <span>Resend Verification Email</span>
-                                </>
+                                <span>Verify &amp; Activate Account</span>
                             )}
                         </button>
 
-                        <button
-                            type="button"
-                            onClick={() => router.push("/")}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                        >
-                            Back to Sign In
-                        </button>
+                        <div className="flex items-center justify-between pt-2 text-xs">
+                            <span className="text-gray-500 dark:text-slate-400">
+                                Valid for 15 minutes
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleResend}
+                                disabled={resending || resendCooldown > 0}
+                                className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:no-underline"
+                            >
+                                {resending
+                                    ? "Sending code..."
+                                    : resendCooldown > 0
+                                    ? `Resend code in ${resendCooldown}s`
+                                    : "Resend Code"}
+                            </button>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100 dark:border-slate-800 text-center">
+                            <button
+                                type="button"
+                                onClick={() => router.push("/")}
+                                className="text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 transition"
+                            >
+                                Already verified? Sign in here
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

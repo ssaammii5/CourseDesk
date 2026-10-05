@@ -106,10 +106,10 @@ export interface VerifyEmailResponse {
     email?: string;
 }
 
-export function verifyEmailRequest(token: string): Promise<VerifyEmailResponse> {
+export function verifyEmailRequest(codeOrToken: string, email?: string): Promise<VerifyEmailResponse> {
     return apiFetch<VerifyEmailResponse>("/api/auth/verify-email", {
         method: "POST",
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token: codeOrToken, code: codeOrToken, email }),
         auth: false,
     });
 }

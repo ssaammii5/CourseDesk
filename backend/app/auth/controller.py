@@ -17,7 +17,7 @@ from app.auth.dtos import (
 )
 from app.auth.models import RefreshTokenModel
 from app.user.models import InstructorDetailsModel, LearnerDetailsModel, UserModel
-from app.utils.email import send_verification_email
+from app.utils.email import send_otp_email, send_verification_email
 from app.utils.helpers import get_password_hash, verify_password
 from app.utils.settings import settings
 
@@ -60,7 +60,7 @@ def login_user(body: LoginSchema, db: Session) -> dict:
     if not user.email_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email address before signing in. Check your inbox for the verification link.",
+            detail="Please verify your email address before signing in. Enter the 6-digit verification code sent to your email.",
         )
     if not verify_password(body.password, user.hash_password):
         raise HTTPException(
@@ -108,8 +108,8 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
             detail="First name and last name are required",
         )
 
-    verification_token = secrets.token_urlsafe(32)
-    verification_expires = datetime.now(UTC) + timedelta(hours=24)
+    otp_code = f"{secrets.randbelow(1_000_000):06d}"
+    verification_expires = datetime.now(UTC) + timedelta(minutes=15)
 
     new_user = UserModel(
         name=full_name,
@@ -118,8 +118,9 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
         role="Learner",
         is_active=True,
         email_verified=False,
-        email_verification_token=verification_token,
+        email_verification_token=otp_code,
         email_verification_expires_at_utc=verification_expires,
+        email_verification_attempts=0,
     )
     db.add(new_user)
     db.flush()
@@ -133,40 +134,73 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
     db.commit()
     db.refresh(new_user)
 
-    frontend_url = settings.FRONTEND_URL.rstrip("/")
-    verification_link = f"{frontend_url}/verify-email?token={verification_token}"
-    send_verification_email(new_user.email, new_user.name, verification_link)
+    send_otp_email(new_user.email, new_user.name, otp_code)
 
     return new_user
 
 
 def verify_email(body: VerifyEmailSchema, db: Session) -> dict:
-    token = (body.token or "").strip()
-    if not token:
+    code_val = (body.code or body.token or "").strip()
+    email_val = (body.email or "").strip().lower()
+
+    if not code_val:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Verification token is required.",
+            detail="6-digit verification code is required.",
         )
-    user = db.scalar(
-        select(UserModel).where(UserModel.email_verification_token == token)
-    )
+
+    # Clean code: remove spaces or dashes if user copied "123 456" or "123-456"
+    clean_code = re.sub(r"\D", "", code_val)
+    if len(clean_code) != 6:
+        clean_code = code_val
+
+    query = select(UserModel)
+    if email_val:
+        query = query.where(func.lower(UserModel.email) == email_val)
+    else:
+        query = query.where(UserModel.email_verification_token == clean_code)
+
+    user = db.scalar(query)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or already verified link. If you already verified your account, you can proceed to sign in.",
+            detail="Account not found or invalid request.",
         )
+
+    if user.email_verified:
+        return {
+            "message": "Email already verified. You can proceed to sign in.",
+            "email": user.email,
+        }
+
+    if user.email_verification_attempts >= 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Too many failed attempts. Please request a new verification code.",
+        )
+
     if (
         user.email_verification_expires_at_utc
         and user.email_verification_expires_at_utc < datetime.now(UTC)
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This verification link has expired. Please request a new verification email.",
+            detail="This verification code has expired (valid for 15 minutes). Please click 'Resend Code'.",
+        )
+
+    if user.email_verification_token != clean_code:
+        user.email_verification_attempts += 1
+        remaining = max(0, 5 - user.email_verification_attempts)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid verification code. {remaining} attempt(s) remaining.",
         )
 
     user.email_verified = True
     user.email_verification_token = None
     user.email_verification_expires_at_utc = None
+    user.email_verification_attempts = 0
     db.commit()
     return {
         "message": "Email verified successfully! You can now sign in.",
@@ -178,22 +212,20 @@ def resend_verification_email(body: ResendVerificationSchema, db: Session) -> di
     email_clean = (body.email or "").strip().lower()
     user = db.scalar(select(UserModel).where(func.lower(UserModel.email) == email_clean))
 
-    # Anti-enumeration response: always return the same message
     generic_response = {
-        "message": "If an unverified account exists with that email address, a verification link has been sent."
+        "message": "If an unverified account exists with that email address, a new verification code has been sent."
     }
 
     if not user or user.email_verified:
         return generic_response
 
-    new_token = secrets.token_urlsafe(32)
-    user.email_verification_token = new_token
-    user.email_verification_expires_at_utc = datetime.now(UTC) + timedelta(hours=24)
+    new_otp = f"{secrets.randbelow(1_000_000):06d}"
+    user.email_verification_token = new_otp
+    user.email_verification_expires_at_utc = datetime.now(UTC) + timedelta(minutes=15)
+    user.email_verification_attempts = 0
     db.commit()
 
-    frontend_url = settings.FRONTEND_URL.rstrip("/")
-    verification_link = f"{frontend_url}/verify-email?token={new_token}"
-    send_verification_email(user.email, user.name, verification_link)
+    send_otp_email(user.email, user.name, new_otp)
 
     return generic_response
 

@@ -84,6 +84,7 @@ with engine.begin() as conn:
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255);
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_expires_at_utc TIMESTAMP WITH TIME ZONE;
+    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_attempts INTEGER DEFAULT 0;
     CREATE INDEX IF NOT EXISTS ix_user_table_email_verification_token ON user_table(email_verification_token);
 
     -- Backfill existing users as verified so existing accounts are not locked out

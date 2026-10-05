@@ -1,7 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Clock, Layers, Loader2, Mail, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+    AlertCircle,
+    ArrowLeft,
+    CheckCircle2,
+    KeyRound,
+    Layers,
+    Loader2,
+    Mail,
+    RefreshCw,
+    Send,
+    Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resendVerificationRequest, verifyEmailRequest } from "@/lib/api/auth";
@@ -9,63 +20,157 @@ import { resendVerificationRequest, verifyEmailRequest } from "@/lib/api/auth";
 export function VerifyEmailView() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const token = searchParams.get("token") || "";
 
-    const [status, setStatus] = useState<"loading" | "success" | "error" | "prompt">(
-        token ? "loading" : "prompt"
+    const paramCode = searchParams.get("code") || searchParams.get("token") || "";
+    const paramEmail = searchParams.get("email") || "";
+
+    const [email, setEmail] = useState<string>(paramEmail);
+    const [otp, setOtp] = useState<string[]>(() => {
+        const cleanParam = paramCode.replace(/\D/g, "").slice(0, 6);
+        if (cleanParam.length === 6) {
+            return cleanParam.split("");
+        }
+        return ["", "", "", "", "", ""];
+    });
+
+    const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">(
+        paramEmail && paramCode.replace(/\D/g, "").length === 6 ? "verifying" : "idle"
     );
-    const [message, setMessage] = useState<string>("");
-    const [resendEmail, setResendEmail] = useState("");
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [resendStatus, setResendStatus] = useState<string | null>(null);
     const [resending, setResending] = useState(false);
-    const [resendMessage, setResendMessage] = useState<string | null>(null);
-    const [resendError, setResendError] = useState<string | null>(null);
+    const [resendCooldown, setResendCooldown] = useState(0);
 
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    // If query params contained both email and a 6-digit code, attempt automatic verification
     useEffect(() => {
-        if (!token) return;
-
-        let active = true;
-        const verify = async () => {
-            try {
-                const res = await verifyEmailRequest(token);
-                if (active) {
-                    setStatus("success");
-                    setMessage(res.message || "Your email has been verified successfully!");
+        const cleanParam = paramCode.replace(/\D/g, "").slice(0, 6);
+        if (paramEmail && cleanParam.length === 6) {
+            let active = true;
+            const autoVerify = async () => {
+                try {
+                    await verifyEmailRequest(cleanParam, paramEmail);
+                    if (active) {
+                        setStatus("success");
+                    }
+                } catch (err) {
+                    if (active) {
+                        setStatus("error");
+                        setErrorMessage(
+                            err instanceof Error && err.message
+                                ? err.message
+                                : "Invalid or expired verification code."
+                        );
+                    }
                 }
-            } catch (err) {
-                if (active) {
-                    setStatus("error");
-                    setMessage(
-                        err instanceof Error && err.message
-                            ? err.message
-                            : "This verification link is invalid or has expired."
-                    );
-                }
-            }
-        };
+            };
+            void autoVerify();
+            return () => {
+                active = false;
+            };
+        }
+    }, [paramCode, paramEmail]);
 
-        void verify();
+    const handleOtpChange = (index: number, val: string) => {
+        const cleanVal = val.replace(/\D/g, "");
+        if (!cleanVal && val) return;
 
-        return () => {
-            active = false;
-        };
-    }, [token]);
+        const newOtp = [...otp];
+        newOtp[index] = cleanVal.slice(-1);
+        setOtp(newOtp);
+        setErrorMessage(null);
 
-    const handleResend = async (e: React.FormEvent) => {
+        // Auto-advance
+        if (cleanVal && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+
+        // Auto-verify if all 6 digits entered
+        const fullCode = newOtp.join("");
+        if (fullCode.length === 6 && !newOtp.includes("")) {
+            void handleVerify(fullCode);
+        }
+    };
+
+    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace" && !otp[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        } else if (e.key === "ArrowLeft" && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        } else if (e.key === "ArrowRight" && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleOtpPaste = (e: React.ClipboardEvent) => {
         e.preventDefault();
-        if (!resendEmail.trim() || resending) return;
+        const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+        if (!pasted) return;
 
-        setResending(true);
-        setResendMessage(null);
-        setResendError(null);
+        const newOtp = ["", "", "", "", "", ""];
+        for (let i = 0; i < pasted.length; i++) {
+            newOtp[i] = pasted[i];
+        }
+        setOtp(newOtp);
+        setErrorMessage(null);
+
+        const nextFocus = Math.min(pasted.length, 5);
+        inputRefs.current[nextFocus]?.focus();
+
+        if (pasted.length === 6) {
+            void handleVerify(pasted);
+        }
+    };
+
+    const handleVerify = async (codeToVerify?: string) => {
+        const fullCode = codeToVerify || otp.join("");
+        if (fullCode.length !== 6 || status === "verifying") return;
+
+        setStatus("verifying");
+        setErrorMessage(null);
 
         try {
-            const res = await resendVerificationRequest(resendEmail.trim());
-            setResendMessage(res.message || "Verification email sent. Please check your inbox.");
+            await verifyEmailRequest(fullCode, email.trim() || undefined);
+            setStatus("success");
         } catch (err) {
-            setResendError(
+            setStatus("error");
+            setErrorMessage(
                 err instanceof Error && err.message
                     ? err.message
-                    : "Failed to send verification email. Please try again."
+                    : "Invalid verification code. Please check your code or request a new one."
+            );
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email.trim() || resending || resendCooldown > 0) return;
+
+        setResending(true);
+        setResendStatus(null);
+        setErrorMessage(null);
+
+        try {
+            const res = await resendVerificationRequest(email.trim());
+            setResendStatus(res.message || "A new 6-digit code has been sent to your email!");
+            setOtp(["", "", "", "", "", ""]);
+            inputRefs.current[0]?.focus();
+            setResendCooldown(60);
+
+            const interval = setInterval(() => {
+                setResendCooldown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } catch (err) {
+            setErrorMessage(
+                err instanceof Error && err.message
+                    ? err.message
+                    : "Failed to resend code. Please try again."
             );
         } finally {
             setResending(false);
@@ -93,10 +198,10 @@ export function VerifyEmailView() {
                     </div>
                     <h1 className="mt-10 text-4xl font-bold tracking-[0.06em] sm:text-5xl">VERIFY ACCESS</h1>
                     <p className="mt-4 text-sm font-semibold uppercase tracking-[0.24em] text-white/90">
-                        Account Security & Confirmation
+                        6-Digit Security Verification
                     </p>
                     <p className="mt-6 max-w-md text-sm leading-6 text-white/80">
-                        Email verification ensures all course notifications, grade alerts, and academic updates reach the genuine account owner securely.
+                        Enter the 6-digit one-time code sent to your registered email to activate your learner account and protect your academic profile.
                     </p>
                 </div>
             </div>
@@ -104,32 +209,17 @@ export function VerifyEmailView() {
             {/* Right content panel */}
             <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-white px-6 py-12 sm:px-12 lg:px-16 xl:px-24 dark:bg-slate-900">
                 <div className="relative mx-auto w-full max-w-md">
-                    {/* 1. Loading State */}
-                    {status === "loading" && (
-                        <div className="flex flex-col items-center text-center animate-in fade-in">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
-                                <Loader2 className="h-8 w-8 animate-spin" />
+                    {/* Success State */}
+                    {status === "success" ? (
+                        <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95">
+                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 shadow-inner mb-6">
+                                <CheckCircle2 className="h-10 w-10 animate-in zoom-in" />
                             </div>
-                            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-slate-100">
-                                Verifying your email...
-                            </h2>
-                            <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
-                                Please wait while we confirm your email token with the server.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* 2. Success State */}
-                    {status === "success" && (
-                        <div className="flex flex-col items-center text-center animate-in fade-in">
-                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 shadow-inner">
-                                <CheckCircle2 className="h-10 w-10" />
-                            </div>
-                            <h2 className="mt-6 text-2xl font-bold text-gray-900 dark:text-slate-100 sm:text-3xl">
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 sm:text-3xl">
                                 Email Verified!
                             </h2>
                             <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-400">
-                                {message || "Your email address has been verified successfully. Your CourseDesk account is now active."}
+                                Your email address has been verified successfully. Your CourseDesk account is now active and ready.
                             </p>
                             <button
                                 type="button"
@@ -139,86 +229,135 @@ export function VerifyEmailView() {
                                 Proceed to Sign In
                             </button>
                         </div>
-                    )}
-
-                    {/* 3. Error or Prompt State */}
-                    {(status === "error" || status === "prompt") && (
+                    ) : (
                         <div className="animate-in fade-in space-y-6">
                             <div className="text-center">
-                                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
-                                    {status === "error" ? (
-                                        <AlertCircle className="h-8 w-8" />
-                                    ) : (
-                                        <Mail className="h-8 w-8" />
-                                    )}
+                                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shadow-inner">
+                                    <KeyRound className="h-8 w-8" />
                                 </div>
-                                <h2 className="mt-5 text-2xl font-bold text-gray-900 dark:text-slate-100">
-                                    {status === "error"
-                                        ? "Verification Link Expired"
-                                        : "Resend Verification Link"}
+                                <h2 className="mt-5 text-2xl font-bold text-gray-900 dark:text-slate-100 sm:text-3xl">
+                                    Enter 6-Digit Code
                                 </h2>
                                 <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
-                                    {status === "error"
-                                        ? message
-                                        : "Enter your registered email address below to receive a new verification link."}
+                                    Please enter the confirmation code sent to your email.
                                 </p>
                             </div>
 
-                            <form onSubmit={handleResend} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">
-                                        Email Address
-                                    </label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        <input
-                                            type="email"
-                                            required
-                                            value={resendEmail}
-                                            onChange={(e) => setResendEmail(e.target.value)}
-                                            placeholder="learner@example.com"
-                                            className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-                                        />
-                                    </div>
+                            {/* Email input field if not fixed */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1.5">
+                                    Account Email
+                                </label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => {
+                                            setEmail(e.target.value);
+                                            setErrorMessage(null);
+                                        }}
+                                        placeholder="learner@example.com"
+                                        className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                    />
                                 </div>
+                            </div>
 
-                                {resendMessage && (
-                                    <div className="rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
-                                        {resendMessage}
-                                    </div>
-                                )}
-
-                                {resendError && (
-                                    <div className="rounded-xl bg-red-50 p-3 text-xs font-medium text-red-800 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">
-                                        {resendError}
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={resending}
-                                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition disabled:opacity-50"
+                            {/* 6 OTP Cells */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-2 text-center">
+                                    Verification Code
+                                </label>
+                                <div
+                                    className="flex items-center justify-center gap-2 sm:gap-2.5"
+                                    onPaste={handleOtpPaste}
                                 >
-                                    {resending ? (
+                                    {otp.map((digit, idx) => (
+                                        <input
+                                            key={idx}
+                                            ref={(el) => {
+                                                inputRefs.current[idx] = el;
+                                            }}
+                                            type="text"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            maxLength={1}
+                                            autoComplete={idx === 0 ? "one-time-code" : "off"}
+                                            value={digit}
+                                            onChange={(e) => handleOtpChange(idx, e.target.value)}
+                                            onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                            autoFocus={idx === 0 && !paramEmail}
+                                            className={`h-12 w-10 sm:h-14 sm:w-12 rounded-xl border text-center text-xl font-bold font-mono transition-all outline-none ${
+                                                errorMessage
+                                                    ? "border-red-400 bg-red-50/50 text-red-700 focus:ring-4 focus:ring-red-500/10 dark:border-red-800 dark:bg-red-950/30"
+                                                    : digit
+                                                    ? "border-blue-600 bg-white text-blue-700 shadow-sm ring-2 ring-blue-500/20 dark:border-blue-500 dark:bg-slate-800 dark:text-blue-300"
+                                                    : "border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-500/15 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-100"
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Messages & Alerts */}
+                            {errorMessage && (
+                                <div className="rounded-xl bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900 animate-in fade-in flex items-start gap-2">
+                                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                    <span>{errorMessage}</span>
+                                </div>
+                            )}
+
+                            {resendStatus && (
+                                <div className="rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 animate-in fade-in flex items-start gap-2">
+                                    <Sparkles className="h-4 w-4 shrink-0 mt-0.5" />
+                                    <span>{resendStatus}</span>
+                                </div>
+                            )}
+
+                            {/* Submit Button */}
+                            <div className="space-y-3">
+                                <button
+                                    type="button"
+                                    onClick={() => handleVerify()}
+                                    disabled={status === "verifying" || otp.join("").length !== 6}
+                                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {status === "verifying" ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            <span>Sending Link...</span>
+                                            <span>Verifying Code...</span>
                                         </>
                                     ) : (
-                                        <>
-                                            <Send className="h-4 w-4" />
-                                            <span>Send New Verification Link</span>
-                                        </>
+                                        <span>Verify &amp; Activate</span>
                                     )}
                                 </button>
-                            </form>
 
-                            <div className="text-center pt-2">
+                                <div className="flex items-center justify-between text-xs pt-1">
+                                    <span className="text-gray-500 dark:text-slate-400">
+                                        Valid for 15 minutes
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleResend}
+                                        disabled={resending || resendCooldown > 0 || !email.trim()}
+                                        className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer"
+                                    >
+                                        {resending
+                                            ? "Sending code..."
+                                            : resendCooldown > 0
+                                            ? `Resend in ${resendCooldown}s`
+                                            : "Resend Code"}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="text-center pt-2 border-t border-gray-100 dark:border-slate-800">
                                 <Link
                                     href="/"
-                                    className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline"
+                                    className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline inline-flex items-center gap-1.5"
                                 >
-                                    Back to Sign In
+                                    <ArrowLeft className="h-3 w-3" />
+                                    <span>Back to Sign In</span>
                                 </Link>
                             </div>
                         </div>
