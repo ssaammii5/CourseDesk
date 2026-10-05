@@ -5,11 +5,16 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from app.auth.dtos import LoginSchema, SetPasswordSchema, SignupSchema
+from app.auth.dtos import (
+    AcceptInviteSchema,
+    LoginSchema,
+    SetPasswordSchema,
+    SignupSchema,
+)
 from app.auth.models import RefreshTokenModel
-from app.user.models import LearnerDetailsModel, UserModel
+from app.user.models import InstructorDetailsModel, LearnerDetailsModel, UserModel
 from app.utils.helpers import get_password_hash, verify_password
 from app.utils.settings import settings
 
@@ -154,28 +159,61 @@ def validate_password_strength(password: str) -> None:
         )
 
 
+def _find_invited_user_by_token(token: str, db: Session) -> UserModel | None:
+    if not token or not token.strip():
+        return None
+    token = token.strip()
+    now = datetime.now(UTC)
+
+    # 1. Direct match for raw URL-safe token (Fast O(1) indexed lookup)
+    user = db.scalar(
+        select(UserModel)
+        .options(selectinload(UserModel.instructor_details))
+        .where(
+            UserModel.invite_token == token,
+            UserModel.invite_expires_at_utc > now,
+        )
+    )
+    if user:
+        return user
+
+    # 2. Fallback for legacy hashed tokens
+    candidates = db.scalars(
+        select(UserModel)
+        .options(selectinload(UserModel.instructor_details))
+        .where(
+            UserModel.invite_token.is_not(None),
+            UserModel.invite_expires_at_utc > now,
+        )
+    ).all()
+    for candidate in candidates:
+        if (
+            candidate.invite_token
+            and candidate.invite_token.startswith("$2b$")
+            and verify_password(token, candidate.invite_token)
+        ):
+            return candidate
+    return None
+
+
+def verify_invite_token(token: str, db: Session) -> dict:
+    user = _find_invited_user_by_token(token, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation link is invalid, expired, or has been revoked.",
+        )
+    return {
+        "valid": True,
+        "email": user.email,
+        "role": user.role,
+    }
+
+
 def set_password_via_token(body: SetPasswordSchema, db: Session) -> dict:
     validate_password_strength(body.password)
 
-    if not body.token:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired invitation token",
-        )
-
-    candidates = db.scalars(
-        select(UserModel).where(
-            UserModel.invite_token.is_not(None),
-            UserModel.invite_expires_at_utc > datetime.now(UTC),
-        )
-    ).all()
-
-    user = None
-    for candidate in candidates:
-        if candidate.invite_token and verify_password(body.token, candidate.invite_token):
-            user = candidate
-            break
-
+    user = _find_invited_user_by_token(body.token, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -188,3 +226,73 @@ def set_password_via_token(body: SetPasswordSchema, db: Session) -> dict:
     db.commit()
 
     return {"message": "Password set successfully"}
+
+
+def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
+    first_name = (body.first_name or "").strip()
+    last_name = (body.last_name or "").strip()
+    headline = (body.professional_headline or "").strip()
+
+    if not first_name:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="First name is required.")
+    if not last_name:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Last name is required.")
+    if not headline:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Professional headline is required.")
+
+    validate_password_strength(body.password)
+
+    user = _find_invited_user_by_token(body.token, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation link is invalid, expired, or has been revoked.",
+        )
+
+    # Set password & activate
+    user.name = f"{first_name} {last_name}".strip()
+    user.hash_password = get_password_hash(body.password)
+    user.invite_token = None
+    user.invite_expires_at_utc = None
+    user.is_active = True
+
+    # Normalize links
+    from app.user.controller import _normalize_links
+    normalized_links = _normalize_links(body.links or [])
+
+    inst = user.instructor_details
+    if not inst:
+        inst = InstructorDetailsModel(
+            user_id=user.id,
+            first_name=first_name,
+            last_name=last_name,
+            avatar=body.avatar or "",
+            professional_headline=headline,
+            timezone=(body.timezone or "").strip() or "UTC",
+            links=normalized_links,
+        )
+        db.add(inst)
+    else:
+        inst.first_name = first_name
+        inst.last_name = last_name
+        inst.professional_headline = headline
+        inst.timezone = (body.timezone or "").strip() or "UTC"
+        if body.avatar is not None:
+            inst.avatar = body.avatar
+        inst.links = normalized_links
+
+    db.commit()
+    db.refresh(user)
+
+    access_token, exp_time = _create_access_token(user)
+    refresh_token = _create_refresh_token(user, db)
+
+    return {
+        "token": access_token,
+        "access_token": access_token,
+        "access_token_expires_at_utc": exp_time,
+        "refresh_token": refresh_token,
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+    }

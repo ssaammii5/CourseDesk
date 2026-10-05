@@ -124,3 +124,31 @@ export function uploadAvatarRequest(file: File): Promise<{ url: string }> {
         body: formData,
     });
 }
+
+export interface PendingInvitation {
+    id: number;
+    email: string;
+    role: string;
+    createdAtUtc: string;
+    expiresAtUtc: string;
+    inviteToken?: string;
+}
+
+export function inviteInstructorRequest(email: string): Promise<PendingInvitation> {
+    return apiFetch<PendingInvitation>("/api/instructors/invite", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+    });
+}
+
+export function getPendingInvitationsRequest(): Promise<PendingInvitation[]> {
+    return apiFetch<PendingInvitation[]>("/api/instructors/invitations", {
+        method: "GET",
+    });
+}
+
+export function revokeInvitationRequest(userId: number): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>(`/api/instructors/invitations/${userId}`, {
+        method: "DELETE",
+    });
+}

@@ -75,3 +75,16 @@ class UserResponseSchema(CamelModel):
     invite_token: str | None = None
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
+
+
+class InviteInstructorSchema(CamelModel):
+    email: EmailStr
+
+
+class PendingInvitationSchema(CamelModel):
+    id: int
+    email: str
+    role: str
+    created_at_utc: datetime
+    expires_at_utc: datetime
+    invite_token: str | None = None

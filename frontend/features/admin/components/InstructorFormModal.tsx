@@ -8,40 +8,9 @@ import { Field, ModernDropdown } from "@/components/ui";
 import { X, Upload, Trash2, Plus, Globe, ExternalLink, Loader2 } from "lucide-react";
 import { initialOf } from "@/lib/utils/format";
 
-export const COMMON_TIMEZONES = [
-    { value: "UTC", label: "UTC (Coordinated Universal Time)" },
-    { value: "America/New_York", label: "America/New_York (EST/EDT, UTC-5/-4)" },
-    { value: "America/Chicago", label: "America/Chicago (CST/CDT, UTC-6/-5)" },
-    { value: "America/Denver", label: "America/Denver (MST/MDT, UTC-7/-6)" },
-    { value: "America/Los_Angeles", label: "America/Los_Angeles (PST/PDT, UTC-8/-7)" },
-    { value: "America/Anchorage", label: "America/Anchorage (AKST/AKDT, UTC-9/-8)" },
-    { value: "Pacific/Honolulu", label: "Pacific/Honolulu (HST, UTC-10)" },
-    { value: "America/Toronto", label: "America/Toronto (EST/EDT, UTC-5/-4)" },
-    { value: "America/Vancouver", label: "America/Vancouver (PST/PDT, UTC-8/-7)" },
-    { value: "America/Sao_Paulo", label: "America/Sao_Paulo (BRT, UTC-3)" },
-    { value: "Europe/London", label: "Europe/London (GMT/BST, UTC+0/+1)" },
-    { value: "Europe/Dublin", label: "Europe/Dublin (GMT/IST, UTC+0/+1)" },
-    { value: "Europe/Paris", label: "Europe/Paris (CET/CEST, UTC+1/+2)" },
-    { value: "Europe/Berlin", label: "Europe/Berlin (CET/CEST, UTC+1/+2)" },
-    { value: "Europe/Amsterdam", label: "Europe/Amsterdam (CET/CEST, UTC+1/+2)" },
-    { value: "Europe/Rome", label: "Europe/Rome (CET/CEST, UTC+1/+2)" },
-    { value: "Europe/Madrid", label: "Europe/Madrid (CET/CEST, UTC+1/+2)" },
-    { value: "Europe/Zurich", label: "Europe/Zurich (CET/CEST, UTC+1/+2)" },
-    { value: "Europe/Athens", label: "Europe/Athens (EET/EEST, UTC+2/+3)" },
-    { value: "Europe/Istanbul", label: "Europe/Istanbul (TRT, UTC+3)" },
-    { value: "Asia/Dubai", label: "Asia/Dubai (GST, UTC+4)" },
-    { value: "Asia/Karachi", label: "Asia/Karachi (PKT, UTC+5)" },
-    { value: "Asia/Kolkata", label: "Asia/Kolkata (IST, UTC+5:30)" },
-    { value: "Asia/Dhaka", label: "Asia/Dhaka (BST, UTC+6)" },
-    { value: "Asia/Bangkok", label: "Asia/Bangkok (ICT, UTC+7)" },
-    { value: "Asia/Singapore", label: "Asia/Singapore (SGT, UTC+8)" },
-    { value: "Asia/Hong_Kong", label: "Asia/Hong_Kong (HKT, UTC+8)" },
-    { value: "Asia/Tokyo", label: "Asia/Tokyo (JST, UTC+9)" },
-    { value: "Asia/Seoul", label: "Asia/Seoul (KST, UTC+9)" },
-    { value: "Australia/Sydney", label: "Australia/Sydney (AEST/AEDT, UTC+10/+11)" },
-    { value: "Australia/Melbourne", label: "Australia/Melbourne (AEST/AEDT, UTC+10/+11)" },
-    { value: "Pacific/Auckland", label: "Pacific/Auckland (NZST/NZDT, UTC+12/+13)" },
-];
+import { COMMON_TIMEZONES } from "@/lib/constants/timezones";
+export { COMMON_TIMEZONES };
+
 
 export interface InstructorFormModalProps {
     open: boolean;

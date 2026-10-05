@@ -10,7 +10,9 @@ from app.submission.models import SubmissionModel
 from app.user.dtos import (
     InstructorDetailsSchema,
     InstructorLinkSchema,
+    InviteInstructorSchema,
     LearnerDetailsSchema,
+    PendingInvitationSchema,
     UserAddressSchema,
     UserResponseSchema,
     UserSchema,
@@ -161,12 +163,12 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
     raw_invite_token: str | None = None
     if body.password:
         hash_pass = get_password_hash(body.password)
-        invite_token_hash = None
+        invite_token_val = None
         invite_expires = None
     else:
         raw_invite_token = secrets.token_urlsafe(48)
         invite_expires = datetime.now(UTC) + timedelta(days=7)
-        invite_token_hash = get_password_hash(raw_invite_token)
+        invite_token_val = raw_invite_token
         hash_pass = "!UNSET_INVITED_USER"
 
     new_user = UserModel(
@@ -174,7 +176,7 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
         email=email,
         hash_password=hash_pass,
         role=body.role,
-        invite_token=invite_token_hash,
+        invite_token=invite_token_val,
         invite_expires_at_utc=invite_expires,
     )
     db.add(new_user)
@@ -313,3 +315,100 @@ def delete_user(user_id: int, db: Session) -> None:
         )
     db.delete(user)
     db.commit()
+
+
+def invite_instructor(body: InviteInstructorSchema, db: Session) -> PendingInvitationSchema:
+    email = body.email.strip().lower()
+    existing_user = db.scalar(select(UserModel).where(UserModel.email == email))
+
+    token = secrets.token_urlsafe(48)
+    expires = datetime.now(UTC) + timedelta(days=7)
+
+    if existing_user:
+        # If user is already active and set password, cannot invite again
+        if existing_user.hash_password != "!UNSET_INVITED_USER":
+            raise HTTPException(
+                status_code=400,
+                detail=f"User with email '{email}' is already registered and active.",
+            )
+        # Refresh pending invitation
+        existing_user.invite_token = token
+        existing_user.invite_expires_at_utc = expires
+        existing_user.role = "Instructor"
+        db.commit()
+        db.refresh(existing_user)
+        return PendingInvitationSchema(
+            id=existing_user.id,
+            email=existing_user.email,
+            role=existing_user.role,
+            created_at_utc=existing_user.created_at_utc,
+            expires_at_utc=existing_user.invite_expires_at_utc,
+            invite_token=token,
+        )
+
+    # Create new invited user
+    new_user = UserModel(
+        name="",
+        email=email,
+        hash_password="!UNSET_INVITED_USER",
+        role="Instructor",
+        invite_token=token,
+        invite_expires_at_utc=expires,
+        is_active=True,
+    )
+    db.add(new_user)
+    db.flush()
+
+    # Create empty instructor details placeholder
+    db.add(InstructorDetailsModel(user_id=new_user.id))
+    db.commit()
+    db.refresh(new_user)
+
+    return PendingInvitationSchema(
+        id=new_user.id,
+        email=new_user.email,
+        role=new_user.role,
+        created_at_utc=new_user.created_at_utc,
+        expires_at_utc=new_user.invite_expires_at_utc,
+        invite_token=token,
+    )
+
+
+def get_pending_instructor_invitations(db: Session) -> list[PendingInvitationSchema]:
+    now = datetime.now(UTC)
+    users = db.scalars(
+        select(UserModel)
+        .where(
+            UserModel.role.in_(("Instructor", "Teacher")),
+            UserModel.invite_token.is_not(None),
+            UserModel.invite_expires_at_utc > now,
+        )
+        .order_by(UserModel.created_at_utc.desc())
+    ).all()
+
+    return [
+        PendingInvitationSchema(
+            id=u.id,
+            email=u.email,
+            role=u.role,
+            created_at_utc=u.created_at_utc,
+            expires_at_utc=u.invite_expires_at_utc,
+            invite_token=u.invite_token,
+        )
+        for u in users
+    ]
+
+
+def revoke_instructor_invitation(user_id: int, db: Session) -> dict:
+    user = db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Invitation not found.")
+    if user.invite_token is None:
+        raise HTTPException(
+            status_code=400, detail="User has already accepted the invitation or is not pending."
+        )
+
+    # Clean delete pending user & cascaded details
+    db.delete(user)
+    db.commit()
+    return {"message": "Invitation revoked successfully."}

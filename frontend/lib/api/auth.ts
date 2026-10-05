@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { InstructorDetails, LearnerDetails } from "./users";
+import type { InstructorDetails, InstructorLink, LearnerDetails } from "./users";
 
 export interface LoginResponse {
     token: string;
@@ -56,4 +56,36 @@ export function logoutRequest(): Promise<void> {
     return apiFetch<void>(`/api/auth/logout`, { method: "POST" });
 }
 
-export { setPasswordRequest, type SetPasswordResponse } from "./users";
+export interface VerifyInviteResponse {
+    valid: boolean;
+    email: string;
+    role: string;
+}
+
+export interface AcceptInvitePayload {
+    token: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    professionalHeadline: string;
+    timezone: string;
+    avatar?: string | null;
+    links?: InstructorLink[];
+}
+
+export function verifyInviteRequest(token: string): Promise<VerifyInviteResponse> {
+    return apiFetch<VerifyInviteResponse>(`/api/auth/invitation?token=${encodeURIComponent(token)}`, {
+        method: "GET",
+        auth: false,
+    });
+}
+
+export function acceptInviteRequest(payload: AcceptInvitePayload): Promise<LoginResponse> {
+    return apiFetch<LoginResponse>("/api/auth/accept-invite", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        auth: false,
+    });
+}
+
+export { setPasswordRequest, type SetPasswordResponse } from "./users";

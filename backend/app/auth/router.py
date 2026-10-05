@@ -2,6 +2,7 @@ from fastapi import APIRouter, status
 
 from app.auth import controller
 from app.auth.dtos import (
+    AcceptInviteSchema,
     LoginResponseSchema,
     LoginSchema,
     MeResponseSchema,
@@ -11,6 +12,7 @@ from app.auth.dtos import (
     SetPasswordSchema,
     SignupResponseSchema,
     SignupSchema,
+    VerifyInviteResponseSchema,
 )
 from app.user.controller import serialize_user
 from app.utils.db import get_db
@@ -67,3 +69,21 @@ def logout(db: DbSession, user: IsAuthenticated):
 )
 def set_password(body: SetPasswordSchema, db: DbSession):
     return controller.set_password_via_token(body, db)
+
+
+@auth_routes.get(
+    "/invitation",
+    response_model=VerifyInviteResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def verify_invitation(token: str, db: DbSession):
+    return controller.verify_invite_token(token, db)
+
+
+@auth_routes.post(
+    "/accept-invite",
+    response_model=LoginResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def accept_invite(body: AcceptInviteSchema, db: DbSession):
+    return controller.accept_invite(body, db)

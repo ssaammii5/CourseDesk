@@ -40,3 +40,23 @@ def update_user(user_id: int, body: UserUpdateSchema, db: DbSession, _admin: IsA
 @user_routes.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: int, db: DbSession, _admin: IsAdmin):
     return controller.delete_user(user_id, db)
+
+
+instructor_routes = APIRouter(prefix="/api/instructors", tags=["instructors"])
+
+
+@instructor_routes.post("/invite", status_code=status.HTTP_201_CREATED)
+def invite_instructor(
+    body: controller.InviteInstructorSchema, db: DbSession, _admin: IsAdmin
+):
+    return controller.invite_instructor(body, db)
+
+
+@instructor_routes.get("/invitations", status_code=status.HTTP_200_OK)
+def get_pending_invitations(db: DbSession, _admin: IsAdmin):
+    return controller.get_pending_instructor_invitations(db)
+
+
+@instructor_routes.delete("/invitations/{user_id}", status_code=status.HTTP_200_OK)
+def revoke_invitation(user_id: int, db: DbSession, _admin: IsAdmin):
+    return controller.revoke_instructor_invitation(user_id, db)

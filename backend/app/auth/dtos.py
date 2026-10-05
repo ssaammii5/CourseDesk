@@ -29,6 +29,24 @@ class SetPasswordResponseSchema(CamelModel):
     message: str = "Password set successfully"
 
 
+class VerifyInviteResponseSchema(CamelModel):
+    valid: bool
+    email: str
+    role: str
+
+
+class AcceptInviteSchema(CamelModel):
+    token: str
+    password: str
+    first_name: str
+    last_name: str
+    professional_headline: str
+    timezone: str = "UTC"
+    avatar: str | None = None
+    links: list[dict] = []
+
+
+
 class LoginResponseSchema(CamelModel):
     token: str
     access_token: str

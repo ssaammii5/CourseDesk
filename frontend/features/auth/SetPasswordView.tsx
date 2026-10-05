@@ -1,26 +1,113 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useRef } from "react";
 import type { FormEvent } from "react";
-import { Check, Eye, EyeOff, Layers, Loader2, Lock } from "lucide-react";
+import {
+    Briefcase,
+    Camera,
+    Check,
+    Clock,
+    Eye,
+    EyeOff,
+    Globe,
+    Layers,
+    Loader2,
+    Lock,
+    Plus,
+    Trash2,
+    User,
+    AlertCircle,
+    X,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { setPasswordRequest } from "@/lib/api/users";
+import { acceptInviteRequest, verifyInviteRequest } from "@/lib/api/auth";
+import { setPasswordRequest, uploadAvatarRequest, type InstructorLink } from "@/lib/api/users";
+import { setTokens } from "@/lib/auth/session";
+import { COMMON_TIMEZONES } from "@/lib/constants/timezones";
+import { ModernDropdown } from "@/components/ui/ModernDropdown";
 
 function SetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token") ?? "";
-    const email = searchParams.get("email") ?? "";
+    const emailParam = searchParams.get("email") ?? "";
 
+    // Verification state
+    const [verifying, setVerifying] = useState(true);
+    const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+    const [verifiedEmail, setVerifiedEmail] = useState(emailParam);
+    const [verifiedRole, setVerifiedRole] = useState<string>("Instructor");
+    const [verifyError, setVerifyError] = useState<string | null>(null);
+
+    // Form fields
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [headline, setHeadline] = useState("");
+    const [timezone, setTimezone] = useState(() => {
+        try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        } catch {
+            return "UTC";
+        }
+    });
+    const [avatar, setAvatar] = useState("");
+    const [avatarLoading, setAvatarLoading] = useState(false);
+    const [avatarError, setAvatarError] = useState<string | null>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    const [links, setLinks] = useState<InstructorLink[]>([]);
+    const [newLinkTitle, setNewLinkTitle] = useState("");
+    const [newLinkUrl, setNewLinkUrl] = useState("");
+
+    // Password fields
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [passError, setPassError] = useState<string | null>(null);
+
+    // Form feedback
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [countdown, setCountdown] = useState(5);
+    const [countdown, setCountdown] = useState(4);
 
+    // Verify token on mount
+    useEffect(() => {
+        let isMounted = true;
+        if (!token) {
+            setVerifying(false);
+            setTokenValid(false);
+            setVerifyError("No invitation token provided. Please check your invitation link.");
+            return;
+        }
+
+        verifyInviteRequest(token)
+            .then((res) => {
+                if (!isMounted) return;
+                setTokenValid(true);
+                setVerifiedEmail(res.email);
+                setVerifiedRole(res.role);
+                setVerifying(false);
+            })
+            .catch((err) => {
+                if (!isMounted) return;
+                setTokenValid(false);
+                setVerifyError(
+                    err instanceof Error
+                        ? err.message
+                        : "This invitation link is invalid, expired, or has been revoked."
+                );
+                setVerifying(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [token]);
+
+    // Automatic redirect countdown on success
     useEffect(() => {
         if (!success) return;
         if (countdown <= 0) {
@@ -41,52 +128,173 @@ function SetPasswordForm() {
     ];
     const allRequirementsMet = requirements.every((r) => r.ok);
 
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+
+        const allowed = ["image/jpeg", "image/png", "image/webp"];
+        if (!allowed.includes(file.type)) {
+            setAvatarError("Only JPG, PNG, or WEBP images are allowed.");
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            setAvatarError("Image must be smaller than 2 MB.");
+            return;
+        }
+
+        setAvatarError(null);
+        setAvatarLoading(true);
+        try {
+            const res = await uploadAvatarRequest(file);
+            setAvatar(res.url);
+        } catch (err: any) {
+            setAvatarError(err?.message || "Failed to upload avatar");
+        } finally {
+            setAvatarLoading(false);
+        }
+    };
+
+    const handleAddLink = () => {
+        const title = newLinkTitle.trim();
+        const url = newLinkUrl.trim();
+        if (!url) return;
+
+        let formattedUrl = url;
+        if (!/^https?:\/\//i.test(formattedUrl)) {
+            formattedUrl = `https://${formattedUrl}`;
+        }
+
+        setLinks((prev) => [...prev, { title: title || "Website", url: formattedUrl }]);
+        setNewLinkTitle("");
+        setNewLinkUrl("");
+    };
+
+    const handleRemoveLink = (idx: number) => {
+        setLinks((prev) => prev.filter((_, i) => i !== idx));
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (!token) {
-            return setPassError("Missing invitation token. Please check your invitation link.");
+        setSubmitError(null);
+        const errs: Record<string, string> = {};
+
+        const isInstructor = verifiedRole === "Instructor" || verifiedRole === "Teacher";
+
+        if (isInstructor) {
+            if (!firstName.trim()) errs.firstName = "First name is required.";
+            if (!lastName.trim()) errs.lastName = "Last name is required.";
+            if (!headline.trim()) errs.headline = "Professional headline is required.";
         }
-        if (!allRequirementsMet) {
-            return setPassError("Password doesn't meet all requirements yet.");
+
+        if (!newPassword) {
+            errs.password = "Password is required.";
+        } else if (!allRequirementsMet) {
+            errs.password = "Password doesn't meet all security requirements.";
         }
+
         if (newPassword !== confirmPassword) {
-            return setPassError("Passwords don't match.");
+            errs.confirmPassword = "Passwords do not match.";
         }
-        setPassError(null);
+
+        if (Object.keys(errs).length > 0) {
+            setErrors(errs);
+            return;
+        }
+
+        setErrors({});
         setLoading(true);
+
         try {
-            await setPasswordRequest(token, newPassword);
+            if (isInstructor) {
+                const res = await acceptInviteRequest({
+                    token,
+                    password: newPassword,
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
+                    professionalHeadline: headline.trim(),
+                    timezone,
+                    avatar: avatar || null,
+                    links,
+                });
+                const tokenStr = res.accessToken || res.token;
+                if (tokenStr) {
+                    setTokens(tokenStr, res.refreshToken);
+                }
+            } else {
+                await setPasswordRequest(token, newPassword);
+            }
             setSuccess(true);
         } catch (err) {
-            setPassError(
+            setSubmitError(
                 err instanceof Error
                     ? err.message
-                    : "Failed to set password. The link may have expired or is invalid."
+                    : "Failed to setup account. The link may have expired or been revoked."
             );
         } finally {
             setLoading(false);
         }
     };
 
-    if (success) {
+    if (verifying) {
         return (
-            <div className="flex min-h-dvh items-center justify-center bg-white px-4 dark:bg-slate-950">
-                <div className="flex flex-col items-center text-center">
-                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e6f4ea] dark:border dark:border-emerald-800/40 dark:bg-emerald-950/60">
-                        <Check className="h-10 w-10 text-[#188038] dark:text-emerald-400" />
-                    </span>
-                    <h2 className="mt-6 text-3xl font-semibold text-gray-900 dark:text-slate-100">Password set successfully</h2>
-                    <p className="mt-3 max-w-sm text-sm leading-6 text-gray-600 dark:text-slate-400">
-                        Your password has been created. You can now sign in to CourseDesk with your email and new password.
+            <div className="flex min-h-dvh items-center justify-center bg-gray-50 dark:bg-slate-950">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400">
+                        Verifying invitation...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (tokenValid === false) {
+        return (
+            <div className="flex min-h-dvh items-center justify-center bg-gray-50 px-4 dark:bg-slate-950">
+                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400">
+                        <AlertCircle className="h-7 w-7" />
+                    </div>
+                    <h2 className="mt-5 text-xl font-bold text-gray-900 dark:text-slate-100">
+                        Invalid or Expired Invitation
+                    </h2>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
+                        {verifyError || "This invitation link is no longer valid, has expired, or was revoked by an administrator."}
                     </p>
                     <button
                         type="button"
                         onClick={() => router.push("/")}
-                        className="mt-8 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] px-8 py-3 text-sm font-semibold text-white hover:bg-[#1554b5] dark:bg-blue-600 dark:hover:bg-blue-500"
+                        className="mt-6 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
                     >
-                        Go to Sign In
+                        Return to Sign In
                     </button>
-                    <p className="mt-4 text-xs text-gray-600 dark:text-slate-400">
+                </div>
+            </div>
+        );
+    }
+
+    if (success) {
+        return (
+            <div className="flex min-h-dvh items-center justify-center bg-gray-50 px-4 dark:bg-slate-950">
+                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                        <Check className="h-8 w-8" />
+                    </div>
+                    <h2 className="mt-5 text-2xl font-bold text-gray-900 dark:text-slate-100">
+                        Account Ready!
+                    </h2>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
+                        Welcome to CourseDesk! Your profile credentials have been saved and your account is active.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => router.push("/")}
+                        className="mt-6 w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition active:scale-95"
+                    >
+                        Enter CourseDesk Dashboard
+                    </button>
+                    <p className="mt-3 text-xs text-gray-400 dark:text-slate-500">
                         Redirecting automatically in {countdown}s…
                     </p>
                 </div>
@@ -94,132 +302,379 @@ function SetPasswordForm() {
         );
     }
 
+    const isInstructor = verifiedRole === "Instructor" || verifiedRole === "Teacher";
+
     return (
-        <div className="flex min-h-dvh flex-col bg-white lg:flex-row dark:bg-slate-950">
-            {/* Left Panel */}
-            <div className="relative overflow-hidden bg-[linear-gradient(135deg,#1a73e8,#0d47a1)] px-8 py-12 text-white sm:px-12 lg:flex lg:w-1/2 lg:flex-col lg:justify-center lg:px-16 lg:py-16 xl:px-24">
-                <span aria-hidden className="pointer-events-none absolute -left-40 -top-80 h-[560px] w-[560px] rounded-full bg-white/10" />
-                <span aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/10" />
-                <span aria-hidden className="pointer-events-none absolute -bottom-28 -left-16 h-64 w-64 rounded-full bg-[radial-gradient(circle_at_32%_30%,#7db2ff,#0a3d8f_72%)]" />
-                <div className="relative">
-                    <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-                            <Layers className="h-6 w-6" />
-                        </span>
-                        <span className="text-xl font-semibold tracking-tight">CourseDesk</span>
+        <div className="min-h-dvh bg-gray-50/70 dark:bg-slate-950 py-10 px-4 sm:px-6">
+            <div className="mx-auto max-w-2xl">
+                {/* Header branding */}
+                <div className="mb-8 flex items-center justify-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/20">
+                        <Layers className="h-6 w-6" />
                     </div>
-                    <h1 className="mt-10 text-4xl font-bold tracking-[0.06em] sm:text-5xl">SET PASSWORD</h1>
-                    <p className="mt-4 text-sm font-semibold uppercase tracking-[0.28em] text-white/90">
-                        Secure your account
-                    </p>
-                    <p className="mt-6 max-w-md text-sm leading-6 text-white/80">
-                        An administrator has created your account. Set a strong password below to activate your access to the CourseDesk platform.
-                    </p>
+                    <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100">
+                        CourseDesk
+                    </span>
                 </div>
-            </div>
 
-            {/* Right Panel */}
-            <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-white px-6 py-12 sm:px-12 lg:px-16 xl:px-24 dark:bg-slate-900">
-                <span aria-hidden className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle_at_35%_30%,#7db2ff,#0a3d8f_72%)]" />
-                <div className="relative mx-auto w-full max-w-md">
-                    <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Create your password</h2>
-                    {email && (
-                        <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
-                            Account: <span className="font-medium text-gray-900 dark:text-slate-200">{email}</span>
+                {/* Form Card */}
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                    {/* Top banner */}
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-white sm:px-8">
+                        <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
+                            {isInstructor ? "Instructor Onboarding" : "Account Setup"}
+                        </span>
+                        <h1 className="mt-3 text-2xl sm:text-3xl font-bold">
+                            {isInstructor ? "Welcome! Complete your profile" : "Set your password"}
+                        </h1>
+                        <p className="mt-1 text-sm text-blue-100">
+                            Invited account: <strong className="text-white underline">{verifiedEmail}</strong>
                         </p>
-                    )}
+                    </div>
 
-                    {!token && (
-                        <div className="mt-4 rounded-lg bg-[#fce8e6] px-4 py-3 text-sm text-[#c5221f] dark:border dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
-                            Missing invitation token. Please make sure you used the full link provided in your invitation.
+                    <form onSubmit={handleSubmit} noValidate className="p-6 sm:p-8 space-y-8">
+                        {submitError && (
+                            <div className="flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-900">
+                                <AlertCircle className="h-5 w-5 shrink-0" />
+                                <span>{submitError}</span>
+                            </div>
+                        )}
+
+                        {/* SECTION 1: Instructor Personal Profile (Mandatory) */}
+                        {isInstructor && (
+                            <div className="space-y-5">
+                                <div className="border-b border-gray-100 pb-3 dark:border-slate-800">
+                                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                                        <User className="h-4 w-4 text-blue-600" />
+                                        1. Personal Information <span className="text-xs font-normal text-red-500">(Required)</span>
+                                    </h2>
+                                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                                        These will appear on your courses, syllabus, and student-facing profile.
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                            First Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={firstName}
+                                            onChange={(e) => {
+                                                setFirstName(e.target.value);
+                                                setErrors((p) => ({ ...p, firstName: "" }));
+                                            }}
+                                            placeholder="e.g. Alan"
+                                            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                        {errors.firstName && (
+                                            <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                            Last Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={lastName}
+                                            onChange={(e) => {
+                                                setLastName(e.target.value);
+                                                setErrors((p) => ({ ...p, lastName: "" }));
+                                            }}
+                                            placeholder="e.g. Turing"
+                                            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                        {errors.lastName && (
+                                            <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                        Professional Headline <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={headline}
+                                            onChange={(e) => {
+                                                setHeadline(e.target.value);
+                                                setErrors((p) => ({ ...p, headline: "" }));
+                                            }}
+                                            placeholder="e.g. Lead Instructor & Distributed Systems Architect"
+                                            className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                    </div>
+                                    {errors.headline && (
+                                        <p className="mt-1 text-xs text-red-500">{errors.headline}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                        Timezone <span className="text-red-500">*</span>
+                                    </label>
+                                    <ModernDropdown
+                                        value={timezone}
+                                        onChange={setTimezone}
+                                        options={COMMON_TIMEZONES}
+                                        searchable
+                                        size="md"
+                                        buttonClassName="w-full justify-between"
+                                    />
+                                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                                        Used for scheduling live lectures, submissions, and assignment deadlines.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SECTION 2: Security & Password (Mandatory) */}
+                        <div className="space-y-5">
+                            <div className="border-b border-gray-100 pb-3 dark:border-slate-800">
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                                    <Lock className="h-4 w-4 text-blue-600" />
+                                    {isInstructor ? "2. Account Password" : "1. Create Password"} <span className="text-xs font-normal text-red-500">(Required)</span>
+                                </h2>
+                                <p className="text-xs text-gray-500 dark:text-slate-400">
+                                    Choose a strong password to protect your account.
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                        Password <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showNew ? "text" : "password"}
+                                            value={newPassword}
+                                            onChange={(e) => {
+                                                setNewPassword(e.target.value);
+                                                setErrors((p) => ({ ...p, password: "" }));
+                                            }}
+                                            placeholder="Enter strong password"
+                                            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNew((v) => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"
+                                        >
+                                            {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
+                                    {errors.password && (
+                                        <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                        Confirm Password <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showConfirm ? "text" : "password"}
+                                            value={confirmPassword}
+                                            onChange={(e) => {
+                                                setConfirmPassword(e.target.value);
+                                                setErrors((p) => ({ ...p, confirmPassword: "" }));
+                                            }}
+                                            placeholder="Repeat your password"
+                                            className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirm((v) => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"
+                                        >
+                                            {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
+                                    {errors.confirmPassword && (
+                                        <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Password requirements checklist */}
+                            <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+                                <p className="text-[11px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                                    Password Requirements:
+                                </p>
+                                <div className="grid gap-1.5 sm:grid-cols-2 text-xs">
+                                    {requirements.map((r, i) => (
+                                        <div
+                                            key={i}
+                                            className={`flex items-center gap-2 ${
+                                                r.ok ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-slate-500"
+                                            }`}
+                                        >
+                                            <div
+                                                className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                                                    r.ok ? "bg-emerald-100 dark:bg-emerald-950 font-bold" : "bg-gray-200 dark:bg-slate-700"
+                                                }`}
+                                            >
+                                                {r.ok ? "✓" : "•"}
+                                            </div>
+                                            <span>{r.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                    )}
 
-                    <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
-                        {/* New Password */}
-                        <div>
-                            <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${passError ? "ring-2 ring-[#c5221f]" : ""}`}
+                        {/* SECTION 3: Avatar & Links (Optional for instructor) */}
+                        {isInstructor && (
+                            <div className="space-y-5">
+                                <div className="border-b border-gray-100 pb-3 dark:border-slate-800">
+                                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                                        <Globe className="h-4 w-4 text-blue-600" />
+                                        3. Avatar & Portfolio Links <span className="text-xs font-normal text-gray-400">(Optional)</span>
+                                    </h2>
+                                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                                        You can also add or change these anytime later in Account Settings.
+                                    </p>
+                                </div>
+
+                                {/* Avatar Uploader */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-2">
+                                        Profile Avatar
+                                    </label>
+                                    <input
+                                        ref={avatarInputRef}
+                                        type="file"
+                                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        onChange={handleAvatarUpload}
+                                    />
+                                    <div className="flex items-center gap-4">
+                                        {avatar ? (
+                                            <div className="relative h-16 w-16 rounded-xl overflow-hidden ring-2 ring-blue-500 shadow-sm">
+                                                <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setAvatar("")}
+                                                    className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                                                    title="Remove avatar"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-slate-500 border border-dashed border-gray-300 dark:border-slate-700">
+                                                <Camera className="h-6 w-6" />
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <button
+                                                type="button"
+                                                disabled={avatarLoading}
+                                                onClick={() => avatarInputRef.current?.click()}
+                                                className="rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-1.5 text-xs font-semibold text-gray-800 dark:text-slate-200 transition"
+                                            >
+                                                {avatarLoading ? "Uploading..." : avatar ? "Change Photo" : "Upload Photo"}
+                                            </button>
+                                            <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                                                JPG, PNG or WEBP under 2 MB.
+                                            </p>
+                                            {avatarError && (
+                                                <p className="mt-1 text-xs text-red-500">{avatarError}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Dynamic Links Builder */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-2">
+                                        Portfolio & Social Links
+                                    </label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <input
+                                            type="text"
+                                            value={newLinkTitle}
+                                            onChange={(e) => setNewLinkTitle(e.target.value)}
+                                            placeholder="Label (e.g. GitHub, LinkedIn)"
+                                            className="sm:w-1/3 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                        <input
+                                            type="url"
+                                            value={newLinkUrl}
+                                            onChange={(e) => setNewLinkUrl(e.target.value)}
+                                            placeholder="https://example.com/username"
+                                            className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAddLink}
+                                            disabled={!newLinkUrl.trim()}
+                                            className="flex items-center justify-center gap-1.5 rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-200 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
+                                        >
+                                            <Plus className="h-3.5 w-3.5" />
+                                            <span>Add</span>
+                                        </button>
+                                    </div>
+
+                                    {links.length > 0 && (
+                                        <div className="mt-3 space-y-2">
+                                            {links.map((lnk, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/60 p-2.5 dark:border-slate-800 dark:bg-slate-800/40 text-xs"
+                                                >
+                                                    <div className="min-w-0 pr-2">
+                                                        <span className="font-semibold text-gray-800 dark:text-slate-200">
+                                                            {lnk.title || "Link"}:
+                                                        </span>{" "}
+                                                        <span className="text-blue-600 dark:text-blue-400 truncate">
+                                                            {lnk.url}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveLink(idx)}
+                                                        className="text-gray-400 hover:text-red-500 p-1"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Submit Button */}
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 shadow-lg shadow-blue-600/25 transition active:scale-[0.99]"
                             >
-                                <Lock className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
-                                <input
-                                    type={showNew ? "text" : "password"}
-                                    value={newPassword}
-                                    autoComplete="new-password"
-                                    placeholder="New password"
-                                    onChange={(e) => {
-                                        setNewPassword(e.target.value);
-                                        setPassError(null);
-                                    }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
-                                />
-                                <button
-                                    type="button"
-                                    aria-label={showNew ? "Hide password" : "Show password"}
-                                    onClick={() => setShowNew((v) => !v)}
-                                    className="shrink-0 cursor-pointer p-1 text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
-                                >
-                                    {showNew ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                            </label>
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        <span>Setting Up Account...</span>
+                                    </>
+                                ) : (
+                                    <span>
+                                        {isInstructor ? "Complete Profile & Start Teaching" : "Set Password & Sign In"}
+                                    </span>
+                                )}
+                            </button>
                         </div>
-
-                        {/* Confirm Password */}
-                        <div>
-                            <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${passError ? "ring-2 ring-[#c5221f]" : ""}`}
-                            >
-                                <Lock className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
-                                <input
-                                    type={showConfirm ? "text" : "password"}
-                                    value={confirmPassword}
-                                    autoComplete="new-password"
-                                    placeholder="Confirm new password"
-                                    onChange={(e) => {
-                                        setConfirmPassword(e.target.value);
-                                        setPassError(null);
-                                    }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
-                                />
-                                <button
-                                    type="button"
-                                    aria-label={showConfirm ? "Hide password" : "Show password"}
-                                    onClick={() => setShowConfirm((v) => !v)}
-                                    className="shrink-0 cursor-pointer p-1 text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
-                                >
-                                    {showConfirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                            </label>
-                        </div>
-
-                        {/* Requirements */}
-                        <ul className="space-y-2 rounded-lg bg-[#e8eaed]/60 px-4 py-3 dark:bg-slate-850/60 dark:bg-slate-800/60">
-                            {requirements.map((r) => (
-                                <li
-                                    key={r.label}
-                                    className={`flex items-center gap-2 text-sm ${r.ok ? "text-[#137333] dark:text-emerald-400" : "text-gray-600 dark:text-slate-400"}`}
-                                >
-                                    <Check className={`h-4 w-4 ${r.ok ? "text-[#188038] dark:text-emerald-400" : "text-gray-400 dark:text-slate-500"}`} />
-                                    {r.label}
-                                </li>
-                            ))}
-                        </ul>
-
-                        {passError && <p className="text-sm text-[#c5221f]">{passError}</p>}
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1554b5] disabled:cursor-default disabled:opacity-70 dark:bg-blue-600 dark:hover:bg-blue-500"
-                        >
-                            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                            {loading ? "Setting password…" : "Set Password"}
-                        </button>
                     </form>
-
-                    <p className="mt-6 text-center text-xs text-gray-500 dark:text-slate-400">
-                        If you didn't expect this email, please contact your administrator.
-                    </p>
                 </div>
             </div>
         </div>
@@ -228,7 +683,13 @@ function SetPasswordForm() {
 
 export function SetPasswordView() {
     return (
-        <Suspense>
+        <Suspense
+            fallback={
+                <div className="flex min-h-dvh items-center justify-center bg-gray-50 dark:bg-slate-950">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                </div>
+            }
+        >
             <SetPasswordForm />
         </Suspense>
     );

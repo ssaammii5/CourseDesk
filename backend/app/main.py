@@ -31,7 +31,7 @@ from app.notification.router import notification_routes
 from app.session.router import session_routes
 from app.setting.router import setting_routes
 from app.submission.router import submission_routes
-from app.user.router import user_routes
+from app.user.router import instructor_routes, user_routes
 
 from sqlalchemy import text
 
@@ -77,6 +77,7 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 
 app.include_router(auth_routes)
 app.include_router(user_routes)
+app.include_router(instructor_routes)
 app.include_router(academic_routes)
 app.include_router(course_routes)
 app.include_router(assignment_routes)
