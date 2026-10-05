@@ -8,10 +8,14 @@ from app.auth.dtos import (
     MeResponseSchema,
     RefreshResponseSchema,
     RefreshSchema,
+    ResendVerificationResponseSchema,
+    ResendVerificationSchema,
     SetPasswordResponseSchema,
     SetPasswordSchema,
     SignupResponseSchema,
     SignupSchema,
+    VerifyEmailResponseSchema,
+    VerifyEmailSchema,
     VerifyInviteResponseSchema,
 )
 from app.user.controller import serialize_user
@@ -87,3 +91,21 @@ def verify_invitation(token: str, db: DbSession):
 )
 def accept_invite(body: AcceptInviteSchema, db: DbSession):
     return controller.accept_invite(body, db)
+
+
+@auth_routes.post(
+    "/verify-email",
+    response_model=VerifyEmailResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def verify_email(body: VerifyEmailSchema, db: DbSession):
+    return controller.verify_email(body, db)
+
+
+@auth_routes.post(
+    "/resend-verification",
+    response_model=ResendVerificationResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def resend_verification(body: ResendVerificationSchema, db: DbSession):
+    return controller.resend_verification_email(body, db)

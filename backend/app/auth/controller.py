@@ -4,17 +4,20 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth.dtos import (
     AcceptInviteSchema,
     LoginSchema,
+    ResendVerificationSchema,
     SetPasswordSchema,
     SignupSchema,
+    VerifyEmailSchema,
 )
 from app.auth.models import RefreshTokenModel
 from app.user.models import InstructorDetailsModel, LearnerDetailsModel, UserModel
+from app.utils.email import send_verification_email
 from app.utils.helpers import get_password_hash, verify_password
 from app.utils.settings import settings
 
@@ -53,6 +56,11 @@ def login_user(body: LoginSchema, db: Session) -> dict:
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive"
+        )
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email address before signing in. Check your inbox for the verification link.",
         )
     if not verify_password(body.password, user.hash_password):
         raise HTTPException(
@@ -100,11 +108,18 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
             detail="First name and last name are required",
         )
 
+    verification_token = secrets.token_urlsafe(32)
+    verification_expires = datetime.now(UTC) + timedelta(hours=24)
+
     new_user = UserModel(
         name=full_name,
         email=body.email,
         hash_password=get_password_hash(body.password),
         role="Learner",
+        is_active=True,
+        email_verified=False,
+        email_verification_token=verification_token,
+        email_verification_expires_at_utc=verification_expires,
     )
     db.add(new_user)
     db.flush()
@@ -117,7 +132,70 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
     )
     db.commit()
     db.refresh(new_user)
+
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    verification_link = f"{frontend_url}/verify-email?token={verification_token}"
+    send_verification_email(new_user.email, new_user.name, verification_link)
+
     return new_user
+
+
+def verify_email(body: VerifyEmailSchema, db: Session) -> dict:
+    token = (body.token or "").strip()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification token is required.",
+        )
+    user = db.scalar(
+        select(UserModel).where(UserModel.email_verification_token == token)
+    )
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or already verified link. If you already verified your account, you can proceed to sign in.",
+        )
+    if (
+        user.email_verification_expires_at_utc
+        and user.email_verification_expires_at_utc < datetime.now(UTC)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This verification link has expired. Please request a new verification email.",
+        )
+
+    user.email_verified = True
+    user.email_verification_token = None
+    user.email_verification_expires_at_utc = None
+    db.commit()
+    return {
+        "message": "Email verified successfully! You can now sign in.",
+        "email": user.email,
+    }
+
+
+def resend_verification_email(body: ResendVerificationSchema, db: Session) -> dict:
+    email_clean = (body.email or "").strip().lower()
+    user = db.scalar(select(UserModel).where(func.lower(UserModel.email) == email_clean))
+
+    # Anti-enumeration response: always return the same message
+    generic_response = {
+        "message": "If an unverified account exists with that email address, a verification link has been sent."
+    }
+
+    if not user or user.email_verified:
+        return generic_response
+
+    new_token = secrets.token_urlsafe(32)
+    user.email_verification_token = new_token
+    user.email_verification_expires_at_utc = datetime.now(UTC) + timedelta(hours=24)
+    db.commit()
+
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    verification_link = f"{frontend_url}/verify-email?token={new_token}"
+    send_verification_email(user.email, user.name, verification_link)
+
+    return generic_response
 
 
 def refresh_tokens(refresh_token: str, db: Session) -> dict:
@@ -285,6 +363,9 @@ def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
     user.invite_token = None
     user.invite_expires_at_utc = None
     user.is_active = True
+    user.email_verified = True
+    user.email_verification_token = None
+    user.email_verification_expires_at_utc = None
 
     # Normalize links
     from app.user.controller import _normalize_links

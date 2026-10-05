@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Layers, Loader2, Lock, Mail, User } from "lucide-react";
+import { Check, Clock, Layers, Loader2, Lock, Mail, RefreshCw, Send, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signupRequest } from "@/lib/api/auth";
+import { resendVerificationRequest, signupRequest } from "@/lib/api/auth";
 
 export function SignupView() {
     const router = useRouter();
@@ -19,6 +19,9 @@ export function SignupView() {
     const [formError, setFormError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [resending, setResending] = useState(false);
+    const [resendStatus, setResendStatus] = useState<string | null>(null);
+    const [resendCooldown, setResendCooldown] = useState(0);
 
     const clearError = (key: string) =>
         setErrors((prev) => {
@@ -44,6 +47,34 @@ export function SignupView() {
         return next;
     };
 
+    const handleResend = async () => {
+        if (!email.trim() || resending || resendCooldown > 0) return;
+        setResending(true);
+        setResendStatus(null);
+        try {
+            const res = await resendVerificationRequest(email.trim());
+            setResendStatus(res.message || "Verification link sent! Check your inbox.");
+            setResendCooldown(60);
+            const interval = setInterval(() => {
+                setResendCooldown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } catch (err) {
+            setResendStatus(
+                err instanceof Error && err.message
+                    ? err.message
+                    : "Failed to resend verification link. Please try again."
+            );
+        } finally {
+            setResending(false);
+        }
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         const next = validate();
@@ -54,9 +85,6 @@ export function SignupView() {
         try {
             await signupRequest(firstName.trim(), lastName.trim(), email.trim(), password);
             setSuccess(true);
-            setTimeout(() => {
-                router.push("/");
-            }, 3000);
         } catch (err) {
             setFormError(
                 err instanceof Error && err.message
@@ -69,24 +97,74 @@ export function SignupView() {
 
     if (success) {
         return (
-            <div className="flex min-h-dvh items-center justify-center bg-white px-4 dark:bg-slate-950">
-                <div className="flex flex-col items-center text-center max-w-md">
-                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e6f4ea] dark:bg-emerald-950/60 dark:border dark:border-emerald-800/40">
-                        <svg className="h-10 w-10 text-[#188038] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </span>
-                    <h2 className="mt-6 text-3xl font-semibold text-gray-900 dark:text-slate-100">Account created!</h2>
+            <div className="flex min-h-dvh items-center justify-center bg-white px-4 py-12 dark:bg-slate-950">
+                <div className="flex flex-col items-center text-center max-w-lg w-full rounded-3xl border border-gray-100 bg-white p-8 sm:p-10 shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in">
+                    <div className="relative mb-6">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shadow-inner">
+                            <Mail className="h-10 w-10" />
+                        </div>
+                        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-white ring-4 ring-white dark:ring-slate-900">
+                            <Clock className="h-4 w-4" />
+                        </span>
+                    </div>
+
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100 sm:text-3xl">
+                        Verify your email address
+                    </h2>
+                    
                     <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-400">
-                        Your account has been created successfully. You can now sign in with your email and password.
+                        We&apos;ve sent a verification link to{" "}
+                        <strong className="font-semibold text-gray-900 dark:text-slate-200">
+                            {email}
+                        </strong>
+                        . Please open the link in your email to activate your account before signing in.
                     </p>
-                    <button
-                        type="button"
-                        onClick={() => router.push("/")}
-                        className="mt-8 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] px-8 py-3 text-sm font-semibold text-white hover:bg-[#1554b5] transition-colors dark:bg-blue-600 dark:hover:bg-blue-500"
-                    >
-                        Go to Sign In
-                    </button>
+
+                    <div className="mt-6 w-full rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-left dark:border-blue-900/40 dark:bg-blue-950/30">
+                        <p className="text-xs text-blue-900 dark:text-blue-200">
+                            <strong className="font-semibold">Important:</strong> The verification link is valid for <strong>24 hours</strong>. If you don&apos;t see the email, please check your spam or junk folder.
+                        </p>
+                    </div>
+
+                    {resendStatus && (
+                        <div className="mt-4 w-full rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 animate-in fade-in">
+                            {resendStatus}
+                        </div>
+                    )}
+
+                    <div className="mt-8 flex w-full flex-col gap-3">
+                        <button
+                            type="button"
+                            onClick={handleResend}
+                            disabled={resending || resendCooldown > 0}
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {resending ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Sending Link...</span>
+                                </>
+                            ) : resendCooldown > 0 ? (
+                                <>
+                                    <Clock className="h-4 w-4" />
+                                    <span>Resend in {resendCooldown}s</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="h-4 w-4" />
+                                    <span>Resend Verification Email</span>
+                                </>
+                            )}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => router.push("/")}
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                            Back to Sign In
+                        </button>
+                    </div>
                 </div>
             </div>
         );

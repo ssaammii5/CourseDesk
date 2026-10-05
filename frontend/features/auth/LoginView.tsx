@@ -1,13 +1,17 @@
 "use client";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Layers, Loader2, Lock, Mail } from "lucide-react";
+import { CheckCircle2, Layers, Loader2, Lock, Mail, Send } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { resendVerificationRequest } from "@/lib/api/auth";
 
 export function LoginView() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const verifiedParam = searchParams.get("verified") === "true";
+
     const { login } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -16,6 +20,8 @@ export function LoginView() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [resending, setResending] = useState(false);
+    const [resendSuccess, setResendSuccess] = useState<string | null>(null);
 
     const clearError = (key: string) =>
         setErrors((prev) => {
@@ -51,6 +57,20 @@ export function LoginView() {
                     : "Sign in failed. Please try again.",
             );
             setLoading(false);
+        }
+    };
+
+    const handleResendFromLogin = async () => {
+        if (!email.trim() || resending) return;
+        setResending(true);
+        setResendSuccess(null);
+        try {
+            const res = await resendVerificationRequest(email.trim());
+            setResendSuccess(res.message || "Verification email sent! Please check your inbox.");
+        } catch {
+            setResendSuccess("If an unverified account exists, a verification link has been sent.");
+        } finally {
+            setResending(false);
         }
     };
 
@@ -104,6 +124,14 @@ export function LoginView() {
                 <div className="relative mx-auto w-full max-w-md">
                     <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Sign in</h2>
                     <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">to continue to CourseDesk</p>
+
+                    {verifiedParam && (
+                        <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 animate-in fade-in">
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                            <span>Your email has been verified! You can now sign in with your credentials.</span>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
                         {/* Email */}
                         <div>
@@ -160,9 +188,33 @@ export function LoginView() {
                         </div>
                         {/* Form-level error (real auth) */}
                         {formError && (
-                            <p className="rounded-md bg-[#fce8e6] px-4 py-2.5 text-sm text-[#c5221f] dark:border dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
-                                {formError}
-                            </p>
+                            <div className="rounded-xl bg-[#fce8e6] p-4 text-xs text-[#c5221f] dark:border dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 space-y-2">
+                                <p className="font-medium">{formError}</p>
+                                {formError.toLowerCase().includes("verify") && (
+                                    <div className="pt-1 border-t border-rose-200 dark:border-rose-900/60">
+                                        <button
+                                            type="button"
+                                            onClick={handleResendFromLogin}
+                                            disabled={resending || !email.trim()}
+                                            className="inline-flex items-center gap-1.5 font-semibold text-blue-700 dark:text-blue-400 hover:underline disabled:opacity-50"
+                                        >
+                                            {resending ? (
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            ) : (
+                                                <Send className="h-3.5 w-3.5" />
+                                            )}
+                                            <span>
+                                                Resend verification email {email ? `to ${email}` : ""}
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {resendSuccess && (
+                            <div className="rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 animate-in fade-in">
+                                {resendSuccess}
+                            </div>
                         )}
                         {/* Remember / forgot */}
                         <div className="flex items-center justify-between">

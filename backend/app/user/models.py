@@ -23,6 +23,13 @@ class UserModel(Base):
     invite_expires_at_utc: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    email_verified: Mapped[bool] = mapped_column(default=False)
+    email_verification_token: Mapped[Optional[str]] = mapped_column(
+        unique=True, index=True, nullable=True
+    )
+    email_verification_expires_at_utc: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     learner_details: Mapped[Optional["LearnerDetailsModel"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"

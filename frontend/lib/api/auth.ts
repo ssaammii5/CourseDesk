@@ -101,4 +101,29 @@ export function acceptInviteRequest(payload: AcceptInvitePayload): Promise<Login
     });
 }
 
+export interface VerifyEmailResponse {
+    message: string;
+    email?: string;
+}
+
+export function verifyEmailRequest(token: string): Promise<VerifyEmailResponse> {
+    return apiFetch<VerifyEmailResponse>("/api/auth/verify-email", {
+        method: "POST",
+        body: JSON.stringify({ token }),
+        auth: false,
+    });
+}
+
+export interface ResendVerificationResponse {
+    message: string;
+}
+
+export function resendVerificationRequest(email: string): Promise<ResendVerificationResponse> {
+    return apiFetch<ResendVerificationResponse>("/api/auth/resend-verification", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        auth: false,
+    });
+}
+
 export { setPasswordRequest, type SetPasswordResponse } from "./users";

@@ -79,7 +79,26 @@ class SignupResponseSchema(CamelModel):
     email: str
     role: str
     is_active: bool
+    email_verified: bool = False
     created_at_utc: datetime
+    message: str = "Please verify your email address to complete registration."
+
+
+class VerifyEmailSchema(CamelModel):
+    token: str
+
+
+class VerifyEmailResponseSchema(CamelModel):
+    message: str = "Email verified successfully"
+    email: str | None = None
+
+
+class ResendVerificationSchema(CamelModel):
+    email: EmailStr
+
+
+class ResendVerificationResponseSchema(CamelModel):
+    message: str = "If an account exists, a verification link has been sent"
 
 
 from app.user.dtos import (

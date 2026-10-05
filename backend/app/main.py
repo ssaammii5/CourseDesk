@@ -79,6 +79,17 @@ with engine.begin() as conn:
         END
     FROM user_table ut
     WHERE ldt.user_id = ut.id AND (ldt.first_name = '' OR ldt.first_name IS NULL);
+
+    -- Ensure email verification columns exist on user_table
+    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255);
+    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_expires_at_utc TIMESTAMP WITH TIME ZONE;
+    CREATE INDEX IF NOT EXISTS ix_user_table_email_verification_token ON user_table(email_verification_token);
+
+    -- Backfill existing users as verified so existing accounts are not locked out
+    UPDATE user_table 
+    SET email_verified = TRUE 
+    WHERE email_verified IS NULL OR email_verified = FALSE;
     """))
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
