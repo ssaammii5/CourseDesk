@@ -132,6 +132,42 @@ export function uploadAvatarRequest(file: File): Promise<{ url: string }> {
     });
 }
 
+export interface UpdateProfilePayload {
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+    timezone?: string;
+    professionalHeadline?: string;
+    shortBio?: string;
+    links?: InstructorLink[];
+    mobile?: string;
+    dateOfBirth?: string;
+    nationality?: string;
+    fathersName?: string;
+    mothersName?: string;
+    regNo?: string;
+    address?: UserAddress;
+}
+
+export interface ChangePasswordPayload {
+    currentPassword: string;
+    newPassword: string;
+}
+
+export function updateProfileRequest(payload: UpdateProfilePayload): Promise<UserDto> {
+    return apiFetch<UserDto>("/api/users/profile", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+
+export function changePasswordRequest(payload: ChangePasswordPayload): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>("/api/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
 export interface PendingInvitation {
     id: number;
     email: string;

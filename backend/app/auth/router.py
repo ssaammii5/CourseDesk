@@ -18,7 +18,16 @@ from app.auth.dtos import (
     VerifyEmailSchema,
     VerifyInviteResponseSchema,
 )
-from app.user.controller import serialize_user
+from app.user.controller import (
+    change_user_password,
+    serialize_user,
+    update_current_user_profile,
+)
+from app.user.dtos import (
+    ChangePasswordResponseSchema,
+    ChangePasswordSchema,
+    UpdateProfileSchema,
+)
 from app.utils.db import get_db
 from app.utils.helpers import DbSession, IsAuthenticated
 
@@ -50,6 +59,32 @@ def signup(body: SignupSchema, db: DbSession):
 )
 def me(user: IsAuthenticated):
     return serialize_user(user)
+
+
+@auth_routes.put(
+    "/me",
+    response_model=MeResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def update_me(
+    body: UpdateProfileSchema,
+    db: DbSession,
+    user: IsAuthenticated,
+):
+    return update_current_user_profile(user, body, db)
+
+
+@auth_routes.post(
+    "/change-password",
+    response_model=ChangePasswordResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def change_password(
+    body: ChangePasswordSchema,
+    db: DbSession,
+    user: IsAuthenticated,
+):
+    return change_user_password(user, body, db)
 
 
 @auth_routes.post(

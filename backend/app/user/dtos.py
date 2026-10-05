@@ -47,6 +47,7 @@ class InstructorDetailsSchema(CamelModel):
     avatar: str = ""
     professional_headline: str = ""
     headline: str = ""
+    short_bio: str = ""
     timezone: str = "UTC"
     links: list[InstructorLinkSchema] = []
 
@@ -54,6 +55,32 @@ class InstructorDetailsSchema(CamelModel):
 # Backwards compatibility aliases
 StudentDetailsSchema = LearnerDetailsSchema
 TeacherDetailsSchema = InstructorDetailsSchema
+
+
+class UpdateProfileSchema(CamelModel):
+    first_name: str | None = None
+    last_name: str | None = None
+    avatar: str | None = None
+    timezone: str | None = None
+    professional_headline: str | None = None
+    short_bio: str | None = None
+    links: list[InstructorLinkSchema] | None = None
+    mobile: str | None = None
+    date_of_birth: str | None = None
+    nationality: str | None = None
+    fathers_name: str | None = None
+    mothers_name: str | None = None
+    reg_no: str | None = None
+    address: UserAddressSchema | None = None
+
+
+class ChangePasswordSchema(CamelModel):
+    current_password: str
+    new_password: str
+
+
+class ChangePasswordResponseSchema(CamelModel):
+    message: str = "Password changed successfully"
 
 
 class UserSchema(CamelModel):

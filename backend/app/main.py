@@ -44,6 +44,7 @@ with engine.begin() as conn:
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS last_name VARCHAR NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS professional_headline VARCHAR NOT NULL DEFAULT '';
+    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS short_bio TEXT NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS links JSON NOT NULL DEFAULT '[]';
     

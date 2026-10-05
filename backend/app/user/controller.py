@@ -1,26 +1,29 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.assignment.models import AssignmentModel
+from app.auth.controller import validate_password_strength
 from app.submission.models import SubmissionModel
 from app.user.dtos import (
+    ChangePasswordSchema,
     InstructorDetailsSchema,
     InstructorLinkSchema,
     InviteInstructorSchema,
     InviteLearnerSchema,
     LearnerDetailsSchema,
     PendingInvitationSchema,
+    UpdateProfileSchema,
     UserAddressSchema,
     UserResponseSchema,
     UserSchema,
     UserUpdateSchema,
 )
 from app.user.models import InstructorDetailsModel, LearnerDetailsModel, UserModel
-from app.utils.helpers import get_password_hash
+from app.utils.helpers import get_password_hash, verify_password
 
 
 def _normalize_links(links: list) -> list[dict]:
@@ -105,6 +108,7 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
             avatar=t.avatar or "",
             professional_headline=p_headline,
             headline=p_headline,
+            short_bio=getattr(t, "short_bio", "") or "",
             timezone=t.timezone or "UTC",
             links=normalized_links,
         )
@@ -568,3 +572,106 @@ def revoke_learner_invitation(user_id: int, db: Session) -> dict:
     db.delete(user)
     db.commit()
     return {"message": "Invitation revoked successfully."}
+
+
+def update_current_user_profile(
+    user: UserModel, body: UpdateProfileSchema, db: Session
+) -> UserResponseSchema:
+    if user.role == "Instructor":
+        details = user.instructor_details
+        if not details:
+            details = InstructorDetailsModel(user_id=user.id)
+            db.add(details)
+            db.flush()
+
+        if body.first_name is not None:
+            details.first_name = body.first_name.strip()
+        if body.last_name is not None:
+            details.last_name = body.last_name.strip()
+        if body.avatar is not None:
+            details.avatar = body.avatar.strip()
+        if body.professional_headline is not None:
+            details.professional_headline = body.professional_headline.strip()
+        if body.short_bio is not None:
+            details.short_bio = body.short_bio.strip()
+        if body.timezone is not None:
+            details.timezone = body.timezone.strip() or "UTC"
+        if body.links is not None:
+            details.links = _normalize_links(body.links)
+
+        full_name = f"{details.first_name} {details.last_name}".strip()
+        if full_name:
+            user.name = full_name
+
+    elif user.role in ("Learner", "Student"):
+        details = user.learner_details
+        if not details:
+            details = LearnerDetailsModel(user_id=user.id)
+            db.add(details)
+            db.flush()
+
+        if body.first_name is not None:
+            details.first_name = body.first_name.strip()
+        if body.last_name is not None:
+            details.last_name = body.last_name.strip()
+        if body.avatar is not None:
+            details.avatar = body.avatar.strip()
+        if body.short_bio is not None:
+            details.short_bio = body.short_bio.strip()
+        if body.timezone is not None:
+            details.timezone = body.timezone.strip() or "UTC"
+        if body.links is not None:
+            details.links = _normalize_links(body.links)
+        if body.mobile is not None:
+            details.mobile = body.mobile.strip()
+        if body.date_of_birth is not None:
+            details.date_of_birth = body.date_of_birth.strip()
+        if body.nationality is not None:
+            details.nationality = body.nationality.strip()
+        if body.fathers_name is not None:
+            details.fathers_name = body.fathers_name.strip()
+        if body.mothers_name is not None:
+            details.mothers_name = body.mothers_name.strip()
+        if body.reg_no is not None:
+            details.reg_no = body.reg_no.strip()
+        if body.address is not None:
+            details.street = body.address.street.strip()
+            details.city = body.address.city.strip()
+            details.state = body.address.state.strip()
+            details.zip = body.address.zip.strip()
+            details.country = body.address.country.strip()
+
+        full_name = f"{details.first_name} {details.last_name}".strip()
+        if full_name:
+            user.name = full_name
+    else:
+        # Admin or other role
+        if body.first_name is not None or body.last_name is not None:
+            f = (body.first_name or "").strip()
+            l = (body.last_name or "").strip()
+            n = f"{f} {l}".strip()
+            if n:
+                user.name = n
+
+    db.commit()
+    db.refresh(user)
+    return serialize_user(user)
+
+
+def change_user_password(
+    user: UserModel, body: ChangePasswordSchema, db: Session
+) -> dict:
+    if not verify_password(body.current_password, user.hash_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+    if body.current_password == body.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password.",
+        )
+    validate_password_strength(body.new_password)
+    user.hash_password = get_password_hash(body.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}

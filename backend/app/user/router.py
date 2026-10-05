@@ -2,7 +2,12 @@ import os
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.user import controller
-from app.user.dtos import UserResponseSchema, UserSchema, UserUpdateSchema
+from app.user.dtos import (
+    UpdateProfileSchema,
+    UserResponseSchema,
+    UserSchema,
+    UserUpdateSchema,
+)
 from app.utils.db import get_db
 from app.utils.helpers import DbSession, IsAdmin, IsAuthenticated, save_upload_file
 
@@ -20,6 +25,11 @@ def upload_avatar(file: UploadFile = File(...), _user: IsAuthenticated = None):
         )
     url, _, _ = save_upload_file(file, subdir="avatars", max_size_bytes=2 * 1024 * 1024)
     return {"url": url}
+
+
+@user_routes.put("/profile", response_model=UserResponseSchema, status_code=status.HTTP_200_OK)
+def update_profile(body: UpdateProfileSchema, db: DbSession, user: IsAuthenticated):
+    return controller.update_current_user_profile(user, body, db)
 
 
 @user_routes.get("", response_model=list[UserResponseSchema], status_code=status.HTTP_200_OK)

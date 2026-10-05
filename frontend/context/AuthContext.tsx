@@ -25,6 +25,7 @@ export interface AuthContextValue {
     status: AuthStatus;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    refreshUser: () => Promise<CurrentUser | null>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -141,9 +142,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus("unauthenticated");
     }, []);
 
+    const refreshUser = useCallback(async () => {
+        try {
+            const me = await getMeRequest();
+            const curr = toCurrentUser(me);
+            setUser(curr);
+            return curr;
+        } catch {
+            return null;
+        }
+    }, []);
+
     const value = useMemo(
-        () => ({ user, status, login, logout }),
-        [user, status, login, logout],
+        () => ({ user, status, login, logout, refreshUser }),
+        [user, status, login, logout, refreshUser],
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

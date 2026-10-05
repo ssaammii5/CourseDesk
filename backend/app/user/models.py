@@ -93,6 +93,7 @@ class InstructorDetailsModel(Base):
     last_name: Mapped[str] = mapped_column(default="")
     avatar: Mapped[str] = mapped_column(Text, default="")
     professional_headline: Mapped[str] = mapped_column(default="")
+    short_bio: Mapped[str] = mapped_column(Text, default="")
     timezone: Mapped[str] = mapped_column(default="UTC")
     links: Mapped[list[dict]] = mapped_column(JSON, default=list)
 

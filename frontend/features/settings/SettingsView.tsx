@@ -1,11 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import {
+    Bell,
+    Briefcase,
+    CheckCircle2,
+    GraduationCap,
+    Lock,
+    Mail,
+    Shield,
+    Sparkles,
+    User,
+} from "lucide-react";
 import { currentUser, type CurrentUser } from "@/types";
 import { SETTINGS_TABS, type SettingsTab } from "./constants";
 import { ProfileCard } from "./ProfileCard";
 import { SecurityCard } from "./SecurityCard";
 import { NotificationsCard } from "./NotificationsCard";
+import { initialOf } from "@/lib/utils/format";
 
 export function SettingsView({
     user,
@@ -17,38 +29,101 @@ export function SettingsView({
     role?: CurrentUser["role"];
 }) {
     const [tab, setTab] = useState<SettingsTab>("profile");
-    const isProfileReadOnly = role !== "Admin";
+
+    const isInstructor = role === "Instructor";
+    const displayName = userName || user?.name || "User";
+    const displayEmail = user?.email || "";
+    const avatarUrl =
+        isInstructor
+            ? (user?.instructorDetails?.avatar || (user?.instructorDetails as any)?.teacherDetails?.avatar)
+            : (user?.learnerDetails?.avatar || (user?.learnerDetails as any)?.studentDetails?.avatar);
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-slate-950">
-            <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
-                <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Account Settings</h1>
-                <p className="mt-1 text-sm text-gray-700 dark:text-slate-400">In this section you can see all the information</p>
+        <div className="min-h-[calc(100vh-4rem)] bg-gray-50/50 pb-16 dark:bg-slate-950">
+            {/* Top Brand Banner / Header */}
+            <div className="border-b border-gray-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
+                <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
+                    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-4 sm:gap-5">
+                            {avatarUrl ? (
+                                <img
+                                    src={avatarUrl}
+                                    alt={displayName}
+                                    className="h-16 w-16 rounded-2xl object-cover border-2 border-gray-100 dark:border-slate-800 shadow-sm"
+                                />
+                            ) : (
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-700 to-blue-500 text-2xl font-bold text-white shadow-md">
+                                    {initialOf(displayName)}
+                                </div>
+                            )}
 
-                <div className="mt-6 border-b border-gray-200 dark:border-slate-800">
-                    <nav className="flex gap-8 sm:gap-12">
-                        {SETTINGS_TABS.map((t) => (
-                            <button
-                                key={t.id}
-                                type="button"
-                                onClick={() => setTab(t.id)}
-                                className={`relative cursor-pointer py-3.5 text-sm font-medium transition-colors ${tab === t.id ? "text-[#1a73e8]" : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"
-                                    }`}
-                            >
-                                {t.label}
-                                {tab === t.id && (
-                                    <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-[#1a73e8]" />
-                                )}
-                            </button>
-                        ))}
-                    </nav>
-                </div>
+                            <div>
+                                <div className="flex items-center gap-2.5 flex-wrap">
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">
+                                        Account Settings
+                                    </h1>
+                                    <span
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                                            isInstructor
+                                                ? "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300"
+                                                : "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300"
+                                        }`}
+                                    >
+                                        {isInstructor ? (
+                                            <Briefcase className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <GraduationCap className="h-3.5 w-3.5" />
+                                        )}
+                                        <span>{role}</span>
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
+                                    Manage your personal identity, login security, and notification preferences.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                <div className="mt-8">
-                    {tab === "profile" && <ProfileCard user={user} userName={userName} readOnly={isProfileReadOnly} />}
-                    {tab === "security" && <SecurityCard />}
-                    {tab === "notifications" && <NotificationsCard />}
+                    {/* Navigation Tabs */}
+                    <div className="mt-8 border-t border-gray-100 dark:border-slate-800/80 pt-4">
+                        <nav className="flex gap-2 sm:gap-4 overflow-x-auto no-scrollbar">
+                            {SETTINGS_TABS.map((t) => {
+                                const active = tab === t.id;
+                                const Icon =
+                                    t.id === "profile"
+                                        ? User
+                                        : t.id === "security"
+                                        ? Shield
+                                        : Bell;
+
+                                return (
+                                    <button
+                                        key={t.id}
+                                        type="button"
+                                        onClick={() => setTab(t.id)}
+                                        className={`cursor-pointer inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all ${
+                                            active
+                                                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                        }`}
+                                    >
+                                        <Icon className="h-4 w-4" />
+                                        <span>{t.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
                 </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="mx-auto w-full max-w-[1200px] px-4 pt-8 sm:px-8">
+                {tab === "profile" && (
+                    <ProfileCard user={user} userName={userName} readOnly={false} />
+                )}
+                {tab === "security" && <SecurityCard />}
+                {tab === "notifications" && <NotificationsCard />}
             </div>
         </div>
     );
