@@ -307,12 +307,12 @@ export function LoginView() {
                                         onChange={(e) => handleOtpChange(idx, e.target.value)}
                                         onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                                         autoFocus={idx === 0}
-                                        className={`h-12 w-10 sm:h-13 sm:w-11 rounded-xl border text-center text-xl font-bold font-mono transition-all outline-none ${
+                                        className={`h-12 w-10 sm:h-13 sm:w-11 rounded-xl border text-center text-xl font-bold font-mono transition-all outline-none caret-blue-600 dark:caret-blue-400 ${
                                             otpError
-                                                ? "border-red-400 bg-red-50 text-red-700 ring-2 ring-red-500/20 dark:border-red-800 dark:bg-red-950/40"
+                                                ? "border-red-400 bg-red-50 text-red-700 ring-2 ring-red-500/20 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400 dark:focus:bg-slate-800 dark:focus:border-red-500 dark:focus:ring-red-500/25"
                                                 : digit
-                                                ? "border-blue-600 bg-white text-blue-700 shadow-sm ring-2 ring-blue-500/20 dark:border-blue-500 dark:bg-slate-800 dark:text-blue-300"
-                                                : "border-gray-300 bg-white text-gray-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                                ? "border-blue-600 bg-white text-blue-700 shadow-sm ring-2 ring-blue-500/20 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/25 dark:border-blue-500 dark:bg-slate-800 dark:text-blue-300 dark:ring-blue-500/30 dark:focus:bg-slate-800 dark:focus:border-blue-400 dark:focus:ring-blue-500/40"
+                                                : "border-gray-300 bg-white text-gray-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:bg-slate-800 dark:focus:border-blue-500 dark:focus:ring-blue-500/30"
                                         }`}
                                     />
                                 ))}

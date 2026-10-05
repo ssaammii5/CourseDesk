@@ -258,12 +258,12 @@ export function SignupView() {
                                 onChange={(e) => handleOtpChange(idx, e.target.value)}
                                 onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                                 autoFocus={idx === 0}
-                                className={`h-13 w-11 sm:h-16 sm:w-13 rounded-2xl border text-center text-2xl font-bold font-mono transition-all outline-none ${
+                                className={`h-13 w-11 sm:h-16 sm:w-13 rounded-2xl border text-center text-2xl font-bold font-mono transition-all outline-none caret-blue-600 dark:caret-blue-400 ${
                                     otpError
-                                        ? "border-red-400 bg-red-50/50 text-red-700 focus:ring-4 focus:ring-red-500/10 dark:border-red-800 dark:bg-red-950/30"
+                                        ? "border-red-400 bg-red-50/60 text-red-700 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-500/15 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400 dark:focus:bg-slate-800 dark:focus:border-red-500 dark:focus:ring-red-500/25"
                                         : digit
-                                        ? "border-blue-600 bg-white text-blue-700 shadow-sm ring-2 ring-blue-500/20 dark:border-blue-500 dark:bg-slate-800 dark:text-blue-300"
-                                        : "border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-500/15 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-100"
+                                        ? "border-blue-600 bg-white text-blue-700 shadow-sm ring-2 ring-blue-500/20 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/25 dark:border-blue-500 dark:bg-slate-800 dark:text-blue-300 dark:ring-blue-500/30 dark:focus:bg-slate-800 dark:focus:border-blue-400 dark:focus:ring-blue-500/40"
+                                        : "border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-850 dark:bg-slate-800/60 dark:text-slate-100 dark:focus:bg-slate-800 dark:focus:border-blue-500 dark:focus:ring-blue-500/30"
                                 }`}
                             />
                         ))}
