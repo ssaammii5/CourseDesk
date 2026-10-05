@@ -24,6 +24,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
 import { avatarClassFor, letterOf } from "@/lib/utils/theme";
+import { resolveAvatarUrl } from "@/lib/utils/format";
 import { useAuth } from "@/hooks/useAuth";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -350,13 +351,21 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                 {open ? (
                     <div className="flex items-center justify-between gap-2 rounded-xl bg-white dark:bg-slate-900 p-2 shadow-xs border border-slate-200/60 dark:border-slate-800">
                         <div className="flex items-center gap-2.5 min-w-0">
-                            <span
-                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold text-white shadow-xs ${
-                                    user?.avatarClass ?? "bg-blue-600"
-                                }`}
-                            >
-                                {letterOf(user?.name ?? "User")}
-                            </span>
+                            {user?.avatar ? (
+                                <img
+                                    src={resolveAvatarUrl(user.avatar)}
+                                    alt={user?.name ?? "User"}
+                                    className="h-8 w-8 shrink-0 rounded-lg object-cover shadow-xs border border-slate-200/80 dark:border-slate-700"
+                                />
+                            ) : (
+                                <span
+                                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold text-white shadow-xs ${
+                                        user?.avatarClass ?? "bg-blue-600"
+                                    }`}
+                                >
+                                    {letterOf(user?.name ?? "User")}
+                                </span>
+                            )}
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs font-semibold text-slate-800 dark:text-slate-200">
                                     {user?.name ?? "Account"}

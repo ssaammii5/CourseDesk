@@ -5,6 +5,7 @@ import {
     Briefcase,
     Check,
     CheckCircle2,
+    ChevronDown,
     Clock,
     Copy,
     ExternalLink,
@@ -30,7 +31,7 @@ import {
     type InstructorLink,
     type UserAddress,
 } from "@/lib/api/users";
-import { initialOf } from "@/lib/utils/format";
+import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
 import { COUNTRIES, MAX_AVATAR_SIZE, TIMEZONES } from "./constants";
 import { Field, SelectField } from "@/components/ui/FormFields";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,8 +98,32 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
 
     // Avatar state
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const avatarMenuRef = useRef<HTMLDivElement>(null);
+    const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
     const [avatarError, setAvatarError] = useState<string | null>(null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+    // Close avatar menu on click outside or escape key
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (avatarMenuRef.current && !avatarMenuRef.current.contains(event.target as Node)) {
+                setAvatarMenuOpen(false);
+            }
+        }
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                setAvatarMenuOpen(false);
+            }
+        }
+        if (avatarMenuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+            document.addEventListener("keydown", handleKeyDown);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [avatarMenuOpen]);
 
     // Populate form from backend me or user prop
     const populateFromMe = (data: MeResponse) => {
@@ -128,7 +153,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
         const state: ProfileFormState = {
             firstName: fName,
             lastName: lName,
-            avatar: isInst ? (inst?.avatar || "") : (lrn?.avatar || ""),
+            avatar: isInst ? (inst?.avatar || data.avatar || "") : (lrn?.avatar || data.avatar || ""),
             timezone: isInst ? (inst?.timezone || "UTC") : (lrn?.timezone || "UTC"),
             professionalHeadline: inst?.professionalHeadline || (inst as any)?.headline || "",
             shortBio: isInst ? (inst?.shortBio || (inst as any)?.bio || "") : (lrn?.shortBio || (lrn as any)?.bio || ""),
@@ -208,6 +233,8 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
 
         setAvatarError(null);
         setUploadingAvatar(true);
+        const localPreview = URL.createObjectURL(file);
+        setForm((prev) => ({ ...prev, avatar: localPreview }));
         try {
             const res = await uploadAvatarRequest(file);
             setForm((prev) => ({ ...prev, avatar: res.url }));
@@ -218,6 +245,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
             setTimeout(() => setSavedSuccess(false), 2500);
         } catch (err: any) {
             setAvatarError(err?.message || "Failed to upload avatar");
+            setForm((prev) => ({ ...prev, avatar: initialState.avatar }));
         } finally {
             setUploadingAvatar(false);
         }
@@ -369,7 +397,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                             />
                             {form.avatar ? (
                                 <img
-                                    src={form.avatar}
+                                    src={resolveAvatarUrl(form.avatar)}
                                     alt={fullNameDisplay}
                                     className="h-22 w-22 rounded-2xl object-cover border-2 border-gray-200 dark:border-slate-700 shadow-sm"
                                 />
@@ -448,25 +476,64 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                     </div>
 
                     {!readOnly && (
-                        <div className="flex items-center gap-2 self-start sm:self-center">
+                        <div className="relative self-start sm:self-center" ref={avatarMenuRef}>
                             <button
                                 type="button"
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => setAvatarMenuOpen((prev) => !prev)}
                                 disabled={uploadingAvatar}
-                                className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
+                                className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
                             >
-                                <Upload className="h-3.5 w-3.5" />
-                                <span>{uploadingAvatar ? "Uploading..." : "Upload Photo"}</span>
+                                {uploadingAvatar ? (
+                                    <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600 dark:text-blue-400" />
+                                        <span>Uploading...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="h-3.5 w-3.5 text-gray-500 dark:text-slate-400" />
+                                        <span>Change</span>
+                                        <ChevronDown
+                                            className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${
+                                                avatarMenuOpen ? "rotate-180" : ""
+                                            }`}
+                                        />
+                                    </>
+                                )}
                             </button>
-                            {form.avatar && (
-                                <button
-                                    type="button"
-                                    onClick={handleRemoveAvatar}
-                                    className="cursor-pointer inline-flex items-center gap-1 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 shadow-sm hover:bg-red-50 dark:border-red-900/60 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-950/30 transition"
-                                >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    <span>Remove</span>
-                                </button>
+
+                            {avatarMenuOpen && (
+                                <div className="absolute right-0 z-30 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-800 animate-in fade-in slide-in-from-top-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setAvatarMenuOpen(false);
+                                            fileInputRef.current?.click();
+                                        }}
+                                        className="cursor-pointer flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-700/70 transition"
+                                    >
+                                        <Upload className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                        <span>{form.avatar ? "Upload new photo" : "Upload photo"}</span>
+                                    </button>
+
+                                    <div className="my-1 border-t border-gray-100 dark:border-slate-700/60" />
+
+                                    <button
+                                        type="button"
+                                        disabled={!form.avatar}
+                                        onClick={() => {
+                                            if (!form.avatar) return;
+                                            handleRemoveAvatar();
+                                        }}
+                                        className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium transition ${
+                                            form.avatar
+                                                ? "cursor-pointer text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                                                : "cursor-not-allowed opacity-40 text-gray-400 dark:text-slate-500"
+                                        }`}
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <span>Remove photo</span>
+                                    </button>
+                                </div>
                             )}
                         </div>
                     )}

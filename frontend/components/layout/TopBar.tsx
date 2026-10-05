@@ -37,7 +37,7 @@ import {
 import { type NotificationItem, type NotificationKind } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
 import { getAssignmentRequest } from "@/lib/api/assignments";
-import { initialOf } from "@/lib/utils/format";
+import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
 import { hasAccessToken } from "@/lib/auth/session";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -466,6 +466,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const displayEmail = user?.email ?? "";
     const displayRole = user?.role ?? "Learner";
     const avatarClass = user?.avatarClass ?? "bg-blue-600";
+    const userAvatar = user?.avatar || user?.instructorDetails?.avatar || user?.learnerDetails?.avatar;
 
     return (
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-2.5 sm:px-6 backdrop-blur-md transition-colors">
@@ -668,9 +669,17 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                 : "border-slate-200/70 dark:border-slate-700/80 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:border-slate-300/70 dark:hover:border-slate-600 shadow-xs"
                         }`}
                     >
-                        <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs ${avatarClass}`}>
-                            {initialOf(displayName)}
-                        </span>
+                        {userAvatar ? (
+                            <img
+                                src={resolveAvatarUrl(userAvatar)}
+                                alt={displayName}
+                                className="h-8 w-8 rounded-lg object-cover shadow-xs border border-slate-200/80 dark:border-slate-700"
+                            />
+                        ) : (
+                            <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs ${avatarClass}`}>
+                                {initialOf(displayName)}
+                            </span>
+                        )}
                         <div className="hidden text-left sm:block">
                             <p className="max-w-[110px] truncate text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">
                                 {displayName || "Account"}
@@ -687,9 +696,17 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                             {/* User Card Header */}
                             <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-4">
                                 <div className="flex items-center gap-3">
-                                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white shadow-xs ${avatarClass}`}>
-                                        {initialOf(displayName)}
-                                    </span>
+                                    {userAvatar ? (
+                                        <img
+                                            src={resolveAvatarUrl(userAvatar)}
+                                            alt={displayName}
+                                            className="h-11 w-11 shrink-0 rounded-xl object-cover shadow-xs border border-slate-200/80 dark:border-slate-700"
+                                        />
+                                    ) : (
+                                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white shadow-xs ${avatarClass}`}>
+                                            {initialOf(displayName)}
+                                        </span>
+                                    )}
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{displayName}</p>
                                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">{displayEmail}</p>

@@ -122,6 +122,7 @@ class MeResponseSchema(CamelModel):
     email: str
     role: str
     is_active: bool = True
+    avatar: str = ""
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
     student_details: StudentDetailsSchema | None = None

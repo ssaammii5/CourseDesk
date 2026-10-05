@@ -17,7 +17,7 @@ import { SETTINGS_TABS, type SettingsTab } from "./constants";
 import { ProfileCard } from "./ProfileCard";
 import { SecurityCard } from "./SecurityCard";
 import { NotificationsCard } from "./NotificationsCard";
-import { initialOf } from "@/lib/utils/format";
+import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
 
 export function SettingsView({
     user,
@@ -35,11 +35,10 @@ export function SettingsView({
     const displayName = userName || user?.name || "User";
     const displayEmail = user?.email || "";
     const avatarUrl =
-        isInstructor
+        user?.avatar ||
+        (isInstructor
             ? (user?.instructorDetails?.avatar || (user?.instructorDetails as any)?.teacherDetails?.avatar)
-            : !isAdmin
-            ? (user?.learnerDetails?.avatar || (user?.learnerDetails as any)?.studentDetails?.avatar)
-            : undefined;
+            : (user?.learnerDetails?.avatar || (user?.learnerDetails as any)?.studentDetails?.avatar));
 
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-gray-50/50 pb-16 dark:bg-slate-950">
@@ -50,7 +49,7 @@ export function SettingsView({
                         <div className="flex items-center gap-4 sm:gap-5">
                             {avatarUrl ? (
                                 <img
-                                    src={avatarUrl}
+                                    src={resolveAvatarUrl(avatarUrl)}
                                     alt={displayName}
                                     className="h-16 w-16 rounded-2xl object-cover border-2 border-gray-100 dark:border-slate-800 shadow-sm"
                                 />

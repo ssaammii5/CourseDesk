@@ -18,6 +18,7 @@ export interface CurrentUser {
     email: string;
     role: "Admin" | "Instructor" | "Learner";
     avatarClass: string;
+    avatar?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;

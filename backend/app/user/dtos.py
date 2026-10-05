@@ -110,6 +110,7 @@ class UserResponseSchema(CamelModel):
     is_active: bool
     created_at_utc: datetime
     invite_token: str | None = None
+    avatar: str = ""
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
 

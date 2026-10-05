@@ -17,6 +17,7 @@ export interface MeResponse {
     email: string;
     role: string;
     isActive?: boolean;
+    avatar?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;

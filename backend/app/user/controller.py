@@ -112,6 +112,12 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
             timezone=t.timezone or "UTC",
             links=normalized_links,
         )
+    avatar = getattr(user, "avatar", "") or ""
+    if learner_details and learner_details.avatar:
+        avatar = learner_details.avatar
+    elif instructor_details and instructor_details.avatar:
+        avatar = instructor_details.avatar
+
     return UserResponseSchema(
         id=user.id,
         name=user.name,
@@ -119,6 +125,7 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
         role=user.role,
         is_active=user.is_active,
         created_at_utc=user.created_at_utc,
+        avatar=avatar,
         learner_details=learner_details,
         instructor_details=instructor_details,
     )
@@ -590,6 +597,7 @@ def update_current_user_profile(
             details.last_name = body.last_name.strip()
         if body.avatar is not None:
             details.avatar = body.avatar.strip()
+            user.avatar = body.avatar.strip()
         if body.professional_headline is not None:
             details.professional_headline = body.professional_headline.strip()
         if body.short_bio is not None:
@@ -616,6 +624,7 @@ def update_current_user_profile(
             details.last_name = body.last_name.strip()
         if body.avatar is not None:
             details.avatar = body.avatar.strip()
+            user.avatar = body.avatar.strip()
         if body.short_bio is not None:
             details.short_bio = body.short_bio.strip()
         if body.timezone is not None:
@@ -646,6 +655,8 @@ def update_current_user_profile(
             user.name = full_name
     else:
         # Admin or other role
+        if body.avatar is not None:
+            user.avatar = body.avatar.strip()
         if body.first_name is not None or body.last_name is not None:
             f = (body.first_name or "").strip()
             l = (body.last_name or "").strip()

@@ -40,6 +40,7 @@ Base.metadata.create_all(engine)
 # Safe idempotent migration to ensure new instructor and learner columns exist
 with engine.begin() as conn:
     conn.execute(text("""
+    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS last_name VARCHAR NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
