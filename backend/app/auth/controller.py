@@ -237,8 +237,6 @@ def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="First name is required.")
     if not last_name:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Last name is required.")
-    if not headline:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Professional headline is required.")
 
     validate_password_strength(body.password)
 

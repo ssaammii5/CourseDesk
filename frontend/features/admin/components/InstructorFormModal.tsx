@@ -310,7 +310,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                             type="email"
                             value={email}
                             onChange={(v) => { setEmail(v); clearError("email"); }}
-                            placeholder="e.g. instructor@coursedesk.com"
+                            placeholder="Enter email address"
                             error={errors.email}
                         />
                     </section>
@@ -325,7 +325,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                             label="5. Professional Headline"
                             value={headline}
                             onChange={setHeadline}
-                            placeholder="e.g. Lead Instructor & Full Stack Architect"
+                            placeholder="Enter professional headline"
                         />
 
                         <div>
@@ -336,7 +336,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                 value={timezone}
                                 onChange={setTimezone}
                                 options={COMMON_TIMEZONES}
-                                placeholder="Select instructor timezone"
+                                placeholder="Select timezone"
                                 size="md"
                                 searchable
                             />
@@ -373,7 +373,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                     onClick={handleAddLink}
                                     className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
                                 >
-                                    + Add first link
+                                    + Add your first link
                                 </button>
                             </div>
                         ) : (
@@ -388,7 +388,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                                 type="text"
                                                 value={link.title}
                                                 onChange={(e) => handleUpdateLink(idx, "title", e.target.value)}
-                                                placeholder="Title (e.g. LinkedIn, GitHub)"
+                                                placeholder="Enter link title (e.g. LinkedIn)"
                                                 className="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             />
                                         </div>
@@ -398,7 +398,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                                 type="url"
                                                 value={link.url}
                                                 onChange={(e) => handleUpdateLink(idx, "url", e.target.value)}
-                                                placeholder="https://example.com/username"
+                                                placeholder="Enter link URL (e.g. https://...)"
                                                 className={`w-full rounded-lg border pl-8 pr-3 py-2 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 ${
                                                     errors[`link_${idx}`]
                                                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"

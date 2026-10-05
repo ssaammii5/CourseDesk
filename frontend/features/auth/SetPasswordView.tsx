@@ -184,7 +184,6 @@ function SetPasswordForm() {
         if (isInstructor) {
             if (!firstName.trim()) errs.firstName = "First name is required.";
             if (!lastName.trim()) errs.lastName = "Last name is required.";
-            if (!headline.trim()) errs.headline = "Professional headline is required.";
         }
 
         if (!newPassword) {
@@ -365,7 +364,7 @@ function SetPasswordForm() {
                                                 setFirstName(e.target.value);
                                                 setErrors((p) => ({ ...p, firstName: "" }));
                                             }}
-                                            placeholder="e.g. Alan"
+                                            placeholder="Enter first name"
                                             className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         />
                                         {errors.firstName && (
@@ -384,7 +383,7 @@ function SetPasswordForm() {
                                                 setLastName(e.target.value);
                                                 setErrors((p) => ({ ...p, lastName: "" }));
                                             }}
-                                            placeholder="e.g. Turing"
+                                            placeholder="Enter last name"
                                             className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         />
                                         {errors.lastName && (
@@ -395,7 +394,7 @@ function SetPasswordForm() {
 
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                                        Professional Headline <span className="text-red-500">*</span>
+                                        Professional Headline
                                     </label>
                                     <div className="relative">
                                         <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -406,7 +405,7 @@ function SetPasswordForm() {
                                                 setHeadline(e.target.value);
                                                 setErrors((p) => ({ ...p, headline: "" }));
                                             }}
-                                            placeholder="e.g. Lead Instructor & Distributed Systems Architect"
+                                            placeholder="Enter professional headline"
                                             className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         />
                                     </div>
@@ -425,6 +424,7 @@ function SetPasswordForm() {
                                         options={COMMON_TIMEZONES}
                                         searchable
                                         size="md"
+                                        placeholder="Select your timezone"
                                         buttonClassName="w-full justify-between"
                                     />
                                     <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
@@ -459,7 +459,7 @@ function SetPasswordForm() {
                                                 setNewPassword(e.target.value);
                                                 setErrors((p) => ({ ...p, password: "" }));
                                             }}
-                                            placeholder="Enter strong password"
+                                            placeholder="Enter password"
                                             className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         />
                                         <button
@@ -487,7 +487,7 @@ function SetPasswordForm() {
                                                 setConfirmPassword(e.target.value);
                                                 setErrors((p) => ({ ...p, confirmPassword: "" }));
                                             }}
-                                            placeholder="Repeat your password"
+                                            placeholder="Confirm password"
                                             className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         />
                                         <button
@@ -604,14 +604,14 @@ function SetPasswordForm() {
                                             type="text"
                                             value={newLinkTitle}
                                             onChange={(e) => setNewLinkTitle(e.target.value)}
-                                            placeholder="Label (e.g. GitHub, LinkedIn)"
+                                            placeholder="Enter link title (e.g. LinkedIn)"
                                             className="sm:w-1/3 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         />
                                         <input
                                             type="url"
                                             value={newLinkUrl}
                                             onChange={(e) => setNewLinkUrl(e.target.value)}
-                                            placeholder="https://example.com/username"
+                                            placeholder="Enter link URL (e.g. https://...)"
                                             className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         />
                                         <button
