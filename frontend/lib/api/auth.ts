@@ -40,10 +40,21 @@ export function loginRequest(email: string, password: string): Promise<LoginResp
     });
 }
 
-export function signupRequest(name: string, email: string, password: string): Promise<SignupResponse> {
+export function signupRequest(
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string
+): Promise<SignupResponse> {
     return apiFetch<SignupResponse>("/api/auth/signup", {
         method: "POST",
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+            firstName,
+            lastName,
+            name: `${firstName} ${lastName}`.trim(),
+            email,
+            password,
+        }),
         auth: false,
     });
 }

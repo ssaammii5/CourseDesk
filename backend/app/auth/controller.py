@@ -86,8 +86,22 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 8 characters long",
         )
+    first_name = (body.first_name or "").strip()
+    last_name = (body.last_name or "").strip()
+    if not first_name and not last_name and body.name:
+        parts = body.name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
+    full_name = f"{first_name} {last_name}".strip() or (body.name or "").strip()
+    if not full_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="First name and last name are required",
+        )
+
     new_user = UserModel(
-        name=body.name,
+        name=full_name,
         email=body.email,
         hash_password=get_password_hash(body.password),
         role="Learner",
@@ -97,6 +111,8 @@ def signup_user(body: SignupSchema, db: Session) -> UserModel:
     db.add(
         LearnerDetailsModel(
             user_id=new_user.id,
+            first_name=first_name,
+            last_name=last_name,
         )
     )
     db.commit()

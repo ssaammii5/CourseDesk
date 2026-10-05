@@ -11,9 +11,11 @@ class LoginSchema(CamelModel):
 
 
 class SignupSchema(CamelModel):
-    name: str
+    first_name: str = ""
+    last_name: str = ""
     email: EmailStr
     password: str
+    name: str | None = None
 
 
 class RefreshSchema(CamelModel):

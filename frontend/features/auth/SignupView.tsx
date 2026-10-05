@@ -8,7 +8,8 @@ import { signupRequest } from "@/lib/api/auth";
 
 export function SignupView() {
     const router = useRouter();
-    const [name, setName] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,7 +30,8 @@ export function SignupView() {
 
     const validate = () => {
         const next: Record<string, string> = {};
-        if (!name.trim()) next.name = "Full name is required.";
+        if (!firstName.trim()) next.firstName = "First name is required.";
+        if (!lastName.trim()) next.lastName = "Last name is required.";
         if (!email.trim()) next.email = "Email is required.";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
             next.email = "Enter a valid email address.";
@@ -50,7 +52,7 @@ export function SignupView() {
         setLoading(true);
         setFormError(null);
         try {
-            await signupRequest(name.trim(), email.trim(), password);
+            await signupRequest(firstName.trim(), lastName.trim(), email.trim(), password);
             setSuccess(true);
             setTimeout(() => {
                 router.push("/");
@@ -139,28 +141,54 @@ export function SignupView() {
                     <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Create account</h2>
                     <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">to get started with CourseDesk</p>
                     <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
-                        {/* Full Name */}
-                        <div>
-                            <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${errors.name ? "ring-2 ring-[#c5221f]" : ""
+                        {/* First & Last Name */}
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                                <label
+                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${
+                                        errors.firstName ? "ring-2 ring-[#c5221f]" : ""
                                     }`}
-                            >
-                                <User className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
-                                <input
-                                    type="text"
-                                    value={name}
-                                    autoComplete="name"
-                                    placeholder="Full name"
-                                    onChange={(e) => {
-                                        setName(e.target.value);
-                                        clearError("name");
-                                    }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
-                                />
-                            </label>
-                            {errors.name && (
-                                <span className="mt-1 block text-sm text-[#c5221f]">{errors.name}</span>
-                            )}
+                                >
+                                    <User className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={firstName}
+                                        autoComplete="given-name"
+                                        placeholder="First name"
+                                        onChange={(e) => {
+                                            setFirstName(e.target.value);
+                                            clearError("firstName");
+                                        }}
+                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
+                                    />
+                                </label>
+                                {errors.firstName && (
+                                    <span className="mt-1 block text-xs text-[#c5221f]">{errors.firstName}</span>
+                                )}
+                            </div>
+                            <div>
+                                <label
+                                    className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${
+                                        errors.lastName ? "ring-2 ring-[#c5221f]" : ""
+                                    }`}
+                                >
+                                    <User className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={lastName}
+                                        autoComplete="family-name"
+                                        placeholder="Last name"
+                                        onChange={(e) => {
+                                            setLastName(e.target.value);
+                                            clearError("lastName");
+                                        }}
+                                        className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
+                                    />
+                                </label>
+                                {errors.lastName && (
+                                    <span className="mt-1 block text-xs text-[#c5221f]">{errors.lastName}</span>
+                                )}
+                            </div>
                         </div>
                         {/* Email */}
                         <div>
