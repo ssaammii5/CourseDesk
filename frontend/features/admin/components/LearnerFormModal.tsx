@@ -201,13 +201,14 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                     <section>
                         <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Learner Profile</h3>
                         <div className="grid gap-5 md:grid-cols-2">
-                            <Field
-                                label="Learner ID"
-                                value={details.learnerId || details.studentId || (user ? "" : "Auto-defined by system (e.g., LRN-7M9K2P)")}
-                                onChange={() => {}}
-                                placeholder="Auto-defined by system (e.g., LRN-7M9K2P)"
-                                disabled
-                            />
+                            {user && (details.learnerId || details.studentId) ? (
+                                <Field
+                                    label="Learner ID"
+                                    value={details.learnerId || details.studentId || ""}
+                                    onChange={() => {}}
+                                    disabled
+                                />
+                            ) : null}
                             <Field
                                 label="Organization / Company"
                                 value={details.organization ?? ""}

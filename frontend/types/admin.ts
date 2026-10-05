@@ -52,14 +52,8 @@ export type InstructorDesignation =
     | string;
 export type TeacherDesignation = InstructorDesignation;
 
-export interface InstructorDetails {
-    instructorId?: string;
-    teacherId?: string;
-    headline?: string;
-    organization?: string;
-    bio?: string;
-}
-export type TeacherDetails = InstructorDetails;
+import type { InstructorDetails, InstructorLink, TeacherDetails } from "@/lib/api/users";
+export type { InstructorDetails, InstructorLink, TeacherDetails };
 
 export interface AcademicProgram {
     id: number;

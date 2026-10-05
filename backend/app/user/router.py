@@ -1,11 +1,25 @@
-from fastapi import APIRouter, status
+import os
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.user import controller
 from app.user.dtos import UserResponseSchema, UserSchema, UserUpdateSchema
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdmin
+from app.utils.helpers import DbSession, IsAdmin, IsAuthenticated, save_upload_file
 
 user_routes = APIRouter(prefix="/api/users", tags=["users"])
+
+
+@user_routes.post("/avatar", status_code=status.HTTP_200_OK)
+def upload_avatar(file: UploadFile = File(...), _user: IsAuthenticated = None):
+    allowed_exts = {".jpg", ".jpeg", ".png", ".webp"}
+    raw_ext = os.path.splitext(file.filename or "")[1].lower()
+    if raw_ext not in allowed_exts:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Only .jpg, .jpeg, .png, or .webp images are allowed for avatars.",
+        )
+    url, _, _ = save_upload_file(file, subdir="avatars", max_size_bytes=2 * 1024 * 1024)
+    return {"url": url}
 
 
 @user_routes.get("", response_model=list[UserResponseSchema], status_code=status.HTTP_200_OK)

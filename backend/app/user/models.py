@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, text
+from sqlalchemy import JSON, DateTime, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.utils.db import Base
@@ -74,5 +74,11 @@ class InstructorDetailsModel(Base):
         unique=True,
         index=True,
     )
+    first_name: Mapped[str] = mapped_column(default="")
+    last_name: Mapped[str] = mapped_column(default="")
+    avatar: Mapped[str] = mapped_column(Text, default="")
+    professional_headline: Mapped[str] = mapped_column(default="")
+    timezone: Mapped[str] = mapped_column(default="UTC")
+    links: Mapped[list[dict]] = mapped_column(JSON, default=list)
 
     user: Mapped["UserModel"] = relationship(back_populates="instructor_details")

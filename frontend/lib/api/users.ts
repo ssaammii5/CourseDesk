@@ -24,10 +24,22 @@ export interface LearnerDetails {
 }
 export type StudentDetails = LearnerDetails;
 
+export interface InstructorLink {
+    title: string;
+    url: string;
+}
+
 export interface InstructorDetails {
     instructorId?: string;
     teacherId?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatar?: string;
+    professionalHeadline?: string;
     headline?: string;
+    timezone?: string;
+    links?: InstructorLink[];
     organization?: string;
     bio?: string;
 }
@@ -101,5 +113,14 @@ export function setPasswordRequest(token: string, password: string): Promise<Set
         method: "POST",
         body: JSON.stringify({ token, password }),
         auth: false,
+    });
+}
+
+export function uploadAvatarRequest(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<{ url: string }>("/api/users/avatar", {
+        method: "POST",
+        body: formData,
     });
 }

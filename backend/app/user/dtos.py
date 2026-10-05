@@ -24,8 +24,21 @@ class LearnerDetailsSchema(CamelModel):
     address: UserAddressSchema = UserAddressSchema()
 
 
+class InstructorLinkSchema(CamelModel):
+    title: str = ""
+    url: str = ""
+
+
 class InstructorDetailsSchema(CamelModel):
     instructor_id: str = ""
+    first_name: str = ""
+    last_name: str = ""
+    email: str = ""
+    avatar: str = ""
+    professional_headline: str = ""
+    headline: str = ""
+    timezone: str = "UTC"
+    links: list[InstructorLinkSchema] = []
 
 
 # Backwards compatibility aliases

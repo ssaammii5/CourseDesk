@@ -17,6 +17,7 @@ import {
     type UserDto,
 } from "@/lib/api/users";
 import { DataTable, StatusBadge, ConfirmDialog, ModernDropdown } from "@/components/ui";
+import { initialOf } from "@/lib/utils/format";
 import { InstructorFormModal } from "../components/InstructorFormModal";
 
 function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
@@ -28,18 +29,8 @@ function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
         role: (dto.role === "Teacher" ? "Instructor" : dto.role) as AdminUser["role"],
         isActive: dto.isActive,
         createdAt: dto.createdAtUtc.split("T")[0],
-        instructorDetails: details
-            ? {
-                instructorId: details.instructorId ?? details.teacherId ?? "",
-                teacherId: details.instructorId ?? details.teacherId ?? "",
-            }
-            : undefined,
-        teacherDetails: details
-            ? {
-                instructorId: details.instructorId ?? details.teacherId ?? "",
-                teacherId: details.instructorId ?? details.teacherId ?? "",
-            }
-            : undefined,
+        instructorDetails: details,
+        teacherDetails: details,
         learnerDetails: undefined,
         studentDetails: undefined,
     };
@@ -153,9 +144,39 @@ export function AdminInstructorsView() {
     const columns = [
         {
             key: "name",
-            header: "Name",
-            width: "30%",
+            header: "Instructor",
+            width: "32%",
             truncate: true,
+            render: (u: AdminUser) => {
+                const details = u.instructorDetails ?? u.teacherDetails;
+                const avatar = details?.avatar;
+                const headline = details?.professionalHeadline || details?.headline;
+                return (
+                    <div className="flex items-center gap-3 min-w-0">
+                        {avatar ? (
+                            <img
+                                src={avatar}
+                                alt={u.name}
+                                className="h-9 w-9 rounded-full object-cover shrink-0 ring-1 ring-gray-200 dark:ring-slate-700 shadow-2xs"
+                            />
+                        ) : (
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white shadow-2xs">
+                                {initialOf(u.name)}
+                            </span>
+                        )}
+                        <div className="min-w-0 truncate">
+                            <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                                {u.name}
+                            </p>
+                            {headline && (
+                                <p className="text-xs text-gray-500 dark:text-slate-400 truncate" title={headline}>
+                                    {headline}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
         },
         {
             key: "email",

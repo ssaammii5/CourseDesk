@@ -33,7 +33,34 @@ from app.setting.router import setting_routes
 from app.submission.router import submission_routes
 from app.user.router import user_routes
 
+from sqlalchemy import text
+
 Base.metadata.create_all(engine)
+
+# Safe idempotent migration to ensure new instructor columns exist
+with engine.begin() as conn:
+    conn.execute(text("""
+    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
+    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS last_name VARCHAR NOT NULL DEFAULT '';
+    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
+    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS professional_headline VARCHAR NOT NULL DEFAULT '';
+    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
+    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS links JSON NOT NULL DEFAULT '[]';
+    
+    UPDATE instructor_details_table idt
+    SET 
+        first_name = CASE 
+            WHEN position(' ' in ut.name) > 0 THEN split_part(ut.name, ' ', 1)
+            ELSE ut.name
+        END,
+        last_name = CASE 
+            WHEN position(' ' in ut.name) > 0 THEN substring(ut.name from position(' ' in ut.name) + 1)
+            ELSE ''
+        END
+    FROM user_table ut
+    WHERE idt.user_id = ut.id AND (idt.first_name = '' OR idt.first_name IS NULL);
+    """))
+
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(title="CourseDesk API")
