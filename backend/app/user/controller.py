@@ -167,7 +167,7 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
         invite_expires = None
     else:
         raw_invite_token = secrets.token_urlsafe(48)
-        invite_expires = datetime.now(UTC) + timedelta(days=7)
+        invite_expires = datetime.now(UTC) + timedelta(hours=72)
         invite_token_val = raw_invite_token
         hash_pass = "!UNSET_INVITED_USER"
 
@@ -322,7 +322,7 @@ def invite_instructor(body: InviteInstructorSchema, db: Session) -> PendingInvit
     existing_user = db.scalar(select(UserModel).where(UserModel.email == email))
 
     token = secrets.token_urlsafe(48)
-    expires = datetime.now(UTC) + timedelta(days=7)
+    expires = datetime.now(UTC) + timedelta(hours=72)
 
     if existing_user:
         # If user is already active and set password, cannot invite again

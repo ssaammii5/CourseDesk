@@ -111,7 +111,7 @@ export function InviteInstructorModal({ open, onClose, onSuccess }: InviteInstru
 
                             <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-left dark:border-slate-800 dark:bg-slate-800/60">
                                 <label className="text-[11px] font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400">
-                                    Invitation Link (Valid for 7 days)
+                                    Invitation Link (Valid for 72 hours)
                                 </label>
                                 <div className="mt-1 flex items-center gap-2">
                                     <input
