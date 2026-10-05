@@ -43,6 +43,7 @@ class AcceptInviteSchema(CamelModel):
     first_name: str
     last_name: str
     professional_headline: str = ""
+    short_bio: str = ""
     timezone: str = "UTC"
     avatar: str | None = None
     links: list[dict] = []

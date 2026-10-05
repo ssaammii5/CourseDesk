@@ -44,6 +44,7 @@ function SetPasswordForm() {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [headline, setHeadline] = useState("");
+    const [shortBio, setShortBio] = useState("");
     const [timezone, setTimezone] = useState(() => {
         try {
             return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -179,6 +180,8 @@ function SetPasswordForm() {
         const errs: Record<string, string> = {};
 
         const isInstructor = verifiedRole === "Instructor" || verifiedRole === "Teacher";
+        const isLearner = verifiedRole === "Learner" || verifiedRole === "Student";
+        const isProfileSetup = isInstructor || isLearner;
         const trimmedEmail = email.trim().toLowerCase();
 
         if (!trimmedEmail) {
@@ -187,7 +190,7 @@ function SetPasswordForm() {
             errs.email = "Please enter a valid email address.";
         }
 
-        if (isInstructor) {
+        if (isProfileSetup) {
             if (!firstName.trim()) errs.firstName = "First name is required.";
             if (!lastName.trim()) errs.lastName = "Last name is required.";
         }
@@ -211,14 +214,15 @@ function SetPasswordForm() {
         setLoading(true);
 
         try {
-            if (isInstructor) {
+            if (isProfileSetup) {
                 const res = await acceptInviteRequest({
                     token,
                     email: trimmedEmail,
                     password: newPassword,
                     firstName: firstName.trim(),
                     lastName: lastName.trim(),
-                    professionalHeadline: headline.trim(),
+                    professionalHeadline: isInstructor ? headline.trim() : undefined,
+                    shortBio: isLearner ? shortBio.trim() : undefined,
                     timezone,
                     avatar: avatar || null,
                     links,
@@ -312,6 +316,8 @@ function SetPasswordForm() {
     }
 
     const isInstructor = verifiedRole === "Instructor" || verifiedRole === "Teacher";
+    const isLearner = verifiedRole === "Learner" || verifiedRole === "Student";
+    const isProfileSetup = isInstructor || isLearner;
 
     return (
         <div className="min-h-dvh bg-gray-50/70 dark:bg-slate-950 py-10 px-4 sm:px-6">
@@ -331,10 +337,10 @@ function SetPasswordForm() {
                     {/* Top banner */}
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-white sm:px-8">
                         <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
-                            {isInstructor ? "Instructor Onboarding" : "Account Setup"}
+                            {isLearner ? "Learner Onboarding" : isInstructor ? "Instructor Onboarding" : "Account Setup"}
                         </span>
                         <h1 className="mt-3 text-2xl sm:text-3xl font-bold">
-                            {isInstructor ? "Welcome! Complete your profile" : "Set your password"}
+                            {isProfileSetup ? "Welcome! Complete your profile" : "Set your password"}
                         </h1>
                         <p className="mt-1 text-sm text-blue-100">
                             Please confirm your invited email address and complete your account setup.
@@ -349,8 +355,8 @@ function SetPasswordForm() {
                             </div>
                         )}
 
-                        {/* SECTION 1: Instructor Personal Profile (Mandatory) */}
-                        {isInstructor && (
+                        {/* SECTION 1: Personal Profile (Mandatory for instructor & learner) */}
+                        {isProfileSetup && (
                             <div className="space-y-5">
                                 <div className="border-b border-gray-100 pb-3 dark:border-slate-800">
                                     <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
@@ -358,7 +364,9 @@ function SetPasswordForm() {
                                         1. Personal Information <span className="text-xs font-normal text-red-500">(Required)</span>
                                     </h2>
                                     <p className="text-xs text-gray-500 dark:text-slate-400">
-                                        These will appear on your courses, syllabus, and student-facing profile.
+                                        {isLearner
+                                            ? "These will appear on your CourseDesk profile, submissions, and learner card."
+                                            : "These will appear on your courses, syllabus, and student-facing profile."}
                                     </p>
                                 </div>
 
@@ -427,27 +435,53 @@ function SetPasswordForm() {
                                     )}
                                 </div>
 
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                                        Professional Headline
-                                    </label>
-                                    <div className="relative">
-                                        <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            value={headline}
-                                            onChange={(e) => {
-                                                setHeadline(e.target.value);
-                                                setErrors((p) => ({ ...p, headline: "" }));
-                                            }}
-                                            placeholder="Enter professional headline"
-                                            className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-                                        />
+                                {isInstructor && (
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                            Professional Headline
+                                        </label>
+                                        <div className="relative">
+                                            <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                value={headline}
+                                                onChange={(e) => {
+                                                    setHeadline(e.target.value);
+                                                    setErrors((p) => ({ ...p, headline: "" }));
+                                                }}
+                                                placeholder="Enter professional headline"
+                                                className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                            />
+                                        </div>
+                                        {errors.headline && (
+                                            <p className="mt-1 text-xs text-red-500">{errors.headline}</p>
+                                        )}
                                     </div>
-                                    {errors.headline && (
-                                        <p className="mt-1 text-xs text-red-500">{errors.headline}</p>
-                                    )}
-                                </div>
+                                )}
+
+                                {isLearner && (
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                            Short Bio
+                                        </label>
+                                        <div className="relative">
+                                            <Briefcase className="absolute left-3.5 top-3 h-4 w-4 text-gray-400" />
+                                            <textarea
+                                                rows={2}
+                                                value={shortBio}
+                                                onChange={(e) => {
+                                                    setShortBio(e.target.value);
+                                                    setErrors((p) => ({ ...p, shortBio: "" }));
+                                                }}
+                                                placeholder="Enter short bio"
+                                                className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 resize-none"
+                                            />
+                                        </div>
+                                        {errors.shortBio && (
+                                            <p className="mt-1 text-xs text-red-500">{errors.shortBio}</p>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
@@ -474,14 +508,14 @@ function SetPasswordForm() {
                             <div className="border-b border-gray-100 pb-3 dark:border-slate-800">
                                 <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
                                     <Lock className="h-4 w-4 text-blue-600" />
-                                    {isInstructor ? "2. Account Password" : "1. Create Password"} <span className="text-xs font-normal text-red-500">(Required)</span>
+                                    {isProfileSetup ? "2. Account Password" : "1. Create Password"} <span className="text-xs font-normal text-red-500">(Required)</span>
                                 </h2>
                                 <p className="text-xs text-gray-500 dark:text-slate-400">
                                     Choose a strong password to protect your account.
                                 </p>
                             </div>
 
-                            {!isInstructor && (
+                            {!isProfileSetup && (
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
                                         Email Address <span className="text-red-500">*</span>
@@ -593,8 +627,8 @@ function SetPasswordForm() {
                             </div>
                         </div>
 
-                        {/* SECTION 3: Avatar & Links (Optional for instructor) */}
-                        {isInstructor && (
+                        {/* SECTION 3: Avatar & Links (Optional for instructor & learner) */}
+                        {isProfileSetup && (
                             <div className="space-y-5">
                                 <div className="border-b border-gray-100 pb-3 dark:border-slate-800">
                                     <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">

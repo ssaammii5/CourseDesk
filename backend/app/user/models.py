@@ -42,16 +42,23 @@ class LearnerDetailsModel(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user_table.id", ondelete="CASCADE"), unique=True
     )
-    fathers_name: Mapped[str] = mapped_column(default="")
-    mothers_name: Mapped[str] = mapped_column(default="")
-    date_of_birth: Mapped[str] = mapped_column(default="")
-    mobile: Mapped[str] = mapped_column(default="")
-    nationality: Mapped[str] = mapped_column(default="")
     learner_id: Mapped[str] = mapped_column(
         server_default=text("generate_base32_id('LRN', 6)"),
         unique=True,
         index=True,
     )
+    first_name: Mapped[str] = mapped_column(default="")
+    last_name: Mapped[str] = mapped_column(default="")
+    avatar: Mapped[str] = mapped_column(Text, default="")
+    short_bio: Mapped[str] = mapped_column(Text, default="")
+    timezone: Mapped[str] = mapped_column(default="UTC")
+    links: Mapped[list[dict]] = mapped_column(JSON, default=list)
+
+    fathers_name: Mapped[str] = mapped_column(default="")
+    mothers_name: Mapped[str] = mapped_column(default="")
+    date_of_birth: Mapped[str] = mapped_column(default="")
+    mobile: Mapped[str] = mapped_column(default="")
+    nationality: Mapped[str] = mapped_column(default="")
     reg_no: Mapped[str] = mapped_column(default="")
     street: Mapped[str] = mapped_column(default="")
     city: Mapped[str] = mapped_column(default="")

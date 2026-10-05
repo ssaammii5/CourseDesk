@@ -274,26 +274,49 @@ def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
     from app.user.controller import _normalize_links
     normalized_links = _normalize_links(body.links or [])
 
-    inst = user.instructor_details
-    if not inst:
-        inst = InstructorDetailsModel(
-            user_id=user.id,
-            first_name=first_name,
-            last_name=last_name,
-            avatar=body.avatar or "",
-            professional_headline=headline,
-            timezone=(body.timezone or "").strip() or "UTC",
-            links=normalized_links,
-        )
-        db.add(inst)
+    if user.role in ("Learner", "Student"):
+        bio = (body.short_bio or body.professional_headline or "").strip()
+        learner = user.learner_details
+        if not learner:
+            learner = LearnerDetailsModel(
+                user_id=user.id,
+                first_name=first_name,
+                last_name=last_name,
+                avatar=body.avatar or "",
+                short_bio=bio,
+                timezone=(body.timezone or "").strip() or "UTC",
+                links=normalized_links,
+            )
+            db.add(learner)
+        else:
+            learner.first_name = first_name
+            learner.last_name = last_name
+            learner.short_bio = bio
+            learner.timezone = (body.timezone or "").strip() or "UTC"
+            if body.avatar is not None:
+                learner.avatar = body.avatar
+            learner.links = normalized_links
     else:
-        inst.first_name = first_name
-        inst.last_name = last_name
-        inst.professional_headline = headline
-        inst.timezone = (body.timezone or "").strip() or "UTC"
-        if body.avatar is not None:
-            inst.avatar = body.avatar
-        inst.links = normalized_links
+        inst = user.instructor_details
+        if not inst:
+            inst = InstructorDetailsModel(
+                user_id=user.id,
+                first_name=first_name,
+                last_name=last_name,
+                avatar=body.avatar or "",
+                professional_headline=headline,
+                timezone=(body.timezone or "").strip() or "UTC",
+                links=normalized_links,
+            )
+            db.add(inst)
+        else:
+            inst.first_name = first_name
+            inst.last_name = last_name
+            inst.professional_headline = headline
+            inst.timezone = (body.timezone or "").strip() or "UTC"
+            if body.avatar is not None:
+                inst.avatar = body.avatar
+            inst.links = normalized_links
 
     db.commit()
     db.refresh(user)

@@ -13,20 +13,30 @@ class UserAddressSchema(CamelModel):
     country: str = ""
 
 
+class InstructorLinkSchema(CamelModel):
+    title: str = ""
+    url: str = ""
+
+
+UserLinkSchema = InstructorLinkSchema
+
+
 class LearnerDetailsSchema(CamelModel):
+    learner_id: str = ""
+    first_name: str = ""
+    last_name: str = ""
+    email: str = ""
+    avatar: str = ""
+    short_bio: str = ""
+    timezone: str = "UTC"
+    links: list[InstructorLinkSchema] = []
     fathers_name: str = ""
     mothers_name: str = ""
     date_of_birth: str = ""
     mobile: str = ""
     nationality: str = ""
-    learner_id: str = ""
     reg_no: str = ""
     address: UserAddressSchema = UserAddressSchema()
-
-
-class InstructorLinkSchema(CamelModel):
-    title: str = ""
-    url: str = ""
 
 
 class InstructorDetailsSchema(CamelModel):
@@ -79,6 +89,9 @@ class UserResponseSchema(CamelModel):
 
 class InviteInstructorSchema(CamelModel):
     email: EmailStr
+
+
+InviteLearnerSchema = InviteInstructorSchema
 
 
 class PendingInvitationSchema(CamelModel):

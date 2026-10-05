@@ -9,6 +9,13 @@ export interface UserAddress {
 }
 
 export interface LearnerDetails {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatar?: string;
+    shortBio?: string;
+    timezone?: string;
+    links?: InstructorLink[];
     fathersName?: string;
     mothersName?: string;
     dateOfBirth?: string;
@@ -149,6 +156,25 @@ export function getPendingInvitationsRequest(): Promise<PendingInvitation[]> {
 
 export function revokeInvitationRequest(userId: number): Promise<{ message: string }> {
     return apiFetch<{ message: string }>(`/api/instructors/invitations/${userId}`, {
+        method: "DELETE",
+    });
+}
+
+export function inviteLearnerRequest(email: string): Promise<PendingInvitation> {
+    return apiFetch<PendingInvitation>("/api/learners/invite", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+    });
+}
+
+export function getPendingLearnerInvitationsRequest(): Promise<PendingInvitation[]> {
+    return apiFetch<PendingInvitation[]>("/api/learners/invitations", {
+        method: "GET",
+    });
+}
+
+export function revokeLearnerInvitationRequest(userId: number): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>(`/api/learners/invitations/${userId}`, {
         method: "DELETE",
     });
 }

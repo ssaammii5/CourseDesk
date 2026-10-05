@@ -69,6 +69,7 @@ export interface AcceptInvitePayload {
     firstName: string;
     lastName: string;
     professionalHeadline?: string;
+    shortBio?: string;
     timezone: string;
     avatar?: string | null;
     links?: InstructorLink[];

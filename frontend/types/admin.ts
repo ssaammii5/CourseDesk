@@ -22,6 +22,13 @@ export type LearnerProgramType =
 export type StudentProgramType = LearnerProgramType;
 
 export interface LearnerDetails {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatar?: string;
+    shortBio?: string;
+    timezone?: string;
+    links?: InstructorLink[];
     fathersName?: string;
     mothersName?: string;
     dateOfBirth?: string;

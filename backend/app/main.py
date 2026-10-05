@@ -31,13 +31,13 @@ from app.notification.router import notification_routes
 from app.session.router import session_routes
 from app.setting.router import setting_routes
 from app.submission.router import submission_routes
-from app.user.router import instructor_routes, user_routes
+from app.user.router import instructor_routes, learner_routes, user_routes
 
 from sqlalchemy import text
 
 Base.metadata.create_all(engine)
 
-# Safe idempotent migration to ensure new instructor columns exist
+# Safe idempotent migration to ensure new instructor and learner columns exist
 with engine.begin() as conn:
     conn.execute(text("""
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
@@ -59,6 +59,26 @@ with engine.begin() as conn:
         END
     FROM user_table ut
     WHERE idt.user_id = ut.id AND (idt.first_name = '' OR idt.first_name IS NULL);
+
+    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
+    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS last_name VARCHAR NOT NULL DEFAULT '';
+    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
+    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS short_bio TEXT NOT NULL DEFAULT '';
+    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
+    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS links JSON NOT NULL DEFAULT '[]';
+
+    UPDATE learner_details_table ldt
+    SET 
+        first_name = CASE 
+            WHEN position(' ' in ut.name) > 0 THEN split_part(ut.name, ' ', 1)
+            ELSE ut.name
+        END,
+        last_name = CASE 
+            WHEN position(' ' in ut.name) > 0 THEN substring(ut.name from position(' ' in ut.name) + 1)
+            ELSE ''
+        END
+    FROM user_table ut
+    WHERE ldt.user_id = ut.id AND (ldt.first_name = '' OR ldt.first_name IS NULL);
     """))
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -78,6 +98,7 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 app.include_router(auth_routes)
 app.include_router(user_routes)
 app.include_router(instructor_routes)
+app.include_router(learner_routes)
 app.include_router(academic_routes)
 app.include_router(course_routes)
 app.include_router(assignment_routes)

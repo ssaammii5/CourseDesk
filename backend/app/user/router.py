@@ -60,3 +60,23 @@ def get_pending_invitations(db: DbSession, _admin: IsAdmin):
 @instructor_routes.delete("/invitations/{user_id}", status_code=status.HTTP_200_OK)
 def revoke_invitation(user_id: int, db: DbSession, _admin: IsAdmin):
     return controller.revoke_instructor_invitation(user_id, db)
+
+
+learner_routes = APIRouter(prefix="/api/learners", tags=["learners"])
+
+
+@learner_routes.post("/invite", status_code=status.HTTP_201_CREATED)
+def invite_learner(
+    body: controller.InviteLearnerSchema, db: DbSession, _admin: IsAdmin
+):
+    return controller.invite_learner(body, db)
+
+
+@learner_routes.get("/invitations", status_code=status.HTTP_200_OK)
+def get_pending_learner_invitations(db: DbSession, _admin: IsAdmin):
+    return controller.get_pending_learner_invitations(db)
+
+
+@learner_routes.delete("/invitations/{user_id}", status_code=status.HTTP_200_OK)
+def revoke_learner_invitation(user_id: int, db: DbSession, _admin: IsAdmin):
+    return controller.revoke_learner_invitation(user_id, db)

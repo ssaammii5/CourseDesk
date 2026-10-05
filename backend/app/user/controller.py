@@ -11,6 +11,7 @@ from app.user.dtos import (
     InstructorDetailsSchema,
     InstructorLinkSchema,
     InviteInstructorSchema,
+    InviteLearnerSchema,
     LearnerDetailsSchema,
     PendingInvitationSchema,
     UserAddressSchema,
@@ -38,13 +39,37 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
     learner_details: LearnerDetailsSchema | None = None
     if user.learner_details:
         d = user.learner_details
+        f_name = d.first_name or ""
+        l_name = d.last_name or ""
+        if not f_name and not l_name and user.name:
+            parts = user.name.strip().split(" ", 1)
+            f_name = parts[0]
+            l_name = parts[1] if len(parts) > 1 else ""
+
+        raw_links = d.links or []
+        normalized_links = []
+        for l in raw_links:
+            if isinstance(l, dict):
+                normalized_links.append(InstructorLinkSchema(title=l.get("title", ""), url=l.get("url", "")))
+            elif isinstance(l, str):
+                normalized_links.append(InstructorLinkSchema(title="", url=l))
+            elif isinstance(l, InstructorLinkSchema):
+                normalized_links.append(l)
+
         learner_details = LearnerDetailsSchema(
+            learner_id=d.learner_id,
+            first_name=f_name,
+            last_name=l_name,
+            email=user.email,
+            avatar=d.avatar or "",
+            short_bio=d.short_bio or "",
+            timezone=d.timezone or "UTC",
+            links=normalized_links,
             fathers_name=d.fathers_name,
             mothers_name=d.mothers_name,
             date_of_birth=d.date_of_birth,
             mobile=d.mobile,
             nationality=d.nationality,
-            learner_id=d.learner_id,
             reg_no=d.reg_no,
             address=UserAddressSchema(
                 street=d.street, city=d.city, state=d.state, zip=d.zip, country=d.country
@@ -105,9 +130,24 @@ def get_users(db: Session) -> list[UserResponseSchema]:
     return [serialize_user(u) for u in users]
 
 
-def _build_learner_details(user_id: int, data: LearnerDetailsSchema) -> LearnerDetailsModel:
+def _build_learner_details(
+    user_id: int, data: LearnerDetailsSchema, user_name: str = ""
+) -> LearnerDetailsModel:
+    f_name = (data.first_name or "").strip()
+    l_name = (data.last_name or "").strip()
+    if not f_name and not l_name and user_name:
+        parts = user_name.strip().split(" ", 1)
+        f_name = parts[0]
+        l_name = parts[1] if len(parts) > 1 else ""
+
     return LearnerDetailsModel(
         user_id=user_id,
+        first_name=f_name,
+        last_name=l_name,
+        avatar=data.avatar or "",
+        short_bio=data.short_bio or "",
+        timezone=data.timezone or "UTC",
+        links=_normalize_links(data.links or []),
         fathers_name=data.fathers_name,
         mothers_name=data.mothers_name,
         date_of_birth=data.date_of_birth,
@@ -215,6 +255,23 @@ def _apply_learner_details(
 ) -> None:
     if user.learner_details:
         d = user.learner_details
+        if data.first_name or data.last_name:
+            d.first_name = (data.first_name or "").strip()
+            d.last_name = (data.last_name or "").strip()
+        elif user.name and not d.first_name and not d.last_name:
+            parts = user.name.strip().split(" ", 1)
+            d.first_name = parts[0]
+            d.last_name = parts[1] if len(parts) > 1 else ""
+
+        if data.avatar is not None:
+            d.avatar = data.avatar
+        if data.short_bio is not None:
+            d.short_bio = (data.short_bio or "").strip()
+        if data.timezone:
+            d.timezone = data.timezone
+        if data.links is not None:
+            d.links = _normalize_links(data.links)
+
         d.fathers_name = data.fathers_name
         d.mothers_name = data.mothers_name
         d.date_of_birth = data.date_of_birth
@@ -228,7 +285,7 @@ def _apply_learner_details(
         d.zip = data.address.zip
         d.country = data.address.country
     else:
-        user.learner_details = _build_learner_details(user.id, data)
+        user.learner_details = _build_learner_details(user.id, data, user.name)
 
 
 def _apply_instructor_details(
@@ -277,6 +334,13 @@ def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserRespon
             user_name = f"{f_name} {l_name}".strip()
         if body.instructor_details.email:
             user_email = body.instructor_details.email
+    elif body.learner_details:
+        f_name = (body.learner_details.first_name or "").strip()
+        l_name = (body.learner_details.last_name or "").strip()
+        if f_name or l_name:
+            user_name = f"{f_name} {l_name}".strip()
+        if body.learner_details.email:
+            user_email = body.learner_details.email
 
     if user_email != user.email:
         existing = db.scalar(
@@ -409,6 +473,98 @@ def revoke_instructor_invitation(user_id: int, db: Session) -> dict:
         )
 
     # Clean delete pending user & cascaded details
+    db.delete(user)
+    db.commit()
+    return {"message": "Invitation revoked successfully."}
+
+
+def invite_learner(body: InviteLearnerSchema, db: Session) -> PendingInvitationSchema:
+    email = body.email.strip().lower()
+    existing_user = db.scalar(select(UserModel).where(UserModel.email == email))
+
+    token = secrets.token_urlsafe(48)
+    expires = datetime.now(UTC) + timedelta(hours=72)
+
+    if existing_user:
+        if existing_user.hash_password != "!UNSET_INVITED_USER":
+            raise HTTPException(
+                status_code=400,
+                detail=f"User with email '{email}' is already registered and active.",
+            )
+        existing_user.invite_token = token
+        existing_user.invite_expires_at_utc = expires
+        existing_user.role = "Learner"
+        db.commit()
+        db.refresh(existing_user)
+        return PendingInvitationSchema(
+            id=existing_user.id,
+            email=existing_user.email,
+            role=existing_user.role,
+            created_at_utc=existing_user.created_at_utc,
+            expires_at_utc=existing_user.invite_expires_at_utc,
+            invite_token=token,
+        )
+
+    new_user = UserModel(
+        name="",
+        email=email,
+        hash_password="!UNSET_INVITED_USER",
+        role="Learner",
+        invite_token=token,
+        invite_expires_at_utc=expires,
+        is_active=True,
+    )
+    db.add(new_user)
+    db.flush()
+
+    db.add(LearnerDetailsModel(user_id=new_user.id))
+    db.commit()
+    db.refresh(new_user)
+
+    return PendingInvitationSchema(
+        id=new_user.id,
+        email=new_user.email,
+        role=new_user.role,
+        created_at_utc=new_user.created_at_utc,
+        expires_at_utc=new_user.invite_expires_at_utc,
+        invite_token=token,
+    )
+
+
+def get_pending_learner_invitations(db: Session) -> list[PendingInvitationSchema]:
+    now = datetime.now(UTC)
+    users = db.scalars(
+        select(UserModel)
+        .where(
+            UserModel.role.in_(("Learner", "Student")),
+            UserModel.invite_token.is_not(None),
+            UserModel.invite_expires_at_utc > now,
+        )
+        .order_by(UserModel.created_at_utc.desc())
+    ).all()
+
+    return [
+        PendingInvitationSchema(
+            id=u.id,
+            email=u.email,
+            role=u.role,
+            created_at_utc=u.created_at_utc,
+            expires_at_utc=u.invite_expires_at_utc,
+            invite_token=u.invite_token,
+        )
+        for u in users
+    ]
+
+
+def revoke_learner_invitation(user_id: int, db: Session) -> dict:
+    user = db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Invitation not found.")
+    if user.invite_token is None:
+        raise HTTPException(
+            status_code=400, detail="User has already accepted the invitation or is not pending."
+        )
+
     db.delete(user)
     db.commit()
     return {"message": "Invitation revoked successfully."}
