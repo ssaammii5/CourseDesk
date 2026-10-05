@@ -108,10 +108,10 @@ export interface SetPasswordResponse {
     message: string;
 }
 
-export function setPasswordRequest(token: string, password: string): Promise<SetPasswordResponse> {
+export function setPasswordRequest(token: string, password: string, email: string): Promise<SetPasswordResponse> {
     return apiFetch<SetPasswordResponse>("/api/auth/set-password", {
         method: "POST",
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ token, password, email }),
         auth: false,
     });
 }

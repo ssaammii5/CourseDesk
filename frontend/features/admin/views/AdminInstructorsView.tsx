@@ -201,7 +201,7 @@ export function AdminInstructorsView() {
 
     const handleCopyInviteLink = async (inv: PendingInvitation) => {
         const token = inv.inviteToken || "";
-        const link = `${window.location.origin}/set-password?token=${token}&email=${encodeURIComponent(inv.email)}`;
+        const link = `${window.location.origin}/set-password?token=${token}`;
         try {
             await navigator.clipboard.writeText(link);
             setCopiedId(inv.id);

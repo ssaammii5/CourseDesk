@@ -22,6 +22,7 @@ class RefreshSchema(CamelModel):
 
 class SetPasswordSchema(CamelModel):
     token: str
+    email: EmailStr
     password: str
 
 
@@ -31,12 +32,13 @@ class SetPasswordResponseSchema(CamelModel):
 
 class VerifyInviteResponseSchema(CamelModel):
     valid: bool
-    email: str
     role: str
+    email: str | None = None
 
 
 class AcceptInviteSchema(CamelModel):
     token: str
+    email: EmailStr
     password: str
     first_name: str
     last_name: str

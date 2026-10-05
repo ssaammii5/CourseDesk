@@ -13,6 +13,7 @@ import {
     Layers,
     Loader2,
     Lock,
+    Mail,
     Plus,
     Trash2,
     User,
@@ -31,16 +32,15 @@ function SetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token") ?? "";
-    const emailParam = searchParams.get("email") ?? "";
 
     // Verification state
     const [verifying, setVerifying] = useState(true);
     const [tokenValid, setTokenValid] = useState<boolean | null>(null);
-    const [verifiedEmail, setVerifiedEmail] = useState(emailParam);
     const [verifiedRole, setVerifiedRole] = useState<string>("Instructor");
     const [verifyError, setVerifyError] = useState<string | null>(null);
 
     // Form fields
+    const [email, setEmail] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [headline, setHeadline] = useState("");
@@ -87,8 +87,7 @@ function SetPasswordForm() {
             .then((res) => {
                 if (!isMounted) return;
                 setTokenValid(true);
-                setVerifiedEmail(res.email);
-                setVerifiedRole(res.role);
+                setVerifiedRole(res.role || "Instructor");
                 setVerifying(false);
             })
             .catch((err) => {
@@ -180,6 +179,13 @@ function SetPasswordForm() {
         const errs: Record<string, string> = {};
 
         const isInstructor = verifiedRole === "Instructor" || verifiedRole === "Teacher";
+        const trimmedEmail = email.trim().toLowerCase();
+
+        if (!trimmedEmail) {
+            errs.email = "Email address is required.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+            errs.email = "Please enter a valid email address.";
+        }
 
         if (isInstructor) {
             if (!firstName.trim()) errs.firstName = "First name is required.";
@@ -208,6 +214,7 @@ function SetPasswordForm() {
             if (isInstructor) {
                 const res = await acceptInviteRequest({
                     token,
+                    email: trimmedEmail,
                     password: newPassword,
                     firstName: firstName.trim(),
                     lastName: lastName.trim(),
@@ -221,15 +228,18 @@ function SetPasswordForm() {
                     setTokens(tokenStr, res.refreshToken);
                 }
             } else {
-                await setPasswordRequest(token, newPassword);
+                await setPasswordRequest(token, newPassword, trimmedEmail);
             }
             setSuccess(true);
         } catch (err) {
-            setSubmitError(
+            const msg =
                 err instanceof Error
                     ? err.message
-                    : "Failed to setup account. The link may have expired or been revoked."
-            );
+                    : "Failed to setup account. The link may have expired or been revoked.";
+            setSubmitError(msg);
+            if (msg.toLowerCase().includes("email")) {
+                setErrors((prev) => ({ ...prev, email: msg }));
+            }
         } finally {
             setLoading(false);
         }
@@ -327,7 +337,7 @@ function SetPasswordForm() {
                             {isInstructor ? "Welcome! Complete your profile" : "Set your password"}
                         </h1>
                         <p className="mt-1 text-sm text-blue-100">
-                            Invited account: <strong className="text-white underline">{verifiedEmail}</strong>
+                            Please confirm your invited email address and complete your account setup.
                         </p>
                     </div>
 
@@ -394,6 +404,31 @@ function SetPasswordForm() {
 
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                        Email Address <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => {
+                                                setEmail(e.target.value);
+                                                setErrors((p) => ({ ...p, email: "" }));
+                                            }}
+                                            placeholder="Enter your email address"
+                                            className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                                        Enter the email address this invitation was sent to.
+                                    </p>
+                                    {errors.email && (
+                                        <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
                                         Professional Headline
                                     </label>
                                     <div className="relative">
@@ -445,6 +480,33 @@ function SetPasswordForm() {
                                     Choose a strong password to protect your account.
                                 </p>
                             </div>
+
+                            {!isInstructor && (
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+                                        Email Address <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => {
+                                                setEmail(e.target.value);
+                                                setErrors((p) => ({ ...p, email: "" }));
+                                            }}
+                                            placeholder="Enter your email address"
+                                            className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">
+                                        Enter the email address this invitation was sent to.
+                                    </p>
+                                    {errors.email && (
+                                        <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>

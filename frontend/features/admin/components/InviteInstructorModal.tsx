@@ -36,7 +36,7 @@ export function InviteInstructorModal({ open, onClose, onSuccess }: InviteInstru
         try {
             const invitation = await inviteInstructorRequest(trimmed);
             const token = invitation.inviteToken || "";
-            const link = `${window.location.origin}/set-password?token=${token}&email=${encodeURIComponent(invitation.email)}`;
+            const link = `${window.location.origin}/set-password?token=${token}`;
             setCreatedInvite({ invitation, link });
             onSuccess(invitation, link);
         } catch (err) {

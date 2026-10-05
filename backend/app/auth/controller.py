@@ -205,7 +205,6 @@ def verify_invite_token(token: str, db: Session) -> dict:
         )
     return {
         "valid": True,
-        "email": user.email,
         "role": user.role,
     }
 
@@ -220,9 +219,17 @@ def set_password_via_token(body: SetPasswordSchema, db: Session) -> dict:
             detail="Invalid or expired invitation token",
         )
 
+    typed_email = (body.email or "").strip().lower()
+    if typed_email != user.email.lower().strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The provided email address does not match this invitation.",
+        )
+
     user.hash_password = get_password_hash(body.password)
     user.invite_token = None
     user.invite_expires_at_utc = None
+    user.is_active = True
     db.commit()
 
     return {"message": "Password set successfully"}
@@ -232,7 +239,10 @@ def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
     first_name = (body.first_name or "").strip()
     last_name = (body.last_name or "").strip()
     headline = (body.professional_headline or "").strip()
+    typed_email = (body.email or "").strip().lower()
 
+    if not typed_email:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Email is required.")
     if not first_name:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="First name is required.")
     if not last_name:
@@ -245,6 +255,12 @@ def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invitation link is invalid, expired, or has been revoked.",
+        )
+
+    if typed_email != user.email.lower().strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The provided email address does not match this invitation.",
         )
 
     # Set password & activate

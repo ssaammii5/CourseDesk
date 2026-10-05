@@ -58,12 +58,13 @@ export function logoutRequest(): Promise<void> {
 
 export interface VerifyInviteResponse {
     valid: boolean;
-    email: string;
     role: string;
+    email?: string;
 }
 
 export interface AcceptInvitePayload {
     token: string;
+    email: string;
     password: string;
     firstName: string;
     lastName: string;
