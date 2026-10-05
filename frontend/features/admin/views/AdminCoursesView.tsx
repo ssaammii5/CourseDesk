@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import type { AdminCourse } from "@/types";
-import { DataTable, StatusBadge, ConfirmDialog } from "@/components/ui";
+import { DataTable, StatusBadge, ConfirmDialog, ModernDropdown } from "@/components/ui";
 import { CourseFormModal } from "../components/CourseFormModal";
 import {
     getCoursesRequest, createCourseRequest, updateCourseRequest, deleteCourseRequest,
@@ -209,36 +209,36 @@ export function AdminCoursesView() {
                         className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
                     />
                 </div>
-                <select
+                <ModernDropdown
                     value={departmentFilter}
-                    onChange={(e) => setDepartmentFilter(e.target.value)}
-                    className="rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                >
-                    <option value="all">All Categories</option>
-                    {departmentOptions.map((d) => (
-                        <option key={d} value={d}>{d}</option>
-                    ))}
-                </select>
-                <select
+                    onChange={setDepartmentFilter}
+                    options={[
+                        { value: "all", label: "All Categories" },
+                        ...departmentOptions.map((d) => ({ value: d, label: d })),
+                    ]}
+                    size="md"
+                    buttonClassName="w-full sm:w-44"
+                />
+                <ModernDropdown
                     value={programFilter}
-                    onChange={(e) => setProgramFilter(e.target.value)}
-                    className="rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                >
-                    <option value="all">All Tracks / Levels</option>
-                    {programOptions.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                    ))}
-                </select>
-                <select
+                    onChange={setProgramFilter}
+                    options={[
+                        { value: "all", label: "All Tracks / Levels" },
+                        ...programOptions.map((p) => ({ value: p, label: p })),
+                    ]}
+                    size="md"
+                    buttonClassName="w-full sm:w-48"
+                />
+                <ModernDropdown
                     value={sessionFilter}
-                    onChange={(e) => setSessionFilter(e.target.value)}
-                    className="rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                >
-                    <option value="all">All Cohorts / Schedules</option>
-                    {sessionOptions.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                    ))}
-                </select>
+                    onChange={setSessionFilter}
+                    options={[
+                        { value: "all", label: "All Cohorts / Schedules" },
+                        ...sessionOptions.map((s) => ({ value: s, label: s })),
+                    ]}
+                    size="md"
+                    buttonClassName="w-full sm:w-52"
+                />
             </div>
 
             <div className="mt-6">

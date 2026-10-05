@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PROGRAM_TYPES } from "@/features/settings";
-import { DataTable, StatusBadge } from "@/components/ui";
+import { DataTable, StatusBadge, ModernDropdown } from "@/components/ui";
 import { getSubmissionsRequest, type SubmissionDto } from "@/lib/api/submissions";
 
 function sessionRank(key: string): number {
@@ -366,63 +366,62 @@ export function AdminSubmissionsView() {
             </div>
 
             {filtersOpen && (
-                <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <label className="block">
+                <div className="mt-4 grid gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm p-4 sm:grid-cols-2 lg:grid-cols-4 shadow-sm">
+                    <div>
                         <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Track / Level</span>
-                        <select
+                        <ModernDropdown
                             value={programFilter}
-                            onChange={(e) => {
-                                setProgramFilter(e.target.value);
+                            onChange={(val) => {
+                                setProgramFilter(val);
                                 setDepartmentFilter("all");
                                 setSessionFilter("all");
                             }}
-                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                        >
-                            <option value="all">All Tracks</option>
-                            {PROGRAM_TYPES.map((p) => (
-                                <option key={p} value={p}>{p}</option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="block">
+                            options={[
+                                { value: "all", label: "All Tracks" },
+                                ...PROGRAM_TYPES.map((p) => ({ value: p, label: p })),
+                            ]}
+                            size="sm"
+                        />
+                    </div>
+                    <div>
                         <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Category / Domain</span>
-                        <select
+                        <ModernDropdown
                             value={departmentFilter}
-                            onChange={(e) => setDepartmentFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                        >
-                            <option value="all">All Categories</option>
-                            {departmentOptions.map((d) => (
-                                <option key={d} value={d}>{d}</option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="block">
+                            onChange={setDepartmentFilter}
+                            options={[
+                                { value: "all", label: "All Categories" },
+                                ...departmentOptions.map((d) => ({ value: d, label: d })),
+                            ]}
+                            size="sm"
+                        />
+                    </div>
+                    <div>
                         <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Cohort / Schedule</span>
-                        <select
+                        <ModernDropdown
                             value={sessionFilter}
-                            onChange={(e) => setSessionFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                        >
-                            <option value="all">All Cohorts</option>
-                            {sessionOptions.map((s) => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="block">
+                            onChange={setSessionFilter}
+                            options={[
+                                { value: "all", label: "All Cohorts" },
+                                ...sessionOptions.map((s) => ({ value: s, label: s })),
+                            ]}
+                            size="sm"
+                        />
+                    </div>
+                    <div>
                         <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Status</span>
-                        <select
+                        <ModernDropdown
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full rounded-md border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="Submitted">Submitted</option>
-                            <option value="Graded">Graded</option>
-                            <option value="Pending">Pending</option>
-                        </select>
-                    </label>
+                            onChange={setStatusFilter}
+                            options={[
+                                { value: "all", label: "All Status" },
+                                { value: "Submitted", label: "Submitted" },
+                                { value: "Graded", label: "Graded" },
+                                { value: "Pending", label: "Pending" },
+                            ]}
+                            showStatusDot
+                            size="sm"
+                        />
+                    </div>
                 </div>
             )}
 

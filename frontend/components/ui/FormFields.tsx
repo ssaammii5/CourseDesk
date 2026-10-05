@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { ModernDropdown, type OptionType } from "./ModernDropdown";
 
 interface FieldProps {
     label: string;
@@ -57,58 +58,35 @@ export function SelectField({
     disabled = false,
     error,
     placeholder = "Select an option",
+    searchable,
+    className = "",
 }: {
     label: string;
     value: string;
     onChange: (v: string) => void;
-    options: string[];
+    options: OptionType[];
     required?: boolean;
     disabled?: boolean;
     error?: string;
     placeholder?: string;
+    searchable?: boolean;
+    className?: string;
 }) {
     return (
-        <label className="block">
-            <span className="mb-1.5 block text-sm text-gray-800 dark:text-slate-200">
-                {label}
-                {required && !disabled && <span className="ml-0.5 text-[#c5221f] dark:text-red-400">*</span>}
-            </span>
-            <span className="relative block">
-                <select
-                    value={value}
-                    disabled={disabled}
-                    onChange={(e) => onChange(e.target.value)}
-                    className={`w-full appearance-none rounded-md border px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none transition-colors ${disabled
-                            ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-700 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500"
-                            : `${error
-                                ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f] dark:border-red-500"
-                                : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                            } bg-white dark:bg-slate-900 ${value ? "text-gray-900 dark:text-slate-100" : "text-gray-500 dark:text-slate-500"}`
-                        }`}
-                >
-                    <option value="" disabled>
-                        {placeholder}
-                    </option>
-                    {options.map((o) => (
-                        <option key={o} value={o} className="bg-white text-gray-900 dark:bg-slate-900 dark:text-slate-100">
-                            {o}
-                        </option>
-                    ))}
-                </select>
-                <svg
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${disabled ? "text-gray-500 dark:text-slate-600" : "text-gray-700 dark:text-slate-400"}`}
-                >
-                    <path
-                        fillRule="evenodd"
-                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                        clipRule="evenodd"
-                    />
-                </svg>
-            </span>
-            {error && !disabled && <span className="mt-1 block text-sm text-[#c5221f] dark:text-red-400">{error}</span>}
-        </label>
+        <div className={`block ${className}`}>
+            <ModernDropdown
+                label={label}
+                value={value}
+                onChange={onChange}
+                options={options}
+                required={required}
+                disabled={disabled}
+                error={error}
+                placeholder={placeholder}
+                searchable={searchable}
+                size="md"
+            />
+        </div>
     );
 }
 
