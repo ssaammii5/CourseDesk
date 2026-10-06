@@ -27,6 +27,7 @@ import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
 import { avatarClassFor, letterOf } from "@/lib/utils/theme";
 import { resolveAvatarUrl } from "@/lib/utils/format";
 import { useAuth } from "@/hooks/useAuth";
+import { formatRole } from "@/types";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 
@@ -383,7 +384,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                                     {user?.name ?? "Account"}
                                 </p>
                                 <span className="inline-block text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                                    {user?.role ?? "Learner"}
+                                    {formatRole(user?.role)}
                                 </span>
                             </div>
                         </div>

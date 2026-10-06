@@ -38,6 +38,16 @@ export function mapRole(role: string): "Admin" | "Instructor" | "Learner" | "Coo
     return "Learner";
 }
 
+/** Format the role for user-facing display (e.g. Co-ordinator). */
+export function formatRole(role?: string): string {
+    if (!role) return "Learner";
+    if (role === "Coordinator" || role === "Co-ordinator") return "Co-ordinator";
+    if (role === "Instructor" || role === "Teacher") return "Instructor";
+    if (role === "Admin") return "Admin";
+    if (role === "Learner" || role === "Student") return "Learner";
+    return role;
+}
+
 /** Derive the avatar background from the role. */
 export function avatarClassFor(role: string): string {
     switch (role) {

@@ -34,7 +34,7 @@ import {
     markNotificationReadRequest,
     subscribeNotificationsStream,
 } from "@/lib/api";
-import { type NotificationItem, type NotificationKind } from "@/types";
+import { type NotificationItem, type NotificationKind, formatRole } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
 import { getAssignmentRequest } from "@/lib/api/assignments";
 import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
@@ -464,9 +464,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
     const displayName = user?.name ?? "";
     const displayEmail = user?.email ?? "";
-    const displayRole = user?.role ?? "Learner";
+    const rawRole = user?.role ?? "Learner";
+    const displayRole = formatRole(rawRole);
     const avatarClass = user?.avatarClass ?? "bg-blue-600";
-    const userAvatar = user?.avatar || user?.instructorDetails?.avatar || user?.learnerDetails?.avatar;
+    const userAvatar = user?.avatar || user?.instructorDetails?.avatar || user?.coordinatorDetails?.avatar || user?.learnerDetails?.avatar;
 
     return (
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-2.5 sm:px-6 backdrop-blur-md transition-colors">
@@ -684,7 +685,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                             <p className="max-w-[110px] truncate text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">
                                 {displayName || "Account"}
                             </p>
-                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-400 capitalize leading-tight">
+                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-400 leading-tight">
                                 {displayRole}
                             </p>
                         </div>
@@ -712,16 +713,19 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                                         <p className="truncate text-xs text-slate-500 dark:text-slate-400">{displayEmail}</p>
                                         <div className="mt-1">
                                             <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold border ${
-                                                displayRole === "Admin"
+                                                rawRole === "Admin"
                                                     ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-900/60"
-                                                    : displayRole === "Instructor"
+                                                    : rawRole === "Instructor"
                                                     ? "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-900/60"
+                                                    : rawRole === "Coordinator"
+                                                    ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-900/60"
                                                     : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-900/60"
                                             }`}>
                                                 <span
                                                     className={`h-1.5 w-1.5 rounded-full ${
-                                                        displayRole === "Admin" ? "bg-rose-500" :
-                                                        displayRole === "Instructor" ? "bg-amber-500" :
+                                                        rawRole === "Admin" ? "bg-rose-500" :
+                                                        rawRole === "Instructor" ? "bg-amber-500" :
+                                                        rawRole === "Coordinator" ? "bg-blue-500" :
                                                         "bg-emerald-500"
                                                     }`}
                                                 />
