@@ -41,6 +41,7 @@ Base.metadata.create_all(engine)
 with engine.begin() as conn:
     conn.execute(text("""
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
+    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS last_name VARCHAR NOT NULL DEFAULT '';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
@@ -81,6 +82,16 @@ with engine.begin() as conn:
         END
     FROM user_table ut
     WHERE ldt.user_id = ut.id AND (ldt.first_name = '' OR ldt.first_name IS NULL);
+
+    UPDATE user_table ut
+    SET timezone = idt.timezone
+    FROM instructor_details_table idt
+    WHERE idt.user_id = ut.id AND idt.timezone IS NOT NULL AND idt.timezone != '' AND (ut.timezone = 'UTC' OR ut.timezone IS NULL);
+
+    UPDATE user_table ut
+    SET timezone = ldt.timezone
+    FROM learner_details_table ldt
+    WHERE ldt.user_id = ut.id AND ldt.timezone IS NOT NULL AND ldt.timezone != '' AND (ut.timezone = 'UTC' OR ut.timezone IS NULL);
 
     -- Ensure email verification columns exist on user_table
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;

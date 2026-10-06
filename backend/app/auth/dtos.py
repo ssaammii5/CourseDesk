@@ -123,6 +123,7 @@ class MeResponseSchema(CamelModel):
     role: str
     is_active: bool = True
     avatar: str = ""
+    timezone: str = "UTC"
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
     student_details: StudentDetailsSchema | None = None

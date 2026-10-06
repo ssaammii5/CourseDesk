@@ -118,6 +118,15 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
     elif instructor_details and instructor_details.avatar:
         avatar = instructor_details.avatar
 
+    user_timezone = getattr(user, "timezone", "") or ""
+    if not user_timezone or user_timezone == "UTC":
+        if learner_details and learner_details.timezone:
+            user_timezone = learner_details.timezone
+        elif instructor_details and instructor_details.timezone:
+            user_timezone = instructor_details.timezone
+    if not user_timezone:
+        user_timezone = "UTC"
+
     return UserResponseSchema(
         id=user.id,
         name=user.name,
@@ -126,6 +135,7 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
         is_active=user.is_active,
         created_at_utc=user.created_at_utc,
         avatar=avatar,
+        timezone=user_timezone,
         learner_details=learner_details,
         instructor_details=instructor_details,
     )
@@ -280,6 +290,7 @@ def _apply_learner_details(
             d.short_bio = (data.short_bio or "").strip()
         if data.timezone:
             d.timezone = data.timezone
+            user.timezone = data.timezone
         if data.links is not None:
             d.links = _normalize_links(data.links)
 
@@ -297,6 +308,8 @@ def _apply_learner_details(
         d.country = data.address.country
     else:
         user.learner_details = _build_learner_details(user.id, data, user.name)
+        if data.timezone:
+            user.timezone = data.timezone
 
 
 def _apply_instructor_details(
@@ -318,10 +331,13 @@ def _apply_instructor_details(
             t.professional_headline = (data.professional_headline or data.headline or "").strip()
         if data.timezone:
             t.timezone = data.timezone
+            user.timezone = data.timezone
         if data.links is not None:
             t.links = _normalize_links(data.links)
     else:
         user.instructor_details = _build_instructor_details(user.id, data, user.name)
+        if data.timezone:
+            user.timezone = data.timezone
 
 
 def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserResponseSchema:
@@ -364,6 +380,8 @@ def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserRespon
     user.email = user_email
     user.role = body.role
     user.is_active = body.is_active
+    if body.timezone is not None:
+        user.timezone = body.timezone.strip() or "UTC"
     if body.password:
         user.hash_password = get_password_hash(body.password)
     if body.learner_details is not None:
@@ -584,6 +602,9 @@ def revoke_learner_invitation(user_id: int, db: Session) -> dict:
 def update_current_user_profile(
     user: UserModel, body: UpdateProfileSchema, db: Session
 ) -> UserResponseSchema:
+    if body.timezone is not None:
+        user.timezone = body.timezone.strip() or "UTC"
+
     if user.role == "Instructor":
         details = user.instructor_details
         if not details:
@@ -603,7 +624,7 @@ def update_current_user_profile(
         if body.short_bio is not None:
             details.short_bio = body.short_bio.strip()
         if body.timezone is not None:
-            details.timezone = body.timezone.strip() or "UTC"
+            details.timezone = user.timezone
         if body.links is not None:
             details.links = _normalize_links(body.links)
 
@@ -628,7 +649,7 @@ def update_current_user_profile(
         if body.short_bio is not None:
             details.short_bio = body.short_bio.strip()
         if body.timezone is not None:
-            details.timezone = body.timezone.strip() or "UTC"
+            details.timezone = user.timezone
         if body.links is not None:
             details.links = _normalize_links(body.links)
         if body.mobile is not None:
@@ -663,6 +684,8 @@ def update_current_user_profile(
             n = f"{f} {l}".strip()
             if n:
                 user.name = n
+        if body.timezone is not None:
+            user.timezone = body.timezone.strip() or "UTC"
 
     db.commit()
     db.refresh(user)

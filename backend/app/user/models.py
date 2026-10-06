@@ -17,6 +17,7 @@ class UserModel(Base):
     role: Mapped[str] = mapped_column(default="Learner")  # Admin | Instructor | Learner
     is_active: Mapped[bool] = mapped_column(default=True)
     avatar: Mapped[str] = mapped_column(Text, default="", server_default="")
+    timezone: Mapped[str] = mapped_column(default="UTC", server_default="UTC")
     created_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

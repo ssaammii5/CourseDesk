@@ -88,6 +88,7 @@ class UserSchema(CamelModel):
     email: EmailStr
     password: str | None = None
     role: str = "Learner"
+    timezone: str = "UTC"
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
 
@@ -98,6 +99,7 @@ class UserUpdateSchema(CamelModel):
     role: str
     is_active: bool = True
     password: str | None = None
+    timezone: str | None = None
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
 
@@ -111,6 +113,7 @@ class UserResponseSchema(CamelModel):
     created_at_utc: datetime
     invite_token: str | None = None
     avatar: str = ""
+    timezone: str = "UTC"
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
 

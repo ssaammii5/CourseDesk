@@ -35,6 +35,8 @@ function toCurrentUser(source: {
     name: string;
     email: string;
     role: string;
+    avatar?: string;
+    timezone?: string;
     learnerDetails?: CurrentUser["learnerDetails"];
     instructorDetails?: CurrentUser["instructorDetails"];
     studentDetails?: CurrentUser["studentDetails"];
@@ -44,6 +46,7 @@ function toCurrentUser(source: {
     const learnerDetails = source.learnerDetails || source.studentDetails;
     const instructorDetails = source.instructorDetails || source.teacherDetails;
     const avatar = (source as any).avatar || instructorDetails?.avatar || learnerDetails?.avatar || "";
+    const timezone = source.timezone || instructorDetails?.timezone || learnerDetails?.timezone || "UTC";
     return {
         id: source.id,
         name: source.name,
@@ -51,6 +54,7 @@ function toCurrentUser(source: {
         role,
         avatarClass: avatarClassFor(role),
         avatar,
+        timezone,
         learnerDetails,
         instructorDetails,
         studentDetails: learnerDetails,

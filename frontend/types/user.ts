@@ -19,6 +19,7 @@ export interface CurrentUser {
     role: "Admin" | "Instructor" | "Learner";
     avatarClass: string;
     avatar?: string;
+    timezone?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;

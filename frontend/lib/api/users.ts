@@ -59,6 +59,8 @@ export interface UserDto {
     role: string;
     isActive: boolean;
     createdAtUtc: string;
+    avatar?: string;
+    timezone?: string;
     inviteToken?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
@@ -71,6 +73,7 @@ export interface CreateUserPayload {
     email: string;
     password?: string;
     role: string;
+    timezone?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;
@@ -83,6 +86,7 @@ export interface UpdateUserPayload {
     role: string;
     isActive: boolean;
     password?: string;
+    timezone?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;

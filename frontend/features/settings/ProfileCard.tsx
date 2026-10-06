@@ -154,7 +154,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
             firstName: fName,
             lastName: lName,
             avatar: isInst ? (inst?.avatar || data.avatar || "") : (lrn?.avatar || data.avatar || ""),
-            timezone: isInst ? (inst?.timezone || "UTC") : (lrn?.timezone || "UTC"),
+            timezone: (data as any)?.timezone || (isInst ? inst?.timezone : lrn?.timezone) || "UTC",
             professionalHeadline: inst?.professionalHeadline || (inst as any)?.headline || "",
             shortBio: isInst ? (inst?.shortBio || (inst as any)?.bio || "") : (lrn?.shortBio || (lrn as any)?.bio || ""),
             links: (isInst ? inst?.links : lrn?.links) || [],

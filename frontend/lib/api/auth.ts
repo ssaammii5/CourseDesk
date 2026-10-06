@@ -18,6 +18,7 @@ export interface MeResponse {
     role: string;
     isActive?: boolean;
     avatar?: string;
+    timezone?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;

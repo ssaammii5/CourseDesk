@@ -447,6 +447,7 @@ def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
                 inst.avatar = body.avatar
             inst.links = normalized_links
 
+    user.timezone = (body.timezone or "").strip() or "UTC"
     db.commit()
     db.refresh(user)
 
