@@ -16,7 +16,12 @@ from app.auth.dtos import (
     VerifyEmailSchema,
 )
 from app.auth.models import RefreshTokenModel
-from app.user.models import InstructorDetailsModel, LearnerDetailsModel, UserModel
+from app.user.models import (
+    CoordinatorDetailsModel,
+    InstructorDetailsModel,
+    LearnerDetailsModel,
+    UserModel,
+)
 from app.utils.email import send_otp_email, send_verification_email
 from app.utils.helpers import get_password_hash, verify_password
 from app.utils.settings import settings
@@ -425,6 +430,28 @@ def accept_invite(body: AcceptInviteSchema, db: Session) -> dict:
             if body.avatar is not None:
                 learner.avatar = body.avatar
             learner.links = normalized_links
+    elif user.role in ("Coordinator", "Co-ordinator"):
+        bio = (body.short_bio or body.professional_headline or "").strip()
+        coord = user.coordinator_details
+        if not coord:
+            coord = CoordinatorDetailsModel(
+                user_id=user.id,
+                first_name=first_name,
+                last_name=last_name,
+                avatar=body.avatar or "",
+                short_bio=bio,
+                timezone=(body.timezone or "").strip() or "UTC",
+                links=normalized_links,
+            )
+            db.add(coord)
+        else:
+            coord.first_name = first_name
+            coord.last_name = last_name
+            coord.short_bio = bio
+            coord.timezone = (body.timezone or "").strip() or "UTC"
+            if body.avatar is not None:
+                coord.avatar = body.avatar
+            coord.links = normalized_links
     else:
         inst = user.instructor_details
         if not inst:

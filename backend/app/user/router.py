@@ -9,7 +9,7 @@ from app.user.dtos import (
     UserUpdateSchema,
 )
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdmin, IsAuthenticated, save_upload_file
+from app.utils.helpers import DbSession, IsAdmin, IsAdminOrCoordinator, IsAuthenticated, save_upload_file
 
 user_routes = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -33,7 +33,7 @@ def update_profile(body: UpdateProfileSchema, db: DbSession, user: IsAuthenticat
 
 
 @user_routes.get("", response_model=list[UserResponseSchema], status_code=status.HTTP_200_OK)
-def get_all_users(db: DbSession, _admin: IsAdmin):
+def get_all_users(db: DbSession, _user: IsAdminOrCoordinator):
     return controller.get_users(db)
 
 
@@ -90,3 +90,23 @@ def get_pending_learner_invitations(db: DbSession, _admin: IsAdmin):
 @learner_routes.delete("/invitations/{user_id}", status_code=status.HTTP_200_OK)
 def revoke_learner_invitation(user_id: int, db: DbSession, _admin: IsAdmin):
     return controller.revoke_learner_invitation(user_id, db)
+
+
+coordinator_routes = APIRouter(prefix="/api/coordinators", tags=["coordinators"])
+
+
+@coordinator_routes.post("/invite", status_code=status.HTTP_201_CREATED)
+def invite_coordinator(
+    body: controller.InviteCoordinatorSchema, db: DbSession, _admin: IsAdmin
+):
+    return controller.invite_coordinator(body, db)
+
+
+@coordinator_routes.get("/invitations", status_code=status.HTTP_200_OK)
+def get_pending_coordinator_invitations(db: DbSession, _admin: IsAdmin):
+    return controller.get_pending_coordinator_invitations(db)
+
+
+@coordinator_routes.delete("/invitations/{user_id}", status_code=status.HTTP_200_OK)
+def revoke_coordinator_invitation(user_id: int, db: DbSession, _admin: IsAdmin):
+    return controller.revoke_coordinator_invitation(user_id, db)

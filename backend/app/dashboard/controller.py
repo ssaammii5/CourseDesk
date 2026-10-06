@@ -17,6 +17,7 @@ def get_stats(db: Session) -> DashboardStatsSchema:
 
     instructors_count = count(UserModel, UserModel.role == "Instructor")
     learners_count = count(UserModel, UserModel.role == "Learner")
+    coordinators_count = count(UserModel, UserModel.role.in_(("Coordinator", "Co-ordinator")))
     return DashboardStatsSchema(
         total_users=count(UserModel),
         active_users=count(UserModel, UserModel.is_active.is_(True)),
@@ -24,6 +25,7 @@ def get_stats(db: Session) -> DashboardStatsSchema:
         total_learners=learners_count,
         total_teachers=instructors_count,
         total_students=learners_count,
+        total_coordinators=coordinators_count,
         total_courses=count(CourseModel),
         active_courses=count(CourseModel, CourseModel.is_active.is_(True)),
         total_assignments=count(AssignmentModel),

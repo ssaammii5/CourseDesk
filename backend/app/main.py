@@ -31,9 +31,15 @@ from app.notification.router import notification_routes
 from app.session.router import session_routes
 from app.setting.router import setting_routes
 from app.submission.router import submission_routes
-from app.user.router import instructor_routes, learner_routes, user_routes
+from app.user.router import (
+    coordinator_routes,
+    instructor_routes,
+    learner_routes,
+    user_routes,
+)
 
 from sqlalchemy import text
+
 
 Base.metadata.create_all(engine)
 
@@ -104,6 +110,21 @@ with engine.begin() as conn:
     UPDATE user_table 
     SET email_verified = TRUE 
     WHERE email_verified IS NULL OR email_verified = FALSE;
+
+    -- Ensure coordinator_details_table exists
+    CREATE TABLE IF NOT EXISTS coordinator_details_table (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER UNIQUE REFERENCES user_table(id) ON DELETE CASCADE,
+        coordinator_id VARCHAR UNIQUE DEFAULT generate_base32_id('CRD', 6),
+        first_name VARCHAR NOT NULL DEFAULT '',
+        last_name VARCHAR NOT NULL DEFAULT '',
+        avatar TEXT NOT NULL DEFAULT '',
+        phone VARCHAR NOT NULL DEFAULT '',
+        short_bio TEXT NOT NULL DEFAULT '',
+        timezone VARCHAR NOT NULL DEFAULT 'UTC',
+        links JSON NOT NULL DEFAULT '[]'
+    );
+    CREATE INDEX IF NOT EXISTS ix_coordinator_details_table_coordinator_id ON coordinator_details_table(coordinator_id);
     """))
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -122,6 +143,7 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 
 app.include_router(auth_routes)
 app.include_router(user_routes)
+app.include_router(coordinator_routes)
 app.include_router(instructor_routes)
 app.include_router(learner_routes)
 app.include_router(academic_routes)
@@ -135,6 +157,7 @@ app.include_router(notification_routes)
 # ── NEW ──
 app.include_router(session_routes)
 app.include_router(announcement_routes)
+
 
 
 

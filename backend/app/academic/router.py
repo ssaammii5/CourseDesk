@@ -10,13 +10,13 @@ from app.academic.dtos import (
     SemesterSchema,
 )
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdmin
+from app.utils.helpers import DbSession, IsAdmin, IsAdminOrCoordinator
 
 academic_routes = APIRouter(prefix="/api/academics", tags=["academics"])
 
 
 @academic_routes.get("/programs", response_model=list[ProgramResponseSchema], status_code=status.HTTP_200_OK)
-def get_programs(db: DbSession, _admin: IsAdmin):
+def get_programs(db: DbSession, _user: IsAdminOrCoordinator):
     return controller.get_programs(db)
 
 
@@ -36,7 +36,7 @@ def delete_program(program_id: int, db: DbSession, _admin: IsAdmin):
 
 
 @academic_routes.get("/departments", response_model=list[DepartmentResponseSchema], status_code=status.HTTP_200_OK)
-def get_departments(db: DbSession, _admin: IsAdmin):
+def get_departments(db: DbSession, _user: IsAdminOrCoordinator):
     return controller.get_departments(db)
 
 
@@ -56,8 +56,9 @@ def delete_department(department_id: int, db: DbSession, _admin: IsAdmin):
 
 
 @academic_routes.get("/semesters", response_model=list[SemesterResponseSchema], status_code=status.HTTP_200_OK)
-def get_semesters(db: DbSession, _admin: IsAdmin):
+def get_semesters(db: DbSession, _user: IsAdminOrCoordinator):
     return controller.get_semesters(db)
+
 
 
 @academic_routes.post("/semesters", response_model=SemesterResponseSchema, status_code=status.HTTP_201_CREATED)

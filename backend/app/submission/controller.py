@@ -51,7 +51,7 @@ def get_submissions(
     if course_id is not None:
         stmt = stmt.join(SubmissionModel.assignment).where(AssignmentModel.course_id == course_id)
 
-    if user.role == "Admin":
+    if user.role in ("Admin", "Coordinator", "Co-ordinator"):
         submissions = db.scalars(stmt).all()
     elif user.role == "Instructor":
         submissions = db.scalars(
@@ -80,7 +80,7 @@ def get_my_submissions(user: UserModel, db: Session) -> list[SubmissionResponseS
 
 
 def _can_view_submission(user: UserModel, submission: SubmissionModel) -> bool:
-    if user.role == "Admin":
+    if user.role in ("Admin", "Coordinator", "Co-ordinator"):
         return True
     if submission.learner_id == user.id:
         return True

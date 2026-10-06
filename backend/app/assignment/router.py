@@ -11,9 +11,15 @@ from app.assignment.dtos import (
 )
 from app.submission.dtos import SubmissionResponseSchema
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdminOrInstructor, IsAuthenticated
+from app.utils.helpers import (
+    DbSession,
+    IsAdminOrInstructor,
+    IsAdminOrInstructorOrCoordinator,
+    IsAuthenticated,
+)
 
 assignment_routes = APIRouter(prefix="/api/assignments", tags=["assignments"])
+
 
 
 @assignment_routes.get("", response_model=list[AssignmentResponseSchema], status_code=status.HTTP_200_OK)
@@ -50,8 +56,9 @@ def publish_assignment(assignment_id: int, db: DbSession, user: IsAdminOrInstruc
 
 
 @assignment_routes.get("/{assignment_id}/submissions", response_model=list[SubmissionResponseSchema], status_code=status.HTTP_200_OK)
-def get_assignment_submissions(assignment_id: int, db: DbSession, user: IsAdminOrInstructor):
+def get_assignment_submissions(assignment_id: int, db: DbSession, user: IsAdminOrInstructorOrCoordinator):
     return controller.get_assignment_submissions(assignment_id, user, db)
+
 
 
 @assignment_routes.post("/{assignment_id}/attachments", response_model=AssignmentAttachmentResponseSchema, status_code=status.HTTP_201_CREATED)

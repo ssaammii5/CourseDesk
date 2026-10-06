@@ -40,6 +40,9 @@ class UserModel(Base):
     instructor_details: Mapped[Optional["InstructorDetailsModel"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    coordinator_details: Mapped[Optional["CoordinatorDetailsModel"]] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
     course_preferences: Mapped[Optional["UserCoursePreferenceModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "UserCoursePreferenceModel", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
@@ -100,3 +103,26 @@ class InstructorDetailsModel(Base):
     links: Mapped[list[dict]] = mapped_column(JSON, default=list)
 
     user: Mapped["UserModel"] = relationship(back_populates="instructor_details")
+
+
+class CoordinatorDetailsModel(Base):
+    __tablename__: str = "coordinator_details_table"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_table.id", ondelete="CASCADE"), unique=True
+    )
+    coordinator_id: Mapped[str] = mapped_column(
+        server_default=text("generate_base32_id('CRD', 6)"),
+        unique=True,
+        index=True,
+    )
+    first_name: Mapped[str] = mapped_column(default="")
+    last_name: Mapped[str] = mapped_column(default="")
+    avatar: Mapped[str] = mapped_column(Text, default="")
+    phone: Mapped[str] = mapped_column(default="")
+    short_bio: Mapped[str] = mapped_column(Text, default="")
+    timezone: Mapped[str] = mapped_column(default="UTC")
+    links: Mapped[list[dict]] = mapped_column(JSON, default=list)
+
+    user: Mapped["UserModel"] = relationship(back_populates="coordinator_details")

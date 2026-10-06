@@ -1,22 +1,24 @@
-import type { LearnerDetails, InstructorDetails } from "@/lib/api/users";
+import type { LearnerDetails, InstructorDetails, CoordinatorDetails } from "@/lib/api/users";
 
-export const ROLE_STYLES: Record<"Admin" | "Instructor" | "Learner", string> = {
+export const ROLE_STYLES: Record<"Admin" | "Instructor" | "Learner" | "Coordinator", string> = {
     Admin: "bg-[#fce8e6] text-[#c5221f]",
     Instructor: "bg-[#fef7e0] text-[#b06000]",
     Learner: "bg-[#e6f4ea] text-[#137333]",
+    Coordinator: "bg-[#e8f0fe] text-[#1a73e8]",
 };
 
-export const ROLE_LABELS: Record<"Admin" | "Instructor" | "Learner", string> = {
+export const ROLE_LABELS: Record<"Admin" | "Instructor" | "Learner" | "Coordinator", string> = {
     Admin: "Admin",
     Instructor: "Instructor",
     Learner: "Learner",
+    Coordinator: "Co-ordinator",
 };
 
 export interface CurrentUser {
     id?: number;
     name: string;
     email: string;
-    role: "Admin" | "Instructor" | "Learner";
+    role: "Admin" | "Instructor" | "Learner" | "Coordinator";
     avatarClass: string;
     avatar?: string;
     timezone?: string;
@@ -24,12 +26,14 @@ export interface CurrentUser {
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;
     teacherDetails?: InstructorDetails;
+    coordinatorDetails?: CoordinatorDetails;
 }
 
 /** Normalize the role string coming from the API. */
-export function mapRole(role: string): "Admin" | "Instructor" | "Learner" {
+export function mapRole(role: string): "Admin" | "Instructor" | "Learner" | "Coordinator" {
     if (role === "Admin") return "Admin";
     if (role === "Instructor" || role === "Teacher") return "Instructor";
+    if (role === "Coordinator" || role === "Co-ordinator") return "Coordinator";
     if (role === "Learner" || role === "Student") return "Learner";
     return "Learner";
 }
@@ -42,6 +46,9 @@ export function avatarClassFor(role: string): string {
         case "Instructor":
         case "Teacher":
             return "bg-amber-800";
+        case "Coordinator":
+        case "Co-ordinator":
+            return "bg-blue-600";
         case "Learner":
         case "Student":
             return "bg-purple-800";

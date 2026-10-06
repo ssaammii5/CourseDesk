@@ -16,6 +16,7 @@ import {
     ListTodo,
     Settings,
     Tag,
+    UserCheck,
     Users,
     UserRound,
     X,
@@ -61,10 +62,12 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
     const prevPathname = useRef(pathname);
     const { user } = useAuth();
     const isAdmin = user?.role === "Admin";
+    const isCoordinator = user?.role === "Coordinator" || (user?.role as string) === "Co-ordinator";
+    const isStaff = isAdmin || isCoordinator;
 
-    // Load courses for sidebar (enrolled/instructing for learners/instructors; admin manages courses via /courses).
+    // Load courses for sidebar (enrolled/instructing for learners/instructors; admin/coordinator manages courses via /courses).
     const loadCourses = useCallback(() => {
-        if (isAdmin) {
+        if (isStaff) {
             setEnrolledCourses([]);
             return () => {};
         }
@@ -79,7 +82,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
         return () => {
             cancelled = true;
         };
-    }, [isAdmin]);
+    }, [isStaff]);
 
     useEffect(() => {
         const cleanup = loadCourses();
@@ -95,7 +98,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
             window.removeEventListener("coursedesk:courses-updated", handleCourseUpdate);
             window.removeEventListener("focus", handleCourseUpdate);
         };
-    }, [loadCourses, user?.id, user?.role, isAdmin]);
+    }, [loadCourses, user?.id, user?.role, isAdmin, isCoordinator]);
 
     useEffect(() => {
         if (prevPathname.current === pathname) return;
@@ -149,7 +152,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                         label="Home"
                     />
 
-                    {!isAdmin && (
+                    {!isStaff && (
                         <>
                             <NavItem
                                 open={open}
@@ -169,8 +172,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                     )}
                 </div>
 
-                {/* Admin Management Section */}
-                {isAdmin && (
+                {/* Management Section (Admin & Coordinator) */}
+                {isStaff && (
                     <div className="space-y-1">
                         {open && (
                             <p className="px-3 pt-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -184,6 +187,15 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                             icon={<UserRound className="h-[18px] w-[18px]" />}
                             label="Instructors"
                         />
+                        {isAdmin && (
+                            <NavItem
+                                open={open}
+                                active={pathname.startsWith("/coordinators")}
+                                href="/coordinators"
+                                icon={<UserCheck className="h-[18px] w-[18px]" />}
+                                label="Co-ordinators"
+                            />
+                        )}
                         <NavItem
                             open={open}
                             active={pathname.startsWith("/learners") || pathname.startsWith("/students")}
@@ -208,8 +220,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                     </div>
                 )}
 
-                {/* Admin Academics Section */}
-                {isAdmin && (
+                {/* Academics Section (Admin & Coordinator) */}
+                {isStaff && (
                     <div className="space-y-1">
                         {open && (
                             <p className="px-3 pt-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -234,7 +246,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                 )}
 
                 {/* Courses Section for Instructor / Learner */}
-                {!isAdmin && enrolledCourses.length > 0 && (
+                {!isStaff && enrolledCourses.length > 0 && (
                     <div className="space-y-1 pt-1">
                         {open ? (
                             <>

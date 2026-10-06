@@ -4,6 +4,7 @@ import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import type { AdminCourse } from "@/types";
 import { DataTable, StatusBadge, ConfirmDialog, ModernDropdown } from "@/components/ui";
 import { CourseFormModal } from "../components/CourseFormModal";
+import { useAuth } from "@/hooks/useAuth";
 import {
     getCoursesRequest, createCourseRequest, updateCourseRequest, deleteCourseRequest,
     type CourseDto,
@@ -40,6 +41,8 @@ function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
 }
 
 export function AdminCoursesView() {
+    const { user: currentUser } = useAuth();
+    const isCoordinator = currentUser?.role === "Coordinator";
     const [courses, setCourses] = useState<AdminCourse[]>([]);
     const [courseNames, setCourseNames] = useState<Record<number, string[]>>({});
     const [academicPrograms, setAcademicPrograms] = useState<AcademicProgramDto[]>([]);
@@ -188,14 +191,16 @@ export function AdminCoursesView() {
                         {courses.length} courses total • {filtered.length} shown
                     </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => { setEditingCourse(null); setModalOpen(true); }}
-                    className="flex cursor-pointer items-center gap-2 rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
-                >
-                    <Plus className="h-4 w-4" />
-                    Add Course
-                </button>
+                {!isCoordinator && (
+                    <button
+                        type="button"
+                        onClick={() => { setEditingCourse(null); setModalOpen(true); }}
+                        className="flex cursor-pointer items-center gap-2 rounded-full bg-[#1a63d8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5]"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Course
+                    </button>
+                )}
             </div>
 
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
@@ -279,12 +284,24 @@ export function AdminCoursesView() {
                             className: "text-right",
                             render: (c: AdminCourse) => (
                                 <div className="flex items-center justify-end gap-1">
-                                    <button type="button" title="Edit" onClick={() => { setEditingCourse(c); setModalOpen(true); }} className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800">
+                                    <button
+                                        type="button"
+                                        title={isCoordinator ? "Assign Users" : "Edit"}
+                                        onClick={() => { setEditingCourse(c); setModalOpen(true); }}
+                                        className="cursor-pointer rounded p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800"
+                                    >
                                         <Pencil className="h-4 w-4" />
                                     </button>
-                                    <button type="button" title="Delete" onClick={() => setDeleteTarget(c)} className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40">
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
+                                    {!isCoordinator && (
+                                        <button
+                                            type="button"
+                                            title="Delete"
+                                            onClick={() => setDeleteTarget(c)}
+                                            className="cursor-pointer rounded p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    )}
                                 </div>
                             ),
                         },
@@ -298,6 +315,7 @@ export function AdminCoursesView() {
             <CourseFormModal
                 open={modalOpen}
                 course={editingCourse}
+                isCoordinator={isCoordinator}
                 onSave={handleSave}
                 onClose={() => { setModalOpen(false); setEditingCourse(null); }}
             />

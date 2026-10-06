@@ -31,6 +31,7 @@ export function SettingsView({
     const [tab, setTab] = useState<SettingsTab>("profile");
 
     const isInstructor = role === "Instructor";
+    const isCoordinator = role === "Coordinator";
     const isAdmin = role === "Admin";
     const displayName = userName || user?.name || "User";
     const displayEmail = user?.email || "";
@@ -38,6 +39,8 @@ export function SettingsView({
         user?.avatar ||
         (isInstructor
             ? (user?.instructorDetails?.avatar || (user?.instructorDetails as any)?.teacherDetails?.avatar)
+            : isCoordinator
+            ? user?.coordinatorDetails?.avatar
             : (user?.learnerDetails?.avatar || (user?.learnerDetails as any)?.studentDetails?.avatar));
 
     return (
@@ -68,19 +71,21 @@ export function SettingsView({
                                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                                             isAdmin
                                                 ? "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300"
-                                                : isInstructor
+                                                : isCoordinator || isInstructor
                                                 ? "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300"
                                                 : "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300"
                                         }`}
                                     >
                                         {isAdmin ? (
                                             <Shield className="h-3.5 w-3.5" />
+                                        ) : isCoordinator ? (
+                                            <Briefcase className="h-3.5 w-3.5" />
                                         ) : isInstructor ? (
                                             <Briefcase className="h-3.5 w-3.5" />
                                         ) : (
                                             <GraduationCap className="h-3.5 w-3.5" />
                                         )}
-                                        <span>{role}</span>
+                                        <span>{isCoordinator ? "Co-ordinator" : role}</span>
                                     </span>
                                 </div>
                                 <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-slate-400">

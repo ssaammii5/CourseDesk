@@ -6,9 +6,12 @@ import { HomeDashboardView } from "@/features/home";
 
 export default function DashboardHomePage() {
     const { user } = useAuth();
-    const isAdmin = user?.role === "Admin";
+    const isStaff =
+        user?.role === "Admin" ||
+        user?.role === "Coordinator" ||
+        (user?.role as string) === "Co-ordinator";
 
-    if (isAdmin) {
+    if (isStaff) {
         return <AdminDashboardView />;
     }
 

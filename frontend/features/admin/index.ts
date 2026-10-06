@@ -3,6 +3,8 @@ export * from "./components/AcademicFormModal";
 export * from "./components/CourseFormModal";
 export * from "./components/LearnerFormModal";
 export * from "./components/InstructorFormModal";
+export * from "./components/CoordinatorFormModal";
+export * from "./components/InviteCoordinatorModal";
 
 // Views
 export * from "./views/AdminAcademicsView";
@@ -14,3 +16,4 @@ export * from "./views/AdminLearnersView";
 export * from "./views/AdminSubmissionDetailView";
 export * from "./views/AdminSubmissionsView";
 export * from "./views/AdminInstructorsView";
+export * from "./views/AdminCoordinatorsView";

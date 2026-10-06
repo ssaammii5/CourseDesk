@@ -5,7 +5,6 @@ import {
     Check,
     Clock,
     Copy,
-    Eye,
     Mail,
     Pencil,
     Plus,
@@ -16,34 +15,30 @@ import {
     Users,
 } from "lucide-react";
 import type { AdminUser } from "@/types";
-import { useAuth } from "@/hooks/useAuth";
 import {
     deleteUserRequest,
-    getPendingInvitationsRequest,
+    getPendingCoordinatorInvitationsRequest,
     getUsersRequest,
-    revokeInvitationRequest,
+    revokeCoordinatorInvitationRequest,
     updateUserRequest,
     type PendingInvitation,
     type UserDto,
 } from "@/lib/api/users";
 import { DataTable, StatusBadge, ConfirmDialog, ModernDropdown } from "@/components/ui";
 import { initialOf } from "@/lib/utils/format";
-import { InstructorFormModal } from "../components/InstructorFormModal";
-import { InviteInstructorModal } from "../components/InviteInstructorModal";
+import { CoordinatorFormModal } from "../components/CoordinatorFormModal";
+import { InviteCoordinatorModal } from "../components/InviteCoordinatorModal";
 
 function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
-    const details = dto.instructorDetails ?? dto.teacherDetails;
+    const details = dto.coordinatorDetails;
     return {
         id: dto.id,
-        name: dto.name || "Unnamed Instructor",
+        name: dto.name || "Unnamed Co-ordinator",
         email: dto.email,
-        role: (dto.role === "Teacher" ? "Instructor" : dto.role) as AdminUser["role"],
+        role: "Coordinator",
         isActive: dto.isActive,
         createdAt: dto.createdAtUtc.split("T")[0],
-        instructorDetails: details,
-        teacherDetails: details,
-        learnerDetails: undefined,
-        studentDetails: undefined,
+        coordinatorDetails: details,
     };
 }
 
@@ -65,12 +60,8 @@ function formatDateTime(isoString?: string | null): string {
     }
 }
 
-
-export function AdminInstructorsView() {
-    const { user: currentUser } = useAuth();
-    const isCoordinator = currentUser?.role === "Coordinator";
-
-    const [tab, setTab] = useState<"instructors" | "invitations">("instructors");
+export function AdminCoordinatorsView() {
+    const [tab, setTab] = useState<"coordinators" | "invitations">("coordinators");
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
     const [loading, setLoading] = useState(true);
@@ -92,22 +83,20 @@ export function AdminInstructorsView() {
             setLoading(true);
             setError(null);
             const all = await getUsersRequest();
-            setUsers(all.filter((u) => u.role === "Instructor" || u.role === "Teacher").map(mapUserDtoToAdminUser));
+            setUsers(all.filter((u) => u.role === "Coordinator").map(mapUserDtoToAdminUser));
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load instructors.");
+            setError(err instanceof Error ? err.message : "Failed to load coordinators.");
         } finally {
             setLoading(false);
         }
     };
 
     const loadInvitations = async () => {
-        if (isCoordinator) return;
         try {
             setLoadingInvitations(true);
-            const invites = await getPendingInvitationsRequest();
+            const invites = await getPendingCoordinatorInvitationsRequest();
             setPendingInvitations(invites);
         } catch (err) {
-            // non-fatal for main view
             console.error("Failed to load pending invitations", err);
         } finally {
             setLoadingInvitations(false);
@@ -116,19 +105,17 @@ export function AdminInstructorsView() {
 
     useEffect(() => {
         void loadUsers();
-        if (!isCoordinator) {
-            void loadInvitations();
-        }
-    }, [isCoordinator]);
+        void loadInvitations();
+    }, []);
 
     const filteredUsers = useMemo(() => {
         return users.filter((u) => {
-            const d = u.instructorDetails ?? u.teacherDetails;
-            const insId = d?.instructorId ?? d?.teacherId ?? "";
+            const d = u.coordinatorDetails;
+            const coordId = d?.coordinatorId ?? "";
             const matchSearch =
                 u.name.toLowerCase().includes(search.toLowerCase()) ||
                 u.email.toLowerCase().includes(search.toLowerCase()) ||
-                insId.toLowerCase().includes(search.toLowerCase());
+                coordId.toLowerCase().includes(search.toLowerCase());
             const matchStatus =
                 statusFilter === "all" ||
                 (statusFilter === "active" ? u.isActive : !u.isActive);
@@ -146,16 +133,14 @@ export function AdminInstructorsView() {
     const handleSaveEdit = async (data: Omit<AdminUser, "id" | "createdAt">) => {
         if (!editingUser) return;
         try {
-            const details = data.instructorDetails ?? data.teacherDetails;
-            const cleanId = details?.instructorId ?? details?.teacherId ?? "";
-            const instructorDetails = details
+            const details = data.coordinatorDetails;
+            const cleanId = details?.coordinatorId ?? "";
+            const coordinatorDetails = details
                 ? {
-                    instructorId: cleanId,
-                    teacherId: cleanId,
+                    coordinatorId: cleanId,
                     firstName: details.firstName,
                     lastName: details.lastName,
                     avatar: details.avatar,
-                    professionalHeadline: details.professionalHeadline,
                     timezone: details.timezone,
                     links: details.links,
                 }
@@ -164,18 +149,17 @@ export function AdminInstructorsView() {
             await updateUserRequest(editingUser.id, {
                 name: data.name,
                 email: data.email,
-                role: "Instructor",
+                role: "Coordinator",
                 isActive: data.isActive,
-                instructorDetails,
-                teacherDetails: instructorDetails,
+                coordinatorDetails,
             });
 
-            setSuccessMessage(`Instructor "${data.name}" updated successfully.`);
+            setSuccessMessage(`Co-ordinator "${data.name}" updated successfully.`);
             window.setTimeout(() => setSuccessMessage(null), 5000);
             setEditingUser(null);
             await loadUsers();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to update instructor.");
+            setError(err instanceof Error ? err.message : "Failed to update coordinator.");
         }
     };
 
@@ -184,11 +168,11 @@ export function AdminInstructorsView() {
         try {
             await deleteUserRequest(deleteTarget.id);
             setDeleteTarget(null);
-            setSuccessMessage(`Instructor "${deleteTarget.name}" deleted.`);
+            setSuccessMessage(`Co-ordinator "${deleteTarget.name}" deleted.`);
             window.setTimeout(() => setSuccessMessage(null), 5000);
             await loadUsers();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to delete instructor.");
+            setError(err instanceof Error ? err.message : "Failed to delete coordinator.");
             setDeleteTarget(null);
         }
     };
@@ -196,7 +180,7 @@ export function AdminInstructorsView() {
     const handleRevoke = async () => {
         if (!revokeTarget) return;
         try {
-            await revokeInvitationRequest(revokeTarget.id);
+            await revokeCoordinatorInvitationRequest(revokeTarget.id);
             setSuccessMessage(`Invitation for "${revokeTarget.email}" has been revoked.`);
             window.setTimeout(() => setSuccessMessage(null), 5000);
             setRevokeTarget(null);
@@ -219,16 +203,15 @@ export function AdminInstructorsView() {
         }
     };
 
-    const instructorColumns = [
+    const coordinatorColumns = [
         {
             key: "name",
-            header: "Instructor",
-            width: "32%",
+            header: "Co-ordinator",
+            width: "35%",
             truncate: true,
             render: (u: AdminUser) => {
-                const details = u.instructorDetails ?? u.teacherDetails;
+                const details = u.coordinatorDetails;
                 const avatar = details?.avatar;
-                const headline = details?.professionalHeadline || details?.headline;
                 return (
                     <div className="flex items-center gap-3 min-w-0">
                         {avatar ? (
@@ -246,11 +229,9 @@ export function AdminInstructorsView() {
                             <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
                                 {u.name}
                             </p>
-                            {headline && (
-                                <p className="text-xs text-gray-500 dark:text-slate-400 truncate" title={headline}>
-                                    {headline}
-                                </p>
-                            )}
+                            <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                                Co-ordinator
+                            </p>
                         </div>
                     </div>
                 );
@@ -263,12 +244,12 @@ export function AdminInstructorsView() {
             truncate: true,
         },
         {
-            key: "instructorId",
-            header: "Instructor ID",
+            key: "coordinatorId",
+            header: "Co-ordinator ID",
             width: "20%",
             truncate: true,
             render: (u: AdminUser) => {
-                const idVal = u.instructorDetails?.instructorId ?? u.teacherDetails?.teacherId;
+                const idVal = u.coordinatorDetails?.coordinatorId;
                 return idVal ? (
                     <span className="text-sm text-gray-900 dark:text-slate-100 font-mono text-xs" title={idVal}>
                         {idVal}
@@ -293,22 +274,20 @@ export function AdminInstructorsView() {
                 <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                     <button
                         type="button"
-                        title={isCoordinator ? "View instructor details" : "Edit instructor details"}
+                        title="Edit coordinator details"
                         onClick={() => setEditingUser(u)}
                         className="cursor-pointer rounded-lg p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
                     >
-                        {isCoordinator ? <Eye className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                        <Pencil className="h-4 w-4" />
                     </button>
-                    {!isCoordinator && (
-                        <button
-                            type="button"
-                            title="Delete instructor"
-                            onClick={() => setDeleteTarget(u)}
-                            className="cursor-pointer rounded-lg p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        title="Delete coordinator"
+                        onClick={() => setDeleteTarget(u)}
+                        className="cursor-pointer rounded-lg p-2 text-[#c5221f] dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </button>
                 </div>
             ),
         },
@@ -318,43 +297,58 @@ export function AdminInstructorsView() {
         {
             key: "email",
             header: "Invited Email",
-            width: "40%",
-            truncate: true,
+            width: "35%",
             render: (inv: PendingInvitation) => (
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
-                        <Mail className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 truncate">
-                        <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
-                            {inv.email}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">
-                            Invited on {formatDateTime(inv.createdAtUtc) || "Recently"}
-                        </p>
-                    </div>
+                <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-slate-100">{inv.email}</span>
                 </div>
             ),
         },
         {
-            key: "expires",
-            header: "Expiration",
-            width: "25%",
+            key: "role",
+            header: "Role",
+            width: "15%",
+            render: () => (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+                    Co-ordinator
+                </span>
+            ),
+        },
+        {
+            key: "createdAtUtc",
+            header: "Invited Date",
+            width: "18%",
+            render: (inv: PendingInvitation) => (
+                <span className="text-xs text-gray-600 dark:text-slate-400">
+                    {formatDateTime(inv.createdAtUtc)}
+                </span>
+            ),
+        },
+        {
+            key: "expiresAtUtc",
+            header: "Expires In",
+            width: "17%",
             render: (inv: PendingInvitation) => {
-                const expDate = new Date(inv.expiresAtUtc);
-                const isExpired = expDate < new Date();
-                const formattedExpiry = formatDateTime(inv.expiresAtUtc);
+                if (!inv.expiresAtUtc) return <span className="text-xs text-gray-400">—</span>;
+                const expires = new Date(inv.expiresAtUtc).getTime();
+                const now = Date.now();
+                const diffHours = Math.round((expires - now) / (1000 * 60 * 60));
+                const isExpired = diffHours <= 0;
+
                 return (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-300">
-                        <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                        <span>
-                            {isExpired ? (
-                                <strong className="text-red-500">Expired</strong>
-                            ) : (
-                                `Expires ${formattedExpiry}`
-                            )}
-                        </span>
-                    </div>
+                    <span
+                        className={`inline-flex items-center gap-1 text-xs font-medium ${
+                            isExpired
+                                ? "text-red-600 dark:text-red-400"
+                                : diffHours < 12
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-gray-600 dark:text-slate-400"
+                        }`}
+                    >
+                        <Clock className="h-3.5 w-3.5" />
+                        {isExpired ? "Expired" : `${diffHours} hours`}
+                    </span>
                 );
             },
         },
@@ -450,69 +444,65 @@ export function AdminInstructorsView() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100 sm:text-3xl">
-                        Instructors
+                        Co-ordinators
                     </h1>
                     <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                        Manage active faculty members and send onboarding invitations
+                        Manage course coordinators and send onboarding invitations
                     </p>
                 </div>
 
-                {!isCoordinator && (
-                    <button
-                        type="button"
-                        onClick={() => setInviteModalOpen(true)}
-                        className="flex cursor-pointer items-center gap-2 self-start rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition active:scale-95 sm:self-auto"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Invite Instructor
-                    </button>
-                )}
+                <button
+                    type="button"
+                    onClick={() => setInviteModalOpen(true)}
+                    className="flex cursor-pointer items-center gap-2 self-start rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition active:scale-95 sm:self-auto"
+                >
+                    <Plus className="h-4 w-4" />
+                    Invite Co-ordinator
+                </button>
             </div>
 
             {/* Tabs Bar */}
-            {!isCoordinator && (
-                <div className="mt-6 flex border-b border-gray-200 dark:border-slate-800 gap-8">
-                    <button
-                        type="button"
-                        onClick={() => setTab("instructors")}
-                        className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
-                            tab === "instructors"
-                                ? "text-blue-600 dark:text-blue-400"
-                                : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
-                        }`}
-                    >
-                        <Users className="h-4 w-4" />
-                        <span>All Instructors</span>
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-slate-800 dark:text-slate-300">
-                            {users.length}
-                        </span>
-                        {tab === "instructors" && (
-                            <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
-                        )}
-                    </button>
+            <div className="mt-6 flex border-b border-gray-200 dark:border-slate-800 gap-8">
+                <button
+                    type="button"
+                    onClick={() => setTab("coordinators")}
+                    className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
+                        tab === "coordinators"
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    }`}
+                >
+                    <Users className="h-4 w-4" />
+                    <span>All Co-ordinators</span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-slate-800 dark:text-slate-300">
+                        {users.length}
+                    </span>
+                    {tab === "coordinators" && (
+                        <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
+                    )}
+                </button>
 
-                    <button
-                        type="button"
-                        onClick={() => setTab("invitations")}
-                        className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
-                            tab === "invitations"
-                                ? "text-blue-600 dark:text-blue-400"
-                                : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
-                        }`}
-                    >
-                        <Mail className="h-4 w-4" />
-                        <span>Pending Invitations</span>
-                        {pendingInvitations.length > 0 && (
-                            <span className="rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-xs font-bold">
-                                {pendingInvitations.length}
-                            </span>
-                        )}
-                        {tab === "invitations" && (
-                            <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
-                        )}
-                    </button>
-                </div>
-            )}
+                <button
+                    type="button"
+                    onClick={() => setTab("invitations")}
+                    className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
+                        tab === "invitations"
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    }`}
+                >
+                    <Mail className="h-4 w-4" />
+                    <span>Pending Invitations</span>
+                    {pendingInvitations.length > 0 && (
+                        <span className="rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-xs font-bold">
+                            {pendingInvitations.length}
+                        </span>
+                    )}
+                    {tab === "invitations" && (
+                        <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
+                    )}
+                </button>
+            </div>
 
             {/* Search and Filters */}
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -523,101 +513,79 @@ export function AdminInstructorsView() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={
-                            tab === "instructors"
-                                ? "Search by name, email, or instructor ID..."
+                            tab === "coordinators"
+                                ? "Search by name, email, or coordinator ID..."
                                 : "Search pending invitations by email..."
                         }
                         className="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     />
                 </div>
 
-                {tab === "instructors" && (
-                    <div className="flex items-center gap-3">
-                        <ModernDropdown
-                            value={statusFilter}
-                            onChange={setStatusFilter}
-                            options={[
-                                { value: "all", label: "All Status" },
-                                { value: "active", label: "Active" },
-                                { value: "inactive", label: "Inactive" },
-                            ]}
-                            showStatusDot
-                            size="md"
-                            buttonClassName="w-40 sm:w-44"
-                        />
-                    </div>
+                {tab === "coordinators" && (
+                    <ModernDropdown
+                        value={statusFilter}
+                        onChange={setStatusFilter}
+                        options={[
+                            { value: "all", label: "All Statuses" },
+                            { value: "active", label: "Active" },
+                            { value: "inactive", label: "Inactive" },
+                        ]}
+                        size="md"
+                        buttonClassName="w-full sm:w-44"
+                    />
                 )}
             </div>
 
-            {/* Content Table */}
+            {/* Table Area */}
             <div className="mt-6">
-                {tab === "instructors" ? (
+                {tab === "coordinators" ? (
                     <DataTable
-                        columns={instructorColumns}
+                        columns={coordinatorColumns}
                         data={filteredUsers}
                         keyExtractor={(u) => u.id}
-                        emptyMessage={
-                            search || statusFilter !== "all"
-                                ? "No instructors match your search or filter."
-                                : "No instructors registered yet. Click 'Invite Instructor' to add one."
-                        }
-                        tableLayout="fixed"
-                        minWidthClassName="min-w-[760px]"
+                        emptyMessage="No coordinators match your filters."
                     />
                 ) : (
                     <DataTable
                         columns={invitationColumns}
                         data={filteredInvitations}
                         keyExtractor={(i) => i.id}
-                        emptyMessage={
-                            search
-                                ? "No pending invitations match your search."
-                                : "No pending invitations. Click 'Invite Instructor' above to send one."
-                        }
-                        tableLayout="fixed"
-                        minWidthClassName="min-w-[700px]"
+                        emptyMessage="No pending invitations right now."
                     />
                 )}
             </div>
 
-            {/* Invite Instructor Modal */}
-            <InviteInstructorModal
+            {/* Modals */}
+            <InviteCoordinatorModal
                 open={inviteModalOpen}
                 onClose={() => setInviteModalOpen(false)}
-                onSuccess={(invitation) => {
-                    setSuccessMessage(`Invitation link created for ${invitation.email}`);
+                onSuccess={() => {
                     void loadInvitations();
                 }}
             />
 
-            {/* Edit Instructor Modal */}
-            {editingUser && (
-                <InstructorFormModal
-                    open={!!editingUser}
-                    user={editingUser}
-                    readOnly={isCoordinator}
-                    onSave={handleSaveEdit}
-                    onClose={() => setEditingUser(null)}
-                />
-            )}
+            <CoordinatorFormModal
+                open={!!editingUser}
+                user={editingUser}
+                onSave={handleSaveEdit}
+                onClose={() => setEditingUser(null)}
+            />
 
-            {/* Delete Instructor Confirmation */}
             <ConfirmDialog
                 open={!!deleteTarget}
-                title="Delete Instructor"
-                message={`Are you sure you want to delete "${deleteTarget?.name}"? All assigned classes and credentials will be removed.`}
-                confirmLabel="Delete Instructor"
+                title="Delete Co-ordinator"
+                message={`Are you sure you want to delete "${deleteTarget?.name}"? They will lose access to the coordinator workspace.`}
+                confirmLabel="Delete"
                 variant="danger"
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteTarget(null)}
             />
 
-            {/* Revoke Invitation Confirmation */}
             <ConfirmDialog
                 open={!!revokeTarget}
                 title="Revoke Invitation"
-                message={`Are you sure you want to revoke the invitation sent to "${revokeTarget?.email}"? The link will immediately stop working and no account will be created.`}
-                confirmLabel="Revoke Invitation"
+                message={`Are you sure you want to revoke the invitation for "${revokeTarget?.email}"? Their onboarding link will be invalidated.`}
+                confirmLabel="Revoke"
                 variant="danger"
                 onConfirm={handleRevoke}
                 onCancel={() => setRevokeTarget(null)}
@@ -625,6 +593,3 @@ export function AdminInstructorsView() {
         </div>
     );
 }
-
-export const AdminTeachersView = AdminInstructorsView;
-

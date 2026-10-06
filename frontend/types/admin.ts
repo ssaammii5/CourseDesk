@@ -59,8 +59,8 @@ export type InstructorDesignation =
     | string;
 export type TeacherDesignation = InstructorDesignation;
 
-import type { InstructorDetails, InstructorLink, TeacherDetails } from "@/lib/api/users";
-export type { InstructorDetails, InstructorLink, TeacherDetails };
+import type { CoordinatorDetails, InstructorDetails, InstructorLink, TeacherDetails } from "@/lib/api/users";
+export type { CoordinatorDetails, InstructorDetails, InstructorLink, TeacherDetails };
 
 export interface AcademicProgram {
     id: number;
@@ -83,13 +83,14 @@ export interface AdminUser {
     id: number;
     name: string;
     email: string;
-    role: "Admin" | "Instructor" | "Learner" | "Teacher" | "Student";
+    role: "Admin" | "Instructor" | "Learner" | "Teacher" | "Student" | "Coordinator";
     isActive: boolean;
     createdAt: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;
     teacherDetails?: InstructorDetails;
+    coordinatorDetails?: CoordinatorDetails;
 }
 
 export interface CourseCatalogItem {

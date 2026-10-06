@@ -109,6 +109,7 @@ class ResendVerificationResponseSchema(CamelModel):
 
 
 from app.user.dtos import (
+    CoordinatorDetailsSchema,
     InstructorDetailsSchema,
     LearnerDetailsSchema,
     StudentDetailsSchema,
@@ -126,5 +127,6 @@ class MeResponseSchema(CamelModel):
     timezone: str = "UTC"
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
+    coordinator_details: CoordinatorDetailsSchema | None = None
     student_details: StudentDetailsSchema | None = None
     teacher_details: TeacherDetailsSchema | None = None

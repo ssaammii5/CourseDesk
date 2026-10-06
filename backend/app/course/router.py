@@ -10,14 +10,22 @@ from app.course.dtos import (
 )
 from app.submission.dtos import SubmissionResponseSchema
 from app.utils.db import get_db
-from app.utils.helpers import DbSession, IsAdmin, IsAdminOrInstructor, IsAdminOrTeacher, IsAuthenticated
+from app.utils.helpers import (
+    DbSession,
+    IsAdmin,
+    IsAdminOrCoordinator,
+    IsAdminOrInstructor,
+    IsAdminOrTeacher,
+    IsAuthenticated,
+)
 
 course_routes = APIRouter(prefix="/api/courses", tags=["courses"])
 
 
 @course_routes.get("", response_model=list[CourseResponseSchema], status_code=status.HTTP_200_OK)
-def get_all_courses(db: DbSession, _admin: IsAdmin):
+def get_all_courses(db: DbSession, _user: IsAdminOrCoordinator):
     return controller.get_courses(db)
+
 
 
 @course_routes.get("/my", response_model=list[CourseResponseSchema], status_code=status.HTTP_200_OK)
@@ -73,8 +81,9 @@ def get_course_submissions(course_id: int, db: DbSession, user: IsAuthenticated)
 
 
 @course_routes.put("/{course_id}", response_model=CourseResponseSchema, status_code=status.HTTP_200_OK)
-def update_course(course_id: int, body: CourseSchema, db: DbSession, _admin: IsAdmin):
+def update_course(course_id: int, body: CourseSchema, db: DbSession, _user: IsAdminOrCoordinator):
     return controller.update_course(course_id, body, db)
+
 
 
 @course_routes.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)

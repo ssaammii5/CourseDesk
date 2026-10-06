@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { InstructorDetails, InstructorLink, LearnerDetails } from "./users";
+import type { InstructorDetails, InstructorLink, LearnerDetails, CoordinatorDetails } from "./users";
 
 export interface LoginResponse {
     token: string;
@@ -21,6 +21,7 @@ export interface MeResponse {
     timezone?: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;
+    coordinatorDetails?: CoordinatorDetails;
     studentDetails?: LearnerDetails;
     teacherDetails?: InstructorDetails;
 }

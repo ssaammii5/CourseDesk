@@ -12,11 +12,12 @@ import { COMMON_TIMEZONES } from "@/lib/constants/timezones";
 export interface LearnerFormModalProps {
     open: boolean;
     user: AdminUser | null;
-    onSave: (data: Omit<AdminUser, "id" | "createdAt">) => void | Promise<void>;
+    readOnly?: boolean;
+    onSave?: (data: Omit<AdminUser, "id" | "createdAt">) => void | Promise<void>;
     onClose: () => void;
 }
 
-export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormModalProps) {
+export function LearnerFormModal({ open, user, readOnly = false, onSave, onClose }: LearnerFormModalProps) {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -168,16 +169,23 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
             links: cleanLinks,
         };
 
+        if (readOnly) {
+            onClose();
+            return;
+        }
+
         try {
             setIsSaving(true);
-            await onSave({
-                name: cleanFullName,
-                email: cleanEmail,
-                role: "Learner",
-                isActive,
-                learnerDetails: mergedDetails,
-                studentDetails: mergedDetails,
-            });
+            if (onSave) {
+                await onSave({
+                    name: cleanFullName,
+                    email: cleanEmail,
+                    role: "Learner",
+                    isActive,
+                    learnerDetails: mergedDetails,
+                    studentDetails: mergedDetails,
+                });
+            }
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "Failed to save learner details.";
             setSaveError(msg);
@@ -197,10 +205,10 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                 <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-slate-800">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
-                            {user ? "Edit Learner" : "Add New Learner"}
+                            {readOnly ? "Learner Details" : user ? "Edit Learner" : "Add New Learner"}
                         </h2>
                         <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
-                            Configure learner profile, credentials, and contact details
+                            {readOnly ? "View learner profile, credentials, and contact details" : "Configure learner profile, credentials, and contact details"}
                         </p>
                     </div>
                     <button
@@ -235,38 +243,46 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/png,image/jpeg,image/webp,image/jpg"
-                                        className="hidden"
-                                        onChange={handleAvatarFile}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        disabled={uploadingAvatar}
-                                        className="flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700/80 transition"
-                                    >
-                                        <Upload className="h-3.5 w-3.5" />
-                                        Upload Photo
-                                    </button>
-
-                                    {avatar && (
+                                {!readOnly ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/webp,image/jpg"
+                                            className="hidden"
+                                            onChange={handleAvatarFile}
+                                        />
                                         <button
                                             type="button"
-                                            onClick={handleRemoveAvatar}
-                                            className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 transition"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploadingAvatar}
+                                            className="flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700/80 transition"
                                         >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                            Remove
+                                            <Upload className="h-3.5 w-3.5" />
+                                            Upload Photo
                                         </button>
-                                    )}
-                                </div>
-                                <span className="text-[11px] text-gray-500 dark:text-slate-400">
-                                    Recommended square image (.jpg, .png, .webp). Max 2MB.
-                                </span>
+
+                                        {avatar && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveAvatar}
+                                                className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 transition"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className="text-xs text-gray-500 dark:text-slate-400">
+                                        Avatar photo
+                                    </span>
+                                )}
+                                {!readOnly && (
+                                    <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                                        Recommended square image (.jpg, .png, .webp). Max 2MB.
+                                    </span>
+                                )}
                             </div>
                         </div>
                         {avatarError && <p className="mt-2 text-xs text-red-500">{avatarError}</p>}
@@ -281,7 +297,8 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <Field
                                 label="First Name"
-                                required
+                                required={!readOnly}
+                                disabled={readOnly}
                                 value={firstName}
                                 onChange={(val) => {
                                     setFirstName(val);
@@ -292,7 +309,8 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                             />
                             <Field
                                 label="Last Name"
-                                required
+                                required={!readOnly}
+                                disabled={readOnly}
                                 value={lastName}
                                 onChange={(val) => {
                                     setLastName(val);
@@ -306,7 +324,8 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                         <Field
                             label="Email Address"
                             type="email"
-                            required
+                            required={!readOnly}
+                            disabled={readOnly}
                             value={email}
                             onChange={(val) => {
                                 setEmail(val);
@@ -324,16 +343,17 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                             <textarea
                                 rows={2}
                                 value={shortBio}
+                                readOnly={readOnly}
                                 onChange={(e) => setShortBio(e.target.value)}
                                 placeholder="Brief background or bio"
-                                className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 resize-none"
+                                className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 resize-none disabled:opacity-60"
                             />
                         </div>
 
                         {/* Timezone */}
                         <div>
                             <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
-                                Timezone <span className="text-red-500">*</span>
+                                Timezone {!readOnly && <span className="text-red-500">*</span>}
                             </label>
                             <ModernDropdown
                                 value={timezone}
@@ -343,6 +363,7 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                 size="md"
                                 placeholder="Select Timezone"
                                 buttonClassName="w-full justify-between"
+                                disabled={readOnly}
                             />
                         </div>
                     </section>
@@ -353,20 +374,22 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                             <span className="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-slate-400">
                                 Social & Portfolio Links
                             </span>
-                            <button
-                                type="button"
-                                onClick={handleAddLink}
-                                className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline"
-                            >
-                                <Plus className="h-3.5 w-3.5" />
-                                Add Link
-                            </button>
+                            {!readOnly && (
+                                <button
+                                    type="button"
+                                    onClick={handleAddLink}
+                                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline"
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Add Link
+                                </button>
+                            )}
                         </div>
 
                         {links.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-800 p-4 text-center">
                                 <p className="text-xs text-gray-500 dark:text-slate-400">
-                                    No profile links added yet. Click &quot;Add Link&quot; to include GitHub, LinkedIn, or portfolio.
+                                    No profile links added yet.
                                 </p>
                             </div>
                         ) : (
@@ -377,36 +400,40 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                             <input
                                                 type="text"
                                                 value={link.title}
+                                                readOnly={readOnly}
                                                 onChange={(e) => handleLinkChange(idx, "title", e.target.value)}
                                                 placeholder="Title (e.g. GitHub)"
-                                                className="w-1/3 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                                className="w-1/3 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 disabled:opacity-60"
                                             />
                                             <input
                                                 type="url"
                                                 value={link.url}
+                                                readOnly={readOnly}
                                                 onChange={(e) => handleLinkChange(idx, "url", e.target.value)}
                                                 placeholder="https://..."
-                                                className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                                className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 disabled:opacity-60"
                                             />
                                             {link.url && /^https?:\/\/.+/i.test(link.url) && (
                                                 <a
                                                     href={link.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"
+                                                    className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                                                     title="Open link"
                                                 >
                                                     <ExternalLink className="h-3.5 w-3.5" />
                                                 </a>
                                             )}
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveLink(idx)}
-                                                className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
-                                                title="Remove link"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </button>
+                                            {!readOnly && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveLink(idx)}
+                                                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
+                                                    title="Remove link"
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                            )}
                                         </div>
                                         {errors[`link_${idx}`] && (
                                             <p className="text-[11px] text-red-500 pl-1">{errors[`link_${idx}`]}</p>
@@ -444,8 +471,9 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                                     <input
                                         type="checkbox"
                                         checked={isActive}
-                                        onChange={(e) => setIsActive(e.target.checked)}
-                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 cursor-pointer"
+                                        disabled={readOnly}
+                                        onChange={(e) => !readOnly && setIsActive(e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 cursor-pointer disabled:cursor-default"
                                     />
                                     <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
                                         Account is Active
@@ -472,23 +500,25 @@ export function LearnerFormModal({ open, user, onSave, onClose }: LearnerFormMod
                         onClick={onClose}
                         className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
                     >
-                        Cancel
+                        {readOnly ? "Close" : "Cancel"}
                     </button>
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={isSaving}
-                        className="cursor-pointer flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition disabled:opacity-50"
-                    >
-                        {isSaving ? (
-                            <>
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                <span>Saving...</span>
-                            </>
-                        ) : (
-                            <span>{user ? "Save Changes" : "Create Learner"}</span>
-                        )}
-                    </button>
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={isSaving}
+                            className="cursor-pointer flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition disabled:opacity-50"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    <span>Saving...</span>
+                                </>
+                            ) : (
+                                <span>{user ? "Save Changes" : "Create Learner"}</span>
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

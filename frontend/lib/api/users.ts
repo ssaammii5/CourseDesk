@@ -52,6 +52,18 @@ export interface InstructorDetails {
 }
 export type TeacherDetails = InstructorDetails;
 
+export interface CoordinatorDetails {
+    coordinatorId?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatar?: string;
+    phone?: string;
+    shortBio?: string;
+    timezone?: string;
+    links?: InstructorLink[];
+}
+
 export interface UserDto {
     id: number;
     name: string;
@@ -66,6 +78,7 @@ export interface UserDto {
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;
     teacherDetails?: InstructorDetails;
+    coordinatorDetails?: CoordinatorDetails;
 }
 
 export interface CreateUserPayload {
@@ -78,6 +91,7 @@ export interface CreateUserPayload {
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;
     teacherDetails?: InstructorDetails;
+    coordinatorDetails?: CoordinatorDetails;
 }
 
 export interface UpdateUserPayload {
@@ -91,6 +105,7 @@ export interface UpdateUserPayload {
     instructorDetails?: InstructorDetails;
     studentDetails?: LearnerDetails;
     teacherDetails?: InstructorDetails;
+    coordinatorDetails?: CoordinatorDetails;
 }
 
 export function getUsersRequest(): Promise<UserDto[]> {
@@ -215,6 +230,25 @@ export function getPendingLearnerInvitationsRequest(): Promise<PendingInvitation
 
 export function revokeLearnerInvitationRequest(userId: number): Promise<{ message: string }> {
     return apiFetch<{ message: string }>(`/api/learners/invitations/${userId}`, {
+        method: "DELETE",
+    });
+}
+
+export function inviteCoordinatorRequest(email: string): Promise<PendingInvitation> {
+    return apiFetch<PendingInvitation>("/api/coordinators/invite", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+    });
+}
+
+export function getPendingCoordinatorInvitationsRequest(): Promise<PendingInvitation[]> {
+    return apiFetch<PendingInvitation[]>("/api/coordinators/invitations", {
+        method: "GET",
+    });
+}
+
+export function revokeCoordinatorInvitationRequest(userId: number): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>(`/api/coordinators/invitations/${userId}`, {
         method: "DELETE",
     });
 }

@@ -29,7 +29,7 @@ def get_target_learner_ids(assignment: AssignmentModel, enrolled_learner_ids: li
 
 
 def _is_assignment_assigned_to_user(assignment: AssignmentModel, user: UserModel) -> bool:
-    if user.role in ("Admin", "Instructor"):
+    if user.role in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
         return True
     if not assignment.course:
         return True
@@ -137,7 +137,7 @@ def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str |
 
 def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSchema]:
     stmt = _assignment_stmt()
-    if user.role in ("Admin", "Instructor"):
+    if user.role in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
         assignments = db.scalars(stmt).all()
     else:
         assignments = db.scalars(
@@ -161,17 +161,17 @@ def get_course_assignments(
         raise HTTPException(404, detail="Course id is incorrect")
 
     stmt = _assignment_stmt().where(AssignmentModel.course_id == course_id)
-    if user.role not in ("Admin", "Instructor"):
+    if user.role not in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
         stmt = stmt.where(AssignmentModel.status == "Published")
 
     assignments = db.scalars(stmt).all()
-    if user.role not in ("Admin", "Instructor"):
+    if user.role not in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
         assignments = [a for a in assignments if _is_assignment_assigned_to_user(a, user)]
     return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
 
 
 def _check_assignment_visible(assignment: AssignmentModel, user: UserModel) -> None:
-    if user.role in ("Admin", "Instructor"):
+    if user.role in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
         return
     if (
         user.role == "Learner"
@@ -320,8 +320,14 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
 def get_assignment_submissions(
     assignment_id: int, user: UserModel, db: Session
 ) -> list[SubmissionResponseSchema]:
-    assignment = _get_manageable_assignment(assignment_id, user, db)
+    if user.role in ("Coordinator", "Co-ordinator"):
+        assignment = db.scalar(_assignment_stmt().where(AssignmentModel.id == assignment_id))
+        if not assignment:
+            raise HTTPException(404, detail="Assignment id is incorrect")
+    else:
+        assignment = _get_manageable_assignment(assignment_id, user, db)
     from app.submission.controller import _submission_stmt
+
 
     submissions = db.scalars(
         _submission_stmt().where(SubmissionModel.assignment_id == assignment.id)

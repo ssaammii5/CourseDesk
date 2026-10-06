@@ -10,10 +10,12 @@ import {
     Users,
     Copy,
     Check,
+    Eye,
     ShieldAlert,
     Clock,
 } from "lucide-react";
 import type { AdminUser, LearnerDetails } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
 import {
     deleteUserRequest,
     getUsersRequest,
@@ -119,6 +121,9 @@ function formatDateTime(isoString: string): string {
 }
 
 export function AdminLearnersView() {
+    const { user: currentUser } = useAuth();
+    const isCoordinator = currentUser?.role === "Coordinator";
+
     const [tab, setTab] = useState<"learners" | "invitations">("learners");
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
@@ -149,6 +154,7 @@ export function AdminLearnersView() {
     };
 
     const loadInvitations = async () => {
+        if (isCoordinator) return;
         try {
             setLoadingInvitations(true);
             const invites = await getPendingLearnerInvitationsRequest();
@@ -162,8 +168,10 @@ export function AdminLearnersView() {
 
     useEffect(() => {
         void loadUsers();
-        void loadInvitations();
-    }, []);
+        if (!isCoordinator) {
+            void loadInvitations();
+        }
+    }, [isCoordinator]);
 
     const filteredUsers = useMemo(() => {
         return users.filter((u) => {
@@ -333,23 +341,25 @@ export function AdminLearnersView() {
                 <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                     <button
                         type="button"
-                        title="Edit learner"
+                        title={isCoordinator ? "View learner details" : "Edit learner"}
                         onClick={() => {
                             setEditingUser(u);
                             setModalOpen(true);
                         }}
                         className="cursor-pointer rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-blue-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400 transition"
                     >
-                        <Pencil className="h-4 w-4" />
+                        {isCoordinator ? <Eye className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                     </button>
-                    <button
-                        type="button"
-                        title="Delete learner"
-                        onClick={() => setDeleteTarget(u)}
-                        className="cursor-pointer rounded-lg p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </button>
+                    {!isCoordinator && (
+                        <button
+                            type="button"
+                            title="Delete learner"
+                            onClick={() => setDeleteTarget(u)}
+                            className="cursor-pointer rounded-lg p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             ),
         },
@@ -512,60 +522,64 @@ export function AdminLearnersView() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setInviteModalOpen(true)}
-                        className="flex cursor-pointer items-center gap-2 self-start rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition active:scale-95 sm:self-auto"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Invite Learner
-                    </button>
-                </div>
+                {!isCoordinator && (
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setInviteModalOpen(true)}
+                            className="flex cursor-pointer items-center gap-2 self-start rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition active:scale-95 sm:self-auto"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Invite Learner
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Tabs Bar */}
-            <div className="mt-6 flex border-b border-gray-200 dark:border-slate-800 gap-8">
-                <button
-                    type="button"
-                    onClick={() => setTab("learners")}
-                    className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
-                        tab === "learners"
-                            ? "text-blue-600 dark:text-blue-400"
-                            : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
-                    }`}
-                >
-                    <Users className="h-4 w-4" />
-                    <span>All Learners</span>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-slate-800 dark:text-slate-300">
-                        {users.length}
-                    </span>
-                    {tab === "learners" && (
-                        <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
-                    )}
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setTab("invitations")}
-                    className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
-                        tab === "invitations"
-                            ? "text-blue-600 dark:text-blue-400"
-                            : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
-                    }`}
-                >
-                    <Mail className="h-4 w-4" />
-                    <span>Pending Invitations</span>
-                    {pendingInvitations.length > 0 && (
-                        <span className="rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-xs font-bold">
-                            {pendingInvitations.length}
+            {!isCoordinator && (
+                <div className="mt-6 flex border-b border-gray-200 dark:border-slate-800 gap-8">
+                    <button
+                        type="button"
+                        onClick={() => setTab("learners")}
+                        className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
+                            tab === "learners"
+                                ? "text-blue-600 dark:text-blue-400"
+                                : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+                        }`}
+                    >
+                        <Users className="h-4 w-4" />
+                        <span>All Learners</span>
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-slate-800 dark:text-slate-300">
+                            {users.length}
                         </span>
-                    )}
-                    {tab === "invitations" && (
-                        <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
-                    )}
-                </button>
-            </div>
+                        {tab === "learners" && (
+                            <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setTab("invitations")}
+                        className={`relative flex items-center gap-2 py-3 text-sm font-semibold transition ${
+                            tab === "invitations"
+                                ? "text-blue-600 dark:text-blue-400"
+                                : "text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200"
+                        }`}
+                    >
+                        <Mail className="h-4 w-4" />
+                        <span>Pending Invitations</span>
+                        {pendingInvitations.length > 0 && (
+                            <span className="rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-xs font-bold">
+                                {pendingInvitations.length}
+                            </span>
+                        )}
+                        {tab === "invitations" && (
+                            <span className="absolute inset-x-0 -bottom-px h-[2px] bg-blue-600 dark:bg-blue-500" />
+                        )}
+                    </button>
+                </div>
+            )}
 
             {/* Search and Filters */}
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -655,6 +669,7 @@ export function AdminLearnersView() {
             <LearnerFormModal
                 open={modalOpen}
                 user={editingUser}
+                readOnly={isCoordinator}
                 onSave={handleSaveEdit}
                 onClose={() => {
                     setModalOpen(false);

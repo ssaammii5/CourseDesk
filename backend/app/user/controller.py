@@ -10,8 +10,10 @@ from app.auth.controller import validate_password_strength
 from app.submission.models import SubmissionModel
 from app.user.dtos import (
     ChangePasswordSchema,
+    CoordinatorDetailsSchema,
     InstructorDetailsSchema,
     InstructorLinkSchema,
+    InviteCoordinatorSchema,
     InviteInstructorSchema,
     InviteLearnerSchema,
     LearnerDetailsSchema,
@@ -22,7 +24,12 @@ from app.user.dtos import (
     UserSchema,
     UserUpdateSchema,
 )
-from app.user.models import InstructorDetailsModel, LearnerDetailsModel, UserModel
+from app.user.models import (
+    CoordinatorDetailsModel,
+    InstructorDetailsModel,
+    LearnerDetailsModel,
+    UserModel,
+)
 from app.utils.helpers import get_password_hash, verify_password
 
 
@@ -112,11 +119,44 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
             timezone=t.timezone or "UTC",
             links=normalized_links,
         )
+    coordinator_details: CoordinatorDetailsSchema | None = None
+    if user.coordinator_details:
+        c = user.coordinator_details
+        f_name = c.first_name or ""
+        l_name = c.last_name or ""
+        if not f_name and not l_name and user.name:
+            parts = user.name.strip().split(" ", 1)
+            f_name = parts[0]
+            l_name = parts[1] if len(parts) > 1 else ""
+
+        raw_links = c.links or []
+        normalized_links = []
+        for l in raw_links:
+            if isinstance(l, dict):
+                normalized_links.append(InstructorLinkSchema(title=l.get("title", ""), url=l.get("url", "")))
+            elif isinstance(l, str):
+                normalized_links.append(InstructorLinkSchema(title="", url=l))
+            elif isinstance(l, InstructorLinkSchema):
+                normalized_links.append(l)
+
+        coordinator_details = CoordinatorDetailsSchema(
+            coordinator_id=c.coordinator_id,
+            first_name=f_name,
+            last_name=l_name,
+            email=user.email,
+            avatar=c.avatar or "",
+            phone=c.phone or "",
+            short_bio=c.short_bio or "",
+            timezone=c.timezone or "UTC",
+            links=normalized_links,
+        )
     avatar = getattr(user, "avatar", "") or ""
     if learner_details and learner_details.avatar:
         avatar = learner_details.avatar
     elif instructor_details and instructor_details.avatar:
         avatar = instructor_details.avatar
+    elif coordinator_details and coordinator_details.avatar:
+        avatar = coordinator_details.avatar
 
     user_timezone = getattr(user, "timezone", "") or ""
     if not user_timezone or user_timezone == "UTC":
@@ -124,6 +164,8 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
             user_timezone = learner_details.timezone
         elif instructor_details and instructor_details.timezone:
             user_timezone = instructor_details.timezone
+        elif coordinator_details and coordinator_details.timezone:
+            user_timezone = coordinator_details.timezone
     if not user_timezone:
         user_timezone = "UTC"
 
@@ -138,6 +180,7 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
         timezone=user_timezone,
         learner_details=learner_details,
         instructor_details=instructor_details,
+        coordinator_details=coordinator_details,
     )
 
 
@@ -146,6 +189,7 @@ def get_users(db: Session) -> list[UserResponseSchema]:
         select(UserModel).options(
             selectinload(UserModel.learner_details),
             selectinload(UserModel.instructor_details),
+            selectinload(UserModel.coordinator_details),
         )
     ).all()
     return [serialize_user(u) for u in users]
@@ -205,6 +249,28 @@ def _build_instructor_details(
     )
 
 
+def _build_coordinator_details(
+    user_id: int, data: CoordinatorDetailsSchema, user_name: str = ""
+) -> CoordinatorDetailsModel:
+    f_name = (data.first_name or "").strip()
+    l_name = (data.last_name or "").strip()
+    if not f_name and not l_name and user_name:
+        parts = user_name.strip().split(" ", 1)
+        f_name = parts[0]
+        l_name = parts[1] if len(parts) > 1 else ""
+
+    return CoordinatorDetailsModel(
+        user_id=user_id,
+        first_name=f_name,
+        last_name=l_name,
+        avatar=data.avatar or "",
+        phone=data.phone or "",
+        short_bio=data.short_bio or "",
+        timezone=data.timezone or "UTC",
+        links=_normalize_links(data.links or []),
+    )
+
+
 def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
     name = body.name
     email = body.email
@@ -216,6 +282,14 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
                 name = f"{f_name} {l_name}".strip()
             if body.instructor_details.email:
                 email = body.instructor_details.email
+    elif body.role in ("Coordinator", "Co-ordinator") or body.coordinator_details is not None:
+        if body.coordinator_details:
+            f_name = (body.coordinator_details.first_name or "").strip()
+            l_name = (body.coordinator_details.last_name or "").strip()
+            if f_name or l_name:
+                name = f"{f_name} {l_name}".strip()
+            if body.coordinator_details.email:
+                email = body.coordinator_details.email
 
     is_user = db.scalar(select(UserModel).where(UserModel.email == email))
     if is_user:
@@ -250,6 +324,12 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
                 new_user.id, body.instructor_details or InstructorDetailsSchema(), name
             )
         )
+    if body.role in ("Coordinator", "Co-ordinator") or body.coordinator_details is not None:
+        db.add(
+            _build_coordinator_details(
+                new_user.id, body.coordinator_details or CoordinatorDetailsSchema(), name
+            )
+        )
     db.commit()
     res = get_one_user(new_user.id, db)
     if raw_invite_token:
@@ -263,6 +343,7 @@ def get_one_user(user_id: int, db: Session) -> UserResponseSchema:
         .options(
             selectinload(UserModel.learner_details),
             selectinload(UserModel.instructor_details),
+            selectinload(UserModel.coordinator_details),
         )
         .where(UserModel.id == user_id)
     )
@@ -340,12 +421,43 @@ def _apply_instructor_details(
             user.timezone = data.timezone
 
 
+def _apply_coordinator_details(
+    user: UserModel, data: CoordinatorDetailsSchema, db: Session
+) -> None:
+    if user.coordinator_details:
+        c = user.coordinator_details
+        if data.first_name or data.last_name:
+            c.first_name = (data.first_name or "").strip()
+            c.last_name = (data.last_name or "").strip()
+        elif user.name and not c.first_name and not c.last_name:
+            parts = user.name.strip().split(" ", 1)
+            c.first_name = parts[0]
+            c.last_name = parts[1] if len(parts) > 1 else ""
+
+        if data.avatar is not None:
+            c.avatar = data.avatar
+        if data.phone is not None:
+            c.phone = data.phone
+        if data.short_bio is not None:
+            c.short_bio = data.short_bio
+        if data.timezone:
+            c.timezone = data.timezone
+            user.timezone = data.timezone
+        if data.links is not None:
+            c.links = _normalize_links(data.links)
+    else:
+        user.coordinator_details = _build_coordinator_details(user.id, data, user.name)
+        if data.timezone:
+            user.timezone = data.timezone
+
+
 def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserResponseSchema:
     user = db.scalar(
         select(UserModel)
         .options(
             selectinload(UserModel.learner_details),
             selectinload(UserModel.instructor_details),
+            selectinload(UserModel.coordinator_details),
         )
         .where(UserModel.id == user_id)
     )
@@ -368,6 +480,13 @@ def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserRespon
             user_name = f"{f_name} {l_name}".strip()
         if body.learner_details.email:
             user_email = body.learner_details.email
+    elif body.coordinator_details:
+        f_name = (body.coordinator_details.first_name or "").strip()
+        l_name = (body.coordinator_details.last_name or "").strip()
+        if f_name or l_name:
+            user_name = f"{f_name} {l_name}".strip()
+        if body.coordinator_details.email:
+            user_email = body.coordinator_details.email
 
     if user_email != user.email:
         existing = db.scalar(
@@ -388,6 +507,8 @@ def update_user(user_id: int, body: UserUpdateSchema, db: Session) -> UserRespon
         _apply_learner_details(user, body.learner_details, db)
     if body.instructor_details is not None:
         _apply_instructor_details(user, body.instructor_details, db)
+    if body.coordinator_details is not None:
+        _apply_coordinator_details(user, body.coordinator_details, db)
     db.commit()
     return get_one_user(user_id, db)
 
@@ -599,18 +720,136 @@ def revoke_learner_invitation(user_id: int, db: Session) -> dict:
     return {"message": "Invitation revoked successfully."}
 
 
+def invite_coordinator(body: InviteCoordinatorSchema, db: Session) -> PendingInvitationSchema:
+    email = body.email.strip().lower()
+    existing_user = db.scalar(select(UserModel).where(UserModel.email == email))
+
+    token = secrets.token_urlsafe(48)
+    expires = datetime.now(UTC) + timedelta(hours=72)
+
+    if existing_user:
+        if existing_user.hash_password != "!UNSET_INVITED_USER":
+            raise HTTPException(
+                status_code=400,
+                detail=f"User with email '{email}' is already registered and active.",
+            )
+        existing_user.invite_token = token
+        existing_user.invite_expires_at_utc = expires
+        existing_user.role = "Coordinator"
+        db.commit()
+        db.refresh(existing_user)
+        return PendingInvitationSchema(
+            id=existing_user.id,
+            email=existing_user.email,
+            role=existing_user.role,
+            created_at_utc=existing_user.created_at_utc,
+            expires_at_utc=existing_user.invite_expires_at_utc,
+            invite_token=token,
+        )
+
+    new_user = UserModel(
+        name="",
+        email=email,
+        hash_password="!UNSET_INVITED_USER",
+        role="Coordinator",
+        invite_token=token,
+        invite_expires_at_utc=expires,
+        is_active=True,
+    )
+    db.add(new_user)
+    db.flush()
+
+    db.add(CoordinatorDetailsModel(user_id=new_user.id))
+    db.commit()
+    db.refresh(new_user)
+
+    return PendingInvitationSchema(
+        id=new_user.id,
+        email=new_user.email,
+        role=new_user.role,
+        created_at_utc=new_user.created_at_utc,
+        expires_at_utc=new_user.invite_expires_at_utc,
+        invite_token=token,
+    )
+
+
+def get_pending_coordinator_invitations(db: Session) -> list[PendingInvitationSchema]:
+    now = datetime.now(UTC)
+    users = db.scalars(
+        select(UserModel)
+        .where(
+            UserModel.role.in_(("Coordinator", "Co-ordinator")),
+            UserModel.invite_token.is_not(None),
+            UserModel.invite_expires_at_utc > now,
+        )
+        .order_by(UserModel.created_at_utc.desc())
+    ).all()
+
+    return [
+        PendingInvitationSchema(
+            id=u.id,
+            email=u.email,
+            role=u.role,
+            created_at_utc=u.created_at_utc,
+            expires_at_utc=u.invite_expires_at_utc,
+            invite_token=u.invite_token,
+        )
+        for u in users
+    ]
+
+
+def revoke_coordinator_invitation(user_id: int, db: Session) -> dict:
+    user = db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Invitation not found.")
+    if user.invite_token is None:
+        raise HTTPException(
+            status_code=400, detail="User has already accepted the invitation or is not pending."
+        )
+
+    db.delete(user)
+    db.commit()
+    return {"message": "Invitation revoked successfully."}
+
+
 def update_current_user_profile(
     user: UserModel, body: UpdateProfileSchema, db: Session
 ) -> UserResponseSchema:
     if body.timezone is not None:
         user.timezone = body.timezone.strip() or "UTC"
 
-    if user.role == "Instructor":
+    if user.role in ("Coordinator", "Co-ordinator"):
+        details = user.coordinator_details
+        if not details:
+            details = CoordinatorDetailsModel(user_id=user.id)
+            db.add(details)
+            db.flush()
+
+        if body.first_name is not None:
+            details.first_name = body.first_name.strip()
+        if body.last_name is not None:
+            details.last_name = body.last_name.strip()
+        if body.avatar is not None:
+            details.avatar = body.avatar.strip()
+            user.avatar = body.avatar.strip()
+        if body.short_bio is not None:
+            details.short_bio = body.short_bio.strip()
+        if body.timezone is not None:
+            details.timezone = user.timezone
+        if body.links is not None:
+            details.links = _normalize_links(body.links)
+
+        full_name = f"{details.first_name} {details.last_name}".strip()
+        if full_name:
+            user.name = full_name
+
+    elif user.role == "Instructor":
         details = user.instructor_details
         if not details:
             details = InstructorDetailsModel(user_id=user.id)
             db.add(details)
             db.flush()
+
 
         if body.first_name is not None:
             details.first_name = body.first_name.strip()

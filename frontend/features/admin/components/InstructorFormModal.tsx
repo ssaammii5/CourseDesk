@@ -15,11 +15,12 @@ export { COMMON_TIMEZONES };
 export interface InstructorFormModalProps {
     open: boolean;
     user: AdminUser | null;
-    onSave: (data: Omit<AdminUser, "id" | "createdAt">) => void;
+    readOnly?: boolean;
+    onSave?: (data: Omit<AdminUser, "id" | "createdAt">) => void;
     onClose: () => void;
 }
 
-export function InstructorFormModal({ open, user, onSave, onClose }: InstructorFormModalProps) {
+export function InstructorFormModal({ open, user, readOnly = false, onSave, onClose }: InstructorFormModalProps) {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -176,14 +177,21 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
             links: cleanLinks,
         };
 
-        onSave({
-            name: cleanFullName,
-            email: cleanEmail,
-            role: "Instructor",
-            isActive,
-            instructorDetails: mergedDetails,
-            teacherDetails: mergedDetails,
-        });
+        if (readOnly) {
+            onClose();
+            return;
+        }
+
+        if (onSave) {
+            onSave({
+                name: cleanFullName,
+                email: cleanEmail,
+                role: "Instructor",
+                isActive,
+                instructorDetails: mergedDetails,
+                teacherDetails: mergedDetails,
+            });
+        }
     };
 
     if (!open) return null;
@@ -197,10 +205,10 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                 <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-slate-800">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
-                            {user ? "Edit Instructor" : "Add New Instructor"}
+                            {readOnly ? "Instructor Details" : user ? "Edit Instructor" : "Add New Instructor"}
                         </h2>
                         <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
-                            Configure instructor profile, credentials, and contact details
+                            {readOnly ? "View instructor profile, credentials, and contact details" : "Configure instructor profile, credentials, and contact details"}
                         </p>
                     </div>
                     <button
@@ -249,30 +257,38 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                             </div>
 
                             <div className="flex-1 space-y-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <button
-                                        type="button"
-                                        disabled={uploadingAvatar}
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center gap-1.5 cursor-pointer rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/15 dark:hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-3.5 py-2 text-xs font-semibold transition-colors disabled:opacity-50"
-                                    >
-                                        <Upload className="h-3.5 w-3.5" />
-                                        {avatar ? "Change Photo" : "Upload Photo"}
-                                    </button>
-                                    {avatar && (
+                                {!readOnly ? (
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <button
                                             type="button"
-                                            onClick={handleRemoveAvatar}
-                                            className="flex items-center gap-1 cursor-pointer rounded-lg border border-gray-300 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 px-3 py-2 text-xs font-medium transition-colors"
+                                            disabled={uploadingAvatar}
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="flex items-center gap-1.5 cursor-pointer rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/15 dark:hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-3.5 py-2 text-xs font-semibold transition-colors disabled:opacity-50"
                                         >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                            Remove
+                                            <Upload className="h-3.5 w-3.5" />
+                                            {avatar ? "Change Photo" : "Upload Photo"}
                                         </button>
-                                    )}
-                                </div>
-                                <p className="text-xs text-gray-500 dark:text-slate-400">
-                                    Recommended: JPG, PNG or WebP under 2 MB. Square aspect ratio.
-                                </p>
+                                        {avatar && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveAvatar}
+                                                className="flex items-center gap-1 cursor-pointer rounded-lg border border-gray-300 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 px-3 py-2 text-xs font-medium transition-colors"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className="text-xs text-gray-500 dark:text-slate-400">
+                                        Avatar photo
+                                    </span>
+                                )}
+                                {!readOnly && (
+                                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                                        Recommended: JPG, PNG or WebP under 2 MB. Square aspect ratio.
+                                    </p>
+                                )}
                                 {avatarError && (
                                     <p className="text-xs text-[#c5221f] dark:text-red-400 font-medium">{avatarError}</p>
                                 )}
@@ -288,7 +304,8 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Field
                                 label="1. First Name"
-                                required
+                                required={!readOnly}
+                                disabled={readOnly}
                                 value={firstName}
                                 onChange={(v) => { setFirstName(v); clearError("firstName"); }}
                                 placeholder="Enter first name"
@@ -296,7 +313,8 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                             />
                             <Field
                                 label="2. Last Name"
-                                required
+                                required={!readOnly}
+                                disabled={readOnly}
                                 value={lastName}
                                 onChange={(v) => { setLastName(v); clearError("lastName"); }}
                                 placeholder="Enter last name"
@@ -306,7 +324,8 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
 
                         <Field
                             label="3. Email Address"
-                            required
+                            required={!readOnly}
+                            disabled={readOnly}
                             type="email"
                             value={email}
                             onChange={(v) => { setEmail(v); clearError("email"); }}
@@ -324,6 +343,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                         <Field
                             label="5. Professional Headline"
                             value={headline}
+                            disabled={readOnly}
                             onChange={setHeadline}
                             placeholder="Enter professional headline"
                         />
@@ -339,6 +359,7 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                 placeholder="Select timezone"
                                 size="md"
                                 searchable
+                                disabled={readOnly}
                             />
                         </div>
                     </section>
@@ -354,27 +375,31 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                     Add websites, portfolio, LinkedIn, GitHub, or social profiles
                                 </p>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleAddLink}
-                                className="flex items-center gap-1.5 cursor-pointer rounded-lg bg-blue-50 dark:bg-blue-500/15 hover:bg-blue-100 dark:hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-3 py-1.5 text-xs font-semibold transition-colors"
-                            >
-                                <Plus className="h-3.5 w-3.5" />
-                                Add Link
-                            </button>
+                            {!readOnly && (
+                                <button
+                                    type="button"
+                                    onClick={handleAddLink}
+                                    className="flex items-center gap-1.5 cursor-pointer rounded-lg bg-blue-50 dark:bg-blue-500/15 hover:bg-blue-100 dark:hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 px-3 py-1.5 text-xs font-semibold transition-colors"
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Add Link
+                                </button>
+                            )}
                         </div>
 
                         {links.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-800 p-4 text-center">
                                 <Globe className="mx-auto h-6 w-6 text-gray-400 dark:text-slate-600 mb-1" />
                                 <p className="text-xs text-gray-500 dark:text-slate-400">No links added yet.</p>
-                                <button
-                                    type="button"
-                                    onClick={handleAddLink}
-                                    className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                                >
-                                    + Add your first link
-                                </button>
+                                {!readOnly && (
+                                    <button
+                                        type="button"
+                                        onClick={handleAddLink}
+                                        className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                    >
+                                        + Add your first link
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -387,9 +412,10 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                             <input
                                                 type="text"
                                                 value={link.title}
+                                                readOnly={readOnly}
                                                 onChange={(e) => handleUpdateLink(idx, "title", e.target.value)}
                                                 placeholder="Enter link title (e.g. LinkedIn)"
-                                                className="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                className="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
                                             />
                                         </div>
                                         <div className="flex-1 w-full relative">
@@ -397,9 +423,10 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                             <input
                                                 type="url"
                                                 value={link.url}
+                                                readOnly={readOnly}
                                                 onChange={(e) => handleUpdateLink(idx, "url", e.target.value)}
                                                 placeholder="Enter link URL (e.g. https://...)"
-                                                className={`w-full rounded-lg border pl-8 pr-3 py-2 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 ${
+                                                className={`w-full rounded-lg border pl-8 pr-3 py-2 text-xs text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 disabled:opacity-60 ${
                                                     errors[`link_${idx}`]
                                                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                                                         : "border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-blue-500 focus:ring-blue-500"
@@ -411,14 +438,26 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                                 </span>
                                             )}
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveLink(idx)}
-                                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors shrink-0"
-                                            title="Delete link"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
+                                        {!readOnly ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveLink(idx)}
+                                                className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+                                                title="Delete link"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        ) : link.url ? (
+                                            <a
+                                                href={link.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="p-2 text-gray-400 hover:text-blue-600 transition"
+                                                title="Open link"
+                                            >
+                                                <ExternalLink className="h-4 w-4" />
+                                            </a>
+                                        ) : null}
                                     </div>
                                 ))}
                             </div>
@@ -451,8 +490,9 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                                         type="button"
                                         role="switch"
                                         aria-checked={isActive}
-                                        onClick={() => setIsActive((v) => !v)}
-                                        className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+                                        disabled={readOnly}
+                                        onClick={() => !readOnly && setIsActive((v) => !v)}
+                                        className={`relative h-6 w-11 shrink-0 ${readOnly ? "cursor-default opacity-80" : "cursor-pointer"} rounded-full transition-colors ${
                                             isActive ? "bg-blue-600" : "bg-gray-300 dark:bg-slate-700"
                                         }`}
                                     >
@@ -475,15 +515,17 @@ export function InstructorFormModal({ open, user, onSave, onClose }: InstructorF
                         onClick={onClose}
                         className="cursor-pointer rounded-xl border border-gray-300 dark:border-slate-700 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
                     >
-                        Cancel
+                        {readOnly ? "Close" : "Cancel"}
                     </button>
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        className="cursor-pointer rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all duration-150 active:scale-95"
-                    >
-                        {user ? "Save Changes" : "Create Instructor"}
-                    </button>
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            className="cursor-pointer rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all duration-150 active:scale-95"
+                        >
+                            {user ? "Save Changes" : "Create Instructor"}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

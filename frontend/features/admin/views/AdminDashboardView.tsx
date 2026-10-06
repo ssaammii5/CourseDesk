@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, BookOpen, ClipboardList, FileText, UserRound, AlertCircle } from "lucide-react";
+import { Users, BookOpen, ClipboardList, FileText, UserRound, AlertCircle, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { getAdminStats } from "@/lib/adminData";
 import { getDashboardStatsRequest, type DashboardStats } from "@/lib/api/dashboard";
 import { getUsersRequest } from "@/lib/api/users";
@@ -37,9 +38,11 @@ function StatCard({ icon, label, value, sublabel, iconBg, onClick }: StatCardPro
 
 export function AdminDashboardView() {
     const router = useRouter();
+    const { user: currentUser } = useAuth();
+    const isCoordinator = currentUser?.role === "Coordinator";
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [userCounts, setUserCounts] = useState<{ total: number; instructors: number; learners: number } | null>(null);
+    const [userCounts, setUserCounts] = useState<{ total: number; instructors: number; learners: number; coordinators: number } | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -57,6 +60,7 @@ export function AdminDashboardView() {
                         total: allUsers.length,
                         instructors: allUsers.filter((u) => u.role === "Instructor" || u.role === "Teacher").length,
                         learners: allUsers.filter((u) => u.role === "Learner" || u.role === "Student").length,
+                        coordinators: allUsers.filter((u) => u.role === "Coordinator").length,
                     });
                 }
             } catch (err) {
@@ -76,7 +80,9 @@ export function AdminDashboardView() {
     if (error) {
         return (
             <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
-                <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Admin Dashboard</h1>
+                <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">
+                    {isCoordinator ? "Co-ordinator Dashboard" : "Admin Dashboard"}
+                </h1>
                 <div className="mt-8 rounded-lg bg-[#fce8e6] dark:bg-red-950/40 px-5 py-4 text-sm text-[#c5221f] dark:text-red-400">{error}</div>
             </div>
         );
@@ -94,22 +100,28 @@ export function AdminDashboardView() {
     const totalUsers = userCounts.total;
     const totalInstructors = userCounts.instructors;
     const totalLearners = userCounts.learners;
+    const totalCoordinators = userCounts.coordinators;
 
     const instructorPct = totalUsers > 0 ? (totalInstructors / totalUsers) * 100 : 0;
     const learnerPct = totalUsers > 0 ? (totalLearners / totalUsers) * 100 : 0;
+    const coordinatorPct = totalUsers > 0 ? (totalCoordinators / totalUsers) * 100 : 0;
 
     // Fall back to dashboard stats for course/assignment/submission counts
     const fallbackStats = getAdminStats();
 
     return (
         <div className="mx-auto w-full max-w-[1200px] px-4 py-8 sm:px-8">
-            <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Admin Dashboard</h1>
+            <h1 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">
+                {isCoordinator ? "Co-ordinator Dashboard" : "Admin Dashboard"}
+            </h1>
             <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-                Overview of your course & assignment management workspace
+                {isCoordinator
+                    ? "Overview of courses, enrolled learners, instructors, and submissions"
+                    : "Overview of your course & assignment management workspace"}
             </p>
 
             {/* Stat Cards */}
-            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className={`mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 ${!isCoordinator ? "xl:grid-cols-6" : "xl:grid-cols-5"}`}>
                 <StatCard
                     icon={<UserRound className="h-6 w-6 text-[#174ea6] dark:text-blue-300" />}
                     iconBg="bg-[#d7e3fd] dark:bg-blue-950/60"
@@ -124,6 +136,15 @@ export function AdminDashboardView() {
                     value={totalLearners}
                     onClick={() => router.push("/learners")}
                 />
+                {!isCoordinator && (
+                    <StatCard
+                        icon={<UserCheck className="h-6 w-6 text-[#174ea6] dark:text-blue-300" />}
+                        iconBg="bg-[#d7e3fd] dark:bg-blue-950/60"
+                        label="Co-ordinators"
+                        value={totalCoordinators}
+                        onClick={() => router.push("/coordinators")}
+                    />
+                )}
                 <StatCard
                     icon={<BookOpen className="h-6 w-6 text-[#b06000] dark:text-amber-300" />}
                     iconBg="bg-[#fef7e0] dark:bg-amber-950/60"
@@ -177,6 +198,21 @@ export function AdminDashboardView() {
                                 style={{ width: `${learnerPct}%` }}
                             />
                         </div>
+
+                        {!isCoordinator && (
+                            <>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-700 dark:text-slate-300">Co-ordinators</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-slate-100">{totalCoordinators}</span>
+                                </div>
+                                <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-slate-800">
+                                    <div
+                                        className="h-2 rounded-full bg-[#1a73e8]"
+                                        style={{ width: `${coordinatorPct}%` }}
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
                 </section>
 

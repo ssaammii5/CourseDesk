@@ -15,3 +15,4 @@ class DashboardStatsSchema(CamelModel):
     total_submissions: int
     graded_submissions: int
     pending_submissions: int
+    total_coordinators: int = 0

@@ -25,6 +25,7 @@ interface EnrolledGroup {
 interface CourseFormModalProps {
     open: boolean;
     course: AdminCourse | null;
+    isCoordinator?: boolean;
     onSave: (data: Omit<AdminCourse, "id">) => void;
     onClose: () => void;
 }
@@ -69,7 +70,7 @@ function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
     };
 }
 
-export function CourseFormModal({ open, course, onSave, onClose }: CourseFormModalProps) {
+export function CourseFormModal({ open, course, isCoordinator = false, onSave, onClose }: CourseFormModalProps) {
     const [program, setProgram] = useState("");
     const [department, setDepartment] = useState("");
     const [session, setSession] = useState("");
@@ -394,7 +395,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
             <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl dark:bg-slate-900 dark:border dark:border-slate-800">
                 <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-slate-800">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
-                        {course ? "Edit Course" : "Add New Course"}
+                        {isCoordinator ? `Course Assignments — ${course?.name || "Course"}` : course ? "Edit Course" : "Add New Course"}
                     </h2>
                     <button type="button" onClick={onClose} className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800">
                         <X className="h-5 w-5" />
@@ -407,6 +408,11 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                     )}
 
                     <section>
+                        {isCoordinator && (
+                            <div className="mb-4 rounded-xl bg-blue-50/70 border border-blue-200/70 p-3 text-xs text-blue-900 dark:bg-blue-950/40 dark:border-blue-800/40 dark:text-blue-300">
+                                Course metadata (title, category, track, cohort) is set by administrators. You can manage instructors and enrolled learners below.
+                            </div>
+                        )}
                         <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Course Details</h3>
                         <div className="grid gap-5 md:grid-cols-2">
                             <div>
@@ -416,8 +422,9 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                 <div className="relative">
                                     <select
                                         value={program}
+                                        disabled={isCoordinator}
                                         onChange={(e) => handleProgramChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.program
+                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.program
                                             ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
                                             : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                             } ${program ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
@@ -439,8 +446,9 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                 <div className="relative">
                                     <select
                                         value={department}
+                                        disabled={isCoordinator}
                                         onChange={(e) => handleDepartmentChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.department
+                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.department
                                             ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
                                             : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                             } ${department ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
@@ -462,8 +470,9 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                 <div className="relative">
                                     <select
                                         value={session}
+                                        disabled={isCoordinator}
                                         onChange={(e) => handleSessionChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.session
+                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.session
                                             ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
                                             : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                             } ${session ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
@@ -483,7 +492,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                     <label className="block text-sm font-medium text-gray-800 dark:text-slate-200">
                                         Course Title <span className="text-[#c5221f]">*</span>
                                     </label>
-                                    {program && department && (
+                                    {!isCoordinator && program && department && (
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -511,8 +520,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                                         handleCourseNameChange(e.target.value);
                                                     }
                                                 }}
-                                                disabled={!program || !department}
-                                                className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.courseName
+                                                disabled={isCoordinator || !program || !department}
+                                                className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.courseName
                                                     ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
                                                     : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                                     } ${!program || !department ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500" : courseName ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
@@ -537,8 +546,8 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                                             value={courseName}
                                             onChange={(e) => handleCourseNameChange(e.target.value)}
                                             placeholder="e.g. Full-Stack Web Development Bootcamp"
-                                            disabled={!program || !department}
-                                            className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 ${errors.courseName
+                                            disabled={isCoordinator || !program || !department}
+                                            className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.courseName
                                                 ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
                                                 : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
                                                 } ${!program || !department ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500" : "text-gray-900 dark:text-slate-100"}`}
@@ -821,7 +830,7 @@ export function CourseFormModal({ open, course, onSave, onClose }: CourseFormMod
                         onClick={handleSubmit}
                         className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] dark:bg-blue-600 dark:hover:bg-blue-500"
                     >
-                        {course ? "Save Changes" : "Create Course"}
+                        {isCoordinator ? "Save Assignments" : course ? "Save Changes" : "Create Course"}
                     </button>
                 </div>
             </div>

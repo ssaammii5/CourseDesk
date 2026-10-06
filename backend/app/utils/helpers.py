@@ -91,10 +91,32 @@ def is_admin_or_instructor(
     return user
 
 
+def is_admin_or_coordinator(
+    user: Annotated[UserModel, Depends(is_authenticated)],
+) -> UserModel:
+    if user.role not in ("Admin", "Coordinator", "Co-ordinator"):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, detail="Admin or Coordinator access required"
+        )
+    return user
+
+
+def is_admin_or_instructor_or_coordinator(
+    user: Annotated[UserModel, Depends(is_authenticated)],
+) -> UserModel:
+    if user.role not in ("Admin", "Instructor", "Teacher", "Coordinator", "Co-ordinator"):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, detail="Staff access required"
+        )
+    return user
+
+
 IsAuthenticated = Annotated[UserModel, Depends(is_authenticated)]
 IsAdmin = Annotated[UserModel, Depends(is_admin)]
 IsAdminOrInstructor = Annotated[UserModel, Depends(is_admin_or_instructor)]
 IsAdminOrTeacher = IsAdminOrInstructor
+IsAdminOrCoordinator = Annotated[UserModel, Depends(is_admin_or_coordinator)]
+IsAdminOrInstructorOrCoordinator = Annotated[UserModel, Depends(is_admin_or_instructor_or_coordinator)]
 
 
 def human_readable_size(num_bytes: int) -> str:

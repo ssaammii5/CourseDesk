@@ -181,7 +181,8 @@ function SetPasswordForm() {
 
         const isInstructor = verifiedRole === "Instructor" || verifiedRole === "Teacher";
         const isLearner = verifiedRole === "Learner" || verifiedRole === "Student";
-        const isProfileSetup = isInstructor || isLearner;
+        const isCoordinator = verifiedRole === "Coordinator";
+        const isProfileSetup = isInstructor || isLearner || isCoordinator;
         const trimmedEmail = email.trim().toLowerCase();
 
         if (!trimmedEmail) {
@@ -317,7 +318,8 @@ function SetPasswordForm() {
 
     const isInstructor = verifiedRole === "Instructor" || verifiedRole === "Teacher";
     const isLearner = verifiedRole === "Learner" || verifiedRole === "Student";
-    const isProfileSetup = isInstructor || isLearner;
+    const isCoordinator = verifiedRole === "Coordinator";
+    const isProfileSetup = isInstructor || isLearner || isCoordinator;
 
     return (
         <div className="min-h-dvh bg-gray-50/70 dark:bg-slate-950 py-10 px-4 sm:px-6">
@@ -337,7 +339,7 @@ function SetPasswordForm() {
                     {/* Top banner */}
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-white sm:px-8">
                         <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
-                            {isLearner ? "Learner Onboarding" : isInstructor ? "Instructor Onboarding" : "Account Setup"}
+                            {isLearner ? "Learner Onboarding" : isInstructor ? "Instructor Onboarding" : isCoordinator ? "Co-ordinator Onboarding" : "Account Setup"}
                         </span>
                         <h1 className="mt-3 text-2xl sm:text-3xl font-bold">
                             {isProfileSetup ? "Welcome! Complete your profile" : "Set your password"}
@@ -355,7 +357,7 @@ function SetPasswordForm() {
                             </div>
                         )}
 
-                        {/* SECTION 1: Personal Profile (Mandatory for instructor & learner) */}
+                        {/* SECTION 1: Personal Profile (Mandatory for instructor & learner & coordinator) */}
                         {isProfileSetup && (
                             <div className="space-y-5">
                                 <div className="border-b border-gray-100 pb-3 dark:border-slate-800">
@@ -366,6 +368,8 @@ function SetPasswordForm() {
                                     <p className="text-xs text-gray-500 dark:text-slate-400">
                                         {isLearner
                                             ? "These will appear on your CourseDesk profile, submissions, and learner card."
+                                            : isCoordinator
+                                            ? "These will appear on your CourseDesk coordinator profile and course management views."
                                             : "These will appear on your courses, syllabus, and student-facing profile."}
                                     </p>
                                 </div>
@@ -765,7 +769,13 @@ function SetPasswordForm() {
                                     </>
                                 ) : (
                                     <span>
-                                        {isInstructor ? "Complete Profile & Start Teaching" : "Set Password & Sign In"}
+                                        {isInstructor
+                                            ? "Complete Profile & Start Teaching"
+                                            : isCoordinator
+                                            ? "Complete Profile & Start Coordinating"
+                                            : isLearner
+                                            ? "Complete Profile & Start Learning"
+                                            : "Set Password & Sign In"}
                                     </span>
                                 )}
                             </button>

@@ -5,6 +5,7 @@ export interface DashboardStats {
     activeUsers: number;
     totalInstructors: number;
     totalLearners: number;
+    totalCoordinators?: number;
     totalTeachers?: number;
     totalStudents?: number;
     totalCourses: number;

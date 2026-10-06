@@ -130,7 +130,9 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
         setMe(data);
 
         const isInst = data.role === "Instructor";
+        const isCoord = data.role === "Coordinator";
         const inst = data.instructorDetails || (data as any).teacherDetails;
+        const coord = (data as any).coordinatorDetails;
         const lrn = data.learnerDetails || (data as any).studentDetails;
 
         let fName = "";
@@ -139,6 +141,9 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
         if (isInst && inst) {
             fName = inst.firstName || "";
             lName = inst.lastName || "";
+        } else if (isCoord && coord) {
+            fName = coord.firstName || "";
+            lName = coord.lastName || "";
         } else if (lrn) {
             fName = lrn.firstName || "";
             lName = lrn.lastName || "";
@@ -153,11 +158,15 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
         const state: ProfileFormState = {
             firstName: fName,
             lastName: lName,
-            avatar: isInst ? (inst?.avatar || data.avatar || "") : (lrn?.avatar || data.avatar || ""),
-            timezone: (data as any)?.timezone || (isInst ? inst?.timezone : lrn?.timezone) || "UTC",
+            avatar: isInst
+                ? (inst?.avatar || data.avatar || "")
+                : isCoord
+                ? (coord?.avatar || data.avatar || "")
+                : (lrn?.avatar || data.avatar || ""),
+            timezone: (data as any)?.timezone || (isInst ? inst?.timezone : isCoord ? coord?.timezone : lrn?.timezone) || "UTC",
             professionalHeadline: inst?.professionalHeadline || (inst as any)?.headline || "",
             shortBio: isInst ? (inst?.shortBio || (inst as any)?.bio || "") : (lrn?.shortBio || (lrn as any)?.bio || ""),
-            links: (isInst ? inst?.links : lrn?.links) || [],
+            links: (isInst ? inst?.links : isCoord ? coord?.links : lrn?.links) || [],
             mobile: lrn?.mobile || "",
             dateOfBirth: lrn?.dateOfBirth || "",
             nationality: lrn?.nationality || "",
@@ -200,9 +209,12 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
     const role = me?.role || initialUser?.role || "Learner";
     const isInstructor = role === "Instructor";
     const isAdmin = role === "Admin";
-    const isLearner = !isInstructor && !isAdmin;
+    const isCoordinator = role === "Coordinator";
+    const isLearner = !isInstructor && !isAdmin && !isCoordinator;
     const systemId = isInstructor
         ? (me?.instructorDetails?.instructorId || (me?.instructorDetails as any)?.teacherId || "")
+        : isCoordinator
+        ? ((me as any)?.coordinatorDetails?.coordinatorId || "")
         : isLearner
         ? (me?.learnerDetails?.learnerId || (me?.learnerDetails as any)?.studentId || "")
         : "";
@@ -434,18 +446,20 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                                     isAdmin
                                         ? "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300"
-                                        : isInstructor
+                                        : isCoordinator || isInstructor
                                         ? "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300"
                                         : "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300"
                                 }`}>
                                     {isAdmin ? (
                                         <Shield className="h-3 w-3" />
+                                    ) : isCoordinator ? (
+                                        <UserCheck className="h-3 w-3" />
                                     ) : isInstructor ? (
                                         <Briefcase className="h-3 w-3" />
                                     ) : (
                                         <GraduationCap className="h-3 w-3" />
                                     )}
-                                    <span>{role}</span>
+                                    <span>{isCoordinator ? "Co-ordinator" : role}</span>
                                 </span>
                             </div>
 

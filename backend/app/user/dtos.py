@@ -52,6 +52,18 @@ class InstructorDetailsSchema(CamelModel):
     links: list[InstructorLinkSchema] = []
 
 
+class CoordinatorDetailsSchema(CamelModel):
+    coordinator_id: str = ""
+    first_name: str = ""
+    last_name: str = ""
+    email: str = ""
+    avatar: str = ""
+    phone: str = ""
+    short_bio: str = ""
+    timezone: str = "UTC"
+    links: list[InstructorLinkSchema] = []
+
+
 # Backwards compatibility aliases
 StudentDetailsSchema = LearnerDetailsSchema
 TeacherDetailsSchema = InstructorDetailsSchema
@@ -91,6 +103,7 @@ class UserSchema(CamelModel):
     timezone: str = "UTC"
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
+    coordinator_details: CoordinatorDetailsSchema | None = None
 
 
 class UserUpdateSchema(CamelModel):
@@ -102,6 +115,7 @@ class UserUpdateSchema(CamelModel):
     timezone: str | None = None
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
+    coordinator_details: CoordinatorDetailsSchema | None = None
 
 
 class UserResponseSchema(CamelModel):
@@ -116,6 +130,7 @@ class UserResponseSchema(CamelModel):
     timezone: str = "UTC"
     learner_details: LearnerDetailsSchema | None = None
     instructor_details: InstructorDetailsSchema | None = None
+    coordinator_details: CoordinatorDetailsSchema | None = None
 
 
 class InviteInstructorSchema(CamelModel):
@@ -123,6 +138,7 @@ class InviteInstructorSchema(CamelModel):
 
 
 InviteLearnerSchema = InviteInstructorSchema
+InviteCoordinatorSchema = InviteInstructorSchema
 
 
 class PendingInvitationSchema(CamelModel):
