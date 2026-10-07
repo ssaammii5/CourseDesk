@@ -2,8 +2,23 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { AdminCourse } from "@/types";
-import { getCategoriesRequest, type CategoryDto } from "@/lib/api/academics";
-import { X, ChevronDown, Check, BookOpen, Layers, Search, Plus } from "lucide-react";
+import {
+    getCategoriesRequest,
+    getTagsRequest,
+    createTagRequest,
+    type CategoryDto,
+    type TagDto,
+} from "@/lib/api/academics";
+import {
+    X,
+    ChevronDown,
+    Check,
+    BookOpen,
+    Layers,
+    Search,
+    Plus,
+    Tag,
+} from "lucide-react";
 
 interface CourseFormModalProps {
     open: boolean;
@@ -22,31 +37,35 @@ export function CourseFormModal({
     const [name, setName] = useState("");
     const [department, setDepartment] = useState("");
     const [isActive, setIsActive] = useState(true);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [tagInput, setTagInput] = useState("");
+    const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const [categories, setCategories] = useState<CategoryDto[]>([]);
+    const [availableTags, setAvailableTags] = useState<TagDto[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [categorySearch, setCategorySearch] = useState("");
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const tagDropdownRef = useRef<HTMLDivElement>(null);
 
-    // Load available categories
+    // Load available categories and tags
     useEffect(() => {
         if (!open) return;
         let isMounted = true;
         setLoadingCategories(true);
 
-        getCategoriesRequest()
-            .then((cats) => {
+        Promise.all([
+            getCategoriesRequest().catch(() => []),
+            getTagsRequest().catch(() => []),
+        ])
+            .then(([cats, tgs]) => {
                 if (isMounted) {
                     setCategories(cats);
-                }
-            })
-            .catch(() => {
-                if (isMounted) {
-                    setCategories([]);
+                    setAvailableTags(tgs);
                 }
             })
             .finally(() => {
@@ -67,30 +86,35 @@ export function CourseFormModal({
             setName(course.name || "");
             setDepartment(course.department || "");
             setIsActive(course.isActive !== false);
+            setSelectedTags(course.tags || []);
         } else {
             setName("");
             setDepartment("");
             setIsActive(true);
+            setSelectedTags([]);
         }
+        setTagInput("");
+        setIsTagDropdownOpen(false);
         setErrors({});
         setIsDropdownOpen(false);
         setCategorySearch("");
     }, [open, course]);
 
-    // Close dropdown when clicking outside
+    // Close dropdowns when clicking outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsDropdownOpen(false);
             }
+            if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+                setIsTagDropdownOpen(false);
+            }
         }
-        if (isDropdownOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
+        document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [isDropdownOpen]);
+    }, []);
 
     // Focus category search input when dropdown opens
     useEffect(() => {
@@ -116,6 +140,45 @@ export function CourseFormModal({
 
     const selectedCategory = categories.find((c) => c.name === department);
 
+    // Filter available tags for suggestion dropdown
+    const filteredAvailableTags = availableTags.filter((t) => {
+        if (!tagInput.trim()) return true;
+        return t.name.toLowerCase().includes(tagInput.trim().toLowerCase());
+    });
+
+    const toggleTag = (tagName: string) => {
+        const clean = tagName.trim().replace(/^#+/, "");
+        if (!clean) return;
+        setSelectedTags((prev) =>
+            prev.some((t) => t.toLowerCase() === clean.toLowerCase())
+                ? prev.filter((t) => t.toLowerCase() !== clean.toLowerCase())
+                : [...prev, clean]
+        );
+    };
+
+    const removeTag = (tagName: string) => {
+        setSelectedTags((prev) =>
+            prev.filter((t) => t.toLowerCase() !== tagName.toLowerCase())
+        );
+    };
+
+    const handleAddCustomTag = () => {
+        const clean = tagInput.trim().replace(/^#+/, "");
+        if (!clean) return;
+        if (!selectedTags.some((t) => t.toLowerCase() === clean.toLowerCase())) {
+            setSelectedTags((prev) => [...prev, clean]);
+        }
+        // Save to global catalog in background if not already present
+        if (!availableTags.some((t) => t.name.toLowerCase() === clean.toLowerCase())) {
+            createTagRequest({ name: clean })
+                .then((newTag) => {
+                    setAvailableTags((prev) => [...prev, newTag]);
+                })
+                .catch(() => {});
+        }
+        setTagInput("");
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors: Record<string, string> = {};
@@ -136,7 +199,7 @@ export function CourseFormModal({
             name: name.trim(),
             department: department.trim(),
             isActive,
-            tags: course?.tags ?? [],
+            tags: selectedTags,
             program: course?.program ?? "",
             session: course?.session ?? "",
             instructorIds: course?.instructorIds ?? [],
@@ -153,11 +216,11 @@ export function CourseFormModal({
             aria-modal="true"
         >
             <div
-                className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
+                className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="relative px-6 pt-6 pb-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <div className="relative px-6 pt-6 pb-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 shadow-sm">
                             <BookOpen className="w-5 h-5" />
@@ -168,7 +231,7 @@ export function CourseFormModal({
                             </h2>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                 {course
-                                    ? "Update the details for this course"
+                                    ? "Update the details and classification for this course"
                                     : "Fill in the details to create a new course"}
                             </p>
                         </div>
@@ -176,15 +239,15 @@ export function CourseFormModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                         aria-label="Close"
                     >
                         <X className="w-4 h-4" />
                     </button>
                 </div>
 
-                {/* Form Body - Strictly 3 Fields: Course Title, Category, Active Course */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                {/* Form Body */}
+                <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 custom-scrollbar">
                     {/* 1. Course Title */}
                     <div className="space-y-1.5">
                         <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
@@ -226,7 +289,7 @@ export function CourseFormModal({
                             <button
                                 type="button"
                                 onClick={() => setIsDropdownOpen((prev) => !prev)}
-                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm border bg-gray-50 dark:bg-gray-800/60 transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 ${
+                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm border bg-gray-50 dark:bg-gray-800/60 transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 cursor-pointer ${
                                     errors.department
                                         ? "border-red-400 dark:border-red-500/60 bg-red-50/20 dark:bg-red-950/10"
                                         : isDropdownOpen
@@ -309,7 +372,7 @@ export function CourseFormModal({
                                                                 }));
                                                             }
                                                         }}
-                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
+                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer ${
                                                             isSelected
                                                                 ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold"
                                                                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/70"
@@ -342,7 +405,116 @@ export function CourseFormModal({
                         )}
                     </div>
 
-                    {/* 3. Active Course Toggle */}
+                    {/* 3. Course Tags */}
+                    <div className="space-y-1.5" ref={tagDropdownRef}>
+                        <div className="flex items-center justify-between">
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                Tags <span className="text-gray-400 font-normal lowercase">(optional)</span>
+                            </label>
+                            {selectedTags.length > 0 && (
+                                <span className="text-[11px] text-gray-400">
+                                    {selectedTags.length} selected
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Selected Tags Display */}
+                        {selectedTags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
+                                {selectedTags.map((t) => (
+                                    <span
+                                        key={t}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50 animate-in fade-in"
+                                    >
+                                        <span>{t}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeTag(t)}
+                                            className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 cursor-pointer"
+                                            aria-label={`Remove tag ${t}`}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Tag Input & Suggestions */}
+                        <div className="relative">
+                            <div className="flex items-center gap-1.5">
+                                <div className="relative flex-1">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 flex items-center justify-center pointer-events-none">
+                                        <Tag className="w-3.5 h-3.5" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={tagInput}
+                                        onChange={(e) => {
+                                            setTagInput(e.target.value);
+                                            if (!isTagDropdownOpen) setIsTagDropdownOpen(true);
+                                        }}
+                                        onFocus={() => setIsTagDropdownOpen(true)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                handleAddCustomTag();
+                                            }
+                                        }}
+                                        placeholder="Type or select tags (e.g., Python, Fullstack)..."
+                                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/80 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleAddCustomTag}
+                                    disabled={!tagInput.trim()}
+                                    className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    Add
+                                </button>
+                            </div>
+
+                            {/* Tag Suggestions Dropdown */}
+                            {isTagDropdownOpen && availableTags.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 p-2 animate-in fade-in-50 zoom-in-95 duration-150">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-2 py-1">
+                                        Suggested Tags:
+                                    </p>
+                                    <div className="max-h-40 overflow-y-auto flex flex-wrap gap-1.5 p-1 custom-scrollbar">
+                                        {filteredAvailableTags.map((t) => {
+                                            const isSelected = selectedTags.some(
+                                                (st) => st.toLowerCase() === t.name.toLowerCase()
+                                            );
+                                            return (
+                                                <button
+                                                    key={t.id || t.name}
+                                                    type="button"
+                                                    onClick={() => toggleTag(t.name)}
+                                                    className={`cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                                                        isSelected
+                                                            ? "bg-blue-600 text-white font-semibold shadow-xs"
+                                                            : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/50"
+                                                    }`}
+                                                >
+                                                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                                                    <span>{t.name}</span>
+                                                </button>
+                                            );
+                                        })}
+                                        {filteredAvailableTags.length === 0 && (
+                                            <p className="text-xs text-gray-400 p-2 italic">
+                                                No matching existing tags. Press &quot;Add&quot; to create &quot;{tagInput.trim()}&quot;.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 4. Active Course Toggle */}
                     <div className="pt-1">
                         <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
                             <div>
@@ -384,7 +556,7 @@ export function CourseFormModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                         >
                             Cancel
                         </button>
