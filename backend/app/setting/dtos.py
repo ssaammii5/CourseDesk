@@ -31,3 +31,12 @@ class SystemActivityItemSchema(CamelModel):
     actor: str
     timestamp: str
     category: str = "system"
+
+
+class PaginatedSystemActivitiesSchema(CamelModel):
+    items: list[SystemActivityItemSchema]
+    total: int
+    has_more: bool
+    offset: int
+    limit: int
+    retention_days: int = 30

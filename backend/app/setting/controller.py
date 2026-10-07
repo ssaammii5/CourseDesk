@@ -86,20 +86,57 @@ def get_system_health(db: Session):
     }
 
 
-def get_system_activities(db: Session):
+def get_system_activities(
+    db: Session,
+    limit: int = 15,
+    offset: int = 0,
+    search: str | None = None,
+):
+    from datetime import datetime, timezone, timedelta
+    from sqlalchemy import or_
+    from sqlalchemy.orm import joinedload
     from app.notification.models import NotificationModel
 
-    notifs = list(
-        db.scalars(
-            select(NotificationModel)
-            .order_by(NotificationModel.created_at_utc.desc())
-            .limit(25)
-        ).all()
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=30)
+
+    # Base query strictly constrained to the past 30 days
+    base_filter = [NotificationModel.created_at_utc >= cutoff]
+
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        base_filter.append(
+            or_(
+                NotificationModel.title.ilike(term),
+                NotificationModel.message.ilike(term),
+                NotificationModel.kind.ilike(term),
+            )
+        )
+
+    # Total matching records within the 30-day window
+    total = db.scalar(
+        select(func.count(NotificationModel.id)).where(*base_filter)
+    ) or 0
+
+    # Paginated query with eager user load for lazy loading
+    safe_limit = max(1, min(limit, 100))
+    safe_offset = max(0, offset)
+
+    query = (
+        select(NotificationModel)
+        .where(*base_filter)
+        .options(joinedload(NotificationModel.user))
+        .order_by(NotificationModel.created_at_utc.desc())
+        .offset(safe_offset)
+        .limit(safe_limit)
     )
-    results = []
+
+    notifs = list(db.scalars(query).all())
+
+    items = []
     for n in notifs:
         actor_name = n.user.name if n.user else "System"
-        results.append({
+        items.append({
             "id": n.id,
             "action": n.title,
             "details": n.message or "Administrative system action completed successfully.",
@@ -107,4 +144,12 @@ def get_system_activities(db: Session):
             "timestamp": n.created_at_utc.isoformat(),
             "category": n.kind or "system",
         })
-    return results
+
+    return {
+        "items": items,
+        "total": total,
+        "has_more": (safe_offset + len(items)) < total,
+        "offset": safe_offset,
+        "limit": safe_limit,
+        "retention_days": 30,
+    }
