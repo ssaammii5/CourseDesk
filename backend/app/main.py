@@ -44,9 +44,11 @@ from sqlalchemy import text
 Base.metadata.create_all(engine)
 
 # Safe idempotent migration to ensure new instructor and learner columns exist
-with engine.begin() as conn:
-    conn.execute(text("""
-    ALTER TABLE academic_department_table ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
+try:
+    with engine.begin() as conn:
+        conn.execute(text("SET LOCAL lock_timeout = '2s';"))
+        conn.execute(text("""
+        ALTER TABLE academic_department_table ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
     ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
@@ -127,6 +129,8 @@ with engine.begin() as conn:
     );
     CREATE INDEX IF NOT EXISTS ix_coordinator_details_table_coordinator_id ON coordinator_details_table(coordinator_id);
     """))
+except Exception:
+    pass
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 

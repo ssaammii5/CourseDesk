@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { resendVerificationRequest, verifyEmailRequest } from "@/lib/api/auth";
+import { useAppSettings } from "@/context";
 
 export function LoginView() {
     const router = useRouter();
@@ -26,6 +27,7 @@ export function LoginView() {
     const verifiedParam = searchParams.get("verified") === "true";
 
     const { login } = useAuth();
+    const { platformName, platformTagline } = useAppSettings();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -229,11 +231,11 @@ export function LoginView() {
                         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                             <Layers className="h-6 w-6" />
                         </span>
-                        <span className="text-xl font-semibold tracking-tight">CourseDesk</span>
+                        <span className="text-xl font-semibold tracking-tight">{platformName || "CourseDesk"}</span>
                     </div>
                     <h1 className="mt-10 text-4xl font-bold tracking-[0.06em] sm:text-5xl">WELCOME</h1>
                     <p className="mt-4 text-sm font-semibold uppercase tracking-[0.24em] text-white/90">
-                        Modern Course &amp; Assignment Platform
+                        {platformTagline || "Modern Course & Assignment Platform"}
                     </p>
                     <p className="mt-6 max-w-md text-sm leading-6 text-white/80">
                         Universal workspace for instructors, learners, and program managers.
@@ -251,7 +253,7 @@ export function LoginView() {
                 />
                 <div className="relative mx-auto w-full max-w-md">
                     <h2 className="text-3xl font-semibold text-gray-900 dark:text-slate-100">Sign in</h2>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">to continue to CourseDesk</p>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">to continue to {platformName || "CourseDesk"}</p>
 
                     {(verifiedParam || otpSuccessMessage) && (
                         <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 animate-in fade-in">

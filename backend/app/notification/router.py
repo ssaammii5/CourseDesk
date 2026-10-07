@@ -47,12 +47,17 @@ def get_sse_user(
             )
         user_id = int(raw_id)
         user = db.scalar(select(UserModel).where(UserModel.id == user_id))
+        db.rollback()
         if not user:
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, detail="You're unauthorized"
             )
         return user
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception:
+        db.rollback()
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, detail="You're unauthorized"
         )

@@ -9,6 +9,34 @@ def get_settings(db: Session):
     return list(db.scalars(select(AppSettingModel)).all())
 
 
+def get_public_settings(db: Session):
+    rows = list(db.scalars(select(AppSettingModel)).all())
+    store = {r.key: r.value for r in rows}
+
+    platform_name = store.get("platform_name") or store.get("site_name") or "CourseDesk"
+    site_name = store.get("site_name") or platform_name
+    tagline = store.get("platform_tagline") or "Modern Learning & Assessment Management Platform"
+    logo_light = store.get("brand_logo_light") or ""
+    logo_dark = store.get("brand_logo_dark") or ""
+    favicon = store.get("brand_favicon") or "/favicon.ico"
+    m_mode = store.get("maintenance_mode", "false").lower() in ("true", "1", "yes")
+    m_msg = (
+        store.get("maintenance_banner_message")
+        or "CourseDesk is currently undergoing scheduled maintenance. Normal access will resume shortly."
+    )
+
+    return {
+        "platform_name": platform_name,
+        "site_name": site_name,
+        "platform_tagline": tagline,
+        "brand_logo_light": logo_light,
+        "brand_logo_dark": logo_dark,
+        "brand_favicon": favicon,
+        "maintenance_mode": m_mode,
+        "maintenance_banner_message": m_msg,
+    }
+
+
 def upsert_setting(body: AppSettingSchema, db: Session):
     setting = db.get(AppSettingModel, body.key)
     if setting:

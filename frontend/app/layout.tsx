@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider, ThemeProvider } from "@/context";
+import { AuthProvider, ThemeProvider, AppSettingsProvider } from "@/context";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -36,7 +36,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-full bg-[#eef1f4] text-gray-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AppSettingsProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </AppSettingsProvider>
         </ThemeProvider>
       </body>
     </html>

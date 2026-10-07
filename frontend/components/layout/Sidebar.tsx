@@ -28,6 +28,7 @@ import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
 import { avatarClassFor, letterOf } from "@/lib/utils/theme";
 import { resolveAvatarUrl } from "@/lib/utils/format";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppSettings } from "@/context";
 import { formatRole } from "@/types";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -63,6 +64,7 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
     const pathname = usePathname();
     const prevPathname = useRef(pathname);
     const { user } = useAuth();
+    const { platformName, platformTagline } = useAppSettings();
     const isAdmin = user?.role === "Admin";
     const isCoordinator = user?.role === "Coordinator" || (user?.role as string) === "Co-ordinator";
     const isStaff = isAdmin || isCoordinator;
@@ -446,11 +448,20 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
             >
                 {/* Mobile Header (only visible on mobile screens) */}
                 <div className="flex lg:hidden items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3.5 bg-slate-50/60 dark:bg-slate-950/60">
-                    <div className="flex items-center gap-2">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-xs">
                             <GraduationCap className="h-4 w-4" />
                         </span>
-                        <span className="font-semibold text-slate-800 dark:text-white text-sm">CourseDesk</span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-slate-800 dark:text-white text-sm leading-tight truncate">
+                                {platformName || "CourseDesk"}
+                            </span>
+                            {platformTagline && (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[150px]">
+                                    {platformTagline}
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <button
                         type="button"

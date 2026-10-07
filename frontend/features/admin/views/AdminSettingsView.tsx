@@ -40,10 +40,12 @@ import {
 import { getUsersRequest } from "@/lib/api/users";
 import { getCoursesRequest } from "@/lib/api/courses";
 import { getSubmissionsRequest } from "@/lib/api/submissions";
+import { useAppSettings } from "@/context";
 
 type SettingsTab = "branding" | "health";
 
 export function AdminSettingsView() {
+    const { refreshSettings } = useAppSettings();
     const [activeTab, setActiveTab] = useState<SettingsTab>("branding");
     const [settings, setSettings] = useState<AppSettingDto[]>([]);
     const [systemHealth, setSystemHealth] = useState<SystemHealthDto | null>(null);
@@ -108,7 +110,7 @@ export function AdminSettingsView() {
             // Populate form fields from settings key-value store
             const getVal = (key: string, fallback: string) => {
                 const found = settingsData.find((s) => s.key === key);
-                return found && found.value !== "" ? found.value : fallback;
+                return found !== undefined && found.value !== null ? found.value : fallback;
             };
 
             const nameVal = getVal("platform_name", getVal("site_name", "CourseDesk"));
@@ -193,6 +195,7 @@ export function AdminSettingsView() {
             ];
 
             await batchUpsertAppSettingsRequest(payload);
+            await refreshSettings();
             flashSuccess("Platform & Branding settings saved successfully.");
             await loadAll();
         } catch (err) {
@@ -685,7 +688,7 @@ export function AdminSettingsView() {
                                                 previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
                                             }`}
                                         >
-                                            {platformTagline || "Learning & Assessment Management Platform"}
+                                            {platformTagline || "Modern Learning & Assessment Management Platform"}
                                         </p>
                                     </div>
                                 </div>

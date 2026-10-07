@@ -40,6 +40,7 @@ import { getAssignmentRequest } from "@/lib/api/assignments";
 import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
 import { hasAccessToken } from "@/lib/auth/session";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAppSettings, useTheme } from "@/context";
 
 interface TopBarProps {
     onMenuClick: () => void;
@@ -270,6 +271,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { user, logout } = useAuth();
+    const { platformName, platformTagline, brandLogoLight, brandLogoDark } = useAppSettings();
+    const { theme } = useTheme();
+    const activeLogo = theme === "dark" ? (brandLogoDark || brandLogoLight) : (brandLogoLight || brandLogoDark);
     const [accountOpen, setAccountOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -483,18 +487,39 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 </button>
 
                 <Link href="/" className="group flex shrink-0 items-center gap-2">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
-                        <GraduationCap className="h-5 w-5" />
-                    </span>
-                    <span
-                        className={`text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${
-                            classCourse || classCourseId || isTodo || isCalendar || isSettings || isAdminPage
-                                ? "hidden md:inline-block"
-                                : "inline-block"
-                        }`}
-                    >
-                        CourseDesk
-                    </span>
+                    {activeLogo ? (
+                        <img
+                            src={activeLogo}
+                            alt={platformName || "Logo"}
+                            className="h-8 max-w-[150px] object-contain transition-transform group-hover:scale-105"
+                        />
+                    ) : (
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
+                            <GraduationCap className="h-5 w-5" />
+                        </span>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                        <span
+                            className={`text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${
+                                classCourse || classCourseId || isTodo || isCalendar || isSettings || isAdminPage
+                                    ? "hidden md:inline-block"
+                                    : "inline-block"
+                            }`}
+                        >
+                            {platformName || "CourseDesk"}
+                        </span>
+                        {platformTagline && (
+                            <span
+                                className={`text-[10px] font-medium leading-none text-slate-500 dark:text-slate-400 tracking-tight truncate max-w-[180px] sm:max-w-[260px] ${
+                                    classCourse || classCourseId || isTodo || isCalendar || isSettings || isAdminPage
+                                        ? "hidden xl:inline-block"
+                                        : "hidden sm:inline-block"
+                                }`}
+                            >
+                                {platformTagline}
+                            </span>
+                        )}
+                    </div>
                 </Link>
 
                 {/* Breadcrumb Info */}
@@ -761,7 +786,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
                             {/* Footer Links */}
                             <div className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/40 px-4 py-2.5 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
-                                <span>CourseDesk LMS</span>
+                                <span>{platformName || "CourseDesk"} LMS</span>
                                 <div className="flex items-center gap-2">
                                     <a href="#" className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">Privacy</a>
                                     <span>•</span>

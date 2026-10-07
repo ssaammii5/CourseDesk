@@ -5,11 +5,19 @@ from app.setting.dtos import (
     AppSettingResponseSchema,
     AppSettingSchema,
     PaginatedSystemActivitiesSchema,
+    PublicPlatformSettingsSchema,
     SystemHealthResponseSchema,
 )
 from app.utils.helpers import DbSession, IsAdmin
 
 setting_routes = APIRouter(prefix="/api/app-settings", tags=["app-settings"])
+
+
+@setting_routes.get(
+    "/public", response_model=PublicPlatformSettingsSchema, status_code=status.HTTP_200_OK
+)
+def get_public_settings(db: DbSession):
+    return controller.get_public_settings(db)
 
 
 @setting_routes.get("", response_model=list[AppSettingResponseSchema], status_code=status.HTTP_200_OK)

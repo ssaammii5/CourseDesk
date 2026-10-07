@@ -7,6 +7,17 @@ export interface AppSettingDto {
     category: string;
 }
 
+export interface PublicPlatformSettingsDto {
+    platformName: string;
+    siteName: string;
+    platformTagline: string;
+    brandLogoLight: string;
+    brandLogoDark: string;
+    brandFavicon: string;
+    maintenanceMode: boolean;
+    maintenanceBannerMessage: string;
+}
+
 export interface UpsertAppSettingPayload {
     key: string;
     value: string;
@@ -80,4 +91,11 @@ export function getSystemActivitiesRequest(params?: {
         `/api/app-settings/activities${queryString ? `?${queryString}` : ""}`,
         { method: "GET" }
     );
+}
+
+export function getPublicPlatformSettingsRequest(): Promise<PublicPlatformSettingsDto> {
+    return apiFetch<PublicPlatformSettingsDto>("/api/app-settings/public", {
+        method: "GET",
+        auth: false,
+    });
 }
