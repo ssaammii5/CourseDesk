@@ -27,12 +27,18 @@ import {
     Clock,
     ArrowDown,
     Loader2,
+    Upload,
+    Trash2,
+    Check,
+    ExternalLink,
+    X,
 } from "lucide-react";
 import {
     getAppSettingsRequest,
     batchUpsertAppSettingsRequest,
     getSystemHealthRequest,
     getSystemActivitiesRequest,
+    uploadBrandingAssetRequest,
     type AppSettingDto,
     type SystemHealthDto,
     type SystemActivityDto,
@@ -40,9 +46,183 @@ import {
 import { getUsersRequest } from "@/lib/api/users";
 import { getCoursesRequest } from "@/lib/api/courses";
 import { getSubmissionsRequest } from "@/lib/api/submissions";
-import { useAppSettings } from "@/context";
+import { useAppSettings, applyFavicon } from "@/context";
+import { resolveBrandAssetUrl } from "@/lib/utils/format";
 
 type SettingsTab = "branding" | "health";
+
+interface AssetFieldProps {
+    id: string;
+    label: string;
+    description: string;
+    value: string;
+    onChange: (val: string) => void;
+    placeholder: string;
+    onUpload: (file: File) => Promise<void>;
+    isUploading: boolean;
+    presets: { label: string; value: string }[];
+    previewTheme?: "light" | "dark";
+    isSquare?: boolean;
+}
+
+function AssetField({
+    id,
+    label,
+    description,
+    value,
+    onChange,
+    placeholder,
+    onUpload,
+    isUploading,
+    presets,
+    previewTheme = "light",
+    isSquare = false,
+}: AssetFieldProps) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [imgStatus, setImgStatus] = useState<"loading" | "valid" | "error" | "empty">("empty");
+
+    const trimmed = value.trim();
+    const resolvedUrl = trimmed ? resolveBrandAssetUrl(trimmed) : "";
+
+    useEffect(() => {
+        if (!resolvedUrl) {
+            setImgStatus("empty");
+        } else {
+            setImgStatus("loading");
+        }
+    }, [resolvedUrl]);
+
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-1">
+                <label
+                    htmlFor={id}
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                >
+                    {label}
+                </label>
+                {presets.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        <span className="text-[10px] text-slate-400">Presets:</span>
+                        {presets.map((p) => (
+                            <button
+                                key={p.label}
+                                type="button"
+                                onClick={() => onChange(p.value)}
+                                className="cursor-pointer text-[11px] font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline underline-offset-2 transition-colors"
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="relative flex-1">
+                    <input
+                        id={id}
+                        type="text"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={placeholder}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    />
+                    {trimmed && (
+                        <button
+                            type="button"
+                            onClick={() => onChange("")}
+                            title="Clear input"
+                            className="cursor-pointer absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors p-1"
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
+
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp,image/x-icon,.ico"
+                    className="hidden"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            void onUpload(file);
+                            e.target.value = "";
+                        }
+                    }}
+                />
+
+                <button
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="cursor-pointer shrink-0 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs transition-colors disabled:opacity-50"
+                >
+                    {isUploading ? (
+                        <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+                            <span>Uploading...</span>
+                        </>
+                    ) : (
+                        <>
+                            <Upload className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                            <span>Upload File</span>
+                        </>
+                    )}
+                </button>
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+                {description}
+            </p>
+
+            {/* Inline Mini Preview & Verification */}
+            {resolvedUrl && (
+                <div className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40">
+                    <div
+                        className={`flex items-center justify-center p-2 rounded-lg border ${
+                            previewTheme === "dark"
+                                ? "bg-slate-900 border-slate-800 text-white"
+                                : "bg-white border-slate-200 text-slate-900"
+                        } ${isSquare ? "h-11 w-11" : "h-11 min-w-[100px] max-w-[150px]"}`}
+                    >
+                        <img
+                            src={resolvedUrl}
+                            alt={label}
+                            onLoad={() => setImgStatus("valid")}
+                            onError={() => setImgStatus("error")}
+                            className={`${isSquare ? "h-6 w-6" : "h-7 max-w-[130px]"} object-contain`}
+                        />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        {imgStatus === "valid" && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                Image loaded successfully
+                            </span>
+                        )}
+                        {imgStatus === "error" && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                                <AlertCircle className="h-3.5 w-3.5" />
+                                Unable to load image (file not found or invalid URL)
+                            </span>
+                        )}
+                        {imgStatus === "loading" && (
+                            <span className="text-[11px] text-slate-400 font-medium">
+                                Verifying image...
+                            </span>
+                        )}
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5" title={resolvedUrl}>
+                            Source: {resolvedUrl}
+                        </p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export function AdminSettingsView() {
     const { refreshSettings } = useAppSettings();
@@ -78,11 +258,32 @@ export function AdminSettingsView() {
 
     // Live preview theme toggle
     const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light");
+    const [uploadingField, setUploadingField] = useState<"logoLight" | "logoDark" | "favicon" | null>(null);
 
     const flashSuccess = (msg: string) => {
         setSuccessMessage(msg);
         setTimeout(() => setSuccessMessage(null), 3500);
     };
+
+    const handleFileUpload = async (
+        field: "logoLight" | "logoDark" | "favicon",
+        file: File
+    ) => {
+        try {
+            setUploadingField(field);
+            setError(null);
+            const res = await uploadBrandingAssetRequest(file);
+            if (field === "logoLight") setBrandLogoLight(res.url);
+            else if (field === "logoDark") setBrandLogoDark(res.url);
+            else if (field === "favicon") setBrandFavicon(res.url);
+            flashSuccess("Asset uploaded successfully! Remember to click 'Save Settings' to apply.");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to upload branding asset.");
+        } finally {
+            setUploadingField(null);
+        }
+    };
+
 
     // Load all data
     const loadAll = useCallback(async () => {
@@ -196,6 +397,12 @@ export function AdminSettingsView() {
 
             await batchUpsertAppSettingsRequest(payload);
             await refreshSettings();
+            applyFavicon(brandFavicon.trim());
+            if (typeof document !== "undefined") {
+                const brand = platformName.trim() || "CourseDesk";
+                const tagline = platformTagline.trim() ? ` - ${platformTagline.trim()}` : " - Course & Assignment Management";
+                document.title = `${brand}${tagline}`;
+            }
             flashSuccess("Platform & Branding settings saved successfully.");
             await loadAll();
         } catch (err) {
@@ -576,120 +783,172 @@ export function AdminSettingsView() {
                                 </p>
                             </div>
 
-                            {/* Light Mode Logo URL */}
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                                    Brand Logo (Light Mode URL)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={brandLogoLight}
-                                    onChange={(e) => setBrandLogoLight(e.target.value)}
-                                    placeholder="e.g. /brand/logo-light.svg or https://..."
-                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                                />
-                                <p className="text-[11px] text-slate-400">
-                                    Logo displayed on white and light backgrounds.
-                                </p>
-                            </div>
+                            {/* Light Mode Logo */}
+                            <AssetField
+                                id="brand-logo-light"
+                                label="Brand Logo (Light Mode URL)"
+                                description="Logo displayed on white and light backgrounds (e.g. headers, sidebars)."
+                                value={brandLogoLight}
+                                onChange={setBrandLogoLight}
+                                placeholder="e.g. /brand/logo-light.svg or https://..."
+                                onUpload={(file) => handleFileUpload("logoLight", file)}
+                                isUploading={uploadingField === "logoLight"}
+                                presets={[
+                                    { label: "Default SVG", value: "/brand/logo-light.svg" },
+                                ]}
+                                previewTheme="light"
+                            />
 
-                            {/* Dark Mode Logo URL */}
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                                    Brand Logo (Dark Mode URL)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={brandLogoDark}
-                                    onChange={(e) => setBrandLogoDark(e.target.value)}
-                                    placeholder="e.g. /brand/logo-dark.svg or https://..."
-                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                                />
-                                <p className="text-[11px] text-slate-400">
-                                    Logo displayed when users enable dark theme.
-                                </p>
-                            </div>
+                            {/* Dark Mode Logo */}
+                            <AssetField
+                                id="brand-logo-dark"
+                                label="Brand Logo (Dark Mode URL)"
+                                description="Logo displayed when users enable dark theme."
+                                value={brandLogoDark}
+                                onChange={setBrandLogoDark}
+                                placeholder="e.g. /brand/logo-dark.svg or https://..."
+                                onUpload={(file) => handleFileUpload("logoDark", file)}
+                                isUploading={uploadingField === "logoDark"}
+                                presets={[
+                                    { label: "Default SVG", value: "/brand/logo-dark.svg" },
+                                ]}
+                                previewTheme="dark"
+                            />
 
                             {/* Favicon URL */}
-                            <div className="space-y-1.5 md:col-span-2">
-                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                                    Favicon URL
-                                </label>
-                                <input
-                                    type="text"
+                            <div className="md:col-span-2">
+                                <AssetField
+                                    id="brand-favicon"
+                                    label="Favicon URL"
+                                    description="Icon displayed in browser tabs and bookmarks (supports .ico, .svg, .png)."
                                     value={brandFavicon}
-                                    onChange={(e) => setBrandFavicon(e.target.value)}
-                                    placeholder="e.g. /favicon.ico"
-                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                    onChange={setBrandFavicon}
+                                    placeholder="e.g. /favicon.ico or /brand/favicon.svg"
+                                    onUpload={(file) => handleFileUpload("favicon", file)}
+                                    isUploading={uploadingField === "favicon"}
+                                    presets={[
+                                        { label: "Default ICO", value: "/favicon.ico" },
+                                        { label: "Brand SVG", value: "/brand/favicon.svg" },
+                                    ]}
+                                    previewTheme={previewTheme}
+                                    isSquare={true}
                                 />
-                                <p className="text-[11px] text-slate-400">
-                                    Icon displayed in browser tabs and bookmarks.
-                                </p>
                             </div>
                         </div>
 
                         {/* Live Branding Preview */}
-                        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                    Live Branding Preview
-                                </h3>
-                                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Live Branding Preview
+                                    </h3>
+                                    <p className="text-xs text-slate-400 mt-0.5">
+                                        Interactive appearance in navigation bar and browser tab.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                                     <button
                                         type="button"
                                         onClick={() => setPreviewTheme("light")}
-                                        className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                        className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                                             previewTheme === "light"
                                                 ? "bg-white text-slate-900 shadow-xs"
-                                                : "text-slate-500 hover:text-slate-900"
+                                                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
                                         }`}
                                     >
-                                        <Sun className="h-3 w-3" />
+                                        <Sun className="h-3.5 w-3.5 text-amber-500" />
                                         Light
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setPreviewTheme("dark")}
-                                        className={`cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                        className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                                             previewTheme === "dark"
                                                 ? "bg-slate-900 text-white shadow-xs"
-                                                : "text-slate-500 hover:text-slate-200"
+                                                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
                                         }`}
                                     >
-                                        <Moon className="h-3 w-3" />
+                                        <Moon className="h-3.5 w-3.5 text-indigo-400" />
                                         Dark
                                     </button>
                                 </div>
                             </div>
 
+                            {/* Navigation Bar Simulation */}
                             <div
-                                className={`rounded-2xl border p-5 transition-colors ${
+                                className={`rounded-2xl border p-5 transition-colors shadow-xs ${
                                     previewTheme === "dark"
                                         ? "bg-slate-950 border-slate-800 text-white"
                                         : "bg-white border-slate-200 text-slate-900"
                                 }`}
                             >
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                                    <Eye className="h-3 w-3" /> Navigation Bar Simulation ({previewTheme === "dark" ? "Dark Theme" : "Light Theme"})
+                                </div>
                                 <div className="flex items-center gap-3">
-                                    <div
-                                        className={`flex h-10 w-10 items-center justify-center rounded-xl font-black text-lg ${
-                                            previewTheme === "dark"
-                                                ? "bg-blue-600 text-white"
-                                                : "bg-blue-50 text-blue-600 border border-blue-200"
-                                        }`}
-                                    >
-                                        {platformName ? platformName.charAt(0).toUpperCase() : "C"}
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-base leading-tight">
+                                    {(() => {
+                                        const logoToPreview = previewTheme === "dark"
+                                            ? (brandLogoDark.trim() || brandLogoLight.trim())
+                                            : (brandLogoLight.trim() || brandLogoDark.trim());
+                                        const resolved = logoToPreview ? resolveBrandAssetUrl(logoToPreview) : "";
+                                        return resolved ? (
+                                            <div className="flex items-center">
+                                                <img
+                                                    src={resolved}
+                                                    alt={platformName || "Logo"}
+                                                    className="h-9 max-w-[190px] object-contain transition-transform"
+                                                    onError={(e) => {
+                                                        (e.currentTarget as HTMLElement).style.display = "none";
+                                                    }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className={`flex h-10 w-10 items-center justify-center rounded-xl font-black text-lg ${
+                                                    previewTheme === "dark"
+                                                        ? "bg-blue-600 text-white shadow-xs"
+                                                        : "bg-blue-50 text-blue-600 border border-blue-200 shadow-xs"
+                                                }`}
+                                            >
+                                                {platformName ? platformName.charAt(0).toUpperCase() : "C"}
+                                            </div>
+                                        );
+                                    })()}
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-base leading-tight truncate">
                                             {platformName || "CourseDesk"}
                                         </p>
                                         <p
-                                            className={`text-xs ${
+                                            className={`text-xs truncate ${
                                                 previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
                                             }`}
                                         >
                                             {platformTagline || "Modern Learning & Assessment Management Platform"}
                                         </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Browser Tab Simulation */}
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 p-4">
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
+                                    <Globe className="h-3 w-3" /> Browser Tab Simulation
+                                </div>
+                                <div className="flex items-center">
+                                    <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-t-xl bg-white dark:bg-slate-900 border-t border-x border-slate-200 dark:border-slate-800 shadow-xs max-w-md">
+                                        <img
+                                            src={resolveBrandAssetUrl(brandFavicon.trim() || "/favicon.ico")}
+                                            alt="Favicon"
+                                            className="h-4 w-4 shrink-0 object-contain rounded-xs"
+                                            onError={(e) => {
+                                                (e.currentTarget as HTMLElement).style.display = "none";
+                                            }}
+                                        />
+                                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                            {platformName.trim() || "CourseDesk"} - {platformTagline.trim() || "Course & Assignment Management"}
+                                        </span>
+                                        <X className="h-3 w-3 text-slate-400 ml-auto shrink-0" />
                                     </div>
                                 </div>
                             </div>

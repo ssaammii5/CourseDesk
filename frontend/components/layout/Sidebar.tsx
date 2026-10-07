@@ -26,9 +26,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getMyCoursesRequest, type CourseDto } from "@/lib/api/courses";
 import { avatarClassFor, letterOf } from "@/lib/utils/theme";
-import { resolveAvatarUrl } from "@/lib/utils/format";
+import { resolveAvatarUrl, resolveBrandAssetUrl } from "@/lib/utils/format";
 import { useAuth } from "@/hooks/useAuth";
-import { useAppSettings } from "@/context";
+import { useAppSettings, useTheme } from "@/context";
 import { formatRole } from "@/types";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -64,7 +64,17 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
     const pathname = usePathname();
     const prevPathname = useRef(pathname);
     const { user } = useAuth();
-    const { platformName, platformTagline } = useAppSettings();
+    const { platformName, platformTagline, brandLogoLight, brandLogoDark } = useAppSettings();
+    const { theme, resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === "dark" || theme === "dark";
+    const rawLogo = isDark ? (brandLogoDark || brandLogoLight) : (brandLogoLight || brandLogoDark);
+    const activeLogo = rawLogo ? resolveBrandAssetUrl(rawLogo) : "";
+    const [logoError, setLogoError] = useState(false);
+
+    useEffect(() => {
+        setLogoError(false);
+    }, [activeLogo]);
+
     const isAdmin = user?.role === "Admin";
     const isCoordinator = user?.role === "Coordinator" || (user?.role as string) === "Co-ordinator";
     const isStaff = isAdmin || isCoordinator;
@@ -449,9 +459,18 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                 {/* Mobile Header (only visible on mobile screens) */}
                 <div className="flex lg:hidden items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3.5 bg-slate-50/60 dark:bg-slate-950/60">
                     <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-xs">
-                            <GraduationCap className="h-4 w-4" />
-                        </span>
+                        {activeLogo && !logoError ? (
+                            <img
+                                src={activeLogo}
+                                alt={platformName || "Logo"}
+                                onError={() => setLogoError(true)}
+                                className="h-7 max-w-[120px] object-contain"
+                            />
+                        ) : (
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-xs">
+                                <GraduationCap className="h-4 w-4" />
+                            </span>
+                        )}
                         <div className="flex flex-col min-w-0">
                             <span className="font-semibold text-slate-800 dark:text-white text-sm leading-tight truncate">
                                 {platformName || "CourseDesk"}

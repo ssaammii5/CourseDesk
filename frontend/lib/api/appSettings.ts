@@ -99,3 +99,12 @@ export function getPublicPlatformSettingsRequest(): Promise<PublicPlatformSettin
         auth: false,
     });
 }
+
+export function uploadBrandingAssetRequest(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiFetch<{ url: string }>("/api/app-settings/upload-asset", {
+        method: "POST",
+        body: formData,
+    });
+}

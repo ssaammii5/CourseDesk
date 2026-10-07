@@ -37,7 +37,7 @@ import {
 import { type NotificationItem, type NotificationKind, formatRole } from "@/types";
 import { getCourseRequest } from "@/lib/api/courses";
 import { getAssignmentRequest } from "@/lib/api/assignments";
-import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
+import { initialOf, resolveAvatarUrl, resolveBrandAssetUrl } from "@/lib/utils/format";
 import { hasAccessToken } from "@/lib/auth/session";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAppSettings, useTheme } from "@/context";
@@ -272,8 +272,16 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const router = useRouter();
     const { user, logout } = useAuth();
     const { platformName, platformTagline, brandLogoLight, brandLogoDark } = useAppSettings();
-    const { theme } = useTheme();
-    const activeLogo = theme === "dark" ? (brandLogoDark || brandLogoLight) : (brandLogoLight || brandLogoDark);
+    const { theme, resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === "dark" || theme === "dark";
+    const rawLogo = isDark ? (brandLogoDark || brandLogoLight) : (brandLogoLight || brandLogoDark);
+    const activeLogo = rawLogo ? resolveBrandAssetUrl(rawLogo) : "";
+    const [logoError, setLogoError] = useState(false);
+
+    useEffect(() => {
+        setLogoError(false);
+    }, [activeLogo]);
+
     const [accountOpen, setAccountOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -487,10 +495,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 </button>
 
                 <Link href="/" className="group flex shrink-0 items-center gap-2">
-                    {activeLogo ? (
+                    {activeLogo && !logoError ? (
                         <img
                             src={activeLogo}
                             alt={platformName || "Logo"}
+                            onError={() => setLogoError(true)}
                             className="h-8 max-w-[150px] object-contain transition-transform group-hover:scale-105"
                         />
                     ) : (

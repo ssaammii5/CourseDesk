@@ -5,8 +5,10 @@ import {
     getPublicPlatformSettingsRequest,
     type PublicPlatformSettingsDto,
 } from "@/lib/api/appSettings";
+import { resolveBrandAssetUrl } from "@/lib/utils/format";
 
 interface AppSettingsContextType {
+
     platformName: string;
     siteName: string;
     platformTagline: string;
@@ -37,6 +39,50 @@ const AppSettingsContext = createContext<AppSettingsContextType>({
     refreshSettings: async () => {},
 });
 
+export function applyFavicon(faviconUrl?: string | null) {
+    if (typeof document === "undefined") return;
+    const raw = (faviconUrl || "").trim() || "/favicon.ico";
+    const resolved = resolveBrandAssetUrl(raw);
+
+    let mimeType = "image/x-icon";
+    const lower = resolved.toLowerCase();
+    if (lower.endsWith(".svg") || lower.includes("image/svg+xml")) {
+        mimeType = "image/svg+xml";
+    } else if (lower.endsWith(".png") || lower.includes("image/png")) {
+        mimeType = "image/png";
+    } else if (lower.endsWith(".webp") || lower.includes("image/webp")) {
+        mimeType = "image/webp";
+    } else if (lower.endsWith(".gif")) {
+        mimeType = "image/gif";
+    }
+
+    const existingIcons = document.querySelectorAll<HTMLLinkElement>(
+        "link[rel*='icon']"
+    );
+
+    if (existingIcons.length > 0) {
+        existingIcons.forEach((link) => {
+            link.type = mimeType;
+            if (mimeType === "image/svg+xml") {
+                link.setAttribute("sizes", "any");
+            } else {
+                link.removeAttribute("sizes");
+            }
+            link.href = resolved;
+        });
+    } else {
+        const link = document.createElement("link");
+        link.rel = "icon";
+        link.type = mimeType;
+        if (mimeType === "image/svg+xml") {
+            link.setAttribute("sizes", "any");
+        }
+        link.href = resolved;
+        document.head.appendChild(link);
+    }
+}
+
+
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<PublicPlatformSettingsDto>(defaultSettings);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,16 +98,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
                 const tagline = data.platformTagline ? ` - ${data.platformTagline}` : " - Course & Assignment Management";
                 document.title = `${brand}${tagline}`;
 
-                // Update favicon dynamically if custom favicon provided
-                if (data.brandFavicon) {
-                    let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
-                    if (!link) {
-                        link = document.createElement("link");
-                        link.rel = "icon";
-                        document.getElementsByTagName("head")[0].appendChild(link);
-                    }
-                    link.href = data.brandFavicon;
-                }
+                // Update favicon dynamically
+                applyFavicon(data.brandFavicon);
             }
         } catch {
             // Keep existing or default settings if fetch fails
@@ -69,6 +107,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             setIsLoading(false);
         }
     }, []);
+
 
     useEffect(() => {
         void refreshSettings();

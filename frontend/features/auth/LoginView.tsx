@@ -20,6 +20,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { resendVerificationRequest, verifyEmailRequest } from "@/lib/api/auth";
 import { useAppSettings } from "@/context";
+import { resolveBrandAssetUrl } from "@/lib/utils/format";
 
 export function LoginView() {
     const router = useRouter();
@@ -27,7 +28,10 @@ export function LoginView() {
     const verifiedParam = searchParams.get("verified") === "true";
 
     const { login } = useAuth();
-    const { platformName, platformTagline } = useAppSettings();
+    const { platformName, platformTagline, brandLogoDark, brandLogoLight } = useAppSettings();
+    const logoUrl = brandLogoDark || brandLogoLight ? resolveBrandAssetUrl(brandLogoDark || brandLogoLight) : "";
+    const [logoError, setLogoError] = useState(false);
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -228,10 +232,21 @@ export function LoginView() {
                 />
                 <div className="relative">
                     <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-                            <Layers className="h-6 w-6" />
-                        </span>
-                        <span className="text-xl font-semibold tracking-tight">{platformName || "CourseDesk"}</span>
+                        {logoUrl && !logoError ? (
+                            <img
+                                src={logoUrl}
+                                alt={platformName || "CourseDesk"}
+                                onError={() => setLogoError(true)}
+                                className="h-9 max-w-[180px] object-contain"
+                            />
+                        ) : (
+                            <>
+                                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+                                    <Layers className="h-6 w-6" />
+                                </span>
+                                <span className="text-xl font-semibold tracking-tight">{platformName || "CourseDesk"}</span>
+                            </>
+                        )}
                     </div>
                     <h1 className="mt-10 text-4xl font-bold tracking-[0.06em] sm:text-5xl">WELCOME</h1>
                     <p className="mt-4 text-sm font-semibold uppercase tracking-[0.24em] text-white/90">

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" fill="none">
+  <defs>
+    <linearGradient id="cd-light-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#4F46E5" />
+    </linearGradient>
+    <linearGradient id="cd-light-glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Icon Mark Container -->
+  <rect x="2" y="4" width="40" height="40" rx="12" fill="url(#cd-light-grad)" />
+  <rect x="2" y="4" width="40" height="40" rx="12" fill="url(#cd-light-glow)" />
+
+  <!-- Graduation Cap Icon Inside Mark -->
+  <path d="M22 14L34 20L22 26L10 20L22 14Z" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 22.5V28.5C14 28.5 17 31.5 22 31.5C27 31.5 30 28.5 30 28.5V22.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34 20V27" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="34" cy="28" r="1.2" fill="white" />
+
+  <!-- Brand Typography (Light Mode: Slate 900 / Blue 600) -->
+  <text x="52" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800" letter-spacing="-0.5px" fill="#0F172A">Course</text>
+  <text x="127" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="21" font-weight="800" letter-spacing="-0.5px" fill="#2563EB">Desk</text>
+  <circle cx="178" cy="27" r="3" fill="#2563EB" />
+</svg>

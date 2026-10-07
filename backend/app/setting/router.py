@@ -1,4 +1,6 @@
-from fastapi import APIRouter, status
+import os
+
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.setting import controller
 from app.setting.dtos import (
@@ -8,9 +10,26 @@ from app.setting.dtos import (
     PublicPlatformSettingsSchema,
     SystemHealthResponseSchema,
 )
-from app.utils.helpers import DbSession, IsAdmin
+from app.utils.helpers import DbSession, IsAdmin, save_upload_file
 
 setting_routes = APIRouter(prefix="/api/app-settings", tags=["app-settings"])
+
+
+@setting_routes.post("/upload-asset", status_code=status.HTTP_200_OK)
+def upload_branding_asset(
+    file: UploadFile = File(...),
+    _admin: IsAdmin = None,
+):
+    allowed_exts = {".jpg", ".jpeg", ".png", ".webp", ".svg", ".ico"}
+    raw_ext = os.path.splitext(file.filename or "")[1].lower()
+    if raw_ext not in allowed_exts:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Only .svg, .png, .jpg, .jpeg, .webp, or .ico image files are allowed for branding assets.",
+        )
+    url, _, _ = save_upload_file(file, subdir="branding", max_size_bytes=5 * 1024 * 1024)
+    return {"url": url}
+
 
 
 @setting_routes.get(
