@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { AdminCourse } from "@/types";
 import { getCategoriesRequest, type CategoryDto } from "@/lib/api/academics";
-import { X, ChevronDown, Check, BookOpen, Layers, Search, Sparkles } from "lucide-react";
+import { X, ChevronDown, Check, BookOpen, Layers, Search, Plus } from "lucide-react";
 
 interface CourseFormModalProps {
     open: boolean;
@@ -156,7 +156,7 @@ export function CourseFormModal({
                 {/* Header */}
                 <div className="relative px-6 pt-6 pb-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 flex items-center justify-center border border-primary-100/50 dark:border-primary-900/50 shadow-sm">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 shadow-sm">
                             <BookOpen className="w-5 h-5" />
                         </div>
                         <div>
@@ -198,7 +198,7 @@ export function CourseFormModal({
                                     }
                                 }}
                                 placeholder="Enter course title..."
-                                className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-gray-50 dark:bg-gray-800/60 border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 ${
+                                className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-gray-50 dark:bg-gray-800/60 border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 ${
                                     errors.name
                                         ? "border-red-400 dark:border-red-500/60 bg-red-50/20 dark:bg-red-950/10"
                                         : "border-gray-200 dark:border-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600"
@@ -223,16 +223,16 @@ export function CourseFormModal({
                             <button
                                 type="button"
                                 onClick={() => setIsDropdownOpen((prev) => !prev)}
-                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm border bg-gray-50 dark:bg-gray-800/60 transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 ${
+                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm border bg-gray-50 dark:bg-gray-800/60 transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 ${
                                     errors.department
                                         ? "border-red-400 dark:border-red-500/60 bg-red-50/20 dark:bg-red-950/10"
                                         : isDropdownOpen
-                                        ? "border-primary-500 dark:border-primary-400 ring-2 ring-primary-500/20"
+                                        ? "border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20"
                                         : "border-gray-200 dark:border-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600"
                                 }`}
                             >
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="w-5 h-5 rounded-md bg-primary-100/60 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                                    <div className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                                         <Layers className="w-3 h-3" />
                                     </div>
                                     {department ? (
@@ -254,7 +254,7 @@ export function CourseFormModal({
                                 </div>
                                 <ChevronDown
                                     className={`w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0 ml-2 ${
-                                        isDropdownOpen ? "rotate-180 text-primary-500" : ""
+                                        isDropdownOpen ? "rotate-180 text-blue-600" : ""
                                     }`}
                                 />
                             </button>
@@ -272,7 +272,7 @@ export function CourseFormModal({
                                                 value={categorySearch}
                                                 onChange={(e) => setCategorySearch(e.target.value)}
                                                 placeholder="Search categories..."
-                                                className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700/80 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:border-primary-500"
+                                                className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700/80 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
                                             />
                                         </div>
                                     )}
@@ -308,7 +308,7 @@ export function CourseFormModal({
                                                         }}
                                                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
                                                             isSelected
-                                                                ? "bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-semibold"
+                                                                ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold"
                                                                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/70"
                                                         }`}
                                                     >
@@ -321,7 +321,7 @@ export function CourseFormModal({
                                                             )}
                                                         </div>
                                                         {isSelected && (
-                                                            <Check className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                                                            <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                                                         )}
                                                     </button>
                                                 );
@@ -361,7 +361,7 @@ export function CourseFormModal({
                                 role="switch"
                                 aria-checked={isActive}
                                 onClick={() => setIsActive((prev) => !prev)}
-                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500/20 ${
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
                                     isActive
                                         ? "bg-emerald-500 dark:bg-emerald-600"
                                         : "bg-gray-200 dark:bg-gray-700"
@@ -381,15 +381,19 @@ export function CourseFormModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 shadow-sm transition-colors flex items-center gap-1.5"
+                            className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer"
                         >
-                            <Sparkles className="w-3.5 h-3.5" />
+                            {course ? (
+                                <Check className="w-4 h-4 stroke-[2.5]" />
+                            ) : (
+                                <Plus className="w-4 h-4 stroke-[2.5]" />
+                            )}
                             {course ? "Update Course" : "Create Course"}
                         </button>
                     </div>
