@@ -14,15 +14,17 @@ import {
     Check,
     X,
     UserPlus,
-    UserMinus,
     AlertCircle,
     Layers,
     ExternalLink,
-    Filter,
     ShieldAlert,
     CheckCircle2,
     ArrowRight,
     Sparkles,
+    Briefcase,
+    Calendar,
+    Award,
+    Filter,
 } from "lucide-react";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/ui";
@@ -84,9 +86,10 @@ export function AdminAcademicsView() {
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [quickFilter, setQuickFilter] = useState<QuickCourseFilter>("all");
 
-    // Studio Right Panel - Faculty Search & Add
-    const [facultySearchQuery, setFacultySearchQuery] = useState("");
-    const [facultyToAddId, setFacultyToAddId] = useState<number | "">("");
+    // Studio Right Panel - Instructor Allotment Modal
+    const [allotInstructorsModalOpen, setAllotInstructorsModalOpen] = useState(false);
+    const [allotInstructorsSearch, setAllotInstructorsSearch] = useState("");
+    const [instructorsToAllot, setInstructorsToAllot] = useState<number[]>([]);
 
     // Studio Right Panel - Learner Search & Batch Roster
     const [enrolledLearnerSearch, setEnrolledLearnerSearch] = useState("");
@@ -246,30 +249,32 @@ export function AdminAcademicsView() {
     const availableInstructorsToAllot = useMemo(() => {
         if (!selectedCourse) return [];
         const currentIds = selectedCourse.instructorIds ?? selectedCourse.teacherIds ?? [];
+        const query = allotInstructorsSearch.toLowerCase().trim();
         return allInstructors.filter((ins) => {
             if (currentIds.includes(ins.id)) return false;
-            if (!facultySearchQuery) return true;
+            if (!query) return true;
             return (
-                ins.name.toLowerCase().includes(facultySearchQuery.toLowerCase()) ||
-                ins.email.toLowerCase().includes(facultySearchQuery.toLowerCase())
+                ins.name.toLowerCase().includes(query) ||
+                ins.email.toLowerCase().includes(query)
             );
         });
-    }, [selectedCourse, allInstructors, facultySearchQuery]);
+    }, [selectedCourse, allInstructors, allotInstructorsSearch]);
 
-    const handleAssignInstructor = async (instructorId: number) => {
-        if (!selectedCourse) return;
+    const handleBatchAllotInstructors = async () => {
+        if (!selectedCourse || instructorsToAllot.length === 0) return;
         const currentIds = selectedCourse.instructorIds ?? selectedCourse.teacherIds ?? [];
-        if (currentIds.includes(instructorId)) return;
-        const nextIds = [...currentIds, instructorId];
+        const nextIds = Array.from(new Set([...currentIds, ...instructorsToAllot]));
         try {
             setError(null);
             const updated = await setCourseInstructorsRequest(selectedCourse.id, nextIds);
             setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-            setFacultyToAddId("");
-            setFacultySearchQuery("");
-            flashSuccess("Instructor allotted to course.");
+            flashSuccess(
+                `Successfully allotted ${instructorsToAllot.length} instructor${instructorsToAllot.length > 1 ? "s" : ""} to course.`,
+            );
+            setAllotInstructorsModalOpen(false);
+            setInstructorsToAllot([]);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to assign instructor.");
+            setError(err instanceof Error ? err.message : "Failed to allot instructors.");
         }
     };
 
@@ -333,7 +338,7 @@ export function AdminAcademicsView() {
                 [],
             );
             setCourses((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-            flashSuccess(`Enrolled ${learnersToEnroll.length} learners.`);
+            flashSuccess(`Successfully enrolled ${learnersToEnroll.length} learners.`);
             setEnrollModalOpen(false);
             setLearnersToEnroll([]);
         } catch (err) {
@@ -379,88 +384,125 @@ export function AdminAcademicsView() {
         return (
             <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="h-9 w-9 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" />
-                    <p className="text-sm font-medium text-slate-500">Loading course allocations...</p>
+                    <div className="h-10 w-10 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" />
+                    <p className="text-sm font-medium text-slate-500">Loading Course Allocation &amp; Categories...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-8">
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
             {/* Feedback notifications */}
             {error && (
-                <div className="mb-5 flex items-center gap-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-5 py-3.5 text-sm text-red-700 dark:text-red-300">
+                <div className="flex items-center gap-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-5 py-3.5 text-sm text-red-700 dark:text-red-300 shadow-sm animate-in fade-in">
                     <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
-                    <span>{error}</span>
+                    <span className="font-medium">{error}</span>
                 </div>
             )}
             {successMessage && (
-                <div className="mb-5 flex items-center gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-5 py-3.5 text-sm text-emerald-700 dark:text-emerald-300 animate-in fade-in">
-                    <Check className="h-5 w-5 shrink-0 text-emerald-500" />
-                    <span>{successMessage}</span>
+                <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-5 py-3.5 text-sm text-emerald-700 dark:text-emerald-300 shadow-sm animate-in fade-in">
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
+                    <span className="font-medium">{successMessage}</span>
                 </div>
             )}
 
-            {/* Top Command Bar & Metrics */}
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            {/* ══════════════════════════════════════════════════════════════════
+                EXECUTIVE KPI & HEADER HERO
+               ══════════════════════════════════════════════════════════════════ */}
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                        Course Allocations &amp; Categories
+                    <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-900/40 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                        <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+                        <span>Academic Management Hub</span>
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+                        Course Allocation &amp; Categories
                     </h1>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Streamlined command center to organize domains, allot instructors, and enroll learners.
+                    <p className="mt-1.5 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-2xl">
+                        Comprehensive command center to allot instructors, orchestrate student enrollment rosters, and organize curriculum domains.
                     </p>
                 </div>
 
-                {/* Metric Badges */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        type="button"
+                {/* 4 Professional KPI Metric Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4 shrink-0">
+                    {/* Metric 1: Total Courses */}
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-3.5 shadow-xs transition-all hover:border-blue-200 dark:hover:border-blue-900">
+                        <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                            <span className="text-xs font-medium">Courses</span>
+                            <BookOpen className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                            {courses.length}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-slate-400">
+                            {courses.filter((c) => c.isActive).length} active curricula
+                        </div>
+                    </div>
+
+                    {/* Metric 2: Categories */}
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-3.5 shadow-xs transition-all hover:border-indigo-200 dark:hover:border-indigo-900">
+                        <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                            <span className="text-xs font-medium">Categories</span>
+                            <Tag className="h-4 w-4 text-indigo-500" />
+                        </div>
+                        <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                            {categories.length}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-slate-400">
+                            Curriculum tracks
+                        </div>
+                    </div>
+
+                    {/* Metric 3: Instructor Staffing Health */}
+                    <div
                         onClick={() => {
                             setActiveTab("studio");
-                            setQuickFilter("all");
+                            setQuickFilter(coursesNeedingFacultyCount > 0 ? "needs-faculty" : "all");
                         }}
-                        className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                        className={`cursor-pointer rounded-2xl border p-3.5 shadow-xs transition-all ${
+                            coursesNeedingFacultyCount > 0
+                                ? "border-amber-300 dark:border-amber-800/80 bg-amber-50/50 dark:bg-amber-950/20 hover:border-amber-400"
+                                : "border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70"
+                        }`}
                     >
-                        <BookOpen className="h-3.5 w-3.5 text-blue-500" />
-                        <span>{courses.length} Courses</span>
-                    </button>
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Staffing Alert</span>
+                            <ShieldAlert
+                                className={`h-4 w-4 ${
+                                    coursesNeedingFacultyCount > 0 ? "text-amber-500" : "text-emerald-500"
+                                }`}
+                            />
+                        </div>
+                        <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                            {coursesNeedingFacultyCount === 0 ? "100%" : coursesNeedingFacultyCount}
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                            {coursesNeedingFacultyCount === 0 ? "All courses staffed" : "Need instructor allotment"}
+                        </div>
+                    </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab("categories")}
-                        className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                    >
-                        <Tag className="h-3.5 w-3.5 text-indigo-500" />
-                        <span>{categories.length} Categories</span>
-                    </button>
-
-                    {coursesNeedingFacultyCount > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setActiveTab("studio");
-                                setQuickFilter("needs-faculty");
-                            }}
-                            className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 px-3.5 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors cursor-pointer animate-pulse"
-                            title="Click to filter courses needing instructors"
-                        >
-                            <ShieldAlert className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                            <span>{coursesNeedingFacultyCount} Need Faculty</span>
-                        </button>
-                    )}
-
-                    <div className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300">
-                        <GraduationCap className="h-3.5 w-3.5 text-violet-500" />
-                        <span>{totalEnrollmentsCount} Enrollments</span>
+                    {/* Metric 4: Total Enrollments */}
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md p-3.5 shadow-xs transition-all hover:border-violet-200 dark:hover:border-violet-900">
+                        <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                            <span className="text-xs font-medium">Enrollments</span>
+                            <GraduationCap className="h-4 w-4 text-violet-500" />
+                        </div>
+                        <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                            {totalEnrollmentsCount}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-slate-400">
+                            Total student seats
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Primary Tab Navigation (No Horizontal Scroll) */}
-            <div className="mt-6 border-b border-slate-200 dark:border-slate-800">
-                <nav className="flex items-center gap-3 sm:gap-8">
+            {/* ══════════════════════════════════════════════════════════════════
+                PRIMARY SEGMENTED TAB BAR (NO HORIZONTAL SCROLL)
+               ══════════════════════════════════════════════════════════════════ */}
+            <div className="border-b border-slate-200 dark:border-slate-800">
+                <nav className="flex w-full items-center gap-2 sm:gap-6">
                     {TABS.map((tab) => {
                         const active = activeTab === tab.id;
                         return (
@@ -468,15 +510,27 @@ export function AdminAcademicsView() {
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex cursor-pointer items-center gap-2.5 px-2 py-3.5 text-sm font-semibold transition-all ${active
+                                className={`group relative flex cursor-pointer items-center gap-2.5 pb-3.5 pt-1 text-sm font-semibold transition-all ${
+                                    active
                                         ? "text-blue-600 dark:text-blue-400"
                                         : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                                    }`}
+                                }`}
                             >
-                                <span className={`p-1 rounded-lg ${active ? "bg-blue-50 dark:bg-blue-950/60" : ""}`}>
+                                <span
+                                    className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
+                                        active
+                                            ? "bg-blue-600 text-white shadow-sm shadow-blue-500/25"
+                                            : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200"
+                                    }`}
+                                >
                                     {tab.icon}
                                 </span>
-                                <span>{tab.label}</span>
+                                <div>
+                                    <span className="text-sm font-bold tracking-tight">{tab.label}</span>
+                                    <span className="hidden md:inline-block ml-2 text-xs font-normal text-slate-400">
+                                        ({tab.id === "studio" ? `${courses.length} courses` : `${categories.length} categories`})
+                                    </span>
+                                </div>
                                 {active && (
                                     <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-blue-600 dark:bg-blue-500" />
                                 )}
@@ -487,67 +541,85 @@ export function AdminAcademicsView() {
             </div>
 
             {/* ══════════════════════════════════════════════════════════════════
-                TAB 1: UNIFIED ALLOCATION STUDIO
+                TAB 1: COURSE ALLOCATION STUDIO
                ══════════════════════════════════════════════════════════════════ */}
             {activeTab === "studio" && (
-                <div className="mt-6 space-y-4">
-                    {/* Filter and Quick-Filter Controls */}
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex flex-1 flex-wrap items-center gap-2">
-                            <div className="relative min-w-[220px] max-w-sm flex-1">
+                <div className="space-y-6">
+                    {/* Search & Fast Status Triage Bar */}
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-3 sm:p-4 shadow-xs">
+                        <div className="flex flex-1 flex-wrap items-center gap-3">
+                            {/* Search box with clear button */}
+                            <div className="relative min-w-[260px] max-w-md flex-1">
                                 <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                                 <input
                                     type="text"
                                     value={courseSearch}
                                     onChange={(e) => setCourseSearch(e.target.value)}
-                                    placeholder="Search courses..."
-                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="Search courses by name or subject code..."
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-10 pr-9 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                 />
+                                {courseSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setCourseSearch("")}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
                             </div>
 
-                            <select
-                                value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2 px-3 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
-                            >
-                                <option value="all">All Categories</option>
-                                {categories.map((c) => (
-                                    <option key={c.id} value={c.name}>
-                                        {c.name} {c.code ? `(${c.code})` : ""}
-                                    </option>
-                                ))}
-                            </select>
+                            {/* Category Filter Select */}
+                            <div className="flex items-center gap-2">
+                                <Filter className="h-4 w-4 text-slate-400 shrink-0 hidden sm:block" />
+                                <select
+                                    value={categoryFilter}
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 px-3.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                >
+                                    <option value="all">All Categories</option>
+                                    {categories.map((c) => (
+                                        <option key={c.id} value={c.name}>
+                                            {c.name} {c.code ? `(${c.code})` : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
-                        {/* Fast Filters Pills */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto">
+                        {/* Status Pills */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
                             <button
                                 type="button"
                                 onClick={() => setQuickFilter("all")}
-                                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${quickFilter === "all"
-                                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                                    quickFilter === "all"
+                                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs"
                                         : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200"
-                                    }`}
+                                }`}
                             >
                                 All ({courses.length})
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setQuickFilter("needs-faculty")}
-                                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${quickFilter === "needs-faculty"
-                                        ? "bg-amber-600 text-white"
-                                        : "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-100"
-                                    }`}
+                                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                                    quickFilter === "needs-faculty"
+                                        ? "bg-amber-600 text-white shadow-xs"
+                                        : "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/50 hover:bg-amber-100"
+                                }`}
                             >
-                                ⚠️ Needs Faculty ({coursesNeedingFacultyCount})
+                                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                                <span>Unstaffed ({coursesNeedingFacultyCount})</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setQuickFilter("empty-roster")}
-                                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${quickFilter === "empty-roster"
-                                        ? "bg-violet-600 text-white"
-                                        : "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 hover:bg-violet-100"
-                                    }`}
+                                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                                    quickFilter === "empty-roster"
+                                        ? "bg-violet-600 text-white shadow-xs"
+                                        : "bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 border border-violet-200/80 dark:border-violet-900/50 hover:bg-violet-100"
+                                }`}
                             >
                                 Empty Roster ({coursesEmptyRosterCount})
                             </button>
@@ -556,118 +628,200 @@ export function AdminAcademicsView() {
 
                     {/* Master-Detail Split Pane */}
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                        {/* ── Left Pane: Course Selector (4 cols) ──────────────── */}
-                        <div className="lg:col-span-4 xl:col-span-4 space-y-2 max-h-[720px] overflow-y-auto pr-1">
+                        {/* ── Left Column: Course Directory (4 cols) ──────────────── */}
+                        <div className="lg:col-span-4 space-y-2.5 max-h-[820px] overflow-y-auto pr-1 custom-scrollbar">
+                            <div className="flex items-center justify-between px-1 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <span>Curriculum Courses ({filteredCourses.length})</span>
+                                <span className="text-[11px] text-slate-400">Select to Allocate</span>
+                            </div>
+
                             {filteredCourses.map((c) => {
                                 const isSelected = selectedCourse?.id === c.id;
-                                const insCount = (c.instructorIds ?? c.teacherIds ?? []).length;
+                                const insIds = c.instructorIds ?? c.teacherIds ?? [];
+                                const insCount = insIds.length;
                                 const lrnCount = (c.learnerIds ?? c.studentIds ?? []).length;
+                                const courseInstructors = users.filter((u) => insIds.includes(u.id));
+
                                 return (
                                     <div
                                         key={c.id}
                                         onClick={() => {
                                             setSelectedCourseId(c.id);
                                             setSelectedEnrolledIds([]);
-                                            setFacultySearchQuery("");
-                                            setFacultyToAddId("");
+                                            setInstructorsToAllot([]);
+                                            setAllotInstructorsSearch("");
                                         }}
-                                        className={`group relative cursor-pointer rounded-2xl border p-4 transition-all ${isSelected
-                                                ? "border-blue-600 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-950/20 shadow-md ring-2 ring-blue-500/20"
-                                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs"
-                                            }`}
+                                        className={`group relative cursor-pointer rounded-2xl border p-4 transition-all ${
+                                            isSelected
+                                                ? "border-l-4 border-blue-600 dark:border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-md ring-1 ring-blue-500/20"
+                                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs hover:shadow-sm"
+                                        }`}
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="inline-block rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                                {c.department || "General"}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <span className="truncate rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                                    {c.department || "General"}
+                                                </span>
+                                                {c.subject && (
+                                                    <span className="text-[11px] font-mono text-slate-400">
+                                                        {c.subject}
+                                                    </span>
+                                                )}
+                                            </div>
+
                                             {insCount === 0 ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 text-[11px] font-bold">
-                                                    ⚠️ No Faculty
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 px-2 py-0.5 text-[10px] font-bold shrink-0">
+                                                    ⚠️ Unstaffed
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 px-2 py-0.5 text-[11px] font-semibold">
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-semibold shrink-0">
                                                     <Check className="h-3 w-3" />
-                                                    {insCount} Faculty
+                                                    {insCount} {insCount === 1 ? "Instructor" : "Instructors"}
                                                 </span>
                                             )}
                                         </div>
 
-                                        <h3 className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
+                                        <h3 className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                             {c.name}
                                         </h3>
 
-                                        <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                                            <span>
-                                                👥 <strong className="text-slate-700 dark:text-slate-200">{lrnCount}</strong> Students
-                                            </span>
-                                            <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5">
-                                                Manage <ArrowRight className="h-3 w-3" />
-                                            </span>
+                                        {/* Instructor Avatars stack & Learner count */}
+                                        <div className="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-2.5 text-xs text-slate-500">
+                                            <div className="flex items-center gap-1.5">
+                                                {courseInstructors.length > 0 ? (
+                                                    <div className="flex -space-x-1.5 overflow-hidden">
+                                                        {courseInstructors.slice(0, 3).map((ins) => {
+                                                            const avatar = resolveAvatarUrl(ins.avatar);
+                                                            return avatar ? (
+                                                                <img
+                                                                    key={ins.id}
+                                                                    src={avatar}
+                                                                    alt={ins.name}
+                                                                    className="inline-block h-5 w-5 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div
+                                                                    key={ins.id}
+                                                                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900"
+                                                                >
+                                                                    {initialOf(ins.name)}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {courseInstructors.length > 3 && (
+                                                            <div className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[9px] font-bold text-slate-600 dark:text-slate-300 ring-2 ring-white dark:ring-slate-900">
+                                                                +{courseInstructors.length - 3}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                                                        No instructor
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                                                <GraduationCap className="h-3.5 w-3.5 text-violet-500" />
+                                                <span>{lrnCount} Students</span>
+                                            </div>
                                         </div>
                                     </div>
                                 );
                             })}
+
                             {filteredCourses.length === 0 && (
                                 <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-xs text-slate-400">
-                                    No courses match your filter.
+                                    No courses match your filter criteria.
                                 </div>
                             )}
                         </div>
 
-                        {/* ── Right Pane: Unified Course Allotment Studio (8 cols) ── */}
-                        <div className="lg:col-span-8 xl:col-span-8">
+                        {/* ── Right Column: Enterprise Allocation Studio (8 cols) ── */}
+                        <div className="lg:col-span-8">
                             {selectedCourse ? (
-                                <div className="space-y-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+                                <div className="space-y-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-sm">
                                     {/* Active Course Banner */}
-                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
                                         <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="inline-block rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-                                                    {selectedCourse.department || "General"}
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="inline-block rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200/50 dark:border-blue-900/50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+                                                    {selectedCourse.department || "General Domain"}
                                                 </span>
                                                 {selectedCourse.subject && (
-                                                    <span className="text-xs text-slate-400 font-mono">
-                                                        ({selectedCourse.subject})
+                                                    <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300 font-mono">
+                                                        {selectedCourse.subject}
+                                                    </span>
+                                                )}
+                                                {selectedCourse.isActive && (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                        Active Course
                                                     </span>
                                                 )}
                                             </div>
-                                            <h2 className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                                            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
                                                 {selectedCourse.name}
                                             </h2>
                                             {selectedCourse.scheduleNotes && (
-                                                <p className="mt-1 text-xs text-slate-500">
-                                                    🗓️ {selectedCourse.scheduleNotes}
+                                                <p className="mt-1.5 text-xs sm:text-sm text-slate-500 flex items-center gap-1.5">
+                                                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                                                    <span>{selectedCourse.scheduleNotes}</span>
                                                 </p>
                                             )}
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 shrink-0">
                                             <Link
                                                 href={`/course/${selectedCourse.id}`}
-                                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                                target="_blank"
+                                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
                                             >
-                                                <span>View Course</span>
+                                                <span>Course Workspace</span>
                                                 <ExternalLink className="h-3.5 w-3.5" />
                                             </Link>
                                         </div>
                                     </div>
 
-                                    {/* ── Coordinated Two-Column Studio: Faculty + Students ── */}
+                                    {/* ── Coordinated Two-Column Studio: Faculty/Instructors + Students ── */}
                                     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                                        {/* ══ Column 1: Faculty Allocation ══ */}
-                                        <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 bg-slate-50/40 dark:bg-slate-900/60 flex flex-col justify-between">
-                                            <div>
+                                        {/* ══ Column 1: Instructor Allotment ══ */}
+                                        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-5 shadow-xs">
+                                            <div className="space-y-4">
                                                 <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3">
                                                     <div className="flex items-center gap-2">
-                                                        <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                                            Assigned Instructors ({currentCourseInstructors.length})
-                                                        </h4>
+                                                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                                                            <UserCheck className="h-4 w-4" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                                                Assigned Instructors
+                                                            </h4>
+                                                            <p className="text-[11px] text-slate-400">
+                                                                {currentCourseInstructors.length}{" "}
+                                                                {currentCourseInstructors.length === 1
+                                                                    ? "instructor allotted"
+                                                                    : "instructors allotted"}
+                                                            </p>
+                                                        </div>
                                                     </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setInstructorsToAllot([]);
+                                                            setAllotInstructorsSearch("");
+                                                            setAllotInstructorsModalOpen(true);
+                                                        }}
+                                                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors shadow-2xs"
+                                                    >
+                                                        <UserPlus className="h-3.5 w-3.5" />
+                                                        <span>Allot Instructors</span>
+                                                    </button>
                                                 </div>
 
                                                 {/* Assigned Instructors List */}
-                                                <div className="mt-3 space-y-2">
+                                                <div className="space-y-2">
                                                     {currentCourseInstructors.map((ins) => {
                                                         const avatarUrl = resolveAvatarUrl(ins.avatar);
                                                         const initial = initialOf(ins.name);
@@ -675,24 +829,29 @@ export function AdminAcademicsView() {
                                                         return (
                                                             <div
                                                                 key={ins.id}
-                                                                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2.5 shadow-xs"
+                                                                className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs hover:border-slate-300 transition-all"
                                                             >
-                                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                                <div className="flex items-center gap-3 min-w-0">
                                                                     {avatarUrl ? (
                                                                         <img
                                                                             src={avatarUrl}
                                                                             alt={ins.name}
-                                                                            className="h-8 w-8 rounded-full object-cover shrink-0"
+                                                                            className="h-9 w-9 rounded-full object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
                                                                         />
                                                                     ) : (
-                                                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                                                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                                                                             {initial}
                                                                         </div>
                                                                     )}
                                                                     <div className="min-w-0">
-                                                                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                                                                            {ins.name}
-                                                                        </p>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                                                                                {ins.name}
+                                                                            </p>
+                                                                            <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.2 text-[9px] font-bold text-blue-600 dark:text-blue-300">
+                                                                                Instructor
+                                                                            </span>
+                                                                        </div>
                                                                         <p className="text-[11px] text-slate-400 truncate">
                                                                             {ins.email}
                                                                         </p>
@@ -700,14 +859,14 @@ export function AdminAcademicsView() {
                                                                 </div>
 
                                                                 <div className="flex items-center gap-2 shrink-0">
-                                                                    <span className="hidden sm:inline-block rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-500 font-medium">
-                                                                        {load} {load === 1 ? "course" : "courses"}
+                                                                    <span className="hidden sm:inline-block rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+                                                                        Teaching {load} {load === 1 ? "course" : "courses"}
                                                                     </span>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleUnassignInstructor(ins.id)}
-                                                                        className="cursor-pointer rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 transition-colors"
-                                                                        title="Remove instructor"
+                                                                        className="cursor-pointer rounded-xl p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors"
+                                                                        title="Remove instructor from course"
                                                                     >
                                                                         <X className="h-4 w-4" />
                                                                     </button>
@@ -717,71 +876,60 @@ export function AdminAcademicsView() {
                                                     })}
 
                                                     {currentCourseInstructors.length === 0 && (
-                                                        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-amber-300 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20 py-6 text-center">
-                                                            <ShieldAlert className="h-6 w-6 text-amber-500 mb-1" />
-                                                            <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
-                                                                No faculty allotted yet
+                                                        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-300/80 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20 py-8 text-center px-4">
+                                                            <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-2">
+                                                                <ShieldAlert className="h-5 w-5" />
+                                                            </div>
+                                                            <h5 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                                                                No Instructors Allotted
+                                                            </h5>
+                                                            <p className="text-xs text-amber-700 dark:text-amber-400 max-w-xs mt-1">
+                                                                This course is currently unstaffed. Click &quot;Allot Instructors&quot; to assign designated faculty.
                                                             </p>
-                                                            <p className="text-[11px] text-amber-700 dark:text-amber-400">
-                                                                Select an instructor below to staff this course.
-                                                            </p>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setInstructorsToAllot([]);
+                                                                    setAllotInstructorsSearch("");
+                                                                    setAllotInstructorsModalOpen(true);
+                                                                }}
+                                                                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                                            >
+                                                                <UserPlus className="h-3.5 w-3.5" />
+                                                                <span>Allot Instructors</span>
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            {/* Quick Allot Faculty Control */}
-                                            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800">
-                                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                                                    Allot Available Faculty
-                                                </label>
-                                                <div className="flex gap-2">
-                                                    <select
-                                                        value={facultyToAddId}
-                                                        onChange={(e) =>
-                                                            setFacultyToAddId(
-                                                                e.target.value ? Number(e.target.value) : "",
-                                                            )
-                                                        }
-                                                        className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
-                                                    >
-                                                        <option value="">Select an instructor...</option>
-                                                        {availableInstructorsToAllot.map((ins) => {
-                                                            const count = instructorWorkloadMap.get(ins.id) ?? 0;
-                                                            return (
-                                                                <option key={ins.id} value={ins.id}>
-                                                                    {ins.name} ({count} courses)
-                                                                </option>
-                                                            );
-                                                        })}
-                                                    </select>
-                                                    <button
-                                                        type="button"
-                                                        disabled={!facultyToAddId}
-                                                        onClick={() => {
-                                                            if (typeof facultyToAddId === "number") {
-                                                                handleAssignInstructor(facultyToAddId);
-                                                            }
-                                                        }}
-                                                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0"
-                                                    >
-                                                        <UserPlus className="h-3.5 w-3.5" />
-                                                        Assign
-                                                    </button>
-                                                </div>
+                                            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+                                                <span>Workload monitored automatically</span>
+                                                <span>{allInstructors.length} registered faculty instructors</span>
                                             </div>
                                         </div>
 
                                         {/* ══ Column 2: Student Enrollment Roster ══ */}
-                                        <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 p-4 bg-slate-50/40 dark:bg-slate-900/60 flex flex-col justify-between">
-                                            <div>
+                                        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-5 shadow-xs">
+                                            <div className="space-y-4">
                                                 <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3">
                                                     <div className="flex items-center gap-2">
-                                                        <GraduationCap className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                                                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                                            Enrolled Learners ({currentCourseLearners.length})
-                                                        </h4>
+                                                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-400">
+                                                            <GraduationCap className="h-4 w-4" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                                                Student Roster
+                                                            </h4>
+                                                            <p className="text-[11px] text-slate-400">
+                                                                {currentCourseLearners.length}{" "}
+                                                                {currentCourseLearners.length === 1
+                                                                    ? "learner enrolled"
+                                                                    : "learners enrolled"}
+                                                            </p>
+                                                        </div>
                                                     </div>
+
                                                     <button
                                                         type="button"
                                                         onClick={() => {
@@ -789,38 +937,39 @@ export function AdminAcademicsView() {
                                                             setEnrollModalSearch("");
                                                             setEnrollModalOpen(true);
                                                         }}
-                                                        className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors shadow-xs"
+                                                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 transition-colors shadow-2xs"
                                                     >
                                                         <UserPlus className="h-3.5 w-3.5" />
-                                                        Enroll Students
+                                                        <span>Enroll Learners</span>
                                                     </button>
                                                 </div>
 
-                                                {/* Search & Bulk Action in Roster */}
-                                                <div className="mt-3 flex items-center justify-between gap-2">
+                                                {/* Search & Bulk Action Toolbar */}
+                                                <div className="flex items-center justify-between gap-2">
                                                     <div className="relative flex-1">
-                                                        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                                                        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                                                         <input
                                                             type="text"
                                                             value={enrolledLearnerSearch}
                                                             onChange={(e) => setEnrolledLearnerSearch(e.target.value)}
-                                                            placeholder="Filter roster..."
-                                                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-1.5 pl-8 pr-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            placeholder="Filter enrolled students..."
+                                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1.5 pl-8 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                                         />
                                                     </div>
+
                                                     {selectedEnrolledIds.length > 0 && (
                                                         <button
                                                             type="button"
                                                             onClick={handleBatchUnenrollSelected}
-                                                            className="cursor-pointer rounded-lg bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900 px-2.5 py-1.5 text-xs font-semibold hover:bg-red-100 transition-colors shrink-0"
+                                                            className="cursor-pointer rounded-xl bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900 px-3 py-1.5 text-xs font-semibold hover:bg-red-100 transition-colors shrink-0 shadow-2xs"
                                                         >
                                                             Unenroll ({selectedEnrolledIds.length})
                                                         </button>
                                                     )}
                                                 </div>
 
-                                                {/* Roster Table / Scroll List */}
-                                                <div className="mt-2.5 max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                                                {/* Roster Scroll List */}
+                                                <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 custom-scrollbar">
                                                     {filteredEnrolledLearners.map((lrn) => {
                                                         const isChecked = selectedEnrolledIds.includes(lrn.id);
                                                         const avatarUrl = resolveAvatarUrl(lrn.avatar);
@@ -832,12 +981,13 @@ export function AdminAcademicsView() {
                                                         return (
                                                             <div
                                                                 key={lrn.id}
-                                                                className={`flex items-center justify-between p-2.5 transition-colors ${isChecked
-                                                                        ? "bg-blue-50/50 dark:bg-blue-950/20"
-                                                                        : "hover:bg-slate-50 dark:hover:bg-slate-900"
-                                                                    }`}
+                                                                className={`flex items-center justify-between p-3 transition-colors ${
+                                                                    isChecked
+                                                                        ? "bg-violet-50/60 dark:bg-violet-950/30"
+                                                                        : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                                                }`}
                                                             >
-                                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                                <div className="flex items-center gap-3 min-w-0">
                                                                     <input
                                                                         type="checkbox"
                                                                         checked={isChecked}
@@ -859,19 +1009,25 @@ export function AdminAcademicsView() {
                                                                         <img
                                                                             src={avatarUrl}
                                                                             alt={lrn.name}
-                                                                            className="h-6 w-6 rounded-full object-cover shrink-0"
+                                                                            className="h-8 w-8 rounded-full object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
                                                                         />
                                                                     ) : (
-                                                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
+                                                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
                                                                             {initial}
                                                                         </div>
                                                                     )}
                                                                     <div className="min-w-0">
-                                                                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                                                            {lrn.name}
-                                                                        </p>
-                                                                        <p className="text-[10px] text-slate-400 truncate">
-                                                                            {lId ? `${lId} • ` : ""}
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                                                                                {lrn.name}
+                                                                            </p>
+                                                                            {lId && (
+                                                                                <span className="font-mono text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded text-slate-600 dark:text-slate-300">
+                                                                                {lId}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-[11px] text-slate-400 truncate">
                                                                             {lrn.email}
                                                                         </p>
                                                                     </div>
@@ -880,34 +1036,54 @@ export function AdminAcademicsView() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleUnenrollSingleLearner(lrn.id)}
-                                                                    className="cursor-pointer text-slate-400 hover:text-red-600 dark:hover:text-red-400 p-1 rounded transition-colors shrink-0"
-                                                                    title="Unenroll student"
+                                                                    className="cursor-pointer text-slate-400 hover:text-red-600 dark:hover:text-red-400 p-1.5 rounded-lg transition-colors shrink-0"
+                                                                    title="Unenroll learner"
                                                                 >
-                                                                    <X className="h-3.5 w-3.5" />
+                                                                    <X className="h-4 w-4" />
                                                                 </button>
                                                             </div>
                                                         );
                                                     })}
 
                                                     {filteredEnrolledLearners.length === 0 && (
-                                                        <div className="p-6 text-center text-xs text-slate-400">
-                                                            {currentCourseLearners.length === 0
-                                                                ? "No learners enrolled yet. Click 'Enroll Students' to add."
-                                                                : "No students matching your search."}
+                                                        <div className="p-8 text-center text-xs text-slate-400">
+                                                            {currentCourseLearners.length === 0 ? (
+                                                                <div className="space-y-2">
+                                                                    <p className="font-medium text-slate-600 dark:text-slate-300">
+                                                                        No learners enrolled yet
+                                                                    </p>
+                                                                    <p className="text-[11px]">
+                                                                        Click &quot;Enroll Learners&quot; to assign students to this course.
+                                                                    </p>
+                                                                </div>
+                                                            ) : (
+                                                                "No students matching your search criteria."
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <div className="mt-3 text-[11px] text-slate-400 text-right">
-                                                {currentCourseLearners.length} enrolled in this course
+                                            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+                                                <span>
+                                                    {selectedEnrolledIds.length > 0
+                                                        ? `${selectedEnrolledIds.length} selected for batch action`
+                                                        : "Multi-select checkboxes enabled"}
+                                                </span>
+                                                <span>{allLearners.length} registered learners</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex h-72 items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
-                                    <p className="text-sm text-slate-400">Select a course on the left to start allocating.</p>
+                                <div className="flex h-80 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-8 text-center">
+                                    <BookOpen className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
+                                    <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                                        No Course Selected
+                                    </h4>
+                                    <p className="mt-1 text-xs text-slate-500 max-w-sm">
+                                        Select a course from the directory on the left to begin allotting instructors and enrolling students.
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -916,11 +1092,11 @@ export function AdminAcademicsView() {
             )}
 
             {/* ══════════════════════════════════════════════════════════════════
-                TAB 2: CATEGORIES
+                TAB 2: CATEGORIES DOMAINS
                ══════════════════════════════════════════════════════════════════ */}
             {activeTab === "categories" && (
-                <div className="mt-6 space-y-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs">
                         <div className="relative max-w-md flex-1">
                             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <input
@@ -928,7 +1104,7 @@ export function AdminAcademicsView() {
                                 value={categorySearch}
                                 onChange={(e) => setCategorySearch(e.target.value)}
                                 placeholder="Search categories by name, code, or description..."
-                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-10 pr-4 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
                         </div>
                         <button
@@ -937,7 +1113,7 @@ export function AdminAcademicsView() {
                                 setEditingCategory(null);
                                 setCategoryModalOpen(true);
                             }}
-                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all"
+                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all shrink-0"
                         >
                             <Plus className="h-4 w-4" />
                             Add Category
@@ -952,17 +1128,21 @@ export function AdminAcademicsView() {
                             return (
                                 <div
                                     key={cat.id}
-                                    className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700/60 transition-all"
+                                    className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700/60 transition-all"
                                 >
                                     <div>
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="flex items-center gap-2">
-                                                {cat.code && (
-                                                    <span className="inline-block rounded-lg bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                                                {cat.code ? (
+                                                    <span className="inline-block rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/50 dark:border-blue-900/50 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-blue-700 dark:text-blue-300">
                                                         {cat.code}
                                                     </span>
+                                                ) : (
+                                                    <span className="inline-block rounded-xl bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300">
+                                                        CAT #{cat.id}
+                                                    </span>
                                                 )}
-                                                <span className="inline-block rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                                <span className="inline-block rounded-xl bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
                                                     {matchingCourses.length}{" "}
                                                     {matchingCourses.length === 1 ? "Course" : "Courses"}
                                                 </span>
@@ -990,17 +1170,17 @@ export function AdminAcademicsView() {
                                             </div>
                                         </div>
 
-                                        <h3 className="mt-3 text-lg font-bold text-slate-900 dark:text-slate-100">
+                                        <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-slate-100">
                                             {cat.name}
                                         </h3>
-                                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
-                                            {cat.description || "No description provided."}
+                                        <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                                            {cat.description || "No description provided for this academic domain."}
                                         </p>
 
                                         {/* Associated Courses Mini-Chips */}
                                         {matchingCourses.length > 0 && (
-                                            <div className="mt-3.5 space-y-1">
-                                                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                            <div className="mt-4 space-y-1.5">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                                     Courses in this domain:
                                                 </p>
                                                 <div className="flex flex-wrap gap-1.5">
@@ -1012,7 +1192,7 @@ export function AdminAcademicsView() {
                                                                 setSelectedCourseId(c.id);
                                                                 setActiveTab("studio");
                                                             }}
-                                                            className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 transition-colors"
+                                                            className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-slate-50 dark:bg-slate-800/80 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 transition-colors border border-slate-200/60 dark:border-slate-700/60"
                                                         >
                                                             <span>{c.name}</span>
                                                         </button>
@@ -1027,17 +1207,18 @@ export function AdminAcademicsView() {
                                         )}
                                     </div>
 
-                                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                                        <span>ID: #{cat.id}</span>
+                                    <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                                        <span>Domain #{cat.id}</span>
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 setCategoryFilter(cat.name);
                                                 setActiveTab("studio");
                                             }}
-                                            className="text-blue-600 hover:underline dark:text-blue-400 font-medium inline-flex items-center gap-1 cursor-pointer"
+                                            className="text-blue-600 hover:underline dark:text-blue-400 font-semibold inline-flex items-center gap-1 cursor-pointer"
                                         >
-                                            Manage Allocations →
+                                            <span>Manage Allocations</span>
+                                            <ArrowRight className="h-3.5 w-3.5" />
                                         </button>
                                     </div>
                                 </div>
@@ -1046,7 +1227,7 @@ export function AdminAcademicsView() {
                     </div>
 
                     {filteredCategories.length === 0 && (
-                        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 py-16 text-center">
+                        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 py-16 text-center">
                             <Tag className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
                             <h4 className="text-base font-semibold text-slate-800 dark:text-slate-200">
                                 No categories found
@@ -1060,24 +1241,174 @@ export function AdminAcademicsView() {
             )}
 
             {/* ══════════════════════════════════════════════════════════════════
-                MODAL: ENROLL LEARNERS
+                MODAL: ALLOT INSTRUCTORS DIRECTORY
                ══════════════════════════════════════════════════════════════════ */}
-            {enrollModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
+            {allotInstructorsModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-2xl">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                             <div>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
+                                    Allot Instructors to &ldquo;{selectedCourse?.name}&rdquo;
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    Select instructors from directory to allot to this course.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setAllotInstructorsModalOpen(false)}
+                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={allotInstructorsSearch}
+                                    onChange={(e) => setAllotInstructorsSearch(e.target.value)}
+                                    placeholder="Search instructors by name or email..."
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (instructorsToAllot.length === availableInstructorsToAllot.length) {
+                                        setInstructorsToAllot([]);
+                                    } else {
+                                        setInstructorsToAllot(availableInstructorsToAllot.map((ins) => ins.id));
+                                    }
+                                }}
+                                className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400 shrink-0"
+                            >
+                                {instructorsToAllot.length === availableInstructorsToAllot.length
+                                    ? "Deselect All"
+                                    : "Select All Filtered"}
+                            </button>
+                        </div>
+
+                        <div className="mt-4 max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-800 custom-scrollbar">
+                            {availableInstructorsToAllot.length === 0 ? (
+                                <p className="p-8 text-center text-xs text-slate-400">
+                                    No available instructors found to allot to this course.
+                                </p>
+                            ) : (
+                                availableInstructorsToAllot.map((ins) => {
+                                    const isSelected = instructorsToAllot.includes(ins.id);
+                                    const avatarUrl = resolveAvatarUrl(ins.avatar);
+                                    const initial = initialOf(ins.name);
+                                    const load = instructorWorkloadMap.get(ins.id) ?? 0;
+                                    return (
+                                        <div
+                                            key={ins.id}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setInstructorsToAllot((prev) =>
+                                                        prev.filter((id) => id !== ins.id),
+                                                    );
+                                                } else {
+                                                    setInstructorsToAllot((prev) => [...prev, ins.id]);
+                                                }
+                                            }}
+                                            className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${
+                                                isSelected
+                                                    ? "bg-blue-50/70 dark:bg-blue-950/40"
+                                                    : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => {}}
+                                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                />
+                                                {avatarUrl ? (
+                                                    <img
+                                                        src={avatarUrl}
+                                                        alt={ins.name}
+                                                        className="h-8 w-8 rounded-full object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                                                        {initial}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                                                        {ins.name}
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-400">{ins.email}</p>
+                                                </div>
+                                            </div>
+                                            <span
+                                                className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${
+                                                    load === 0
+                                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                                        : load > 3
+                                                        ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                                                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                                                }`}
+                                            >
+                                                {load === 0 ? "Available" : `Teaching ${load} ${load === 1 ? "course" : "courses"}`}
+                                            </span>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
+                            <span className="text-xs text-slate-500 font-semibold">
+                                {instructorsToAllot.length} selected for allotment
+                            </span>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAllotInstructorsModalOpen(false)}
+                                    className="cursor-pointer rounded-xl px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={instructorsToAllot.length === 0}
+                                    onClick={handleBatchAllotInstructors}
+                                    className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <Check className="h-4 w-4" />
+                                    Allot Selected ({instructorsToAllot.length})
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════════════
+                MODAL: ENROLL LEARNERS DIRECTORY
+               ══════════════════════════════════════════════════════════════════ */}
+            {enrollModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                            <div>
+                                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
                                     Enroll Learners into &ldquo;{selectedCourse?.name}&rdquo;
                                 </h3>
-                                <p className="text-xs text-slate-500">
-                                    Select learners from directory to enroll into this course.
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    Select learners from directory to enroll into this course roster.
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setEnrollModalOpen(false)}
-                                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
                                 <X className="h-5 w-5" />
                             </button>
@@ -1091,7 +1422,7 @@ export function AdminAcademicsView() {
                                     value={enrollModalSearch}
                                     onChange={(e) => setEnrollModalSearch(e.target.value)}
                                     placeholder="Search by name, email, or student ID..."
-                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                             </div>
                             <button
@@ -1103,18 +1434,18 @@ export function AdminAcademicsView() {
                                         setLearnersToEnroll(availableLearnersToEnroll.map((l) => l.id));
                                     }
                                 }}
-                                className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                                className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400 shrink-0"
                             >
                                 {learnersToEnroll.length === availableLearnersToEnroll.length
                                     ? "Deselect All"
-                                    : "Select All"}
+                                    : "Select All Filtered"}
                             </button>
                         </div>
 
-                        <div className="mt-4 max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div className="mt-4 max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-800 custom-scrollbar">
                             {availableLearnersToEnroll.length === 0 ? (
                                 <p className="p-8 text-center text-xs text-slate-400">
-                                    No available learners found to enroll.
+                                    No available learners found to enroll in this course.
                                 </p>
                             ) : (
                                 availableLearnersToEnroll.map((lrn) => {
@@ -1137,23 +1468,24 @@ export function AdminAcademicsView() {
                                                     setLearnersToEnroll((prev) => [...prev, lrn.id]);
                                                 }
                                             }}
-                                            className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${isSelected
-                                                    ? "bg-blue-50/60 dark:bg-blue-950/40"
+                                            className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${
+                                                isSelected
+                                                    ? "bg-blue-50/70 dark:bg-blue-950/40"
                                                     : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                                                }`}
+                                            }`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="checkbox"
                                                     checked={isSelected}
-                                                    onChange={() => { }} // handled by parent div onClick
+                                                    onChange={() => {}}
                                                     className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                 />
                                                 {avatarUrl ? (
                                                     <img
                                                         src={avatarUrl}
                                                         alt={lrn.name}
-                                                        className="h-8 w-8 rounded-full object-cover shrink-0"
+                                                        className="h-8 w-8 rounded-full object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
                                                     />
                                                 ) : (
                                                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-bold text-white">
@@ -1161,7 +1493,7 @@ export function AdminAcademicsView() {
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                                                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
                                                         {lrn.name}
                                                     </p>
                                                     <p className="text-[11px] text-slate-400">{lrn.email}</p>
@@ -1179,14 +1511,14 @@ export function AdminAcademicsView() {
                         </div>
 
                         <div className="mt-5 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
-                            <span className="text-xs text-slate-500 font-medium">
-                                {learnersToEnroll.length} selected
+                            <span className="text-xs text-slate-500 font-semibold">
+                                {learnersToEnroll.length} selected for enrollment
                             </span>
                             <div className="flex gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setEnrollModalOpen(false)}
-                                    className="cursor-pointer rounded-xl px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                                    className="cursor-pointer rounded-xl px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -1194,7 +1526,7 @@ export function AdminAcademicsView() {
                                     type="button"
                                     disabled={learnersToEnroll.length === 0}
                                     onClick={handleBatchEnroll}
-                                    className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
                                     <Check className="h-4 w-4" />
                                     Enroll Selected ({learnersToEnroll.length})
