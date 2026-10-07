@@ -771,8 +771,7 @@ export function AdminCoursesView() {
                                         )}
                                     </div>
 
-                                    <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                                        <span>Category ID: {cat.id}</span>
+                                    <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end text-xs">
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -905,32 +904,29 @@ export function AdminCoursesView() {
                                         )}
                                     </div>
 
-                                    <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                                        <span className="text-slate-400 font-medium">Tag ID: {tag.id}</span>
-                                        <div className="flex items-center gap-3">
-                                            {!isCoordinator && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setTagForCourses(tag)}
-                                                    className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 font-semibold inline-flex items-center gap-1 cursor-pointer"
-                                                    title="Assign courses to this tag"
-                                                >
-                                                    <BookOpen className="h-3.5 w-3.5" />
-                                                    <span>Manage Courses</span>
-                                                </button>
-                                            )}
+                                    <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 text-xs">
+                                        {!isCoordinator && (
                                             <button
                                                 type="button"
-                                                onClick={() => {
-                                                    setTagFilter(tag.name);
-                                                    setActiveTab("courses");
-                                                }}
-                                                className="text-blue-600 hover:underline dark:text-blue-400 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                                onClick={() => setTagForCourses(tag)}
+                                                className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                                title="Assign courses to this tag"
                                             >
-                                                <span>View Courses ({matchingCourses.length})</span>
-                                                <ArrowRight className="h-3.5 w-3.5" />
+                                                <BookOpen className="h-3.5 w-3.5" />
+                                                <span>Manage Courses</span>
                                             </button>
-                                        </div>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setTagFilter(tag.name);
+                                                setActiveTab("courses");
+                                            }}
+                                            className="text-blue-600 hover:underline dark:text-blue-400 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <span>View Courses ({matchingCourses.length})</span>
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </button>
                                     </div>
                                 </div>
                             );
