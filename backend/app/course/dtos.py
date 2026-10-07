@@ -4,15 +4,15 @@ from app.utils.dto import CamelModel
 class CourseSchema(CamelModel):
     name: str
     subject: str = ""
-    program: str
-    department: str
-    session: str
+    program: str = ""
+    department: str = ""
+    session: str = ""
     is_active: bool = True
     instructor_ids: list[int] = []
     learner_ids: list[int] = []
     teacher_ids: list[int] = []
     student_ids: list[int] = []
-    # ── NEW ──
+    # ── Live-class ──
     meeting_provider: str = ""
     meeting_url: str | None = None
     meeting_id: str = ""
@@ -23,11 +23,11 @@ class CourseSchema(CamelModel):
 class CourseResponseSchema(CamelModel):
     id: int
     name: str
-    subject: str
-    program: str
-    department: str
-    session: str
-    is_active: bool
+    subject: str = ""
+    program: str = ""
+    department: str = ""
+    session: str = ""
+    is_active: bool = True
     instructor_id: int | None = None
     instructor_name: str | None = None
     instructor_ids: list[int] = []
@@ -40,7 +40,6 @@ class CourseResponseSchema(CamelModel):
     teacher_names: list[str] = []
     student_ids: list[int] = []
     student_count: int = 0
-    # ── NEW ──
     meeting_provider: str = ""
     meeting_url: str | None = None
     meeting_id: str = ""
@@ -60,6 +59,19 @@ class CoursePeopleResponseSchema(CamelModel):
     learners: list[CoursePersonSchema] = []
     teachers: list[CoursePersonSchema] = []
     students: list[CoursePersonSchema] = []
+
+
+class CourseInstructorAllotmentSchema(CamelModel):
+    instructor_ids: list[int] = []
+
+
+class CourseLearnerAllotmentSchema(CamelModel):
+    learner_ids: list[int] = []
+
+
+class CourseLearnerBatchSchema(CamelModel):
+    add_learner_ids: list[int] = []
+    remove_learner_ids: list[int] = []
 
 
 class CoursePreferencesSchema(CamelModel):

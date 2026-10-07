@@ -1,27 +1,16 @@
 from app.utils.dto import CamelModel
 
 
-class ProgramSchema(CamelModel):
-    name: str
-    description: str = ""
-
-
-class ProgramResponseSchema(ProgramSchema):
-    id: int
-
-
 class DepartmentSchema(CamelModel):
     name: str
-    code: str
+    code: str = ""
+    description: str = ""
 
 
 class DepartmentResponseSchema(DepartmentSchema):
     id: int
+    course_count: int = 0
 
 
-class SemesterSchema(CamelModel):
-    name: str
-
-
-class SemesterResponseSchema(SemesterSchema):
-    id: int
+CategorySchema = DepartmentSchema
+CategoryResponseSchema = DepartmentResponseSchema

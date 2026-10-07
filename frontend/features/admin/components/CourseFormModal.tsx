@@ -358,10 +358,8 @@ export function CourseFormModal({ open, course, isCoordinator = false, onSave, o
 
     const validate = () => {
         const next: Record<string, string> = {};
-        if (!program) next.program = "Track / level is required.";
         if (!department) next.department = "Category is required.";
-        if (!session) next.session = "Cohort / schedule is required.";
-        if (!courseName) next.courseName = "Course title is required.";
+        if (!courseName.trim()) next.courseName = "Course title is required.";
         return next;
     };
 
@@ -417,30 +415,6 @@ export function CourseFormModal({ open, course, isCoordinator = false, onSave, o
                         <div className="grid gap-5 md:grid-cols-2">
                             <div>
                                 <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Learning Track / Level <span className="text-[#c5221f]">*</span>
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={program}
-                                        disabled={isCoordinator}
-                                        onChange={(e) => handleProgramChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.program
-                                            ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                            } ${program ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
-                                    >
-                                        <option value="" disabled>Select track or level</option>
-                                        {programOptions.map((p) => (
-                                            <option key={p} value={p}>{p}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                                </div>
-                                {errors.program && <span className="mt-1 block text-sm text-[#c5221f]">{errors.program}</span>}
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
                                     Category / Domain <span className="text-[#c5221f]">*</span>
                                 </label>
                                 <div className="relative">
@@ -464,35 +438,11 @@ export function CourseFormModal({ open, course, isCoordinator = false, onSave, o
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Cohort / Schedule <span className="text-[#c5221f]">*</span>
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={session}
-                                        disabled={isCoordinator}
-                                        onChange={(e) => handleSessionChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.session
-                                            ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                            } ${session ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
-                                    >
-                                        <option value="" disabled>Select cohort / schedule</option>
-                                        {sessionOptions.map((s) => (
-                                            <option key={s} value={s}>{s}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                                </div>
-                                {errors.session && <span className="mt-1 block text-sm text-[#c5221f]">{errors.session}</span>}
-                            </div>
-
-                            <div>
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="block text-sm font-medium text-gray-800 dark:text-slate-200">
                                         Course Title <span className="text-[#c5221f]">*</span>
                                     </label>
-                                    {!isCoordinator && program && department && (
+                                    {!isCoordinator && (
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -502,7 +452,7 @@ export function CourseFormModal({ open, course, isCoordinator = false, onSave, o
                                             className="text-xs font-medium text-[#1a73e8] hover:underline cursor-pointer dark:text-blue-400"
                                         >
                                             {isCustomCourse
-                                                ? "← Pick from catalog/database"
+                                                ? "← Pick from catalog"
                                                 : "+ Enter custom title"}
                                         </button>
                                     )}
@@ -520,18 +470,16 @@ export function CourseFormModal({ open, course, isCoordinator = false, onSave, o
                                                         handleCourseNameChange(e.target.value);
                                                     }
                                                 }}
-                                                disabled={isCoordinator || !program || !department}
+                                                disabled={isCoordinator}
                                                 className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.courseName
                                                     ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
                                                     : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                                    } ${!program || !department ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500" : courseName ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
+                                                    } ${courseName ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
                                             >
                                                 <option value="" disabled>
-                                                    {!program || !department
-                                                        ? "Select track & category first"
-                                                        : availableCourses.length === 0
-                                                            ? "No catalog courses available"
-                                                            : "Select course title"}
+                                                    {availableCourses.length === 0
+                                                        ? "No catalog courses available"
+                                                        : "Select course title"}
                                                 </option>
                                                 {availableCourses.map((c) => (
                                                     <option key={c} value={c}>{c}</option>
@@ -546,11 +494,11 @@ export function CourseFormModal({ open, course, isCoordinator = false, onSave, o
                                             value={courseName}
                                             onChange={(e) => handleCourseNameChange(e.target.value)}
                                             placeholder="e.g. Full-Stack Web Development Bootcamp"
-                                            disabled={isCoordinator || !program || !department}
+                                            disabled={isCoordinator}
                                             className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.courseName
                                                 ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
                                                 : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                                } ${!program || !department ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50 text-gray-500 dark:text-slate-500" : "text-gray-900 dark:text-slate-100"}`}
+                                                } text-gray-900 dark:text-slate-100 placeholder:text-gray-500 dark:placeholder:text-slate-500`}
                                         />
                                     )}
                                 </div>

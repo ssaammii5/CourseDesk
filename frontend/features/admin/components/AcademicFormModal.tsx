@@ -1,53 +1,34 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, ChevronDown } from "lucide-react";
+import { X, Tag } from "lucide-react";
 
-interface AcademicFormModalProps {
+interface CategoryFormModalProps {
     open: boolean;
-    type: "program" | "semester" | "department";
     item: { id: number; name: string; description?: string; code?: string } | null;
     onSave: (data: { name: string; description?: string; code?: string }) => void;
     onClose: () => void;
+    type?: string; // Kept for backwards compatibility
 }
 
-const TYPE_LABELS: Record<string, string> = {
-    program: "Learning Track",
-    semester: "Cohort / Schedule",
-    department: "Category",
-};
-
-const COMMON_COHORT_TEMPLATES = [
-    "Self-Paced / On-Demand",
-    "Spring 2025 Cohort",
-    "Summer 2025 Cohort",
-    "Fall 2025 Cohort",
-    "Winter 2025 Cohort",
-    "Q1 Intensive Batch",
-    "Q2 Intensive Batch",
-];
-
-export function AcademicFormModal({ open, type, item, onSave, onClose }: AcademicFormModalProps) {
+export function CategoryFormModal({ open, item, onSave, onClose }: CategoryFormModalProps) {
     const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
     const [code, setCode] = useState("");
+    const [description, setDescription] = useState("");
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (open) {
             setName(item?.name ?? "");
-            setDescription((item as any)?.description ?? "");
-            setCode((item as any)?.code ?? "");
+            setCode(item?.code ?? "");
+            setDescription(item?.description ?? "");
             setErrors({});
         }
-    }, [open, item, type]);
+    }, [open, item]);
 
     const validate = () => {
         const next: Record<string, string> = {};
         if (!name.trim()) {
-            next.name = `${TYPE_LABELS[type]} name is required.`;
-        }
-        if (type === "department" && !code.trim()) {
-            next.code = "Category code is required.";
+            next.name = "Category name is required.";
         }
         return next;
     };
@@ -59,145 +40,108 @@ export function AcademicFormModal({ open, type, item, onSave, onClose }: Academi
 
         onSave({
             name: name.trim(),
-            description: description.trim(),
             code: code.trim().toUpperCase(),
+            description: description.trim(),
         });
     };
 
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:border dark:border-slate-800 dark:bg-slate-900">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
-                        {item ? `Edit ${TYPE_LABELS[type]}` : `Add New ${TYPE_LABELS[type]}`}
-                    </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div
+                className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl transition-all"
+                role="dialog"
+                aria-modal="true"
+            >
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                            <Tag className="h-5 w-5" />
+                        </div>
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                            {item ? "Edit Category" : "Add New Category"}
+                        </h2>
+                    </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                     >
                         <X className="h-5 w-5" />
                     </button>
                 </div>
 
-                {/* Body */}
-                <div className="mt-6 space-y-5">
-                    {type === "semester" ? (
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                Cohort / Schedule Name <span className="text-[#c5221f]">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
-                                placeholder="e.g., Spring 2025 Cohort or Self-Paced"
-                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 dark:text-slate-100 ${errors.name
-                                    ? "border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                    }`}
-                            />
-                            {errors.name && <span className="mt-1 block text-sm text-[#c5221f]">{errors.name}</span>}
+                <div className="mt-5 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Category Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => {
+                                setName(e.target.value);
+                                if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                            }}
+                            placeholder="e.g. Web & Mobile Development"
+                            className={`mt-1.5 w-full rounded-xl border bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${
+                                errors.name
+                                    ? "border-red-500 focus:ring-red-500/20"
+                                    : "border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-blue-500/20"
+                            }`}
+                        />
+                        {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                    </div>
 
-                            {/* Quick template suggestions */}
-                            <div className="mt-2.5">
-                                <span className="text-xs text-gray-500 dark:text-slate-400">Quick suggestions:</span>
-                                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                    {COMMON_COHORT_TEMPLATES.map((tpl) => (
-                                        <button
-                                            key={tpl}
-                                            type="button"
-                                            onClick={() => { setName(tpl); setErrors((p) => ({ ...p, name: "" })); }}
-                                            className="cursor-pointer rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-blue-900/40 dark:hover:text-blue-300"
-                                        >
-                                            {tpl}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        /* Name field for program/department */
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                {TYPE_LABELS[type]} Name <span className="text-[#c5221f]">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
-                                placeholder={
-                                    type === "program"
-                                        ? "e.g., Professional Track, Foundations, Advanced Mastery"
-                                        : "e.g., Software Engineering, UI/UX Design, Cloud Architecture"
-                                }
-                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 dark:text-slate-100 ${errors.name
-                                    ? "border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                    }`}
-                            />
-                            {errors.name && <span className="mt-1 block text-sm text-[#c5221f]">{errors.name}</span>}
-                        </div>
-                    )}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Short Code <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.toUpperCase())}
+                            placeholder="e.g. WMD, CS, DESIGN"
+                            maxLength={10}
+                            className="mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        />
+                    </div>
 
-                    {/* Department code field */}
-                    {type === "department" && (
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                Department Code <span className="text-[#c5221f]">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={code}
-                                onChange={(e) => { setCode(e.target.value); setErrors((p) => ({ ...p, code: "" })); }}
-                                placeholder="e.g., CSE, BBA, EEE"
-                                className={`w-full rounded-md border px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 dark:text-slate-100 ${errors.code
-                                    ? "border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                    }`}
-                            />
-                            {errors.code && <span className="mt-1 block text-sm text-[#c5221f]">{errors.code}</span>}
-                        </div>
-                    )}
-
-                    {/* Program description field */}
-                    {type === "program" && (
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                Description
-                            </label>
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Brief description of the program..."
-                                rows={3}
-                                className="w-full rounded-md border border-gray-400/80 px-3.5 py-2.5 text-[15px] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                            />
-                        </div>
-                    )}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Description <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Briefly describe what courses belong to this category..."
+                            rows={3}
+                            className="mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                        />
+                    </div>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-8 flex justify-end gap-3">
+                <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] dark:bg-blue-600 dark:hover:bg-blue-500"
+                        className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all"
                     >
-                        {item ? "Save Changes" : `Create ${TYPE_LABELS[type]}`}
+                        {item ? "Update Category" : "Save Category"}
                     </button>
                 </div>
             </div>
         </div>
     );
 }
+
+// Backward-compatibility export
+export const AcademicFormModal = CategoryFormModal;

@@ -10,12 +10,8 @@ import {
     type CourseDto,
 } from "@/lib/api/courses";
 import {
-    getProgramsRequest,
     getDepartmentsRequest,
-    getSemestersRequest,
-    type AcademicProgramDto,
     type AcademicDepartmentDto,
-    type AcademicSemesterDto,
 } from "@/lib/api/academics";
 
 function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
@@ -45,15 +41,11 @@ export function AdminCoursesView() {
     const isCoordinator = currentUser?.role === "Coordinator";
     const [courses, setCourses] = useState<AdminCourse[]>([]);
     const [courseNames, setCourseNames] = useState<Record<number, string[]>>({});
-    const [academicPrograms, setAcademicPrograms] = useState<AcademicProgramDto[]>([]);
     const [academicDepartments, setAcademicDepartments] = useState<AcademicDepartmentDto[]>([]);
-    const [academicSemesters, setAcademicSemesters] = useState<AcademicSemesterDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [departmentFilter, setDepartmentFilter] = useState("all");
-    const [programFilter, setProgramFilter] = useState("all");
-    const [sessionFilter, setSessionFilter] = useState("all");
     const [modalOpen, setModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<AdminCourse | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<AdminCourse | null>(null);
@@ -61,16 +53,12 @@ export function AdminCoursesView() {
     const loadCourses = useCallback(async () => {
         try {
             setError(null);
-            const [dtos, progs, depts, sems] = await Promise.all([
+            const [dtos, depts] = await Promise.all([
                 getCoursesRequest(),
-                getProgramsRequest().catch(() => []),
                 getDepartmentsRequest().catch(() => []),
-                getSemestersRequest().catch(() => []),
             ]);
             setCourses(dtos.map(mapCourseDtoToAdminCourse));
-            setAcademicPrograms(progs);
             setAcademicDepartments(depts);
-            setAcademicSemesters(sems);
             const names: Record<number, string[]> = {};
             for (const d of dtos) names[d.id] = d.instructorNames ?? d.teacherNames ?? [];
             setCourseNames(names);
@@ -86,22 +74,10 @@ export function AdminCoursesView() {
     }, [loadCourses]);
 
     const departmentOptions = useMemo(() => {
-        const fromDepts = academicDepartments.map((d) => d.code || d.name);
+        const fromDepts = academicDepartments.map((d) => d.name || d.code);
         const fromCourses = courses.map((c) => c.department).filter(Boolean);
         return Array.from(new Set([...fromDepts, ...fromCourses])).sort();
     }, [academicDepartments, courses]);
-
-    const programOptions = useMemo(() => {
-        const fromProgs = academicPrograms.map((p) => p.name);
-        const fromCourses = courses.map((c) => c.program).filter(Boolean);
-        return Array.from(new Set([...fromProgs, ...fromCourses])).sort();
-    }, [academicPrograms, courses]);
-
-    const sessionOptions = useMemo(() => {
-        const fromSems = academicSemesters.map((s) => s.name);
-        const fromCourses = courses.map((c) => c.session).filter(Boolean);
-        return Array.from(new Set([...fromSems, ...fromCourses])).sort();
-    }, [academicSemesters, courses]);
 
     const filtered = useMemo(() => {
         return courses.filter((c) => {
@@ -110,11 +86,9 @@ export function AdminCoursesView() {
                 c.name.toLowerCase().includes(search.toLowerCase()) ||
                 instructorNames.toLowerCase().includes(search.toLowerCase());
             const matchDept = departmentFilter === "all" || c.department === departmentFilter;
-            const matchProgram = programFilter === "all" || c.program === programFilter;
-            const matchSession = sessionFilter === "all" || c.session === sessionFilter;
-            return matchSearch && matchDept && matchProgram && matchSession;
+            return matchSearch && matchDept;
         });
-    }, [courses, courseNames, search, departmentFilter, programFilter, sessionFilter]);
+    }, [courses, courseNames, search, departmentFilter]);
 
     const handleSave = async (data: Omit<AdminCourse, "id">) => {
         try {
@@ -222,27 +196,7 @@ export function AdminCoursesView() {
                         ...departmentOptions.map((d) => ({ value: d, label: d })),
                     ]}
                     size="md"
-                    buttonClassName="w-full sm:w-44"
-                />
-                <ModernDropdown
-                    value={programFilter}
-                    onChange={setProgramFilter}
-                    options={[
-                        { value: "all", label: "All Tracks / Levels" },
-                        ...programOptions.map((p) => ({ value: p, label: p })),
-                    ]}
-                    size="md"
-                    buttonClassName="w-full sm:w-48"
-                />
-                <ModernDropdown
-                    value={sessionFilter}
-                    onChange={setSessionFilter}
-                    options={[
-                        { value: "all", label: "All Cohorts / Schedules" },
-                        ...sessionOptions.map((s) => ({ value: s, label: s })),
-                    ]}
-                    size="md"
-                    buttonClassName="w-full sm:w-52"
+                    buttonClassName="w-full sm:w-56"
                 />
             </div>
 
@@ -251,16 +205,15 @@ export function AdminCoursesView() {
                     columns={[
                         { key: "name", header: "Course Title" },
                         { key: "department", header: "Category" },
-                        { key: "program", header: "Track / Level" },
                         {
                             key: "instructors",
                             header: "Instructors",
                             render: (c: AdminCourse) => {
                                 const names = (courseNames[c.id] ?? []).join(", ");
                                 return names ? (
-                                    <span className="text-sm text-gray-900 dark:text-slate-100" title={names}>{names}</span>
+                                    <span className="text-sm font-medium text-gray-900 dark:text-slate-100" title={names}>{names}</span>
                                 ) : (
-                                    <span className="text-sm italic text-gray-500 dark:text-slate-500">Not assigned</span>
+                                    <span className="text-sm italic text-gray-400 dark:text-slate-500">Not assigned</span>
                                 );
                             },
                         },
@@ -269,10 +222,11 @@ export function AdminCoursesView() {
                             header: "Learners",
                             className: "text-center",
                             render: (c: AdminCourse) => (
-                                <span className="text-sm text-gray-900 dark:text-slate-100">{(c.learnerIds ?? c.studentIds ?? []).length}</span>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                                    {(c.learnerIds ?? c.studentIds ?? []).length}
+                                </span>
                             ),
                         },
-                        { key: "session", header: "Cohort / Schedule" },
                         {
                             key: "isActive",
                             header: "Status",

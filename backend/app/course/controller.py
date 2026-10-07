@@ -195,6 +195,89 @@ def delete_course(course_id: int, db: Session) -> None:
     db.commit()
 
 
+def set_course_instructors(
+    course_id: int, instructor_ids: list[int], db: Session
+) -> CourseResponseSchema:
+    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    old_ids = {u.id for u in course.instructors}
+    course.instructors = _fetch_users(instructor_ids, db)
+    db.add(course)
+
+    new_added_ids = [uid for uid in instructor_ids if uid not in old_ids]
+    if new_added_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        create_notifications_bulk(
+            db=db,
+            user_ids=new_added_ids,
+            title=f"Assigned to instruct {course.name}",
+            message=f"You are assigned as an instructor for {course.name}",
+            kind="system",
+            link=f"/course/{course.id}",
+        )
+    db.commit()
+    return get_one_course(course_id, db)
+
+
+def set_course_learners(
+    course_id: int, learner_ids: list[int], db: Session
+) -> CourseResponseSchema:
+    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    old_ids = {u.id for u in course.learners}
+    course.learners = _fetch_users(learner_ids, db)
+    db.add(course)
+
+    new_added_ids = [uid for uid in learner_ids if uid not in old_ids]
+    if new_added_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        create_notifications_bulk(
+            db=db,
+            user_ids=new_added_ids,
+            title=f"Enrolled in {course.name}",
+            message=f"You have been enrolled in {course.name}",
+            kind="system",
+            link=f"/course/{course.id}",
+        )
+    db.commit()
+    return get_one_course(course_id, db)
+
+
+def batch_update_course_learners(
+    course_id: int, add_learner_ids: list[int], remove_learner_ids: list[int], db: Session
+) -> CourseResponseSchema:
+    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+
+    current_ids = {u.id for u in course.learners}
+    for r_id in remove_learner_ids:
+        current_ids.discard(r_id)
+    for a_id in add_learner_ids:
+        current_ids.add(a_id)
+
+    course.learners = _fetch_users(list(current_ids), db)
+    db.add(course)
+
+    if add_learner_ids:
+        from app.notification.controller import create_notifications_bulk
+
+        create_notifications_bulk(
+            db=db,
+            user_ids=add_learner_ids,
+            title=f"Enrolled in {course.name}",
+            message=f"You have been enrolled in {course.name}",
+            kind="system",
+            link=f"/course/{course.id}",
+        )
+    db.commit()
+    return get_one_course(course_id, db)
+
+
 def get_user_course_preferences(user: UserModel, db: Session) -> CoursePreferencesSchema:
     pref = db.scalar(
         select(UserCoursePreferenceModel).where(UserCoursePreferenceModel.user_id == user.id)

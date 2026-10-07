@@ -30,9 +30,9 @@ export interface CourseDto {
 export interface CoursePayload {
     name: string;
     subject?: string;
-    program: string;
-    department: string;
-    session: string;
+    program?: string;
+    department?: string;
+    session?: string;
     isActive: boolean;
     instructorIds?: number[];
     learnerIds?: number[];
@@ -78,6 +78,9 @@ export function getCoursePeopleRequest(courseId: number): Promise<CoursePeopleDt
 export function createCourseRequest(payload: CoursePayload): Promise<CourseDto> {
     const bodyPayload = {
         ...payload,
+        program: payload.program || "",
+        department: payload.department || "",
+        session: payload.session || "",
         instructorIds: payload.instructorIds || payload.teacherIds || [],
         learnerIds: payload.learnerIds || payload.studentIds || [],
     };
@@ -90,6 +93,9 @@ export function createCourseRequest(payload: CoursePayload): Promise<CourseDto> 
 export function updateCourseRequest(id: number, payload: CoursePayload): Promise<void> {
     const bodyPayload = {
         ...payload,
+        program: payload.program || "",
+        department: payload.department || "",
+        session: payload.session || "",
         instructorIds: payload.instructorIds || payload.teacherIds || [],
         learnerIds: payload.learnerIds || payload.studentIds || [],
     };
@@ -101,6 +107,40 @@ export function updateCourseRequest(id: number, payload: CoursePayload): Promise
 
 export function deleteCourseRequest(id: number): Promise<void> {
     return apiFetch<void>(`/api/courses/${id}`, { method: "DELETE" });
+}
+
+export function setCourseInstructorsRequest(
+    courseId: number,
+    instructorIds: number[],
+): Promise<CourseDto> {
+    return apiFetch<CourseDto>(`/api/courses/${courseId}/instructors`, {
+        method: "PUT",
+        body: JSON.stringify({ instructorIds }),
+    });
+}
+
+export function setCourseLearnersRequest(
+    courseId: number,
+    learnerIds: number[],
+): Promise<CourseDto> {
+    return apiFetch<CourseDto>(`/api/courses/${courseId}/learners`, {
+        method: "PUT",
+        body: JSON.stringify({ learnerIds }),
+    });
+}
+
+export function batchUpdateCourseLearnersRequest(
+    courseId: number,
+    addLearnerIds: number[],
+    removeLearnerIds: number[],
+): Promise<CourseDto> {
+    return apiFetch<CourseDto>(`/api/courses/${courseId}/learners/batch`, {
+        method: "POST",
+        body: JSON.stringify({
+            addLearnerIds,
+            removeLearnerIds,
+        }),
+    });
 }
 
 export interface CoursePreferencesDto {

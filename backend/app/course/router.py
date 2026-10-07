@@ -3,6 +3,9 @@ from fastapi import APIRouter, status
 from app.assignment.dtos import AssignmentResponseSchema, TopicDeleteSchema, TopicRenameSchema
 from app.course import controller
 from app.course.dtos import (
+    CourseInstructorAllotmentSchema,
+    CourseLearnerAllotmentSchema,
+    CourseLearnerBatchSchema,
     CoursePeopleResponseSchema,
     CoursePreferencesSchema,
     CourseResponseSchema,
@@ -89,6 +92,50 @@ def update_course(course_id: int, body: CourseSchema, db: DbSession, _user: IsAd
 @course_routes.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_course(course_id: int, db: DbSession, _admin: IsAdmin):
     return controller.delete_course(course_id, db)
+
+
+@course_routes.put(
+    "/{course_id}/instructors",
+    response_model=CourseResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def set_course_instructors(
+    course_id: int,
+    body: CourseInstructorAllotmentSchema,
+    db: DbSession,
+    _user: IsAdminOrCoordinator,
+):
+    return controller.set_course_instructors(course_id, body.instructor_ids, db)
+
+
+@course_routes.put(
+    "/{course_id}/learners",
+    response_model=CourseResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def set_course_learners(
+    course_id: int,
+    body: CourseLearnerAllotmentSchema,
+    db: DbSession,
+    _user: IsAdminOrCoordinator,
+):
+    return controller.set_course_learners(course_id, body.learner_ids, db)
+
+
+@course_routes.post(
+    "/{course_id}/learners/batch",
+    response_model=CourseResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def batch_update_course_learners(
+    course_id: int,
+    body: CourseLearnerBatchSchema,
+    db: DbSession,
+    _user: IsAdminOrCoordinator,
+):
+    return controller.batch_update_course_learners(
+        course_id, body.add_learner_ids, body.remove_learner_ids, db
+    )
 
 
 @course_routes.put("/{course_id}/topics/rename", status_code=status.HTTP_200_OK)

@@ -512,7 +512,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                             {isInstructors && "Instructors"}
                             {isLearners && "Learners"}
                             {isCourses && "Courses"}
-                            {isCategories && "Categories & Tracks"}
+                            {isCategories && "Categories & Allotment"}
                             {isAssignments && "Assignments"}
                             {isSubmissions && "Submissions"}
                             {isAppSettings && "App Settings"}

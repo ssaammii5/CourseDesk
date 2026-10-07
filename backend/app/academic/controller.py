@@ -1,130 +1,133 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.academic.dtos import (
+    DepartmentResponseSchema,
     DepartmentSchema,
-    ProgramSchema,
-    SemesterSchema,
 )
-from app.academic.models import (
-    AcademicDepartmentModel,
-    AcademicProgramModel,
-    AcademicSemesterModel,
-)
+from app.academic.models import AcademicDepartmentModel
+from app.course.models import CourseModel
 
 
-# ── Programs ────────────────────────────────────────────────────────────────
-def get_programs(db: Session):
-    return list(db.scalars(select(AcademicProgramModel)).all())
+def get_departments(db: Session) -> list[DepartmentResponseSchema]:
+    depts = list(db.scalars(select(AcademicDepartmentModel).order_by(AcademicDepartmentModel.name)).all())
+    results: list[DepartmentResponseSchema] = []
+    for d in depts:
+        # Count courses belonging to this department/category by name or code
+        count = db.scalar(
+            select(func.count(CourseModel.id)).where(
+                or_(
+                    CourseModel.department == d.name,
+                    CourseModel.department == d.code,
+                )
+            )
+        ) or 0
+        results.append(
+            DepartmentResponseSchema(
+                id=d.id,
+                name=d.name,
+                code=d.code,
+                description=d.description,
+                course_count=count,
+            )
+        )
+    return results
 
 
-def create_program(body: ProgramSchema, db: Session):
-    exists = db.scalar(
-        select(AcademicProgramModel).where(AcademicProgramModel.name == body.name)
-    )
-    if exists:
-        raise HTTPException(400, detail="Program already exists")
-    program = AcademicProgramModel(name=body.name, description=body.description)
-    db.add(program)
-    db.commit()
-    db.refresh(program)
-    return program
-
-
-def update_program(program_id: int, body: ProgramSchema, db: Session):
-    program = db.get(AcademicProgramModel, program_id)
-    if not program:
-        raise HTTPException(404, detail="Program id is incorrect")
-    program.name = body.name
-    program.description = body.description
-    db.add(program)
-    db.commit()
-    db.refresh(program)
-    return program
-
-
-def delete_program(program_id: int, db: Session) -> None:
-    program = db.get(AcademicProgramModel, program_id)
-    if not program:
-        raise HTTPException(404, detail="Program id is incorrect")
-    db.delete(program)
-    db.commit()
-
-
-# ── Departments ─────────────────────────────────────────────────────────────
-def get_departments(db: Session):
-    return list(db.scalars(select(AcademicDepartmentModel)).all())
-
-
-def create_department(body: DepartmentSchema, db: Session):
+def create_department(body: DepartmentSchema, db: Session) -> DepartmentResponseSchema:
     exists = db.scalar(
         select(AcademicDepartmentModel).where(
             (AcademicDepartmentModel.name == body.name)
-            | (AcademicDepartmentModel.code == body.code)
+            | (
+                (AcademicDepartmentModel.code != "")
+                & (AcademicDepartmentModel.code == body.code)
+            )
         )
     )
     if exists:
-        raise HTTPException(400, detail="Department name or code already exists")
-    department = AcademicDepartmentModel(name=body.name, code=body.code)
-    db.add(department)
+        raise HTTPException(400, detail="Category name or code already exists")
+    dept = AcademicDepartmentModel(name=body.name, code=body.code, description=body.description)
+    db.add(dept)
     db.commit()
-    db.refresh(department)
-    return department
+    db.refresh(dept)
+    return DepartmentResponseSchema(
+        id=dept.id,
+        name=dept.name,
+        code=dept.code,
+        description=dept.description,
+        course_count=0,
+    )
 
 
-def update_department(department_id: int, body: DepartmentSchema, db: Session):
-    department = db.get(AcademicDepartmentModel, department_id)
-    if not department:
-        raise HTTPException(404, detail="Department id is incorrect")
-    department.name = body.name
-    department.code = body.code
-    db.add(department)
+def update_department(department_id: int, body: DepartmentSchema, db: Session) -> DepartmentResponseSchema:
+    dept = db.get(AcademicDepartmentModel, department_id)
+    if not dept:
+        raise HTTPException(404, detail="Category id is incorrect")
+    # Check duplicate on another record
+    dup = db.scalar(
+        select(AcademicDepartmentModel).where(
+            (AcademicDepartmentModel.id != department_id)
+            & (
+                (AcademicDepartmentModel.name == body.name)
+                | (
+                    (AcademicDepartmentModel.code != "")
+                    & (AcademicDepartmentModel.code == body.code)
+                )
+            )
+        )
+    )
+    if dup:
+        raise HTTPException(400, detail="Category name or code already exists")
+
+    # If name or code changed, cascade update CourseModel.department
+    old_name = dept.name
+    old_code = dept.code
+    dept.name = body.name
+    dept.code = body.code
+    dept.description = body.description
+    db.add(dept)
+
+    if old_name != body.name or (old_code and old_code != body.code):
+        # Update courses referencing the old name/code to the new name
+        courses = list(
+            db.scalars(
+                select(CourseModel).where(
+                    or_(
+                        CourseModel.department == old_name,
+                        CourseModel.department == old_code,
+                    )
+                )
+            ).all()
+        )
+        for c in courses:
+            c.department = body.name
+            db.add(c)
+
     db.commit()
-    db.refresh(department)
-    return department
+    db.refresh(dept)
+
+    count = db.scalar(
+        select(func.count(CourseModel.id)).where(
+            or_(
+                CourseModel.department == dept.name,
+                CourseModel.department == dept.code,
+            )
+        )
+    ) or 0
+
+    return DepartmentResponseSchema(
+        id=dept.id,
+        name=dept.name,
+        code=dept.code,
+        description=dept.description,
+        course_count=count,
+    )
 
 
 def delete_department(department_id: int, db: Session) -> None:
-    department = db.get(AcademicDepartmentModel, department_id)
-    if not department:
-        raise HTTPException(404, detail="Department id is incorrect")
-    db.delete(department)
-    db.commit()
-
-
-# ── Semesters ───────────────────────────────────────────────────────────────
-def get_semesters(db: Session):
-    return list(db.scalars(select(AcademicSemesterModel)).all())
-
-
-def create_semester(body: SemesterSchema, db: Session):
-    exists = db.scalar(
-        select(AcademicSemesterModel).where(AcademicSemesterModel.name == body.name)
-    )
-    if exists:
-        raise HTTPException(400, detail="Semester already exists")
-    semester = AcademicSemesterModel(name=body.name)
-    db.add(semester)
-    db.commit()
-    db.refresh(semester)
-    return semester
-
-
-def update_semester(semester_id: int, body: SemesterSchema, db: Session):
-    semester = db.get(AcademicSemesterModel, semester_id)
-    if not semester:
-        raise HTTPException(404, detail="Semester id is incorrect")
-    semester.name = body.name
-    db.add(semester)
-    db.commit()
-    db.refresh(semester)
-    return semester
-
-
-def delete_semester(semester_id: int, db: Session) -> None:
-    semester = db.get(AcademicSemesterModel, semester_id)
-    if not semester:
-        raise HTTPException(404, detail="Semester id is incorrect")
-    db.delete(semester)
+    dept = db.get(AcademicDepartmentModel, department_id)
+    if not dept:
+        raise HTTPException(404, detail="Category id is incorrect")
+    db.delete(dept)
     db.commit()
