@@ -111,6 +111,7 @@ function mapCourseToHomeCourse(c: CourseDto): HomeCourse {
         teacherAvatarClass: avatarClassFor(c.id),
         meetingUrl: null,
         meetingProvider: "",
+        tags: c.tags ?? [],
     };
 }
 

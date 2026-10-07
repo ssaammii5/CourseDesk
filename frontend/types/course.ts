@@ -23,6 +23,7 @@ export const CourseSchema = z.object({
     teacherIds: z.array(z.number().int()).optional(),
     teacherNames: z.array(z.string()).optional(),
     studentCount: z.number().int().nonnegative().optional(),
+    tags: z.array(z.string()).optional(),
     meetingUrl: z.string().nullable().optional(),
     meetingProvider: z.string().nullable().optional(),
 });

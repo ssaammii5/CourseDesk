@@ -40,6 +40,53 @@ export function deleteCategoryRequest(id: number): Promise<void> {
     return apiFetch<void>(`/api/academics/categories/${id}`, { method: "DELETE" });
 }
 
+// Tags
+export interface TagDto {
+    id: number;
+    name: string;
+    description: string;
+    courseCount?: number;
+}
+
+export function getTagsRequest(): Promise<TagDto[]> {
+    return apiFetch<TagDto[]>("/api/academics/tags", { method: "GET" });
+}
+
+export function createTagRequest(payload: {
+    name: string;
+    description?: string;
+}): Promise<TagDto> {
+    return apiFetch<TagDto>("/api/academics/tags", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export function updateTagRequest(
+    id: number,
+    payload: { name: string; description?: string },
+): Promise<TagDto> {
+    return apiFetch<TagDto>(`/api/academics/tags/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+
+export function deleteTagRequest(id: number): Promise<void> {
+    return apiFetch<void>(`/api/academics/tags/${id}`, { method: "DELETE" });
+}
+
+export function setTagCoursesRequest(
+    tagId: number,
+    courseIds: number[],
+): Promise<TagDto> {
+    return apiFetch<TagDto>(`/api/academics/tags/${tagId}/courses`, {
+        method: "PUT",
+        body: JSON.stringify({ courseIds }),
+    });
+}
+
+
 // Backward-compatible aliases
 export const getDepartmentsRequest = getCategoriesRequest;
 export const createDepartmentRequest = (payload: { name: string; code: string; description?: string }) =>

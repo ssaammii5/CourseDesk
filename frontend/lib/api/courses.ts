@@ -20,6 +20,7 @@ export interface CourseDto {
     teacherNames?: string[];
     studentIds?: number[];
     studentCount?: number;
+    tags?: string[];
 }
 
 export interface CoursePayload {
@@ -29,6 +30,7 @@ export interface CoursePayload {
     department?: string;
     session?: string;
     isActive: boolean;
+    tags?: string[];
     instructorIds?: number[];
     learnerIds?: number[];
     teacherIds?: number[];
@@ -150,5 +152,15 @@ export function updateCoursePreferencesRequest(
     return apiFetch<CoursePreferencesDto>("/api/courses/preferences", {
         method: "PUT",
         body: JSON.stringify(payload),
+    });
+}
+
+export function updateCourseTagsRequest(
+    courseId: number,
+    tags: string[],
+): Promise<CourseDto> {
+    return apiFetch<CourseDto>(`/api/courses/${courseId}/tags`, {
+        method: "PUT",
+        body: JSON.stringify({ tags }),
     });
 }

@@ -5,6 +5,11 @@ export * from "./components/LearnerFormModal";
 export * from "./components/InstructorFormModal";
 export * from "./components/CoordinatorFormModal";
 export * from "./components/InviteCoordinatorModal";
+export * from "./components/TagFormModal";
+
+export * from "./components/CourseTagsModal";
+export * from "./components/TagCoursesModal";
+
 
 // Views
 export * from "./views/AdminAcademicsView";

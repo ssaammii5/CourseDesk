@@ -37,10 +37,11 @@ export function CourseFormModal({
         if (!open) return;
         let isMounted = true;
         setLoadingCategories(true);
+
         getCategoriesRequest()
-            .then((data) => {
+            .then((cats) => {
                 if (isMounted) {
-                    setCategories(data);
+                    setCategories(cats);
                 }
             })
             .catch(() => {
@@ -53,6 +54,7 @@ export function CourseFormModal({
                     setLoadingCategories(false);
                 }
             });
+
         return () => {
             isMounted = false;
         };
@@ -134,6 +136,7 @@ export function CourseFormModal({
             name: name.trim(),
             department: department.trim(),
             isActive,
+            tags: course?.tags ?? [],
             program: course?.program ?? "",
             session: course?.session ?? "",
             instructorIds: course?.instructorIds ?? [],
@@ -180,7 +183,7 @@ export function CourseFormModal({
                     </button>
                 </div>
 
-                {/* Form Body */}
+                {/* Form Body - Strictly 3 Fields: Course Title, Category, Active Course */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {/* 1. Course Title */}
                     <div className="space-y-1.5">
@@ -340,7 +343,7 @@ export function CourseFormModal({
                     </div>
 
                     {/* 3. Active Course Toggle */}
-                    <div className="pt-2">
+                    <div className="pt-1">
                         <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
                             <div>
                                 <label

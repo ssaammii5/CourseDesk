@@ -110,6 +110,7 @@ export interface AdminCourse {
     studentIds?: number[];
     session: string;
     isActive: boolean;
+    tags?: string[];
 }
 
 export interface AdminAssignment {

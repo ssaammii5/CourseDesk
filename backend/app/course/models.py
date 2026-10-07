@@ -32,6 +32,7 @@ class CourseModel(Base):
     department: Mapped[str] = mapped_column(default="")
     session: Mapped[str] = mapped_column(default="")
     is_active: Mapped[bool] = mapped_column(default=True)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     instructors: Mapped[list["UserModel"]] = relationship(
         secondary=course_instructor_table, backref="instructing_courses"

@@ -13,3 +13,14 @@ class AcademicDepartmentModel(Base):
 
 
 CategoryModel = AcademicDepartmentModel
+
+
+class AcademicTagModel(Base):
+    __tablename__: str = "academic_tag_table"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    description: Mapped[str] = mapped_column(default="")
+
+
+TagModel = AcademicTagModel

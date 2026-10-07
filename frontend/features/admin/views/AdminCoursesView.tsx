@@ -7,22 +7,26 @@ import {
     Pencil,
     Trash2,
     BookOpen,
+    Layers,
     Tag,
     ArrowRight,
     AlertCircle,
     CheckCircle2,
-    Users,
     GraduationCap,
 } from "lucide-react";
 import type { AdminCourse } from "@/types";
 import { DataTable, StatusBadge, ConfirmDialog, ModernDropdown } from "@/components/ui";
 import { CourseFormModal } from "../components/CourseFormModal";
 import { CategoryFormModal } from "../components/AcademicFormModal";
+import { TagFormModal } from "../components/TagFormModal";
+import { CourseTagsModal } from "../components/CourseTagsModal";
+import { TagCoursesModal } from "../components/TagCoursesModal";
 import { useAuth } from "@/hooks/useAuth";
 import {
     getCoursesRequest,
     createCourseRequest,
     updateCourseRequest,
+    updateCourseTagsRequest,
     deleteCourseRequest,
     type CourseDto,
 } from "@/lib/api/courses";
@@ -31,7 +35,13 @@ import {
     createCategoryRequest,
     updateCategoryRequest,
     deleteCategoryRequest,
+    getTagsRequest,
+    createTagRequest,
+    updateTagRequest,
+    deleteTagRequest,
+    setTagCoursesRequest,
     type CategoryDto,
+    type TagDto,
 } from "@/lib/api/academics";
 
 function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
@@ -48,10 +58,11 @@ function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
         studentIds: lIds,
         session: dto.session,
         isActive: dto.isActive,
+        tags: dto.tags ?? [],
     };
 }
 
-type CoursesTab = "courses" | "categories";
+type CoursesTab = "courses" | "categories" | "tags";
 
 export function AdminCoursesView() {
     const { user: currentUser } = useAuth();
@@ -61,6 +72,7 @@ export function AdminCoursesView() {
     const [courses, setCourses] = useState<AdminCourse[]>([]);
     const [courseNames, setCourseNames] = useState<Record<number, string[]>>({});
     const [categories, setCategories] = useState<CategoryDto[]>([]);
+    const [tags, setTags] = useState<TagDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -68,6 +80,7 @@ export function AdminCoursesView() {
     // Courses Tab Filters & Modals
     const [search, setSearch] = useState("");
     const [departmentFilter, setDepartmentFilter] = useState("all");
+    const [tagFilter, setTagFilter] = useState("all");
     const [modalOpen, setModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<AdminCourse | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<AdminCourse | null>(null);
@@ -78,6 +91,17 @@ export function AdminCoursesView() {
     const [editingCategory, setEditingCategory] = useState<CategoryDto | null>(null);
     const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<CategoryDto | null>(null);
 
+    // Tags Tab Filters & Modals
+    const [tagSearch, setTagSearch] = useState("");
+    const [tagModalOpen, setTagModalOpen] = useState(false);
+    const [editingTag, setEditingTag] = useState<TagDto | null>(null);
+    const [deleteTagTarget, setDeleteTagTarget] = useState<TagDto | null>(null);
+
+    // Cross-Tab Course Tag Assignment Modals
+    const [courseForTags, setCourseForTags] = useState<AdminCourse | null>(null);
+    const [tagForCourses, setTagForCourses] = useState<TagDto | null>(null);
+
+
     const flashSuccess = (msg: string) => {
         setSuccessMessage(msg);
         setTimeout(() => setSuccessMessage(null), 3500);
@@ -86,12 +110,14 @@ export function AdminCoursesView() {
     const loadAllData = useCallback(async () => {
         try {
             setError(null);
-            const [dtos, cats] = await Promise.all([
+            const [dtos, cats, tgs] = await Promise.all([
                 getCoursesRequest(),
                 getCategoriesRequest().catch(() => []),
+                getTagsRequest().catch(() => []),
             ]);
             setCourses(dtos.map(mapCourseDtoToAdminCourse));
             setCategories(cats);
+            setTags(tgs);
 
             const names: Record<number, string[]> = {};
             for (const d of dtos) {
@@ -115,16 +141,26 @@ export function AdminCoursesView() {
         return Array.from(new Set([...fromCats, ...fromCourses])).sort();
     }, [categories, courses]);
 
+    const tagOptions = useMemo(() => {
+        const fromTags = tags.map((t) => t.name);
+        const fromCourses = courses.flatMap((c) => c.tags || []);
+        return Array.from(new Set([...fromTags, ...fromCourses])).sort();
+    }, [tags, courses]);
+
     const filteredCourses = useMemo(() => {
         return courses.filter((c) => {
             const instructorNames = (courseNames[c.id] ?? []).join(", ");
             const matchSearch =
                 c.name.toLowerCase().includes(search.toLowerCase()) ||
-                instructorNames.toLowerCase().includes(search.toLowerCase());
+                instructorNames.toLowerCase().includes(search.toLowerCase()) ||
+                (c.tags ?? []).some((t) => t.toLowerCase().includes(search.toLowerCase()));
             const matchDept = departmentFilter === "all" || c.department === departmentFilter;
-            return matchSearch && matchDept;
+            const matchTag =
+                tagFilter === "all" ||
+                (c.tags ?? []).some((t) => t.toLowerCase() === tagFilter.toLowerCase());
+            return matchSearch && matchDept && matchTag;
         });
-    }, [courses, courseNames, search, departmentFilter]);
+    }, [courses, courseNames, search, departmentFilter, tagFilter]);
 
     const filteredCategories = useMemo(() => {
         const query = categorySearch.toLowerCase().trim();
@@ -136,6 +172,16 @@ export function AdminCoursesView() {
                 (c.description && c.description.toLowerCase().includes(query)),
         );
     }, [categories, categorySearch]);
+
+    const filteredTags = useMemo(() => {
+        const query = tagSearch.toLowerCase().trim();
+        if (!query) return tags;
+        return tags.filter(
+            (t) =>
+                t.name.toLowerCase().includes(query) ||
+                (t.description && t.description.toLowerCase().includes(query)),
+        );
+    }, [tags, tagSearch]);
 
     // ── COURSE ACTIONS ─────────────────────────────────────────────────────
     const handleSaveCourse = async (data: Omit<AdminCourse, "id">) => {
@@ -150,6 +196,7 @@ export function AdminCoursesView() {
                 department: data.department,
                 session: data.session,
                 isActive: data.isActive,
+                tags: data.tags ?? [],
                 instructorIds: instIds,
                 learnerIds: lrnIds,
                 teacherIds: instIds,
@@ -223,12 +270,79 @@ export function AdminCoursesView() {
         }
     };
 
+    // ── TAG ACTIONS ────────────────────────────────────────────────────────
+    const handleSaveTag = async (data: { name: string; description?: string }) => {
+        try {
+            setError(null);
+            if (editingTag) {
+                await updateTagRequest(editingTag.id, data);
+                flashSuccess(`Tag "${data.name}" updated successfully.`);
+            } else {
+                await createTagRequest(data);
+                flashSuccess(`Tag "${data.name}" created successfully.`);
+            }
+            setTagModalOpen(false);
+            setEditingTag(null);
+            await loadAllData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to save tag.");
+        }
+    };
+
+    const handleDeleteTag = async () => {
+        if (!deleteTagTarget) return;
+        try {
+            setError(null);
+            await deleteTagRequest(deleteTagTarget.id);
+            flashSuccess(`Tag "${deleteTagTarget.name}" deleted.`);
+            setDeleteTagTarget(null);
+            await loadAllData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to delete tag.");
+            setDeleteTagTarget(null);
+        }
+    };
+
+    const handleSaveCourseTags = async (courseId: number, newTags: string[]) => {
+        try {
+            setError(null);
+            await updateCourseTagsRequest(courseId, newTags);
+            flashSuccess("Course tags updated successfully.");
+            await loadAllData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to update course tags.");
+        }
+    };
+
+    const handleQuickCreateTag = async (tagName: string) => {
+        try {
+            const created = await createTagRequest({ name: tagName });
+            await loadAllData();
+            return created;
+        } catch (err) {
+            // If already exists or error, still reload data
+            await loadAllData();
+        }
+    };
+
+    const handleSaveTagCourses = async (tagId: number, courseIds: number[]) => {
+        try {
+            setError(null);
+            await setTagCoursesRequest(tagId, courseIds);
+            flashSuccess("Tagged courses updated successfully.");
+            await loadAllData();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to update tagged courses.");
+        }
+    };
+
+
     if (loading) {
         return (
             <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <div className="h-9 w-9 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" />
-                    <p className="text-sm font-medium text-slate-500">Loading courses and categories...</p>
+                    <p className="text-sm font-medium text-slate-500">Loading courses, categories, and tags...</p>
                 </div>
             </div>
         );
@@ -254,16 +368,16 @@ export function AdminCoursesView() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                        Courses &amp; Categories
+                        Course Management
                     </h1>
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Manage course curricula, schedules, and organize academic domain categories.
+                        Manage course curricula, categories, and tags.
                     </p>
                 </div>
 
                 {!isCoordinator && (
                     <div className="flex items-center gap-2">
-                        {activeTab === "courses" ? (
+                        {activeTab === "courses" && (
                             <button
                                 type="button"
                                 onClick={() => {
@@ -275,7 +389,8 @@ export function AdminCoursesView() {
                                 <Plus className="h-4 w-4" />
                                 Add Course
                             </button>
-                        ) : (
+                        )}
+                        {activeTab === "categories" && (
                             <button
                                 type="button"
                                 onClick={() => {
@@ -286,6 +401,19 @@ export function AdminCoursesView() {
                             >
                                 <Plus className="h-4 w-4" />
                                 Add Category
+                            </button>
+                        )}
+                        {activeTab === "tags" && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditingTag(null);
+                                    setTagModalOpen(true);
+                                }}
+                                className="flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-all"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Tag
                             </button>
                         )}
                     </div>
@@ -336,7 +464,7 @@ export function AdminCoursesView() {
                                     : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                             }`}
                         >
-                            <Tag className="h-3.5 w-3.5" />
+                            <Layers className="h-3.5 w-3.5" />
                         </span>
                         <span>Categories</span>
                         <span className="text-xs font-normal text-slate-400">({categories.length})</span>
@@ -344,37 +472,68 @@ export function AdminCoursesView() {
                             <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-blue-600 dark:bg-blue-500" />
                         )}
                     </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab("tags")}
+                        className={`group relative flex cursor-pointer items-center gap-2.5 pb-3.5 pt-1 text-sm font-semibold transition-all ${
+                            activeTab === "tags"
+                                ? "text-blue-600 dark:text-blue-400"
+                                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                        }`}
+                    >
+                        <span
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
+                                activeTab === "tags"
+                                    ? "bg-blue-600 text-white shadow-xs"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                            }`}
+                        >
+                            <Tag className="h-3.5 w-3.5" />
+                        </span>
+                        <span>Tags</span>
+                        <span className="text-xs font-normal text-slate-400">({tags.length})</span>
+                        {activeTab === "tags" && (
+                            <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-full bg-blue-600 dark:bg-blue-500" />
+                        )}
+                    </button>
                 </nav>
             </div>
 
-            {/* ══════════════════════════════════════════════════════════════════
-                TAB 1: COURSES MANAGEMENT
-               ══════════════════════════════════════════════════════════════════ */}
+            {/* TAB CONTENT: COURSES */}
             {activeTab === "courses" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {/* Filters Toolbar */}
-                    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs">
-                        <div className="relative max-w-sm flex-1">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="relative w-full sm:max-w-sm">
                             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search courses or instructors..."
+                                placeholder="Search courses, instructors, tags..."
                                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-10 pr-4 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             <ModernDropdown
                                 value={departmentFilter}
                                 onChange={setDepartmentFilter}
+                                placeholder="All Categories"
                                 options={[
                                     { value: "all", label: "All Categories" },
-                                    ...departmentOptions.map((d) => ({ value: d, label: d })),
+                                    ...departmentOptions.map((dept) => ({ value: dept, label: dept })),
                                 ]}
-                                size="md"
-                                buttonClassName="w-full sm:w-56 rounded-xl"
+                            />
+                            <ModernDropdown
+                                value={tagFilter}
+                                onChange={setTagFilter}
+                                placeholder="All Tags"
+                                options={[
+                                    { value: "all", label: "All Tags" },
+                                    ...tagOptions.map((t) => ({ value: t, label: t })),
+                                ]}
                             />
                         </div>
                     </div>
@@ -383,15 +542,56 @@ export function AdminCoursesView() {
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
                         <DataTable
                             columns={[
-                                { key: "name", header: "Course Title" },
+                                {
+                                    key: "name",
+                                    header: "Course Title",
+                                    render: (c: AdminCourse) => (
+                                        <p className="font-semibold text-slate-900 dark:text-slate-100">
+                                            {c.name}
+                                        </p>
+                                    ),
+                                },
                                 {
                                     key: "department",
                                     header: "Category",
                                     render: (c: AdminCourse) => (
-                                        <span className="inline-block rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        <span className="inline-block rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
                                             {c.department || "General"}
                                         </span>
                                     ),
+                                },
+                                {
+                                    key: "tags",
+                                    header: "Tags",
+                                    render: (c: AdminCourse) => {
+                                        return (
+                                            <div className="flex flex-wrap items-center gap-1.5 max-w-[260px]">
+                                                {c.tags && c.tags.length > 0 ? (
+                                                    c.tags.map((tag) => (
+                                                        <span
+                                                            key={tag}
+                                                            className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50"
+                                                        >
+                                                            {tag}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-xs text-slate-400 italic">No tags</span>
+                                                )}
+                                                {!isCoordinator && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCourseForTags(c)}
+                                                        className="cursor-pointer inline-flex items-center gap-1 rounded-md border border-dashed border-slate-300 dark:border-slate-700 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:border-blue-500 hover:text-blue-600 dark:hover:border-blue-400 dark:hover:text-blue-400 transition-colors"
+                                                        title="Assign or edit tags for this course"
+                                                    >
+                                                        <Tag className="h-3 w-3" />
+                                                        <span>{c.tags?.length ? "Edit" : "+ Tag"}</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    },
                                 },
                                 {
                                     key: "instructors",
@@ -458,20 +658,18 @@ export function AdminCoursesView() {
                             ]}
                             data={filteredCourses}
                             keyExtractor={(c) => c.id}
-                            emptyMessage="No courses match your filters."
+                            emptyMessage="No courses found. Add a course to get started."
                         />
                     </div>
                 </div>
             )}
 
-            {/* ══════════════════════════════════════════════════════════════════
-                TAB 2: CATEGORIES MANAGEMENT
-               ══════════════════════════════════════════════════════════════════ */}
+            {/* TAB CONTENT: CATEGORIES */}
             {activeTab === "categories" && (
-                <div className="space-y-6">
-                    {/* Categories Toolbar */}
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs">
-                        <div className="relative max-w-md flex-1">
+                <div className="space-y-4">
+                    {/* Search Category Toolbar */}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="relative w-full sm:max-w-sm">
                             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
@@ -503,7 +701,7 @@ export function AdminCoursesView() {
                                                     </span>
                                                 ) : (
                                                     <span className="inline-block rounded-xl bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300">
-                                                        CAT #{cat.id}
+                                                        Category
                                                     </span>
                                                 )}
                                                 <span className="inline-block rounded-xl bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -574,7 +772,7 @@ export function AdminCoursesView() {
                                     </div>
 
                                     <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                                        <span>Domain #{cat.id}</span>
+                                        <span>Category ID: {cat.id}</span>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -594,12 +792,159 @@ export function AdminCoursesView() {
 
                     {filteredCategories.length === 0 && (
                         <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 py-16 text-center">
-                            <Tag className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
+                            <Layers className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
                             <h4 className="text-base font-semibold text-slate-800 dark:text-slate-200">
                                 No categories found
                             </h4>
                             <p className="mt-1 text-sm text-slate-500">
                                 {categorySearch ? "Try adjusting your search query." : "Add your first curriculum category."}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* TAB CONTENT: TAGS */}
+            {activeTab === "tags" && (
+                <div className="space-y-4">
+                    {/* Search Tag Toolbar */}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="relative w-full sm:max-w-sm">
+                            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={tagSearch}
+                                onChange={(e) => setTagSearch(e.target.value)}
+                                placeholder="Search tags by name or description..."
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-10 pr-4 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Tag Cards Grid */}
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        {filteredTags.map((tag) => {
+                            const matchingCourses = courses.filter(
+                                (c) => c.tags && c.tags.some((t) => t.toLowerCase() === tag.name.toLowerCase()),
+                            );
+                            return (
+                                <div
+                                    key={tag.id}
+                                    className="group relative flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700/60 transition-all"
+                                >
+                                    <div>
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-block rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                                    {tag.name}
+                                                </span>
+                                                <span className="inline-block rounded-xl bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                                    {matchingCourses.length}{" "}
+                                                    {matchingCourses.length === 1 ? "Course" : "Courses"}
+                                                </span>
+                                            </div>
+                                            {!isCoordinator && (
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        title="Edit Tag"
+                                                        onClick={() => {
+                                                            setEditingTag(tag);
+                                                            setTagModalOpen(true);
+                                                        }}
+                                                        className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        title="Delete Tag"
+                                                        onClick={() => setDeleteTagTarget(tag)}
+                                                        className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-slate-100">
+                                            {tag.name}
+                                        </h3>
+                                        <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                                            {tag.description || "No description provided for this classification tag."}
+                                        </p>
+
+                                        {/* Associated Courses Mini-Chips */}
+                                        {matchingCourses.length > 0 && (
+                                            <div className="mt-4 space-y-1.5">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                    Tagged courses:
+                                                </p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {matchingCourses.slice(0, 4).map((c) => (
+                                                        <button
+                                                            key={c.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setTagFilter(tag.name);
+                                                                setActiveTab("courses");
+                                                            }}
+                                                            className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-slate-50 dark:bg-slate-800/80 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/60 dark:hover:text-blue-300 transition-colors border border-slate-200/60 dark:border-slate-700/60"
+                                                        >
+                                                            <span>{c.name}</span>
+                                                        </button>
+                                                    ))}
+                                                    {matchingCourses.length > 4 && (
+                                                        <span className="text-[11px] text-slate-400 px-1 py-0.5">
+                                                            +{matchingCourses.length - 4} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                                        <span className="text-slate-400 font-medium">Tag ID: {tag.id}</span>
+                                        <div className="flex items-center gap-3">
+                                            {!isCoordinator && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setTagForCourses(tag)}
+                                                    className="text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                                    title="Assign courses to this tag"
+                                                >
+                                                    <BookOpen className="h-3.5 w-3.5" />
+                                                    <span>Manage Courses</span>
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setTagFilter(tag.name);
+                                                    setActiveTab("courses");
+                                                }}
+                                                className="text-blue-600 hover:underline dark:text-blue-400 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                            >
+                                                <span>View Courses ({matchingCourses.length})</span>
+                                                <ArrowRight className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {filteredTags.length === 0 && (
+                        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 py-16 text-center">
+                            <Tag className="h-10 w-10 text-slate-300 dark:text-slate-600 mb-3" />
+                            <h4 className="text-base font-semibold text-slate-800 dark:text-slate-200">
+                                No tags found
+                            </h4>
+                            <p className="mt-1 text-sm text-slate-500">
+                                {tagSearch ? "Try adjusting your search query." : "Add your first classification tag."}
                             </p>
                         </div>
                     )}
@@ -649,6 +994,47 @@ export function AdminCoursesView() {
                 variant="danger"
                 onConfirm={handleDeleteCategory}
                 onCancel={() => setDeleteCategoryTarget(null)}
+            />
+
+            {/* Tag Form Modal */}
+            <TagFormModal
+                open={tagModalOpen}
+                item={editingTag}
+                onSave={handleSaveTag}
+                onClose={() => {
+                    setTagModalOpen(false);
+                    setEditingTag(null);
+                }}
+            />
+
+            {/* Confirm Tag Delete Dialog */}
+            <ConfirmDialog
+                open={!!deleteTagTarget}
+                title="Delete Tag"
+                message={`Are you sure you want to delete tag "${deleteTagTarget?.name}"?`}
+                confirmLabel="Delete Tag"
+                variant="danger"
+                onConfirm={handleDeleteTag}
+                onCancel={() => setDeleteTagTarget(null)}
+            />
+
+            {/* Course Tags Modal */}
+            <CourseTagsModal
+                open={!!courseForTags}
+                course={courseForTags}
+                availableTags={tags}
+                onSave={handleSaveCourseTags}
+                onCreateTag={handleQuickCreateTag}
+                onClose={() => setCourseForTags(null)}
+            />
+
+            {/* Tag Courses Modal */}
+            <TagCoursesModal
+                open={!!tagForCourses}
+                tag={tagForCourses}
+                courses={courses}
+                onSave={handleSaveTagCourses}
+                onClose={() => setTagForCourses(null)}
             />
         </div>
     );

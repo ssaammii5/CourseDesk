@@ -10,6 +10,7 @@ from app.course.dtos import (
     CoursePreferencesSchema,
     CourseResponseSchema,
     CourseSchema,
+    CourseTagsSchema,
 )
 from app.submission.dtos import SubmissionResponseSchema
 from app.utils.db import get_db
@@ -92,6 +93,21 @@ def update_course(course_id: int, body: CourseSchema, db: DbSession, _user: IsAd
 @course_routes.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_course(course_id: int, db: DbSession, _admin: IsAdmin):
     return controller.delete_course(course_id, db)
+
+
+@course_routes.put(
+    "/{course_id}/tags",
+    response_model=CourseResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def set_course_tags(
+    course_id: int,
+    body: CourseTagsSchema,
+    db: DbSession,
+    _user: IsAdminOrCoordinator,
+):
+    return controller.set_course_tags(course_id, body.tags, db)
+
 
 
 @course_routes.put(

@@ -12,6 +12,7 @@ class CourseSchema(CamelModel):
     learner_ids: list[int] = []
     teacher_ids: list[int] = []
     student_ids: list[int] = []
+    tags: list[str] = []
 
 
 class CourseResponseSchema(CamelModel):
@@ -22,6 +23,7 @@ class CourseResponseSchema(CamelModel):
     department: str = ""
     session: str = ""
     is_active: bool = True
+    tags: list[str] = []
     instructor_id: int | None = None
     instructor_name: str | None = None
     instructor_ids: list[int] = []
@@ -68,3 +70,7 @@ class CoursePreferencesSchema(CamelModel):
     course_order: list[int] = []
     sort_mode: str = "custom"
     view_mode: str = "grid"
+
+
+class CourseTagsSchema(CamelModel):
+    tags: list[str] = []

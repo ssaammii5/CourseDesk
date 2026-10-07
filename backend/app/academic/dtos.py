@@ -14,3 +14,17 @@ class DepartmentResponseSchema(DepartmentSchema):
 
 CategorySchema = DepartmentSchema
 CategoryResponseSchema = DepartmentResponseSchema
+
+
+class TagSchema(CamelModel):
+    name: str
+    description: str = ""
+
+
+class TagResponseSchema(TagSchema):
+    id: int
+    course_count: int = 0
+
+
+class TagCoursesSchema(CamelModel):
+    course_ids: list[int] = []

@@ -26,6 +26,7 @@ def serialize_course(course: CourseModel) -> CourseResponseSchema:
         department=course.department,
         session=course.session,
         is_active=course.is_active,
+        tags=course.tags or [],
         instructor_id=first_instructor.id if first_instructor else None,
         instructor_name=first_instructor.name if first_instructor else None,
         instructor_ids=[t.id for t in instructors],
@@ -121,6 +122,7 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
         department=body.department,
         session=body.session,
         is_active=body.is_active,
+        tags=body.tags or [],
     )
     inst_ids = body.instructor_ids or body.teacher_ids
     learn_ids = body.learner_ids or body.student_ids
@@ -164,6 +166,7 @@ def update_course(course_id: int, body: CourseSchema, db: Session) -> CourseResp
     course.department = body.department
     course.session = body.session
     course.is_active = body.is_active
+    course.tags = body.tags or []
     course.instructors = _fetch_users(body.instructor_ids or body.teacher_ids, db)
     course.learners = _fetch_users(body.learner_ids or body.student_ids, db)
     db.add(course)
@@ -177,6 +180,18 @@ def delete_course(course_id: int, db: Session) -> None:
         raise HTTPException(404, detail="Course id is incorrect")
     db.delete(course)
     db.commit()
+
+
+def set_course_tags(course_id: int, tags: list[str], db: Session) -> CourseResponseSchema:
+    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    cleaned = [t.strip().replace("#", "") for t in tags if t.strip().replace("#", "")]
+    course.tags = cleaned
+    db.add(course)
+    db.commit()
+    return get_one_course(course_id, db)
+
 
 
 def set_course_instructors(
