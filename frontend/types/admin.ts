@@ -110,11 +110,6 @@ export interface AdminCourse {
     studentIds?: number[];
     session: string;
     isActive: boolean;
-    meetingProvider?: string;
-    meetingUrl?: string | null;
-    meetingId?: string;
-    meetingPasscode?: string;
-    scheduleNotes?: string;
 }
 
 export interface AdminAssignment {

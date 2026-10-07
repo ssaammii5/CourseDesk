@@ -38,12 +38,6 @@ def serialize_course(course: CourseModel) -> CourseResponseSchema:
         teacher_names=[t.name for t in instructors],
         student_ids=sorted(s.id for s in course.learners),
         student_count=len(course.learners),
-        # ── NEW ──
-        meeting_provider=course.meeting_provider,
-        meeting_url=course.meeting_url,
-        meeting_id=course.meeting_id,
-        meeting_passcode=course.meeting_passcode,
-        schedule_notes=course.schedule_notes,
     )
 
 
@@ -127,11 +121,6 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
         department=body.department,
         session=body.session,
         is_active=body.is_active,
-        meeting_provider=body.meeting_provider,
-        meeting_url=body.meeting_url,
-        meeting_id=body.meeting_id,
-        meeting_passcode=body.meeting_passcode,
-        schedule_notes=body.schedule_notes,
     )
     inst_ids = body.instructor_ids or body.teacher_ids
     learn_ids = body.learner_ids or body.student_ids
@@ -175,11 +164,6 @@ def update_course(course_id: int, body: CourseSchema, db: Session) -> CourseResp
     course.department = body.department
     course.session = body.session
     course.is_active = body.is_active
-    course.meeting_provider = body.meeting_provider
-    course.meeting_url = body.meeting_url
-    course.meeting_id = body.meeting_id
-    course.meeting_passcode = body.meeting_passcode
-    course.schedule_notes = body.schedule_notes
     course.instructors = _fetch_users(body.instructor_ids or body.teacher_ids, db)
     course.learners = _fetch_users(body.learner_ids or body.student_ids, db)
     db.add(course)

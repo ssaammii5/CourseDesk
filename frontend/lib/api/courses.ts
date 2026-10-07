@@ -20,11 +20,6 @@ export interface CourseDto {
     teacherNames?: string[];
     studentIds?: number[];
     studentCount?: number;
-    meetingProvider: string;
-    meetingUrl: string | null;
-    meetingId: string;
-    meetingPasscode: string;
-    scheduleNotes: string;
 }
 
 export interface CoursePayload {
@@ -38,11 +33,6 @@ export interface CoursePayload {
     learnerIds?: number[];
     teacherIds?: number[];
     studentIds?: number[];
-    meetingProvider?: string;
-    meetingUrl?: string | null;
-    meetingId?: string;
-    meetingPasscode?: string;
-    scheduleNotes?: string;
 }
 
 export interface CoursePersonDto {

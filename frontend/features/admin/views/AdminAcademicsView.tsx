@@ -651,12 +651,6 @@ export function AdminAcademicsView() {
                                         <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
                                             {selectedCourse.name}
                                         </h2>
-                                        {selectedCourse.scheduleNotes && (
-                                            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 flex items-center gap-1.5">
-                                                <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                                                <span>{selectedCourse.scheduleNotes}</span>
-                                            </p>
-                                        )}
                                     </div>
 
                                     <div className="flex items-center gap-2 shrink-0">

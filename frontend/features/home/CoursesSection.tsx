@@ -109,8 +109,8 @@ function mapCourseToHomeCourse(c: CourseDto): HomeCourse {
         emoji: emojiFor(c.id),
         instructorAvatarClass: avatarClassFor(c.id),
         teacherAvatarClass: avatarClassFor(c.id),
-        meetingUrl: c.meetingUrl,
-        meetingProvider: c.meetingProvider,
+        meetingUrl: null,
+        meetingProvider: "",
     };
 }
 

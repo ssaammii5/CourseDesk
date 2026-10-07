@@ -59,11 +59,10 @@ export function CourseHeroBanner({
     const isLive = state === "live" && !!nextSession;
     const isUpcoming = state === "upcoming" && !!nextSession?.scheduledAtUtc;
 
-    // Meeting details: session overrides course
-    const meetingUrl = nextSession?.meetingUrl || course?.meetingUrl || null;
-    const meetingId = nextSession?.meetingId || course?.meetingId || "";
-    const meetingPasscode =
-        nextSession?.meetingPasscode || course?.meetingPasscode || "";
+    // Meeting details: session
+    const meetingUrl = nextSession?.meetingUrl || null;
+    const meetingId = nextSession?.meetingId || "";
+    const meetingPasscode = nextSession?.meetingPasscode || "";
 
     // Instructor names
     const instructorList = useMemo(() => {
@@ -410,13 +409,13 @@ export function CourseHeroBanner({
                                 </div>
                             )}
 
-                            {course?.scheduleNotes && (
+                            {nextSession?.description && (
                                 <div className="py-2.5">
                                     <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
-                                        Schedule Notes:
+                                        Session Notes:
                                     </span>
                                     <p className="mt-1 text-xs text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-slate-800 p-2.5 rounded-lg border border-transparent dark:border-slate-700">
-                                        {course.scheduleNotes}
+                                        {nextSession.description}
                                     </p>
                                 </div>
                             )}

@@ -62,10 +62,9 @@ export function StreamHero({
     const isLive = state === "live" && !!nextSession;
     const isUpcoming = state === "upcoming" && !!nextSession?.scheduledAtUtc;
 
-    const meetingUrl = nextSession?.meetingUrl || course?.meetingUrl || null;
-    const meetingId = nextSession?.meetingId || course?.meetingId || "";
-    const meetingPasscode =
-        nextSession?.meetingPasscode || course?.meetingPasscode || "";
+    const meetingUrl = nextSession?.meetingUrl || null;
+    const meetingId = nextSession?.meetingId || "";
+    const meetingPasscode = nextSession?.meetingPasscode || "";
 
     const instructorList = useMemo(() => {
         const rawNames: string[] = [];

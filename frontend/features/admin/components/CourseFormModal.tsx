@@ -1,26 +1,9 @@
 "use client";
-import { useState, useEffect, useMemo, useRef } from "react";
-import type { AdminCourse, AdminUser } from "@/types";
-import { COURSE_CATALOG, AVAILABLE_SESSIONS, TEACHER_DEPARTMENTS } from "@/lib/adminData";
-import { PROGRAM_TYPES } from "@/features/settings";
-import { getUsersRequest, type UserDto } from "@/lib/api/users";
-import {
-    getProgramsRequest,
-    getDepartmentsRequest,
-    getSemestersRequest,
-    type AcademicProgramDto,
-    type AcademicDepartmentDto,
-    type AcademicSemesterDto,
-} from "@/lib/api/academics";
-import { getCoursesRequest, type CourseDto } from "@/lib/api/courses";
-import { X, ChevronDown, Search, UserPlus, Users } from "lucide-react";
 
-interface EnrolledGroup {
-    program: string;
-    department: string;
-    session: string;
-    learnerIds: number[];
-}
+import { useState, useEffect, useRef } from "react";
+import type { AdminCourse } from "@/types";
+import { getCategoriesRequest, type CategoryDto } from "@/lib/api/academics";
+import { X, ChevronDown, Check, BookOpen, Layers, Search, Sparkles } from "lucide-react";
 
 interface CourseFormModalProps {
     open: boolean;
@@ -30,757 +13,387 @@ interface CourseFormModalProps {
     onClose: () => void;
 }
 
-function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
-    const lDetails = dto.learnerDetails || dto.studentDetails;
-    const iDetails = dto.instructorDetails || dto.teacherDetails;
-    return {
-        id: dto.id,
-        name: dto.name,
-        email: dto.email,
-        role: dto.role as AdminUser["role"],
-        isActive: dto.isActive,
-        createdAt: dto.createdAtUtc.split("T")[0],
-        learnerDetails: lDetails
-            ? {
-                fathersName: lDetails.fathersName ?? "",
-                mothersName: lDetails.mothersName ?? "",
-                dateOfBirth: lDetails.dateOfBirth ?? "",
-                mobile: lDetails.mobile ?? "",
-                nationality: lDetails.nationality ?? "",
-                learnerId: lDetails.learnerId ?? lDetails.studentId ?? "",
-                studentId: lDetails.learnerId ?? lDetails.studentId ?? "",
-                regNo: lDetails.regNo ?? "",
-                address: {
-                    street: lDetails.address?.street ?? "",
-                    city: lDetails.address?.city ?? "",
-                    state: lDetails.address?.state ?? "",
-                    zip: lDetails.address?.zip ?? "",
-                    country: lDetails.address?.country ?? "",
-                },
-            }
-            : undefined,
-        instructorDetails: iDetails
-            ? {
-                instructorId: iDetails.instructorId ?? iDetails.teacherId ?? "",
-                teacherId: iDetails.instructorId ?? iDetails.teacherId ?? "",
-            }
-            : undefined,
-        studentDetails: lDetails as any,
-        teacherDetails: iDetails as any,
-    };
-}
-
-export function CourseFormModal({ open, course, isCoordinator = false, onSave, onClose }: CourseFormModalProps) {
-    const [program, setProgram] = useState("");
+export function CourseFormModal({
+    open,
+    course,
+    onSave,
+    onClose,
+}: CourseFormModalProps) {
+    const [name, setName] = useState("");
     const [department, setDepartment] = useState("");
-    const [session, setSession] = useState("");
-    const [courseName, setCourseName] = useState("");
-    const [isCustomCourse, setIsCustomCourse] = useState(false);
     const [isActive, setIsActive] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [instructorDeptFilter, setInstructorDeptFilter] = useState("");
-    const [instructorIds, setInstructorIds] = useState<number[]>([]);
-    const [learnerProgram, setLearnerProgram] = useState("");
-    const [learnerDept, setLearnerDept] = useState("");
-    const [learnerSession, setLearnerSession] = useState("");
-    const [enrolledGroups, setEnrolledGroups] = useState<EnrolledGroup[]>([]);
-    const [manualLearnerIds, setManualLearnerIds] = useState<number[]>([]);
-    const [manualLearnerSearch, setManualLearnerSearch] = useState("");
-    const [manualLearnerResults, setManualLearnerResults] = useState<AdminUser[]>([]);
-    const [showManualResults, setShowManualResults] = useState(false);
 
-    const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
-    const [academicPrograms, setAcademicPrograms] = useState<AcademicProgramDto[]>([]);
-    const [academicDepartments, setAcademicDepartments] = useState<AcademicDepartmentDto[]>([]);
-    const [academicSemesters, setAcademicSemesters] = useState<AcademicSemesterDto[]>([]);
-    const [existingCourses, setExistingCourses] = useState<CourseDto[]>([]);
-    const [loadingData, setLoadingData] = useState(false);
-    const lastAppliedGroupFilter = useRef<string>("");
+    const [categories, setCategories] = useState<CategoryDto[]>([]);
+    const [loadingCategories, setLoadingCategories] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [categorySearch, setCategorySearch] = useState("");
 
-    const [meetingProvider, setMeetingProvider] = useState("");
-    const [meetingUrl, setMeetingUrl] = useState("");
-    const [meetingId, setMeetingId] = useState("");
-    const [meetingPasscode, setMeetingPasscode] = useState("");
-    const [scheduleNotes, setScheduleNotes] = useState("");
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
-    // Fetch instructors/learners, programs, departments, semesters, and courses when modal opens.
+    // Load available categories
     useEffect(() => {
         if (!open) return;
-        let cancelled = false;
-        setLoadingData(true);
-        Promise.all([
-            getUsersRequest().catch(() => []),
-            getProgramsRequest().catch(() => []),
-            getDepartmentsRequest().catch(() => []),
-            getSemestersRequest().catch(() => []),
-            getCoursesRequest().catch(() => []),
-        ])
-            .then(([userDtos, progDtos, deptDtos, semDtos, courseDtos]) => {
-                if (cancelled) return;
-                setAllUsers(userDtos.map(mapUserDtoToAdminUser));
-                setAcademicPrograms(progDtos);
-                setAcademicDepartments(deptDtos);
-                setAcademicSemesters(semDtos);
-                setExistingCourses(courseDtos);
+        let isMounted = true;
+        setLoadingCategories(true);
+        getCategoriesRequest()
+            .then((data) => {
+                if (isMounted) {
+                    setCategories(data);
+                }
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setCategories([]);
+                }
             })
             .finally(() => {
-                if (!cancelled) setLoadingData(false);
+                if (isMounted) {
+                    setLoadingCategories(false);
+                }
             });
         return () => {
-            cancelled = true;
+            isMounted = false;
         };
     }, [open]);
 
-    const matchDept = (userOrCourseDept?: string, targetDept?: string): boolean => {
-        if (!userOrCourseDept || !targetDept) return false;
-        const u = userOrCourseDept.trim().toLowerCase();
-        const t = targetDept.trim().toLowerCase();
-        if (u === t) return true;
-        const deptObj = academicDepartments.find(
-            (d) => d.code?.toLowerCase() === t || d.name.toLowerCase() === t
-        );
-        if (deptObj) {
-            return u === deptObj.name.toLowerCase() || u === deptObj.code?.toLowerCase();
-        }
-        return false;
-    };
-
-    const programOptions = useMemo(() => {
-        if (academicPrograms.length > 0) {
-            return academicPrograms.map((p) => p.name);
-        }
-        return [...PROGRAM_TYPES];
-    }, [academicPrograms]);
-
-    const departmentOptions = useMemo(() => {
-        if (academicDepartments.length > 0) {
-            return academicDepartments.map((d) => ({
-                value: d.code || d.name,
-                label: d.code ? `${d.name} (${d.code})` : d.name,
-                code: d.code,
-                name: d.name,
-            }));
-        }
-        return TEACHER_DEPARTMENTS.map((d) => ({
-            value: d,
-            label: d,
-            code: d,
-            name: d,
-        }));
-    }, [academicDepartments]);
-
-    const sessionOptions = useMemo(() => {
-        if (academicSemesters.length > 0) {
-            return academicSemesters.map((s) => s.name);
-        }
-        return [...AVAILABLE_SESSIONS];
-    }, [academicSemesters]);
-
-    const allInstructors = useMemo(
-        () => allUsers.filter((u) => (u.role === "Instructor" || u.role === "Teacher") && u.isActive),
-        [allUsers]
-    );
-
-    const allLearners = useMemo(
-        () => allUsers.filter((u) => u.role === "Learner" || u.role === "Student"),
-        [allUsers]
-    );
-
-    const availableCourses = useMemo(() => {
-        const set = new Set<string>();
-        COURSE_CATALOG.forEach((item) => {
-            const matchesProg = !program || (item.program && item.program.toLowerCase() === program.toLowerCase());
-            const matchesDept = !department || matchDept(item.department, department);
-            if (matchesProg && matchesDept && item.name) {
-                set.add(item.name);
-            }
-        });
-        existingCourses.forEach((c) => {
-            const matchesProg = !program || (c.program && c.program.toLowerCase() === program.toLowerCase());
-            const matchesDept = !department || matchDept(c.department, department);
-            if (matchesProg && matchesDept && c.name) {
-                set.add(c.name);
-            }
-        });
-        return Array.from(set).sort();
-    }, [program, department, existingCourses, academicDepartments]);
-
-    const filteredInstructors = useMemo(() => {
-        return allInstructors;
-    }, [allInstructors]);
-
-    const combinedLearnerSessionOptions = useMemo(() => {
-        return sessionOptions;
-    }, [sessionOptions]);
-
-    const totalEnrolledCount = useMemo(() => {
-        const groupIds = new Set(enrolledGroups.flatMap((g) => g.learnerIds));
-        const manualIds = new Set(manualLearnerIds);
-        return new Set([...groupIds, ...manualIds]).size;
-    }, [enrolledGroups, manualLearnerIds]);
-
-    const buildGroupsFromLearnerIds = (ids: number[]): { groups: EnrolledGroup[]; manual: number[] } => {
-        return { groups: [], manual: ids };
-    };
-
+    // Populate or reset form fields
     useEffect(() => {
-        if (open) {
-            setProgram(course?.program ?? "");
-            setDepartment(course?.department ?? "");
-            setSession(course?.session ?? "");
-            const initialCourseName = course?.name ?? "";
-            setCourseName(initialCourseName);
-            setIsCustomCourse(Boolean(initialCourseName));
-            setInstructorIds(course?.instructorIds ?? course?.teacherIds ?? []);
-            setIsActive(course?.isActive ?? true);
-            setErrors({});
-            setInstructorDeptFilter("");
-            setLearnerProgram("");
-            setLearnerDept("");
-            setLearnerSession("");
-            setManualLearnerSearch("");
-            setManualLearnerResults([]);
-            setShowManualResults(false);
+        if (!open) return;
+        if (course) {
+            setName(course.name || "");
+            setDepartment(course.department || "");
+            setIsActive(course.isActive !== false);
+        } else {
+            setName("");
+            setDepartment("");
+            setIsActive(true);
+        }
+        setErrors({});
+        setIsDropdownOpen(false);
+        setCategorySearch("");
+    }, [open, course]);
 
-            setMeetingProvider(course?.meetingProvider ?? "");
-            setMeetingUrl(course?.meetingUrl ?? "");
-            setMeetingId(course?.meetingId ?? "");
-            setMeetingPasscode(course?.meetingPasscode ?? "");
-            setScheduleNotes(course?.scheduleNotes ?? "");
-
-            lastAppliedGroupFilter.current = "";
-            const initialIds = course?.learnerIds ?? course?.studentIds ?? [];
-            if (initialIds.length > 0 && allLearners.length > 0) {
-                const { groups, manual } = buildGroupsFromLearnerIds(initialIds);
-                setEnrolledGroups(groups);
-                setManualLearnerIds(manual);
-            } else {
-                setEnrolledGroups([]);
-                setManualLearnerIds(initialIds);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, course, allLearners]);
-
-    const handleProgramChange = (value: string) => {
-        setProgram(value);
-        setCourseName("");
-        setIsCustomCourse(false);
-        clearError("program");
-        clearError("courseName");
-    };
-    const handleDepartmentChange = (value: string) => {
-        setDepartment(value);
-        setCourseName("");
-        setIsCustomCourse(false);
-        clearError("department");
-        clearError("courseName");
-    };
-    const handleSessionChange = (value: string) => {
-        setSession(value);
-        clearError("session");
-    };
-    const handleCourseNameChange = (value: string) => {
-        setCourseName(value);
-        clearError("courseName");
-    };
-    const handleInstructorDeptChange = (value: string) => {
-        setInstructorDeptFilter(value);
-    };
-    const handleLearnerProgramChange = (value: string) => {
-        setLearnerProgram(value);
-        setLearnerDept("");
-        setLearnerSession("");
-        lastAppliedGroupFilter.current = "";
-    };
-    const handleLearnerDeptChange = (value: string) => {
-        setLearnerDept(value);
-        setLearnerSession("");
-        lastAppliedGroupFilter.current = "";
-    };
-    const handleLearnerSessionChange = (value: string) => {
-        setLearnerSession(value);
-        lastAppliedGroupFilter.current = "";
-    };
-    const removeGroup = (index: number) => {
-        setEnrolledGroups((prev) => prev.filter((_, i) => i !== index));
-    };
-    const handleManualSearch = (value: string) => {
-        setManualLearnerSearch(value);
-        if (value.trim().length >= 2) {
-            const results = allLearners.filter(
-                (s) => {
-                    const lId = s.learnerDetails?.learnerId || s.studentDetails?.studentId || "";
-                    return (
-                        lId.toLowerCase().includes(value.toLowerCase()) ||
-                        s.email.toLowerCase().includes(value.toLowerCase()) ||
-                        s.name.toLowerCase().includes(value.toLowerCase())
-                    );
-                }
-            );
-            setManualLearnerResults(results);
-            setShowManualResults(true);
-        } else {
-            setManualLearnerResults([]);
-            setShowManualResults(false);
+        if (isDropdownOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
         }
-    };
-    const addManualLearner = (learner: AdminUser) => {
-        setManualLearnerIds((prev) => {
-            if (prev.includes(learner.id)) return prev;
-            return [...prev, learner.id];
-        });
-        setManualLearnerSearch("");
-        setManualLearnerResults([]);
-        setShowManualResults(false);
-    };
-    const removeManualLearner = (id: number) => {
-        setManualLearnerIds((prev) => prev.filter((s) => s !== id));
-    };
-    const toggleInstructor = (id: number) => {
-        setInstructorIds((prev) =>
-            prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
-        );
-    };
-    const clearError = (key: string) =>
-        setErrors((prev) => {
-            if (!prev[key]) return prev;
-            const next = { ...prev };
-            delete next[key];
-            return next;
-        });
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isDropdownOpen]);
 
-    const getAllLearnerIds = (): number[] => {
-        const groupIds = enrolledGroups.flatMap((g) => g.learnerIds);
-        const allIds = new Set([...groupIds, ...manualLearnerIds]);
-        return Array.from(allIds);
-    };
-
-    const validate = () => {
-        const next: Record<string, string> = {};
-        if (!department) next.department = "Category is required.";
-        if (!courseName.trim()) next.courseName = "Course title is required.";
-        return next;
-    };
-
-    const handleSubmit = () => {
-        const errs = validate();
-        setErrors(errs);
-        if (Object.keys(errs).length > 0) return;
-        const finalLearnerIds = getAllLearnerIds();
-        onSave({
-            name: courseName,
-            program,
-            department,
-            instructorIds,
-            learnerIds: finalLearnerIds,
-            teacherIds: instructorIds,
-            studentIds: finalLearnerIds,
-            session,
-            isActive,
-            meetingProvider,
-            meetingUrl: meetingUrl || null,
-            meetingId,
-            meetingPasscode,
-            scheduleNotes,
-        });
-    };
+    // Focus category search input when dropdown opens
+    useEffect(() => {
+        if (isDropdownOpen) {
+            setTimeout(() => {
+                searchInputRef.current?.focus();
+            }, 50);
+        } else {
+            setCategorySearch("");
+        }
+    }, [isDropdownOpen]);
 
     if (!open) return null;
 
+    const filteredCategories = categories.filter((cat) => {
+        if (!categorySearch.trim()) return true;
+        const q = categorySearch.toLowerCase().trim();
+        return (
+            cat.name.toLowerCase().includes(q) ||
+            (cat.code && cat.code.toLowerCase().includes(q))
+        );
+    });
+
+    const selectedCategory = categories.find((c) => c.name === department);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+            newErrors.name = "Course title is required.";
+        }
+        if (!department.trim()) {
+            newErrors.department = "Please select a category.";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        onSave({
+            name: name.trim(),
+            department: department.trim(),
+            isActive,
+            program: course?.program ?? "",
+            session: course?.session ?? "",
+            instructorIds: course?.instructorIds ?? [],
+            learnerIds: course?.learnerIds ?? [],
+            teacherIds: course?.teacherIds ?? course?.instructorIds ?? [],
+            studentIds: course?.studentIds ?? course?.learnerIds ?? [],
+        });
+    };
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-            <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl dark:bg-slate-900 dark:border dark:border-slate-800">
-                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-slate-800">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
-                        {isCoordinator ? `Course Assignments — ${course?.name || "Course"}` : course ? "Edit Course" : "Add New Course"}
-                    </h2>
-                    <button type="button" onClick={onClose} className="cursor-pointer rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800">
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-6 py-6">
-                    {loadingData && (
-                        <p className="text-sm text-gray-500 dark:text-slate-400">Loading academic data & users…</p>
-                    )}
-
-                    <section>
-                        {isCoordinator && (
-                            <div className="mb-4 rounded-xl bg-blue-50/70 border border-blue-200/70 p-3 text-xs text-blue-900 dark:bg-blue-950/40 dark:border-blue-800/40 dark:text-blue-300">
-                                Course metadata (title, category, track, cohort) is set by administrators. You can manage instructors and enrolled learners below.
-                            </div>
-                        )}
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">Course Details</h3>
-                        <div className="grid gap-5 md:grid-cols-2">
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Category / Domain <span className="text-[#c5221f]">*</span>
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={department}
-                                        disabled={isCoordinator}
-                                        onChange={(e) => handleDepartmentChange(e.target.value)}
-                                        className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.department
-                                            ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                            : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                            } ${department ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
-                                    >
-                                        <option value="" disabled>Select category</option>
-                                        {departmentOptions.map((d) => (
-                                            <option key={d.value} value={d.value}>{d.label}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                                </div>
-                                {errors.department && <span className="mt-1 block text-sm text-[#c5221f]">{errors.department}</span>}
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label className="block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                        Course Title <span className="text-[#c5221f]">*</span>
-                                    </label>
-                                    {!isCoordinator && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsCustomCourse(!isCustomCourse);
-                                                clearError("courseName");
-                                            }}
-                                            className="text-xs font-medium text-[#1a73e8] hover:underline cursor-pointer dark:text-blue-400"
-                                        >
-                                            {isCustomCourse
-                                                ? "← Pick from catalog"
-                                                : "+ Enter custom title"}
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="relative">
-                                    {!isCustomCourse ? (
-                                        <>
-                                            <select
-                                                value={courseName}
-                                                onChange={(e) => {
-                                                    if (e.target.value === "__custom__") {
-                                                        setIsCustomCourse(true);
-                                                        setCourseName("");
-                                                    } else {
-                                                        handleCourseNameChange(e.target.value);
-                                                    }
-                                                }}
-                                                disabled={isCoordinator}
-                                                className={`w-full appearance-none rounded-md border bg-white px-3.5 py-2.5 pr-10 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.courseName
-                                                    ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                                    : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                                    } ${courseName ? "text-gray-900 dark:text-slate-100" : "text-gray-600 dark:text-slate-400"}`}
-                                            >
-                                                <option value="" disabled>
-                                                    {availableCourses.length === 0
-                                                        ? "No catalog courses available"
-                                                        : "Select course title"}
-                                                </option>
-                                                {availableCourses.map((c) => (
-                                                    <option key={c} value={c}>{c}</option>
-                                                ))}
-                                                <option value="__custom__">+ Enter custom course title...</option>
-                                            </select>
-                                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 dark:text-slate-400" />
-                                        </>
-                                    ) : (
-                                        <input
-                                            type="text"
-                                            value={courseName}
-                                            onChange={(e) => handleCourseNameChange(e.target.value)}
-                                            placeholder="e.g. Full-Stack Web Development Bootcamp"
-                                            disabled={isCoordinator}
-                                            className={`w-full rounded-md border bg-white px-3.5 py-2.5 text-[15px] focus:outline-none dark:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed ${errors.courseName
-                                                ? "border-[#c5221f] focus:border-[#c5221f] focus:ring-1 focus:ring-[#c5221f]"
-                                                : "border-gray-400/80 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] dark:border-slate-700"
-                                                } text-gray-900 dark:text-slate-100 placeholder:text-gray-500 dark:placeholder:text-slate-500`}
-                                        />
-                                    )}
-                                </div>
-                                {errors.courseName && <span className="mt-1 block text-sm text-[#c5221f]">{errors.courseName}</span>}
-                            </div>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+            role="dialog"
+            aria-modal="true"
+        >
+            <div
+                className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="relative px-6 pt-6 pb-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 flex items-center justify-center border border-primary-100/50 dark:border-primary-900/50 shadow-sm">
+                            <BookOpen className="w-5 h-5" />
                         </div>
-                    </section>
-
-                    <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
-                            Live Class Configuration
-                        </h3>
-                        <div className="grid gap-5 md:grid-cols-2">
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Meeting Provider
-                                </label>
-                                <select
-                                    value={meetingProvider}
-                                    onChange={(e) => setMeetingProvider(e.target.value)}
-                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                >
-                                    <option value="">Select provider</option>
-                                    <option value="zoom">Zoom</option>
-                                    <option value="meet">Google Meet</option>
-                                    <option value="teams">Microsoft Teams</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Meeting URL
-                                </label>
-                                <input
-                                    type="url"
-                                    value={meetingUrl}
-                                    onChange={(e) => setMeetingUrl(e.target.value)}
-                                    placeholder="https://zoom.us/j/123456789"
-                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Meeting ID
-                                </label>
-                                <input
-                                    type="text"
-                                    value={meetingId}
-                                    onChange={(e) => setMeetingId(e.target.value)}
-                                    placeholder="e.g., 123 456 7890"
-                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Passcode
-                                </label>
-                                <input
-                                    type="text"
-                                    value={meetingPasscode}
-                                    onChange={(e) => setMeetingPasscode(e.target.value)}
-                                    placeholder="e.g., abc123"
-                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="mb-1.5 block text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Schedule Notes
-                                </label>
-                                <input
-                                    type="text"
-                                    value={scheduleNotes}
-                                    onChange={(e) => setScheduleNotes(e.target.value)}
-                                    placeholder="e.g., Every Monday & Wednesday, 7:00 PM – 9:00 PM (GMT+6)"
-                                    className="w-full rounded-md border border-gray-400/80 bg-white px-3.5 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                />
-                            </div>
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                {course ? "Edit Course" : "Add New Course"}
+                            </h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {course
+                                    ? "Update the details for this course"
+                                    : "Fill in the details to create a new course"}
+                            </p>
                         </div>
-                    </section>
-
-                    <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
-                            Assigned Instructors
-                            {instructorIds.length > 0 && (
-                                <span className="ml-2 rounded-full bg-[#e8f0fe] px-2 py-0.5 text-xs font-medium text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300 dark:border dark:border-blue-850/50">
-                                    {instructorIds.length} selected
-                                </span>
-                            )}
-                        </h3>
-                        <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-800 dark:bg-slate-800/40">
-                            {filteredInstructors.length === 0 ? (
-                                <p className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No active instructors available.</p>
-                            ) : (
-                                filteredInstructors.map((t) => {
-                                    const details = t.instructorDetails || t.teacherDetails;
-                                    return (
-                                        <label key={t.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800/60">
-                                            <input
-                                                type="checkbox"
-                                                checked={instructorIds.includes(t.id)}
-                                                onChange={() => toggleInstructor(t.id)}
-                                                className="h-4 w-4 accent-[#1a73e8]"
-                                            />
-                                            <div className="min-w-0 flex-1">
-                                                <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{t.name}</span>
-                                                <span className="block text-xs text-gray-500 dark:text-slate-400">
-                                                    {details?.instructorId || details?.teacherId || t.email}
-                                                </span>
-                                            </div>
-                                        </label>
-                                    );
-                                })
-                            )}
-                        </div>
-                        {instructorIds.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                {instructorIds.map((id) => {
-                                    const teacher = allUsers.find((u) => u.id === id);
-                                    return teacher ? (
-                                        <span key={id} className="inline-flex items-center gap-1 rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#174ea6] dark:bg-blue-950/60 dark:text-blue-300 dark:border dark:border-blue-800/40">
-                                            {teacher.name}
-                                            <button type="button" onClick={() => toggleInstructor(id)} className="ml-1 cursor-pointer text-[#174ea6] hover:text-[#c5221f] dark:text-blue-300 dark:hover:text-rose-400">
-                                                ×
-                                            </button>
-                                        </span>
-                                    ) : null;
-                                })}
-                            </div>
-                        )}
-                    </section>
-
-                    <section>
-                        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
-                            Enrolled Learners
-                            {totalEnrolledCount > 0 && (
-                                <span className="ml-2 rounded-full bg-[#e6f4ea] px-2 py-0.5 text-xs font-medium text-[#137333] dark:bg-emerald-950/60 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
-                                    {totalEnrolledCount} enrolled
-                                </span>
-                            )}
-                        </h3>
-
-
-                        <div className="mb-4 rounded-md border border-gray-200 bg-[#f8f9fa] p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-slate-300">Individual Learner Enrollment</p>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-slate-400" />
-                                <input
-                                    type="text"
-                                    value={manualLearnerSearch}
-                                    onChange={(e) => handleManualSearch(e.target.value)}
-                                    placeholder="Type learner ID, email, or name..."
-                                    className="w-full rounded-md border border-gray-400/80 bg-white py-2 pl-10 pr-4 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:outline-none focus:ring-1 focus:ring-[#1a73e8]"
-                                />
-                                {showManualResults && manualLearnerResults.length > 0 && (
-                                    <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                                        {manualLearnerResults.map((s) => {
-                                            const isAlreadyEnrolled =
-                                                manualLearnerIds.includes(s.id) ||
-                                                enrolledGroups.some((g) => g.learnerIds.includes(s.id));
-                                            const details = s.learnerDetails || s.studentDetails;
-                                            return (
-                                                <button
-                                                    key={s.id}
-                                                    type="button"
-                                                    onClick={() => addManualLearner(s)}
-                                                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-slate-700/60"
-                                                >
-                                                    <UserPlus className="h-4 w-4 shrink-0 text-[#1a73e8] dark:text-blue-400" />
-                                                    <div className="min-w-0 flex-1">
-                                                        <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{s.name}</span>
-                                                        <span className="block text-xs text-gray-500 dark:text-slate-400">
-                                                            {details?.learnerId || details?.studentId || "N/A"} • {s.email}
-                                                        </span>
-                                                    </div>
-                                                    {isAlreadyEnrolled && (
-                                                        <span className="shrink-0 text-xs text-[#137333] dark:text-emerald-400">Already enrolled</span>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {enrolledGroups.length > 0 && (
-                            <div className="mb-4">
-                                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-300">
-                                    Enrolled Cohorts / Groups ({enrolledGroups.length})
-                                </p>
-                                <div className="space-y-2">
-                                    {enrolledGroups.map((group, index) => (
-                                        <div
-                                            key={`${group.program}-${group.department}-${group.session}`}
-                                            className="flex items-center gap-3 rounded-md border border-[#c8e6c9] bg-[#e8f5e9] px-4 py-3 dark:border-emerald-900/50 dark:bg-emerald-950/40"
-                                        >
-                                            <Users className="h-5 w-5 shrink-0 text-[#137333] dark:text-emerald-400" />
-                                            <div className="min-w-0 flex-1">
-                                                <span className="block text-sm font-medium text-[#137333] dark:text-emerald-300">
-                                                    {group.program} • {group.department} • {group.session}
-                                                </span>
-                                                <span className="block text-xs text-[#2e7d32] dark:text-emerald-400">
-                                                    {group.learnerIds.length} learner{group.learnerIds.length === 1 ? "" : "s"} enrolled
-                                                </span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeGroup(index)}
-                                                className="shrink-0 cursor-pointer rounded-full p-1.5 text-[#2e7d32] hover:bg-[#c8e6c9] hover:text-[#c5221f] dark:text-emerald-400 dark:hover:bg-emerald-900/50 dark:hover:text-rose-400"
-                                                title="Remove entire group"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {manualLearnerIds.length > 0 && (
-                            <div>
-                                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-300">
-                                    Individually Enrolled Learners ({manualLearnerIds.length})
-                                </p>
-                                <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-800">
-                                    {manualLearnerIds.map((id) => {
-                                        const student = allUsers.find((u) => u.id === id);
-                                        const details = student?.learnerDetails || student?.studentDetails;
-                                        return student ? (
-                                            <div key={id} className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 dark:border-slate-800">
-                                                <div className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm text-gray-900 dark:text-slate-100">{student.name}</span>
-                                                    <span className="block text-xs text-gray-500 dark:text-slate-400">
-                                                        {details?.learnerId || details?.studentId || "N/A"} • {student.email}
-                                                    </span>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeManualLearner(id)}
-                                                    className="shrink-0 cursor-pointer rounded p-1 text-gray-500 hover:bg-red-50 hover:text-[#c5221f] dark:text-slate-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
-                                                    title="Remove learner"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        ) : null;
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                    </section>
-
-                    <div className="flex items-center justify-between rounded-md border border-gray-200 px-4 py-3 dark:border-slate-800">
-                        <span className="text-sm text-gray-800 dark:text-slate-200">Active Course</span>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={isActive}
-                            onClick={() => setIsActive((v) => !v)}
-                            className={`relative h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors ${isActive ? "bg-[#1a73e8]" : "bg-gray-300 dark:bg-slate-700"}`}
-                        >
-                            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${isActive ? "left-6" : "left-1"}`} />
-                        </button>
                     </div>
-                </div>
-
-                <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-slate-800">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="cursor-pointer rounded-full border border-gray-400 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        aria-label="Close"
                     >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        className="cursor-pointer rounded-full bg-[#1a63d8] px-7 py-2.5 text-sm font-medium text-white hover:bg-[#1554b5] dark:bg-blue-600 dark:hover:bg-blue-500"
-                    >
-                        {isCoordinator ? "Save Assignments" : course ? "Save Changes" : "Create Course"}
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
+
+                {/* Form Body */}
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                    {/* 1. Course Title */}
+                    <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            Course Title <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    if (errors.name) {
+                                        setErrors((prev) => ({ ...prev, name: "" }));
+                                    }
+                                }}
+                                placeholder="Enter course title..."
+                                className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-gray-50 dark:bg-gray-800/60 border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 ${
+                                    errors.name
+                                        ? "border-red-400 dark:border-red-500/60 bg-red-50/20 dark:bg-red-950/10"
+                                        : "border-gray-200 dark:border-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600"
+                                }`}
+                            />
+                        </div>
+                        {errors.name && (
+                            <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-medium">
+                                {errors.name}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* 2. Category Dropdown (Modern) */}
+                    <div className="space-y-1.5" ref={dropdownRef}>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            Category <span className="text-red-500">*</span>
+                        </label>
+
+                        <div className="relative">
+                            {/* Modern Dropdown Trigger Button */}
+                            <button
+                                type="button"
+                                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm border bg-gray-50 dark:bg-gray-800/60 transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 dark:focus:border-primary-400 ${
+                                    errors.department
+                                        ? "border-red-400 dark:border-red-500/60 bg-red-50/20 dark:bg-red-950/10"
+                                        : isDropdownOpen
+                                        ? "border-primary-500 dark:border-primary-400 ring-2 ring-primary-500/20"
+                                        : "border-gray-200 dark:border-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600"
+                                }`}
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-5 h-5 rounded-md bg-primary-100/60 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                                        <Layers className="w-3 h-3" />
+                                    </div>
+                                    {department ? (
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                {department}
+                                            </span>
+                                            {selectedCategory?.code && (
+                                                <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 tracking-wider uppercase">
+                                                    {selectedCategory.code}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-400 dark:text-gray-500">
+                                            Select category
+                                        </span>
+                                    )}
+                                </div>
+                                <ChevronDown
+                                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0 ml-2 ${
+                                        isDropdownOpen ? "rotate-180 text-primary-500" : ""
+                                    }`}
+                                />
+                            </button>
+
+                            {/* Dropdown Popover */}
+                            {isDropdownOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 p-1.5 animate-in fade-in-50 zoom-in-95 duration-150">
+                                    {/* Search Inside Dropdown if categories exist */}
+                                    {categories.length > 5 && (
+                                        <div className="relative mb-1.5 px-1 pt-0.5">
+                                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                            <input
+                                                ref={searchInputRef}
+                                                type="text"
+                                                value={categorySearch}
+                                                onChange={(e) => setCategorySearch(e.target.value)}
+                                                placeholder="Search categories..."
+                                                className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700/80 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:border-primary-500"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Options List */}
+                                    <div className="max-h-52 overflow-y-auto space-y-0.5 custom-scrollbar">
+                                        {loadingCategories ? (
+                                            <div className="py-4 text-center text-xs text-gray-400 dark:text-gray-500">
+                                                Loading categories...
+                                            </div>
+                                        ) : filteredCategories.length === 0 ? (
+                                            <div className="py-4 text-center text-xs text-gray-400 dark:text-gray-500">
+                                                {categorySearch
+                                                    ? "No categories match your search"
+                                                    : "No categories available"}
+                                            </div>
+                                        ) : (
+                                            filteredCategories.map((cat) => {
+                                                const isSelected = department === cat.name;
+                                                return (
+                                                    <button
+                                                        key={cat.id || cat.name}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setDepartment(cat.name);
+                                                            setIsDropdownOpen(false);
+                                                            if (errors.department) {
+                                                                setErrors((prev) => ({
+                                                                    ...prev,
+                                                                    department: "",
+                                                                }));
+                                                            }
+                                                        }}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
+                                                            isSelected
+                                                                ? "bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-semibold"
+                                                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/70"
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <span className="truncate">{cat.name}</span>
+                                                            {cat.code && (
+                                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase">
+                                                                    {cat.code}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {isSelected && (
+                                                            <Check className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 shrink-0" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {errors.department && (
+                            <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-medium">
+                                {errors.department}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* 3. Active Course Toggle */}
+                    <div className="pt-2">
+                        <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
+                            <div>
+                                <label
+                                    htmlFor="course-active-toggle"
+                                    className="text-xs font-semibold text-gray-800 dark:text-gray-200 cursor-pointer block"
+                                >
+                                    Active Course
+                                </label>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {isActive
+                                        ? "Course is active and accessible for teaching and learning"
+                                        : "Course is archived/hidden from active catalogs"}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                id="course-active-toggle"
+                                role="switch"
+                                aria-checked={isActive}
+                                onClick={() => setIsActive((prev) => !prev)}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500/20 ${
+                                    isActive
+                                        ? "bg-emerald-500 dark:bg-emerald-600"
+                                        : "bg-gray-200 dark:bg-gray-700"
+                                }`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                        isActive ? "translate-x-5" : "translate-x-0"
+                                    }`}
+                                />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 shadow-sm transition-colors flex items-center gap-1.5"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            {course ? "Update Course" : "Create Course"}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
