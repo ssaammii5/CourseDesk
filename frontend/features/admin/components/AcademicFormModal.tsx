@@ -84,7 +84,7 @@ export function CategoryFormModal({ open, item, onSave, onClose }: CategoryFormM
                                 setName(e.target.value);
                                 if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
                             }}
-                            placeholder="e.g. Web & Mobile Development"
+                            placeholder="Enter category name"
                             className={`mt-1.5 w-full rounded-xl border bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${
                                 errors.name
                                     ? "border-red-500 focus:ring-red-500/20"
@@ -102,7 +102,7 @@ export function CategoryFormModal({ open, item, onSave, onClose }: CategoryFormM
                             type="text"
                             value={code}
                             onChange={(e) => setCode(e.target.value.toUpperCase())}
-                            placeholder="e.g. WMD, CS, DESIGN"
+                            placeholder="Enter short code"
                             maxLength={10}
                             className="mt-1.5 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         />
