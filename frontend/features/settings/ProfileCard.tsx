@@ -13,7 +13,6 @@ import {
     HelpCircle,
     Loader2,
     Mail,
-    MapPin,
     Plus,
     Shield,
     Sparkles,
@@ -32,7 +31,7 @@ import {
     type UserAddress,
 } from "@/lib/api/users";
 import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
-import { COUNTRIES, MAX_AVATAR_SIZE, TIMEZONES } from "./constants";
+import { MAX_AVATAR_SIZE, TIMEZONES } from "./constants";
 import { Field, SelectField } from "@/components/ui/FormFields";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -654,178 +653,38 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                     </div>
                 </div>
             ) : isLearner ? (
-                /* Learner Specific Details: Bio, Academic & Address */
-                <>
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-6">
-                        <div>
-                            <h3 className="text-base font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-                                <Sparkles className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
-                                <span>About You</span>
-                            </h3>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                                Share a brief bio with your cohort peers and instructors.
-                            </p>
-                        </div>
-
-                        <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                                <label className="text-sm font-medium text-gray-800 dark:text-slate-200">
-                                    Short Bio
-                                </label>
-                                <span className="text-xs text-gray-400">
-                                    {form.shortBio.length}/600 characters
-                                </span>
-                            </div>
-                            <textarea
-                                rows={3}
-                                maxLength={600}
-                                value={form.shortBio}
-                                onChange={(e) => setForm((p) => ({ ...p, shortBio: e.target.value }))}
-                                disabled={readOnly}
-                                placeholder="Tell us about your learning goals, interests, or background..."
-                                className="w-full rounded-xl border border-gray-300 bg-white p-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
-                            />
-                        </div>
+                /* Learner Specific Details: Bio */
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-6">
+                    <div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                            <Sparkles className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
+                            <span>About You</span>
+                        </h3>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                            Share a brief bio with your cohort peers and instructors.
+                        </p>
                     </div>
 
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-6">
-                        <div>
-                            <h3 className="text-base font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-                                <GraduationCap className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
-                                <span>Academic &amp; Personal Info</span>
-                            </h3>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                                Additional record info for course enrollment and institutional verification.
-                            </p>
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-sm font-medium text-gray-800 dark:text-slate-200">
+                                Short Bio
+                            </label>
+                            <span className="text-xs text-gray-400">
+                                {form.shortBio.length}/600 characters
+                            </span>
                         </div>
-
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <Field
-                                label="Mobile Phone"
-                                type="tel"
-                                value={form.mobile}
-                                onChange={(val) => setForm((p) => ({ ...p, mobile: val }))}
-                                placeholder="+1 (555) 000-0000"
-                                disabled={readOnly}
-                            />
-                            <Field
-                                label="Date of Birth"
-                                type="date"
-                                value={form.dateOfBirth}
-                                onChange={(val) => setForm((p) => ({ ...p, dateOfBirth: val }))}
-                                disabled={readOnly}
-                            />
-                            <Field
-                                label="Nationality"
-                                value={form.nationality}
-                                onChange={(val) => setForm((p) => ({ ...p, nationality: val }))}
-                                placeholder="e.g. Canadian, American, etc."
-                                disabled={readOnly}
-                            />
-                            <Field
-                                label="Registration Number"
-                                value={form.regNo}
-                                onChange={(val) => setForm((p) => ({ ...p, regNo: val }))}
-                                placeholder="Student/Reg Number"
-                                disabled={readOnly}
-                            />
-                            <Field
-                                label="Father's Name"
-                                value={form.fathersName}
-                                onChange={(val) => setForm((p) => ({ ...p, fathersName: val }))}
-                                placeholder="Optional"
-                                disabled={readOnly}
-                            />
-                            <Field
-                                label="Mother's Name"
-                                value={form.mothersName}
-                                onChange={(val) => setForm((p) => ({ ...p, mothersName: val }))}
-                                placeholder="Optional"
-                                disabled={readOnly}
-                            />
-                        </div>
+                        <textarea
+                            rows={3}
+                            maxLength={600}
+                            value={form.shortBio}
+                            onChange={(e) => setForm((p) => ({ ...p, shortBio: e.target.value }))}
+                            disabled={readOnly}
+                            placeholder="Tell us about your learning goals, interests, or background..."
+                            className="w-full rounded-xl border border-gray-300 bg-white p-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                        />
                     </div>
-
-                    {/* Learner Address Card */}
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-6">
-                        <div>
-                            <h3 className="text-base font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-                                <MapPin className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
-                                <span>Address &amp; Location</span>
-                            </h3>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                                Your physical location for regional academic scheduling and certificates.
-                            </p>
-                        </div>
-
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="sm:col-span-2">
-                                <Field
-                                    label="Street Address"
-                                    value={form.address.street || ""}
-                                    onChange={(val) =>
-                                        setForm((p) => ({
-                                            ...p,
-                                            address: { ...p.address, street: val },
-                                        }))
-                                    }
-                                    placeholder="123 Academic Way, Apt 4B"
-                                    disabled={readOnly}
-                                />
-                            </div>
-                            <Field
-                                label="City"
-                                value={form.address.city || ""}
-                                onChange={(val) =>
-                                    setForm((p) => ({
-                                        ...p,
-                                        address: { ...p.address, city: val },
-                                    }))
-                                }
-                                placeholder="City"
-                                disabled={readOnly}
-                            />
-                            <Field
-                                label="State / Province"
-                                value={form.address.state || ""}
-                                onChange={(val) =>
-                                    setForm((p) => ({
-                                        ...p,
-                                        address: { ...p.address, state: val },
-                                    }))
-                                }
-                                placeholder="State / Province"
-                                disabled={readOnly}
-                            />
-                            <Field
-                                label="ZIP / Postal Code"
-                                value={form.address.zip || ""}
-                                onChange={(val) =>
-                                    setForm((p) => ({
-                                        ...p,
-                                        address: { ...p.address, zip: val },
-                                    }))
-                                }
-                                placeholder="Postal code"
-                                disabled={readOnly}
-                            />
-                            <SelectField
-                                label="Country"
-                                value={form.address.country || ""}
-                                onChange={(val) =>
-                                    setForm((p) => ({
-                                        ...p,
-                                        address: { ...p.address, country: val },
-                                    }))
-                                }
-                                options={COUNTRIES}
-                                searchable
-                                placeholder="Select country"
-                                disabled={readOnly}
-                            />
-                        </div>
-                    </div>
-                </>
+                </div>
             ) : null}
 
             {/* Links Section (Instructor & Learner only, not Admin) */}
