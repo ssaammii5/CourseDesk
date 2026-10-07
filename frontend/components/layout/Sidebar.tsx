@@ -19,6 +19,7 @@ import {
     UserCheck,
     Users,
     UserRound,
+    Layers,
     X,
 } from "lucide-react";
 import Link from "next/link";
@@ -215,8 +216,8 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                             open={open}
                             active={pathname === "/categories" || pathname === "/academics"}
                             href="/categories"
-                            icon={<Tag className="h-[18px] w-[18px]" />}
-                            label="Categories & Allotment"
+                            icon={<Layers className="h-[18px] w-[18px]" />}
+                            label="Course Allocation"
                         />
                     </div>
                 )}
