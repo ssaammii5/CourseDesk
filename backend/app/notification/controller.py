@@ -60,7 +60,7 @@ def _should_suppress(
         return False
     if kind == "assignment" and not pref.assignment_notifications:
         return True
-    if kind == "grade" and not pref.grade_notifications:
+    if kind in ("grade", "submission") and not pref.grade_notifications:
         return True
     if kind == "announcement" and not pref.announcement_notifications:
         return True

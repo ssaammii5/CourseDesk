@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     Bell,
     Briefcase,
@@ -19,16 +20,48 @@ import { SecurityCard } from "./SecurityCard";
 import { NotificationsCard } from "./NotificationsCard";
 import { initialOf, resolveAvatarUrl } from "@/lib/utils/format";
 
+function normalizeTab(rawTab?: string | null): SettingsTab | null {
+    if (!rawTab) return null;
+    const lower = rawTab.toLowerCase().trim();
+    if (lower === "notifications" || lower === "notification") return "notifications";
+    if (lower === "security") return "security";
+    if (lower === "profile") return "profile";
+    return null;
+}
+
 export function SettingsView({
     user,
     userName = user?.name ?? currentUser.name,
     role = user?.role ?? currentUser.role,
+    initialTab,
 }: {
     user?: CurrentUser | null;
     userName?: string;
     role?: CurrentUser["role"];
+    initialTab?: SettingsTab;
 }) {
-    const [tab, setTab] = useState<SettingsTab>("profile");
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const queryTab = normalizeTab(searchParams?.get("tab"));
+    const activeTab = initialTab || queryTab || "profile";
+    const [tab, setTab] = useState<SettingsTab>(activeTab);
+
+    useEffect(() => {
+        if (initialTab) {
+            setTab(initialTab);
+        } else if (queryTab && queryTab !== tab) {
+            setTab(queryTab);
+        }
+    }, [initialTab, queryTab]);
+
+    const handleTabChange = (newTab: SettingsTab) => {
+        setTab(newTab);
+        if (typeof window !== "undefined") {
+            const nextUrl = `/settings?tab=${newTab}`;
+            window.history.replaceState(null, "", nextUrl);
+        }
+    };
 
     const isInstructor = role === "Instructor";
     const isCoordinator = role === "Coordinator";
@@ -111,7 +144,7 @@ export function SettingsView({
                                     <button
                                         key={t.id}
                                         type="button"
-                                        onClick={() => setTab(t.id)}
+                                        onClick={() => handleTabChange(t.id)}
                                         className={`cursor-pointer inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all ${
                                             active
                                                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
@@ -134,7 +167,7 @@ export function SettingsView({
                     <ProfileCard user={user} userName={userName} readOnly={false} />
                 )}
                 {tab === "security" && <SecurityCard />}
-                {tab === "notifications" && <NotificationsCard />}
+                {tab === "notifications" && <NotificationsCard role={role} />}
             </div>
         </div>
     );
