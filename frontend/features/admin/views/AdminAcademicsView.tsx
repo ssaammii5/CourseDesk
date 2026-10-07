@@ -48,6 +48,15 @@ import { resolveAvatarUrl, initialOf } from "@/lib/utils/format";
 type MainTab = "studio" | "categories";
 type QuickCourseFilter = "all" | "needs-faculty" | "empty-roster" | "active";
 
+interface ConfirmActionState {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    variant?: "danger" | "default";
+    onConfirm: () => Promise<void> | void;
+}
+
 const TABS: { id: MainTab; label: string; icon: React.ReactNode; desc: string }[] = [
     {
         id: "studio",
@@ -97,6 +106,9 @@ export function AdminAcademicsView() {
     const [enrollModalOpen, setEnrollModalOpen] = useState(false);
     const [enrollModalSearch, setEnrollModalSearch] = useState("");
     const [learnersToEnroll, setLearnersToEnroll] = useState<number[]>([]);
+
+    // Safety Confirm Dialog State for protecting against accidental clicks
+    const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
 
     const flashSuccess = (msg: string) => {
         setSuccessMessage(msg);
@@ -864,7 +876,15 @@ export function AdminAcademicsView() {
                                                                     </span>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => handleUnassignInstructor(ins.id)}
+                                                                        onClick={() => {
+                                                                            setConfirmAction({
+                                                                                title: "Remove Instructor",
+                                                                                message: `Are you sure you want to remove ${ins.name} from "${selectedCourse?.name}"?`,
+                                                                                confirmLabel: "Remove Instructor",
+                                                                                variant: "danger",
+                                                                                onConfirm: () => handleUnassignInstructor(ins.id),
+                                                                            });
+                                                                        }}
                                                                         className="cursor-pointer rounded-xl p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors"
                                                                         title="Remove instructor from course"
                                                                     >
@@ -960,7 +980,15 @@ export function AdminAcademicsView() {
                                                     {selectedEnrolledIds.length > 0 && (
                                                         <button
                                                             type="button"
-                                                            onClick={handleBatchUnenrollSelected}
+                                                            onClick={() => {
+                                                                setConfirmAction({
+                                                                    title: "Confirm Batch Unenrollment",
+                                                                    message: `Are you sure you want to unenroll ${selectedEnrolledIds.length} selected learner${selectedEnrolledIds.length > 1 ? "s" : ""} from "${selectedCourse?.name}"?`,
+                                                                    confirmLabel: `Unenroll ${selectedEnrolledIds.length} Learners`,
+                                                                    variant: "danger",
+                                                                    onConfirm: handleBatchUnenrollSelected,
+                                                                });
+                                                            }}
                                                             className="cursor-pointer rounded-xl bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900 px-3 py-1.5 text-xs font-semibold hover:bg-red-100 transition-colors shrink-0 shadow-2xs"
                                                         >
                                                             Unenroll ({selectedEnrolledIds.length})
@@ -1035,7 +1063,15 @@ export function AdminAcademicsView() {
 
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => handleUnenrollSingleLearner(lrn.id)}
+                                                                    onClick={() => {
+                                                                        setConfirmAction({
+                                                                            title: "Unenroll Learner",
+                                                                            message: `Are you sure you want to unenroll ${lrn.name} from "${selectedCourse?.name}"?`,
+                                                                            confirmLabel: "Unenroll Learner",
+                                                                            variant: "danger",
+                                                                            onConfirm: () => handleUnenrollSingleLearner(lrn.id),
+                                                                        });
+                                                                    }}
                                                                     className="cursor-pointer text-slate-400 hover:text-red-600 dark:hover:text-red-400 p-1.5 rounded-lg transition-colors shrink-0"
                                                                     title="Unenroll learner"
                                                                 >
@@ -1378,11 +1414,19 @@ export function AdminAcademicsView() {
                                 <button
                                     type="button"
                                     disabled={instructorsToAllot.length === 0}
-                                    onClick={handleBatchAllotInstructors}
+                                    onClick={() => {
+                                        setConfirmAction({
+                                            title: "Confirm Instructor Allotment",
+                                            message: `Are you sure you want to allot ${instructorsToAllot.length} selected instructor${instructorsToAllot.length > 1 ? "s" : ""} to "${selectedCourse?.name}"?`,
+                                            confirmLabel: "Confirm & Allot",
+                                            variant: "default",
+                                            onConfirm: handleBatchAllotInstructors,
+                                        });
+                                    }}
                                     className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
                                     <Check className="h-4 w-4" />
-                                    Allot Selected ({instructorsToAllot.length})
+                                    Save &amp; Allot ({instructorsToAllot.length})
                                 </button>
                             </div>
                         </div>
@@ -1525,11 +1569,19 @@ export function AdminAcademicsView() {
                                 <button
                                     type="button"
                                     disabled={learnersToEnroll.length === 0}
-                                    onClick={handleBatchEnroll}
+                                    onClick={() => {
+                                        setConfirmAction({
+                                            title: "Confirm Student Enrollment",
+                                            message: `Are you sure you want to enroll ${learnersToEnroll.length} selected learner${learnersToEnroll.length > 1 ? "s" : ""} into "${selectedCourse?.name}"?`,
+                                            confirmLabel: "Confirm & Enroll",
+                                            variant: "default",
+                                            onConfirm: handleBatchEnroll,
+                                        });
+                                    }}
                                     className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
                                     <Check className="h-4 w-4" />
-                                    Enroll Selected ({learnersToEnroll.length})
+                                    Save &amp; Enroll ({learnersToEnroll.length})
                                 </button>
                             </div>
                         </div>
@@ -1557,6 +1609,24 @@ export function AdminAcademicsView() {
                 variant="danger"
                 onConfirm={handleDeleteCategory}
                 onCancel={() => setDeleteCategoryTarget(null)}
+            />
+
+            {/* Safety Confirmation Dialog for All Studio Actions */}
+            <ConfirmDialog
+                open={!!confirmAction}
+                title={confirmAction?.title ?? "Confirm Action"}
+                message={confirmAction?.message ?? ""}
+                confirmLabel={confirmAction?.confirmLabel ?? "Confirm"}
+                cancelLabel={confirmAction?.cancelLabel ?? "Cancel"}
+                variant={confirmAction?.variant ?? "default"}
+                onConfirm={async () => {
+                    if (confirmAction) {
+                        const actionToRun = confirmAction.onConfirm;
+                        setConfirmAction(null);
+                        await actionToRun();
+                    }
+                }}
+                onCancel={() => setConfirmAction(null)}
             />
         </div>
     );
