@@ -538,7 +538,7 @@ export function AdminAcademicsView() {
                 {/* Master-Detail Split Pane */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                     {/* ── Left Column: Course Directory (4 cols) ──────────────── */}
-                    <div className="lg:col-span-4 space-y-2.5 max-h-[820px] overflow-y-auto pr-1 custom-scrollbar">
+                    <div className="lg:col-span-4 space-y-2 max-h-[820px] overflow-y-auto pr-1 custom-scrollbar">
                         <div className="flex items-center justify-between px-1 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
                             <span>Curriculum Courses ({filteredCourses.length})</span>
                             <span className="text-[11px] text-slate-400">Select to Allocate</span>
@@ -560,10 +560,10 @@ export function AdminAcademicsView() {
                                         setInstructorsToAllot([]);
                                         setAllotInstructorsSearch("");
                                     }}
-                                    className={`group relative cursor-pointer rounded-2xl border p-4 transition-all ${
+                                    className={`group relative cursor-pointer rounded-xl border p-3 transition-all ${
                                         isSelected
-                                            ? "border-l-4 border-blue-600 dark:border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-md ring-1 ring-blue-500/20"
-                                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs hover:shadow-sm"
+                                            ? "border-l-4 border-blue-600 dark:border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-sm ring-1 ring-blue-500/20"
+                                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs hover:shadow-xs"
                                     }`}
                                 >
                                     <div className="flex items-center justify-between gap-2">
@@ -590,67 +590,53 @@ export function AdminAcademicsView() {
                                         )}
                                     </div>
 
-                                    <h3 className="mt-2 text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    <h3 className="mt-1.5 text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                         {c.name}
                                     </h3>
 
-                                    {/* Instructor Avatars stack & Learner count */}
-                                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-2.5 text-xs text-slate-500">
-                                        <div className="flex items-center gap-1.5 min-w-0">
-                                            {courseInstructors.length > 0 ? (
-                                                <div className="flex items-center gap-1.5 min-w-0">
-                                                    <div className="flex -space-x-1.5 overflow-hidden shrink-0">
-                                                        {courseInstructors.slice(0, 3).map((ins) => {
-                                                            const avatar = resolveAvatarUrl(ins.avatar);
-                                                            const insId = getInstructorId(ins);
-                                                            const tooltip = insId ? `${ins.name} (${insId})` : ins.name;
-                                                            return avatar ? (
-                                                                <img
-                                                                    key={ins.id}
-                                                                    src={avatar}
-                                                                    alt={ins.name}
-                                                                    title={tooltip}
-                                                                    className="inline-block h-5 w-5 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div
-                                                                    key={ins.id}
-                                                                    title={tooltip}
-                                                                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900"
-                                                                >
-                                                                    {initialOf(ins.name)}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                        {courseInstructors.length > 3 && (
-                                                            <div className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[9px] font-bold text-slate-600 dark:text-slate-300 ring-2 ring-white dark:ring-slate-900">
-                                                                +{courseInstructors.length - 3}
+                                    {/* Assigned Instructors & Learner count */}
+                                    <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                                        {courseInstructors.length > 0 ? (
+                                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                                <div className="flex -space-x-1 overflow-hidden shrink-0">
+                                                    {courseInstructors.slice(0, 2).map((ins) => {
+                                                        const avatar = resolveAvatarUrl(ins.avatar);
+                                                        return avatar ? (
+                                                            <img
+                                                                key={ins.id}
+                                                                src={avatar}
+                                                                alt={ins.name}
+                                                                className="h-4.5 w-4.5 rounded-full ring-1 ring-white dark:ring-slate-900 object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div
+                                                                key={ins.id}
+                                                                className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-600 text-[8px] font-bold text-white ring-1 ring-white dark:ring-slate-900"
+                                                            >
+                                                                {initialOf(ins.name)}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                    {courseInstructors.length === 1 && (
-                                                        <span
-                                                            className="truncate text-[10px] font-mono text-slate-500 dark:text-slate-400 max-w-[110px]"
-                                                            title={(() => {
-                                                                const single = courseInstructors[0];
-                                                                const sId = getInstructorId(single);
-                                                                return sId ? `${single.name} (${sId})` : single.name;
-                                                            })()}
-                                                        >
-                                                            {getInstructorId(courseInstructors[0])}
-                                                        </span>
-                                                    )}
+                                                        );
+                                                    })}
                                                 </div>
-                                            ) : (
-                                                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                                                    No instructor
-                                                </span>
-                                            )}
-                                        </div>
+                                                <div className="min-w-0 flex-1 truncate">
+                                                    <span
+                                                        className="font-medium text-slate-700 dark:text-slate-300 text-xs truncate inline-block max-w-full"
+                                                        title={courseInstructors.map((i) => `${i.name} (${getInstructorId(i)})`).join(", ")}
+                                                    >
+                                                        {courseInstructors.map((i) => i.name).join(", ")}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                                Unstaffed
+                                            </span>
+                                        )}
 
-                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 shrink-0">
+                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
                                             <GraduationCap className="h-3.5 w-3.5 text-violet-500" />
-                                            <span>{lrnCount} Students</span>
+                                            <span>{lrnCount}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -751,9 +737,9 @@ export function AdminAcademicsView() {
                                                     return (
                                                         <div
                                                             key={ins.id}
-                                                            className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs hover:border-slate-300 transition-all"
+                                                            className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs hover:border-slate-300 transition-all"
                                                         >
-                                                            <div className="flex items-center gap-3 min-w-0">
+                                                            <div className="flex items-center gap-3 min-w-0 flex-1">
                                                                 {avatarUrl ? (
                                                                     <img
                                                                         src={avatarUrl}
@@ -765,47 +751,46 @@ export function AdminAcademicsView() {
                                                                         {initial}
                                                                     </div>
                                                                 )}
-                                                                <div className="min-w-0">
+                                                                <div className="min-w-0 flex-1">
                                                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                                                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                                                                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
                                                                             {ins.name}
                                                                         </p>
                                                                         {insId && (
-                                                                            <span className="font-mono text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                                                                            <span className="font-mono text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
                                                                                 {insId}
                                                                             </span>
                                                                         )}
-                                                                        <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.2 text-[9px] font-bold text-blue-600 dark:text-blue-300">
+                                                                        <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.2 text-[9px] font-bold text-blue-600 dark:text-blue-300 shrink-0">
                                                                             Instructor
                                                                         </span>
                                                                     </div>
-                                                                    <p className="text-[11px] text-slate-400 truncate">
-                                                                        {ins.email}
-                                                                    </p>
+                                                                    <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5 flex-wrap">
+                                                                        <span className="truncate">{ins.email}</span>
+                                                                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                                                                        <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                                                                            Teaching {load} {load === 1 ? "course" : "courses"}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex items-center gap-2 shrink-0">
-                                                                <span className="hidden sm:inline-block rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] text-slate-600 dark:text-slate-300 font-medium">
-                                                                    Teaching {load} {load === 1 ? "course" : "courses"}
-                                                                </span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setConfirmAction({
-                                                                            title: "Remove Instructor",
-                                                                            message: `Are you sure you want to remove ${ins.name}${insId ? ` (${insId})` : ""} from "${selectedCourse?.name}"?`,
-                                                                            confirmLabel: "Remove Instructor",
-                                                                            variant: "danger",
-                                                                            onConfirm: () => handleUnassignInstructor(ins.id),
-                                                                        });
-                                                                    }}
-                                                                    className="cursor-pointer rounded-xl p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors"
-                                                                    title="Remove instructor from course"
-                                                                >
-                                                                    <X className="h-4 w-4" />
-                                                                </button>
-                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setConfirmAction({
+                                                                        title: "Remove Instructor",
+                                                                        message: `Are you sure you want to remove ${ins.name}${insId ? ` (${insId})` : ""} from "${selectedCourse?.name}"?`,
+                                                                        confirmLabel: "Remove Instructor",
+                                                                        variant: "danger",
+                                                                        onConfirm: () => handleUnassignInstructor(ins.id),
+                                                                    });
+                                                                }}
+                                                                className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors shrink-0"
+                                                                title="Remove instructor from course"
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </button>
                                                         </div>
                                                     );
                                                 })}
