@@ -285,15 +285,15 @@ export function StreamHero({
                             )}
                         </button>
 
-                        {/* Meeting & Course Details */}
+                        {/* Course Details */}
                         <button
                             type="button"
                             onClick={() => setInfoOpen(true)}
-                            title="Meeting details and access credentials"
+                            title="Course details and information"
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors"
                         >
                             <Info className="h-3.5 w-3.5 text-slate-400" />
-                            <span>Meeting Info</span>
+                            <span>Course Info</span>
                         </button>
 
                         {/* Instructor New Announcement */}
@@ -311,17 +311,17 @@ export function StreamHero({
                 </div>
             </header>
 
-            {/* Meeting Credentials Dialog */}
+            {/* Course Details Dialog */}
             {infoOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-xs">
                     <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                    Course & Meeting Info
+                                    Course Details
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    Virtual meeting credentials and course details
+                                    Academic information and course overview
                                 </p>
                             </div>
                             <button
@@ -333,14 +333,38 @@ export function StreamHero({
                             </button>
                         </div>
 
-                        <div className="mt-4 space-y-3 text-xs text-slate-700 dark:text-slate-300">
+                        <div className="mt-4 space-y-3.5 text-xs text-slate-700 dark:text-slate-300">
                             {/* Course name */}
                             <div>
                                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Course</p>
                                 <p className="mt-0.5 text-xs font-semibold text-slate-900 dark:text-slate-100">{title}</p>
                             </div>
 
-                            {/* Meeting URL */}
+                            {/* Academic Metadata: Subject Code, Department, Session */}
+                            {(subjectLabel || programLabel || sessionLabel) && (
+                                <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/30">
+                                    {subjectLabel && (
+                                        <div>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Subject Code</p>
+                                            <p className="mt-0.5 font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">{subjectLabel}</p>
+                                        </div>
+                                    )}
+                                    {programLabel && (
+                                        <div>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Department</p>
+                                            <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{programLabel}</p>
+                                        </div>
+                                    )}
+                                    {sessionLabel && (
+                                        <div className={subjectLabel && programLabel ? "col-span-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60" : ""}>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Session</p>
+                                            <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{sessionLabel}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Meeting URL (if configured) */}
                             {meetingUrl && (
                                 <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
                                     <div className="flex items-center justify-between">
@@ -377,7 +401,7 @@ export function StreamHero({
                                 </div>
                             )}
 
-                            {/* Meeting ID & Passcode */}
+                            {/* Meeting ID & Passcode (if configured) */}
                             {(meetingId || meetingPasscode) && (
                                 <div className="grid grid-cols-2 gap-2.5">
                                     {meetingId && (
