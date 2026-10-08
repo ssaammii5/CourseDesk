@@ -12,6 +12,7 @@ import {
     Clock,
     Download,
     ExternalLink,
+    Eye,
     FileText,
     Layers,
     MessageSquare,
@@ -23,7 +24,7 @@ import {
 } from "lucide-react";
 import type { AssignmentDto } from "@/lib/api/assignments";
 import type { SubmissionDto } from "@/lib/api/submissions";
-import { DataTable, StatusBadge } from "@/components/ui";
+import { DataTable, FileViewerModal, StatusBadge, type PreviewableAttachment } from "@/components/ui";
 import { API_URL } from "@/lib/api/client";
 import { initialOf } from "@/lib/utils/format";
 
@@ -64,6 +65,7 @@ export function AdminAssignmentDetailView({
     const [activeTab, setActiveTab] = useState<"overview" | "submissions">("overview");
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [viewerAttachment, setViewerAttachment] = useState<PreviewableAttachment | null>(null);
 
     // Submission statistics
     const totalSubmissions = submissions.length;
@@ -376,26 +378,66 @@ export function AdminAssignmentDetailView({
                                                 ? att.url
                                                 : `${API_URL}${att.url}`;
                                             return (
-                                                <a
+                                                <div
                                                     key={att.id}
-                                                    href={fileUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                    className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                                                 >
-                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                                                        <FileText className="h-5 w-5" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setViewerAttachment({
+                                                                id: att.id,
+                                                                title: att.fileName,
+                                                                fileType: att.fileType,
+                                                                fileSize: att.fileSize,
+                                                                url: att.url,
+                                                                kind: att.kind as "file" | "link",
+                                                            })
+                                                        }
+                                                        className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer hover:opacity-80 transition-opacity"
+                                                    >
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                                            <FileText className="h-5 w-5" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">
+                                                                {att.fileName}
+                                                            </p>
+                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                                                {att.fileSize}
+                                                            </p>
+                                                        </div>
+                                                    </button>
+                                                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                                                        <button
+                                                            type="button"
+                                                            title="Preview file"
+                                                            onClick={() =>
+                                                                setViewerAttachment({
+                                                                    id: att.id,
+                                                                    title: att.fileName,
+                                                                    fileType: att.fileType,
+                                                                    fileSize: att.fileSize,
+                                                                    url: att.url,
+                                                                    kind: att.kind as "file" | "link",
+                                                                })
+                                                            }
+                                                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-200/70 hover:text-blue-600 dark:hover:bg-slate-700 dark:hover:text-blue-400 cursor-pointer"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </button>
+                                                        <a
+                                                            href={fileUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            download={att.fileName}
+                                                            title="Download file"
+                                                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-200/70 hover:text-blue-600 dark:hover:bg-slate-700 dark:hover:text-blue-400"
+                                                        >
+                                                            <Download className="h-4 w-4" />
+                                                        </a>
                                                     </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <p className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">
-                                                            {att.fileName}
-                                                        </p>
-                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                                            {att.fileSize}
-                                                        </p>
-                                                    </div>
-                                                    <Download className="h-4 w-4 text-slate-400 shrink-0" />
-                                                </a>
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -509,6 +551,14 @@ export function AdminAssignmentDetailView({
                     </section>
                 )}
             </div>
+
+            {/* File Viewer Modal */}
+            {viewerAttachment && (
+                <FileViewerModal
+                    attachment={viewerAttachment}
+                    onClose={() => setViewerAttachment(null)}
+                />
+            )}
         </div>
     );
 }

@@ -10,6 +10,7 @@ import {
     Clock,
     Download,
     ExternalLink,
+    Eye,
     FileText,
     FolderCheck,
     MessageSquare,
@@ -31,7 +32,7 @@ import {
 } from "@/lib/api/submissions";
 import { initialOf } from "@/lib/utils/format";
 import { API_URL } from "@/lib/api/client";
-import { RichTextContent } from "@/components/ui";
+import { FileViewerModal, RichTextContent, type PreviewableAttachment } from "@/components/ui";
 import { AssignmentComments } from "../components/AssignmentComments";
 
 export interface InstructorAssignmentViewProps {
@@ -76,6 +77,7 @@ export function InstructorAssignmentView({
     const [gradeInputs, setGradeInputs] = useState<Record<number, { marks: string; feedback: string }>>({});
     const [savingGradeId, setSavingGradeId] = useState<number | null>(null);
     const [savedSuccessId, setSavedSuccessId] = useState<number | null>(null);
+    const [viewerAttachment, setViewerAttachment] = useState<PreviewableAttachment | null>(null);
 
     const loadSubmissions = useCallback(async () => {
         try {
@@ -635,19 +637,42 @@ export function InstructorAssignmentView({
                                                                             ? att.url
                                                                             : `${API_URL}${att.url}`;
                                                                         return (
-                                                                            <a
+                                                                            <div
                                                                                 key={att.id}
-                                                                                href={downloadUrl}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-gray-800 dark:text-slate-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-slate-700"
+                                                                                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 pl-3 pr-1.5 text-xs font-medium text-gray-800 dark:text-slate-200 shadow-2xs hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                                                                             >
-                                                                                <Paperclip className="h-3.5 w-3.5 text-gray-500 dark:text-slate-400" />
-                                                                                <span className="max-w-[200px] truncate">
-                                                                                    {att.fileName}
-                                                                                </span>
-                                                                                <Download className="h-3 w-3 text-gray-400 dark:text-slate-500" />
-                                                                            </a>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        setViewerAttachment({
+                                                                                            id: att.id,
+                                                                                            title: att.fileName,
+                                                                                            fileType: att.fileType,
+                                                                                            fileSize: att.fileSize,
+                                                                                            url: att.url,
+                                                                                            kind: "file",
+                                                                                        })
+                                                                                    }
+                                                                                    className="inline-flex cursor-pointer items-center gap-1.5 hover:text-[#1a73e8] dark:hover:text-blue-400"
+                                                                                    title="Click to preview file"
+                                                                                >
+                                                                                    <Paperclip className="h-3.5 w-3.5 text-gray-500 dark:text-slate-400" />
+                                                                                    <span className="max-w-[180px] truncate">
+                                                                                        {att.fileName}
+                                                                                    </span>
+                                                                                    <Eye className="h-3.5 w-3.5 text-gray-400 hover:text-[#1a73e8] dark:text-slate-400" />
+                                                                                </button>
+                                                                                <a
+                                                                                    href={downloadUrl}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    download={att.fileName}
+                                                                                    className="rounded p-1 text-gray-400 hover:bg-gray-200/60 hover:text-gray-700 dark:hover:bg-slate-600 dark:hover:text-slate-200 transition-colors"
+                                                                                    title="Download file"
+                                                                                >
+                                                                                    <Download className="h-3 w-3" />
+                                                                                </a>
+                                                                            </div>
                                                                         );
                                                                     })}
                                                                 </div>
@@ -1056,17 +1081,39 @@ export function InstructorAssignmentView({
                                             ? att.url
                                             : `${API_URL}${att.url}`;
                                         return (
-                                            <a
+                                            <div
                                                 key={att.id}
-                                                href={fileUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-2 text-xs font-medium text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
+                                                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 py-1 pl-3.5 pr-1.5 text-xs font-medium text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                                             >
-                                                <Paperclip className="h-4 w-4 text-[#1a73e8] dark:text-blue-400" />
-                                                <span className="truncate">{att.fileName}</span>
-                                                <ExternalLink className="h-3.5 w-3.5 text-gray-400 dark:text-slate-500" />
-                                            </a>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setViewerAttachment({
+                                                            id: att.id,
+                                                            title: att.fileName,
+                                                            fileType: att.fileType,
+                                                            fileSize: att.fileSize,
+                                                            url: att.url,
+                                                            kind: att.kind as "file" | "link",
+                                                        })
+                                                    }
+                                                    className="inline-flex cursor-pointer items-center gap-2 hover:text-[#1a73e8] dark:hover:text-blue-400"
+                                                    title="Click to preview file"
+                                                >
+                                                    <Paperclip className="h-4 w-4 text-[#1a73e8] dark:text-blue-400" />
+                                                    <span className="truncate max-w-[200px]">{att.fileName}</span>
+                                                    <Eye className="h-3.5 w-3.5 text-gray-400 hover:text-[#1a73e8] dark:text-slate-400" />
+                                                </button>
+                                                <a
+                                                    href={fileUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="rounded p-1 text-gray-400 hover:bg-gray-200/60 hover:text-gray-700 dark:hover:bg-slate-600 dark:hover:text-slate-200 transition-colors"
+                                                    title="Open in new tab / download"
+                                                >
+                                                    <ExternalLink className="h-3.5 w-3.5" />
+                                                </a>
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -1082,6 +1129,14 @@ export function InstructorAssignmentView({
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* File Viewer Modal */}
+            {viewerAttachment && (
+                <FileViewerModal
+                    attachment={viewerAttachment}
+                    onClose={() => setViewerAttachment(null)}
+                />
             )}
         </div>
     );
