@@ -206,6 +206,10 @@ def _build_learner_details(
         f_name = parts[0]
         l_name = parts[1] if len(parts) > 1 else ""
 
+    kwargs = {}
+    if data.learner_id:
+        kwargs["learner_id"] = data.learner_id
+
     return LearnerDetailsModel(
         user_id=user_id,
         first_name=f_name,
@@ -225,6 +229,7 @@ def _build_learner_details(
         state=data.address.state,
         zip=data.address.zip,
         country=data.address.country,
+        **kwargs,
     )
 
 
@@ -239,6 +244,10 @@ def _build_instructor_details(
         l_name = parts[1] if len(parts) > 1 else ""
 
     p_headline = (data.professional_headline or data.headline or "").strip()
+    kwargs = {}
+    if data.instructor_id:
+        kwargs["instructor_id"] = data.instructor_id
+
     return InstructorDetailsModel(
         user_id=user_id,
         first_name=f_name,
@@ -247,6 +256,7 @@ def _build_instructor_details(
         professional_headline=p_headline,
         timezone=data.timezone or "UTC",
         links=_normalize_links(data.links or []),
+        **kwargs,
     )
 
 
@@ -260,6 +270,10 @@ def _build_coordinator_details(
         f_name = parts[0]
         l_name = parts[1] if len(parts) > 1 else ""
 
+    kwargs = {}
+    if data.coordinator_id:
+        kwargs["coordinator_id"] = data.coordinator_id
+
     return CoordinatorDetailsModel(
         user_id=user_id,
         first_name=f_name,
@@ -269,6 +283,7 @@ def _build_coordinator_details(
         short_bio=data.short_bio or "",
         timezone=data.timezone or "UTC",
         links=_normalize_links(data.links or []),
+        **kwargs,
     )
 
 
@@ -307,13 +322,24 @@ def create_user(body: UserSchema, db: Session) -> UserResponseSchema:
         invite_token_val = raw_invite_token
         hash_pass = "!UNSET_INVITED_USER"
 
+    avatar_val = ""
+    if body.learner_details and body.learner_details.avatar:
+        avatar_val = body.learner_details.avatar
+    elif body.instructor_details and body.instructor_details.avatar:
+        avatar_val = body.instructor_details.avatar
+    elif body.coordinator_details and body.coordinator_details.avatar:
+        avatar_val = body.coordinator_details.avatar
+
     new_user = UserModel(
         name=name,
         email=email,
         hash_password=hash_pass,
         role=body.role,
+        avatar=avatar_val,
+        timezone=body.timezone or "UTC",
         invite_token=invite_token_val,
         invite_expires_at_utc=invite_expires,
+        email_verified=True,
     )
     db.add(new_user)
     db.flush()

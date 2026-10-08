@@ -15,7 +15,7 @@ def _login(email: str, password: str = "Learner@123") -> str:
 
 
 def test_learner_notifications():
-    token = _login("samiur@eclassroompro.com", "Learner@123")
+    token = _login("shakil.mahmud@coursedesk.com", "Learner@123")
     res = client.get("/api/notifications", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     data = res.json()
@@ -28,7 +28,7 @@ def test_learner_notifications():
         from app.user.models import UserModel
         from sqlalchemy import select
         with LocalSession() as db:
-            u = db.scalar(select(UserModel).where(UserModel.email == "samiur@eclassroompro.com"))
+            u = db.scalar(select(UserModel).where(UserModel.email == "shakil.mahmud@coursedesk.com"))
             create_notification(db, u.id, "Welcome to CourseDesk", "Sample notification", "system", "/course/1")
             db.commit()
         res = client.get("/api/notifications", headers={"Authorization": f"Bearer {token}"})
@@ -47,7 +47,7 @@ def test_learner_notifications():
 
 
 def test_instructor_notifications():
-    token = _login("mahbubur@eclassroompro.com", "Instructor@123")
+    token = _login("kamrul.ahsan@coursedesk.com", "Instructor@123")
     res = client.get("/api/notifications", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     data = res.json()
@@ -56,7 +56,7 @@ def test_instructor_notifications():
 
 
 def test_admin_notifications():
-    token = _login("admin@eclassroompro.com", "Admin@123")
+    token = _login("admin@coursedesk.com", "Admin@123")
     res = client.get("/api/notifications", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     data = res.json()
@@ -68,8 +68,8 @@ def test_admin_notifications():
 
 def test_idor_security_access_control():
     """Verify user cannot read, mark read, or delete another user's notifications."""
-    learner_token = _login("samiur@eclassroompro.com", "Learner@123")
-    instructor_token = _login("abdul@eclassroompro.com", "Instructor@123")
+    learner_token = _login("shakil.mahmud@coursedesk.com", "Learner@123")
+    instructor_token = _login("zahidul.haque@coursedesk.com", "Instructor@123")
 
     # Get instructor's notification id
     res_t = client.get("/api/notifications", headers={"Authorization": f"Bearer {instructor_token}"})
@@ -92,7 +92,7 @@ def test_idor_security_access_control():
 
 
 def test_notification_preferences():
-    token = _login("samiur@eclassroompro.com", "Learner@123")
+    token = _login("shakil.mahmud@coursedesk.com", "Learner@123")
     res = client.get("/api/notifications/preferences", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     pref = res.json()
@@ -117,15 +117,15 @@ def test_notification_preferences():
 
 
 def test_mark_all_read():
-    token = _login("ratin@eclassroompro.com", "Learner@123")
+    token = _login("maruf.billah@coursedesk.com", "Learner@123")
     res = client.post("/api/notifications/read-all", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     assert res.json()["status"] == "ok"
 
 
 def test_event_triggers():
-    instructor_token = _login("mahbubur@eclassroompro.com", "Instructor@123")
-    learner_token = _login("samiur@eclassroompro.com", "Learner@123")
+    instructor_token = _login("kamrul.ahsan@coursedesk.com", "Instructor@123")
+    learner_token = _login("shakil.mahmud@coursedesk.com", "Learner@123")
 
     # 1. Instructor creates an announcement in Course 1
     res_ann = client.post(

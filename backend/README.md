@@ -1,4 +1,4 @@
-# eClassroomPro — Backend
+# CourseDesk — Backend
 
 FastAPI + PostgreSQL + SQLAlchemy 2.0 (module style: models / dtos / controller / router).
 
