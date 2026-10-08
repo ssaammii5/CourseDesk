@@ -120,7 +120,7 @@ export interface AnnouncementDto {
 
 
 export interface CreateAnnouncementPayload {
-    courseId: number;
+    courseId: number | string;
     title: string;
     body: string;
     isPinned?: boolean;

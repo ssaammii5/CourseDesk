@@ -140,7 +140,7 @@ export function AdminAssignmentDetailView({
                         <div className="min-w-0">
                             <button
                                 type="button"
-                                onClick={() => router.push(`/submissions/${s.id}`)}
+                                onClick={() => router.push(`/submissions/${s.code || s.id}`)}
                                 className="cursor-pointer text-left text-sm font-medium text-slate-900 dark:text-slate-100 hover:text-[#1a73e8] dark:hover:text-blue-400 hover:underline truncate block"
                             >
                                 {name}
@@ -203,7 +203,7 @@ export function AdminAssignmentDetailView({
             render: (s: SubmissionDto) => (
                 <button
                     type="button"
-                    onClick={() => router.push(`/submissions/${s.id}`)}
+                    onClick={() => router.push(`/submissions/${s.code || s.id}`)}
                     className="cursor-pointer text-xs font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                 >
                     View Details

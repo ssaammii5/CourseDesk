@@ -6,7 +6,7 @@ import { AdminSubmissionDetailView } from "@/features/admin";
 import { getSubmissionRequest, type SubmissionDto } from "@/lib/api/submissions";
 
 interface AdminSubmissionDetailClientProps {
-    submissionId: number;
+    submissionId: number | string;
 }
 
 export function AdminSubmissionDetailClient({ submissionId }: AdminSubmissionDetailClientProps) {

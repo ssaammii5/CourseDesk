@@ -8,7 +8,7 @@ import type {
 } from "@/types/session";
 
 export function getCourseAnnouncementsRequest(
-    courseId: number,
+    courseId: number | string,
 ): Promise<AnnouncementDto[]> {
     return apiFetch<AnnouncementDto[]>(`/api/announcements/course/${courseId}`, {
         method: "GET",

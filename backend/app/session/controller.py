@@ -3,6 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.assignment.models import AssignmentModel
+from app.course.controller import find_course
 from app.course.models import CourseModel
 from app.session.dtos import (
     CourseTopicsReorderSchema,
@@ -97,23 +98,16 @@ def _check_course_access(user: UserModel, course: CourseModel) -> None:
 # ── CRUD ───────────────────────────────────────────────────────────────────
 
 def get_course_sessions(
-    course_id: int, user: UserModel, db: Session
+    course_id: int | str, user: UserModel, db: Session
 ) -> list[SessionResponseSchema]:
-    course = db.scalar(
-        select(CourseModel)
-        .options(
-            selectinload(CourseModel.instructors),
-            selectinload(CourseModel.learners),
-        )
-        .where(CourseModel.id == course_id)
-    )
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     _check_course_access(user, course)
 
     sessions = db.scalars(
         _session_stmt()
-        .where(SessionModel.course_id == course_id)
+        .where(SessionModel.course_id == course.id)
         .order_by(SessionModel.session_number, SessionModel.id)
     ).all()
     return [_serialize_session(s) for s in sessions]
@@ -242,16 +236,12 @@ def delete_session(session_id: int, user: UserModel, db: Session) -> None:
 
 
 def reorder_course_sessions(
-    course_id: int,
+    course_id: int | str,
     body: SessionReorderSchema,
     user: UserModel,
     db: Session,
 ) -> list[SessionResponseSchema]:
-    course = db.scalar(
-        select(CourseModel)
-        .options(selectinload(CourseModel.instructors))
-        .where(CourseModel.id == course_id)
-    )
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     if not _can_manage_course(user, course):
@@ -262,7 +252,7 @@ def reorder_course_sessions(
             session = db.scalar(
                 select(SessionModel).where(
                     SessionModel.id == item.id,
-                    SessionModel.course_id == course_id,
+                    SessionModel.course_id == course.id,
                 )
             )
             if session:
@@ -275,7 +265,7 @@ def reorder_course_sessions(
             session = db.scalar(
                 select(SessionModel).where(
                     SessionModel.id == sid,
-                    SessionModel.course_id == course_id,
+                    SessionModel.course_id == course.id,
                 )
             )
             if session:
@@ -283,20 +273,16 @@ def reorder_course_sessions(
                 db.add(session)
 
     db.commit()
-    return get_course_sessions(course_id, user, db)
+    return get_course_sessions(course.id, user, db)
 
 
 def reorder_course_topics(
-    course_id: int,
+    course_id: int | str,
     body: CourseTopicsReorderSchema,
     user: UserModel,
     db: Session,
 ) -> list[SessionResponseSchema]:
-    course = db.scalar(
-        select(CourseModel)
-        .options(selectinload(CourseModel.instructors))
-        .where(CourseModel.id == course_id)
-    )
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     if not _can_manage_course(user, course):
@@ -340,7 +326,7 @@ def reorder_course_topics(
 # ── Video Setup (YouTube, title, description, file) ─────────────────────────
 
 def create_video_session(
-    course_id: int,
+    course_id: int | str,
     title: str,
     video_url: str,
     description: str,
@@ -351,16 +337,7 @@ def create_video_session(
     db: Session,
     files: list[UploadFile] | None = None,
 ) -> SessionResponseSchema:
-    course = db.scalar(
-        select(CourseModel)
-        .options(
-            selectinload(CourseModel.instructors),
-            selectinload(CourseModel.learners),
-        )
-        .where(CourseModel.id == course_id)
-    )
-    if not course:
-        raise HTTPException(404, detail="Course id is incorrect")
+    course = find_course(course_id, db)
     if not _can_manage_course(user, course):
         raise HTTPException(403, detail="You cannot manage sessions in this course")
 
@@ -370,7 +347,7 @@ def create_video_session(
         raise HTTPException(400, detail="Video URL is required")
 
     max_num = db.scalar(
-        select(func.max(SessionModel.session_number)).where(SessionModel.course_id == course_id)
+        select(func.max(SessionModel.session_number)).where(SessionModel.course_id == course.id)
     ) or 0
     session_number = max_num + 1
 
@@ -389,13 +366,13 @@ def create_video_session(
 
     if upload_list:
         first_f = upload_list[0]
-        file_url, file_type, file_size = save_upload_file(first_f, f"sessions/{course_id}")
+        file_url, file_type, file_size = save_upload_file(first_f, f"sessions/{course.id}")
         file_name = first_f.filename
 
     video_provider = _detect_video_provider(video_url)
 
     session = SessionModel(
-        course_id=course_id,
+        course_id=course.id,
         session_number=session_number,
         title=title.strip(),
         topic=topic.strip() if topic else "General Videos",
@@ -696,19 +673,12 @@ def delete_video_marker(
 # ── Next upcoming session helper ──────────────────────────────────────────
 
 def get_next_session(
-    course_id: int, user: UserModel, db: Session
+    course_id: int | str, user: UserModel, db: Session
 ) -> SessionResponseSchema | None:
     """Return the next upcoming (or currently live) session for the course."""
     from datetime import UTC, datetime
 
-    course = db.scalar(
-        select(CourseModel)
-        .options(
-            selectinload(CourseModel.instructors),
-            selectinload(CourseModel.learners),
-        )
-        .where(CourseModel.id == course_id)
-    )
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     _check_course_access(user, course)
@@ -717,7 +687,7 @@ def get_next_session(
     session = db.scalar(
         _session_stmt()
         .where(
-            SessionModel.course_id == course_id,
+            SessionModel.course_id == course.id,
             SessionModel.scheduled_at_utc >= now,
             SessionModel.status.in_(["Scheduled", "Live"]),
         )

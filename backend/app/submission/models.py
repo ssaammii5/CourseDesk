@@ -1,16 +1,23 @@
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.utils.db import Base
+from app.utils.helpers import generate_stripe_id
 
 
 class SubmissionModel(Base):
     __tablename__: str = "submission_table"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(
+        String(32),
+        unique=True,
+        index=True,
+        default=lambda: generate_stripe_id("sub", 10),
+    )
     assignment_id: Mapped[int] = mapped_column(
         ForeignKey("assignment_table.id", ondelete="CASCADE"), index=True
     )

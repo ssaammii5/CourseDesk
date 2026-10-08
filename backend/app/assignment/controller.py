@@ -10,6 +10,7 @@ from app.assignment.dtos import (
     AssignmentUpdateSchema,
 )
 from app.assignment.models import AssignmentAttachmentModel, AssignmentModel
+from app.course.controller import find_course
 from app.course.models import CourseModel
 from app.session.models import SessionModel
 from app.submission.dtos import SubmissionResponseSchema, serialize_submission
@@ -52,7 +53,9 @@ def serialize_assignment(
 
     return AssignmentResponseSchema(
         id=assignment.id,
+        code=assignment.code,
         course_id=assignment.course_id,
+        course_code=course.code if course else None,
         course_name=course.name if course else None,
         subject=course.subject if course else None,
         program=None,
@@ -99,6 +102,17 @@ def _assignment_stmt():
         selectinload(AssignmentModel.submissions),
         selectinload(AssignmentModel.attachments),
     )
+
+
+def find_assignment(assignment_id_or_code: int | str, db: Session) -> AssignmentModel | None:
+    if isinstance(assignment_id_or_code, int):
+        return db.scalar(_assignment_stmt().where(AssignmentModel.id == assignment_id_or_code))
+    a_str = str(assignment_id_or_code).strip()
+    if a_str.isdigit():
+        a = db.scalar(_assignment_stmt().where(AssignmentModel.id == int(a_str)))
+        if a:
+            return a
+    return db.scalar(_assignment_stmt().where(AssignmentModel.code == a_str))
 
 
 def _can_manage_course(user: UserModel, course: CourseModel) -> bool:
@@ -150,17 +164,13 @@ def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSche
 
 
 def get_course_assignments(
-    course_id: int, user: UserModel, db: Session
+    course_id: int | str, user: UserModel, db: Session
 ) -> list[AssignmentResponseSchema]:
-    course = db.scalar(
-        select(CourseModel)
-        .options(selectinload(CourseModel.instructors), selectinload(CourseModel.learners))
-        .where(CourseModel.id == course_id)
-    )
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
 
-    stmt = _assignment_stmt().where(AssignmentModel.course_id == course_id)
+    stmt = _assignment_stmt().where(AssignmentModel.course_id == course.id)
     if user.role not in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
         stmt = stmt.where(AssignmentModel.status == "Published")
 
@@ -183,9 +193,9 @@ def _check_assignment_visible(assignment: AssignmentModel, user: UserModel) -> N
 
 
 def get_assignment(
-    assignment_id: int, user: UserModel, db: Session
+    assignment_id: int | str, user: UserModel, db: Session
 ) -> AssignmentResponseSchema:
-    assignment = db.scalar(_assignment_stmt().where(AssignmentModel.id == assignment_id))
+    assignment = find_assignment(assignment_id, db)
     if not assignment:
         raise HTTPException(404, detail="Assignment id is incorrect")
     _check_assignment_visible(assignment, user)
@@ -193,9 +203,9 @@ def get_assignment(
 
 
 def _get_manageable_assignment(
-    assignment_id: int, user: UserModel, db: Session
+    assignment_id: int | str, user: UserModel, db: Session
 ) -> AssignmentModel:
-    assignment = db.scalar(_assignment_stmt().where(AssignmentModel.id == assignment_id))
+    assignment = find_assignment(assignment_id, db)
     if not assignment:
         raise HTTPException(404, detail="Assignment id is incorrect")
     if not _can_manage_course(user, assignment.course):
@@ -204,11 +214,7 @@ def _get_manageable_assignment(
 
 
 def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> AssignmentModel:
-    course = db.scalar(
-        select(CourseModel)
-        .options(selectinload(CourseModel.instructors))
-        .where(CourseModel.id == body.course_id)
-    )
+    course = find_course(body.course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     if not _can_manage_course(user, course):
@@ -241,7 +247,7 @@ def create_assignment(body: AssignmentSchema, user: UserModel, db: Session) -> A
 
 
 def update_assignment(
-    assignment_id: int, body: AssignmentUpdateSchema, user: UserModel, db: Session
+    assignment_id: int | str, body: AssignmentUpdateSchema, user: UserModel, db: Session
 ) -> None:
     assignment = _get_manageable_assignment(assignment_id, user, db)
     assignment.title = body.title
@@ -261,13 +267,13 @@ def update_assignment(
     db.commit()
 
 
-def delete_assignment(assignment_id: int, user: UserModel, db: Session) -> None:
+def delete_assignment(assignment_id: int | str, user: UserModel, db: Session) -> None:
     assignment = _get_manageable_assignment(assignment_id, user, db)
     db.delete(assignment)
     db.commit()
 
 
-def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None:
+def publish_assignment(assignment_id: int | str, user: UserModel, db: Session) -> None:
     assignment = _get_manageable_assignment(assignment_id, user, db)
     assignment.status = "Published"
     db.add(assignment)
@@ -305,23 +311,25 @@ def publish_assignment(assignment_id: int, user: UserModel, db: Session) -> None
             else ""
         )
         msg = f"Posted in {course.name}" + (f" • Due {deadline_str}" if deadline_str else "")
+        course_ref = course.code or course.id if course else assignment.course_id
+        asg_ref = assignment.code or assignment.id
         create_notifications_bulk(
             db=db,
             user_ids=target_ids,
             title=f"New assignment: {assignment.title}",
             message=msg,
             kind="assignment",
-            link=f"/course/{assignment.course_id}/assignments/{assignment.id}",
+            link=f"/course/{course_ref}/assignments/{asg_ref}",
         )
 
     db.commit()
 
 
 def get_assignment_submissions(
-    assignment_id: int, user: UserModel, db: Session
+    assignment_id: int | str, user: UserModel, db: Session
 ) -> list[SubmissionResponseSchema]:
     if user.role in ("Coordinator", "Co-ordinator"):
-        assignment = db.scalar(_assignment_stmt().where(AssignmentModel.id == assignment_id))
+        assignment = find_assignment(assignment_id, db)
         if not assignment:
             raise HTTPException(404, detail="Assignment id is incorrect")
     else:
@@ -336,7 +344,7 @@ def get_assignment_submissions(
 
 
 def add_attachment(
-    assignment_id: int,
+    assignment_id: int | str,
     user: UserModel,
     db: Session,
     file: UploadFile | None,
@@ -374,7 +382,7 @@ def add_attachment(
 
 
 def delete_attachment(
-    assignment_id: int, attachment_id: int, user: UserModel, db: Session
+    assignment_id: int | str, attachment_id: int, user: UserModel, db: Session
 ) -> None:
     assignment = _get_manageable_assignment(assignment_id, user, db)
     attachment = db.get(AssignmentAttachmentModel, attachment_id)
@@ -385,13 +393,9 @@ def delete_attachment(
 
 
 def rename_topic(
-    course_id: int, old_name: str, new_name: str, user: UserModel, db: Session
+    course_id: int | str, old_name: str, new_name: str, user: UserModel, db: Session
 ) -> dict:
-    course = db.scalar(
-        select(CourseModel)
-        .options(selectinload(CourseModel.instructors))
-        .where(CourseModel.id == course_id)
-    )
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course not found")
     if not _can_manage_course(user, course):
@@ -405,7 +409,7 @@ def rename_topic(
     # Update all assignments in this course where topic matches old_clean
     assignments = db.scalars(
         select(AssignmentModel).where(
-            AssignmentModel.course_id == course_id,
+            AssignmentModel.course_id == course.id,
             or_(
                 AssignmentModel.topic == old_clean,
                 func.trim(func.lower(AssignmentModel.topic)) == old_clean.lower(),
@@ -419,7 +423,7 @@ def rename_topic(
     # Also update any sessions in this course where topic matches old_name
     sessions = db.scalars(
         select(SessionModel).where(
-            SessionModel.course_id == course_id,
+            SessionModel.course_id == course.id,
             or_(
                 SessionModel.topic == old_clean,
                 func.trim(func.lower(SessionModel.topic)) == old_clean.lower(),
@@ -441,13 +445,9 @@ def rename_topic(
 
 
 def delete_topic(
-    course_id: int, topic_name: str, fallback_topic: str, user: UserModel, db: Session
+    course_id: int | str, topic_name: str, fallback_topic: str, user: UserModel, db: Session
 ) -> dict:
-    course = db.scalar(
-        select(CourseModel)
-        .options(selectinload(CourseModel.instructors))
-        .where(CourseModel.id == course_id)
-    )
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course not found")
     if not _can_manage_course(user, course):
@@ -461,7 +461,7 @@ def delete_topic(
     # Reassign all assignments from deleted topic to fallback topic
     assignments = db.scalars(
         select(AssignmentModel).where(
-            AssignmentModel.course_id == course_id,
+            AssignmentModel.course_id == course.id,
             or_(
                 AssignmentModel.topic == target,
                 func.trim(func.lower(AssignmentModel.topic)) == target.lower(),
@@ -475,7 +475,7 @@ def delete_topic(
     # Reassign any sessions from deleted topic to fallback topic
     sessions = db.scalars(
         select(SessionModel).where(
-            SessionModel.course_id == course_id,
+            SessionModel.course_id == course.id,
             or_(
                 SessionModel.topic == target,
                 func.trim(func.lower(SessionModel.topic)) == target.lower(),

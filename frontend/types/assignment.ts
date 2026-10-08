@@ -10,6 +10,7 @@ export interface AssignmentAttachment {
 
 export interface AssignmentSubmission {
     id?: number;
+    code?: string;
     status: "Assigned" | "Draft" | "Submitted" | "Turned in" | "Graded" | "Missed";
     attachments: AssignmentAttachment[];
     marks?: number | null;
@@ -20,6 +21,7 @@ export interface AssignmentSubmission {
 
 export interface AssignmentDetail {
     id: number;
+    code?: string;
     title: string;
     instructorName: string;
     teacherName?: string;
@@ -30,7 +32,8 @@ export interface AssignmentDetail {
     attachments: AssignmentAttachment[];
     submission: AssignmentSubmission;
     privateCommentTarget: string;
-    courseId?: number;
+    courseId?: number | string;
+    courseCode?: string;
     deadlineUtc?: string | null;
     createdAtUtc?: string | null;
     kind?: string | null;

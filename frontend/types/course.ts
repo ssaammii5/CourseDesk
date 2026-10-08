@@ -11,6 +11,7 @@ export type SubmissionStatus = z.infer<typeof SubmissionStatusSchema>;
 
 export const CourseSchema = z.object({
     id: z.number().int(),
+    code: z.string().optional(),
     name: z.string(),
     subject: z.string(),
     instructorId: z.number().int().nullable().optional(),
@@ -31,7 +32,9 @@ export type Course = z.infer<typeof CourseSchema>;
 
 export const AssignmentSchema = z.object({
     id: z.number().int(),
+    code: z.string().optional(),
     courseId: z.number().int(),
+    courseCode: z.string().optional(),
     courseName: z.string().nullable(),
     subject: z.string().nullable(),
     title: z.string(),
@@ -47,7 +50,9 @@ export type Assignment = z.infer<typeof AssignmentSchema>;
 
 export const SubmissionSchema = z.object({
     id: z.number().int(),
+    code: z.string().optional(),
     assignmentId: z.number().int(),
+    assignmentCode: z.string().optional(),
     assignmentTitle: z.string().nullable(),
     learnerId: z.number().int().optional(),
     learnerName: z.string().nullable().optional(),
@@ -92,6 +97,9 @@ export type Announcement = z.infer<typeof AnnouncementSchema>;
 
 export const CourseworkEntrySchema = z.object({
     id: z.number().int(),
+    code: z.string().optional(),
+    courseId: z.union([z.number().int(), z.string()]).optional(),
+    courseCode: z.string().optional(),
     title: z.string(),
     topic: z.string(),
     dueLabel: z.string(),
@@ -136,7 +144,8 @@ export const ClassPersonSchema = CoursePersonSchema;
 export type ClassPerson = CoursePerson;
 
 export const CourseDetailsSchema = z.object({
-    courseId: z.number().int(),
+    courseId: z.union([z.number().int(), z.string()]),
+    courseCode: z.string().optional(),
     session: z.string().optional(),
     bannerColor: z.string(),
     bannerEmoji: z.string(),
@@ -161,6 +170,7 @@ export type HomeClass = HomeCourse;
 
 export const SidebarCourseSchema = z.object({
     id: z.number().int(),
+    code: z.string().optional(),
     name: z.string(),
     sub: z.string().optional(),
     letter: z.string().length(1),
@@ -172,6 +182,9 @@ export type SidebarClass = SidebarCourse;
 
 export const DueAssignmentSchema = z.object({
     id: z.number().int(),
+    code: z.string().optional(),
+    courseId: z.union([z.number().int(), z.string()]).optional(),
+    courseCode: z.string().optional(),
     title: z.string(),
     courseName: z.string(),
     dueDate: z.string(),

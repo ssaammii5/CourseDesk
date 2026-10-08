@@ -625,11 +625,13 @@ export function CourseCard({
         };
     }, [menuOpen]);
 
+    const courseTarget = course.code || course.id;
+
     const handleCopyLink = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setMenuOpen(false);
-        const url = `${window.location.origin}/course/${course.id}`;
+        const url = `${window.location.origin}/course/${courseTarget}`;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(() => {
                 setCopied(true);
@@ -667,7 +669,7 @@ export function CourseCard({
                     setMenuOpen(false);
                     return;
                 }
-                router.push(`/course/${course.id}`);
+                router.push(`/course/${courseTarget}`);
             }}
             className={`group/card relative flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
                 menuOpen
@@ -746,7 +748,7 @@ export function CourseCard({
                                         e.preventDefault();
                                         e.stopPropagation();
                                         setMenuOpen(false);
-                                        router.push(`/course/${course.id}?tab=coursework`);
+                                        router.push(`/course/${courseTarget}?tab=coursework`);
                                     }}
                                     className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                                 >
@@ -760,7 +762,7 @@ export function CourseCard({
                                         e.preventDefault();
                                         e.stopPropagation();
                                         setMenuOpen(false);
-                                        router.push(`/course/${course.id}?tab=stream`);
+                                        router.push(`/course/${courseTarget}?tab=stream`);
                                     }}
                                     className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                                 >
@@ -809,7 +811,7 @@ export function CourseCard({
             <div className="flex flex-1 flex-col justify-between gap-4 p-5">
                 <div>
                     <Link
-                        href={`/course/${course.id}`}
+                        href={`/course/${courseTarget}`}
                         draggable={false}
                         onClick={(e) => e.stopPropagation()}
                         className="group/title block"
@@ -877,7 +879,7 @@ export function CourseCard({
                     aria-label="View coursework"
                     onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/course/${course.id}?tab=coursework`);
+                        router.push(`/course/${courseTarget}?tab=coursework`);
                     }}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
                 >
@@ -886,7 +888,7 @@ export function CourseCard({
                 </button>
 
                 <Link
-                    href={`/course/${course.id}`}
+                    href={`/course/${courseTarget}`}
                     onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 hover:shadow-sm"
                 >
@@ -906,10 +908,11 @@ interface CourseListRowProps {
 function CourseListRow({ course, onToggleHide }: CourseListRowProps) {
     const router = useRouter();
     const studentTotal = course.studentCount ?? course.learnerCount ?? 0;
+    const cTarget = course.code || course.id;
 
     return (
         <div
-            onClick={() => router.push(`/course/${course.id}`)}
+            onClick={() => router.push(`/course/${cTarget}`)}
             className="group flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between"
         >
             <div className="flex items-center gap-3.5 min-w-0 flex-1">
@@ -954,14 +957,14 @@ function CourseListRow({ course, onToggleHide }: CourseListRowProps) {
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/course/${course.id}?tab=coursework`);
+                            router.push(`/course/${cTarget}?tab=coursework`);
                         }}
                         className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                     >
                         Coursework
                     </button>
                     <Link
-                        href={`/course/${course.id}`}
+                        href={`/course/${cTarget}`}
                         onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
                     >

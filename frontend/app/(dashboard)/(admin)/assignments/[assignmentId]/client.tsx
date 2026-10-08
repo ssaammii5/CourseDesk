@@ -8,7 +8,7 @@ import { getAssignmentRequest, type AssignmentDto } from "@/lib/api/assignments"
 import { getSubmissionsByAssignmentRequest, type SubmissionDto } from "@/lib/api/submissions";
 
 interface AdminAssignmentDetailClientProps {
-    assignmentId: number;
+    assignmentId: number | string;
 }
 
 export function AdminAssignmentDetailClient({ assignmentId }: AdminAssignmentDetailClientProps) {

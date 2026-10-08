@@ -4,7 +4,7 @@ from app.utils.dto import CamelModel
 
 
 class AnnouncementSchema(CamelModel):
-    course_id: int
+    course_id: int | str
     title: str = ""
     body: str = ""
     is_pinned: bool = False
@@ -45,6 +45,7 @@ class AnnouncementAttachmentResponseSchema(CamelModel):
 class AnnouncementResponseSchema(CamelModel):
     id: int
     course_id: int
+    course_code: str | None = None
     author_id: int
     author_name: str | None = None
     title: str

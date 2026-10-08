@@ -20,7 +20,7 @@ announcement_routes = APIRouter(prefix="/api/announcements", tags=["announcement
     response_model=list[AnnouncementResponseSchema],
     status_code=status.HTTP_200_OK,
 )
-def get_course_announcements(course_id: int, db: DbSession, user: IsAuthenticated):
+def get_course_announcements(course_id: str, db: DbSession, user: IsAuthenticated):
     return controller.get_course_announcements(course_id, user, db)
 
 

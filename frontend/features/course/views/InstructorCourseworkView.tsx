@@ -72,7 +72,7 @@ export interface InstructorCourseworkViewProps {
     onEdit: (entry: CourseworkEntry) => void;
     onDelete: (entry: CourseworkEntry) => void;
     onPublish?: (entry: CourseworkEntry) => void;
-    courseId?: number;
+    courseId?: number | string;
     submissions?: SubmissionDto[];
 }
 export type InstructorClassworkViewProps = InstructorCourseworkViewProps;
@@ -549,7 +549,7 @@ export function InstructorCourseworkView({
                                                             type="button"
                                                             onClick={() => {
                                                                 if (courseId && !isDraft) {
-                                                                    router.push(`/course/${courseId}/assignments/${entry.id}`);
+                                                                    router.push(`/course/${courseId}/assignments/${entry.code || entry.id}`);
                                                                 } else {
                                                                     onEdit(entry);
                                                                 }
@@ -636,7 +636,7 @@ export function InstructorCourseworkView({
                                                     {courseId && !isDraft && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => router.push(`/course/${courseId}/assignments/${entry.id}`)}
+                                                            onClick={() => router.push(`/course/${courseId}/assignments/${entry.code || entry.id}`)}
                                                             className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 px-3.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100/80 dark:hover:bg-blue-900/60 transition-colors cursor-pointer"
                                                         >
                                                             <ClipboardList className="h-3.5 w-3.5" />
@@ -677,7 +677,7 @@ export function InstructorCourseworkView({
                                                                             type="button"
                                                                             onClick={() => {
                                                                                 setMenuFor(null);
-                                                                                router.push(`/course/${courseId}/assignments/${entry.id}`);
+                                                                                router.push(`/course/${courseId}/assignments/${entry.code || entry.id}`);
                                                                             }}
                                                                             className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700/80 transition-colors"
                                                                         >

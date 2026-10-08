@@ -30,7 +30,7 @@ import type { CourseworkEntry } from "@/types";
 
 export interface CourseworkViewProps {
     items: CourseworkEntry[];
-    courseId?: number;
+    courseId?: number | string;
     assignmentStatusMap?: Record<number, string>;
 }
 export type ClassworkViewProps = CourseworkViewProps;
@@ -224,9 +224,10 @@ export function CourseworkView({
         });
     };
 
-    const handleCopyLink = (entryId: number) => {
+    const handleCopyLink = (entryId: number, entryCode?: string) => {
         if (typeof window === "undefined" || !courseId) return;
-        const url = `${window.location.origin}/course/${courseId}/assignments/${entryId}`;
+        const asgTarget = entryCode || entryId;
+        const url = `${window.location.origin}/course/${courseId}/assignments/${asgTarget}`;
         navigator.clipboard.writeText(url).then(() => {
             setCopiedId(entryId);
             setTimeout(() => setCopiedId(null), 2000);
@@ -550,7 +551,7 @@ export function CourseworkView({
                                                 expanded={expanded}
                                                 copied={copiedId === entry.id}
                                                 onToggle={() => toggleItem(entry.id)}
-                                                onCopyLink={() => handleCopyLink(entry.id)}
+                                                onCopyLink={() => handleCopyLink(entry.id, entry.code)}
                                             />
                                         );
                                     })}
@@ -583,7 +584,7 @@ function CourseworkItemCard({
 }: {
     entry: CourseworkEntry;
     effectiveStatus: string;
-    courseId?: number;
+    courseId?: number | string;
     expanded: boolean;
     copied: boolean;
     onToggle: () => void;
@@ -817,7 +818,7 @@ function CourseworkItemCard({
 
                         {courseId !== undefined && (
                             <Link
-                                href={`/course/${courseId}/assignments/${entry.id}`}
+                                href={`/course/${courseId}/assignments/${entry.code || entry.id}`}
                                 className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
                                     stage === "Missed"
                                         ? "border border-slate-300 dark:border-slate-700 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"

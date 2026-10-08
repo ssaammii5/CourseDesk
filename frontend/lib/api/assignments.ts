@@ -2,7 +2,9 @@ import { apiFetch } from "./client";
 
 export interface AssignmentDto {
     id: number;
+    code?: string;
     courseId: number;
+    courseCode?: string;
     courseName: string | null;
     subject: string | null;
     program: string | null;
@@ -33,7 +35,7 @@ export interface AssignmentDto {
 }
 
 export interface CreateAssignmentPayload {
-    courseId: number;
+    courseId: number | string;
     title: string;
     description: string;
     topic?: string;
@@ -73,50 +75,50 @@ export function getAssignmentsRequest(): Promise<AssignmentDto[]> {
     return apiFetch<AssignmentDto[]>("/api/assignments", { method: "GET" });
 }
 
-export function getAssignmentRequest(id: number): Promise<AssignmentDto> {
+export function getAssignmentRequest(id: number | string): Promise<AssignmentDto> {
     return apiFetch<AssignmentDto>(`/api/assignments/${id}`, { method: "GET" });
 }
 
-export function getCourseAssignmentsRequest(courseId: number): Promise<AssignmentDto[]> {
+export function getCourseAssignmentsRequest(courseId: number | string): Promise<AssignmentDto[]> {
     return apiFetch<AssignmentDto[]>(`/api/courses/${courseId}/assignments`, { method: "GET" });
 }
 
-export function createAssignmentRequest(payload: CreateAssignmentPayload): Promise<{ id: number }> {
-    return apiFetch<{ id: number }>("/api/assignments", {
+export function createAssignmentRequest(payload: CreateAssignmentPayload): Promise<{ id: number; code?: string }> {
+    return apiFetch<{ id: number; code?: string }>("/api/assignments", {
         method: "POST",
         body: JSON.stringify(payload),
     });
 }
 
-export function updateAssignmentRequest(id: number, payload: UpdateAssignmentPayload): Promise<void> {
+export function updateAssignmentRequest(id: number | string, payload: UpdateAssignmentPayload): Promise<void> {
     return apiFetch<void>(`/api/assignments/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
     });
 }
 
-export function deleteAssignmentRequest(id: number): Promise<void> {
+export function deleteAssignmentRequest(id: number | string): Promise<void> {
     return apiFetch<void>(`/api/assignments/${id}`, { method: "DELETE" });
 }
 
-export function publishAssignmentRequest(id: number): Promise<void> {
+export function publishAssignmentRequest(id: number | string): Promise<void> {
     return apiFetch<void>(`/api/assignments/${id}/publish`, { method: "POST" });
 }
 
 
-export function uploadAssignmentAttachmentRequest(assignmentId: number, formData: FormData): Promise<AssignmentAttachmentDto> {
+export function uploadAssignmentAttachmentRequest(assignmentId: number | string, formData: FormData): Promise<AssignmentAttachmentDto> {
     return apiFetch<AssignmentAttachmentDto>(`/api/assignments/${assignmentId}/attachments`, {
         method: "POST",
         body: formData,
     });
 }
 
-export function deleteAssignmentAttachmentRequest(assignmentId: number, attachmentId: number): Promise<void> {
+export function deleteAssignmentAttachmentRequest(assignmentId: number | string, attachmentId: number): Promise<void> {
     return apiFetch<void>(`/api/assignments/${assignmentId}/attachments/${attachmentId}`, { method: "DELETE" });
 }
 
 export function renameCourseTopicRequest(
-    courseId: number,
+    courseId: number | string,
     oldName: string,
     newName: string,
 ): Promise<{ success: boolean; old_name: string; new_name: string; updated_assignments_count: number }> {
@@ -127,7 +129,7 @@ export function renameCourseTopicRequest(
 }
 
 export function deleteCourseTopicRequest(
-    courseId: number,
+    courseId: number | string,
     topicName: string,
     fallbackTopic = "General",
 ): Promise<{ success: boolean; deleted_topic: string; fallback_topic: string }> {

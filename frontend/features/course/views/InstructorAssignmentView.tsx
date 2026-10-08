@@ -37,7 +37,7 @@ import { AssignmentComments } from "../components/AssignmentComments";
 
 export interface InstructorAssignmentViewProps {
     assignment: AssignmentDto;
-    courseId: number;
+    courseId: number | string;
     onRefresh?: () => void;
     backHref?: string;
 }

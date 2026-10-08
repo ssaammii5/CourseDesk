@@ -22,7 +22,7 @@ export interface TopicItem {
 
 interface TopicReorderModalProps {
     open: boolean;
-    courseId?: number;
+    courseId?: number | string;
     initialTopics: TopicItem[];
     onClose: () => void;
     onSuccess: (updatedSessions: SessionDto[]) => void;

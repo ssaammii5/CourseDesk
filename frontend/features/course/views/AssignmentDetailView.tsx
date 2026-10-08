@@ -417,7 +417,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                 {/* Top navigation row */}
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                     <Link
-                        href={detail.courseId ? `/course/${detail.courseId}?tab=coursework` : "/courses"}
+                        href={detail.courseCode ? `/course/${detail.courseCode}?tab=coursework` : detail.courseId ? `/course/${detail.courseId}?tab=coursework` : "/courses"}
                         className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-600 transition-all hover:bg-white hover:text-blue-600 hover:shadow-2xs dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                     >
                         <ArrowLeft className="h-4 w-4" />

@@ -14,9 +14,12 @@ import { getSubmissionsRequest, type SubmissionDto } from "@/lib/api/submissions
 /** Row shape used by the existing table / grouping logic */
 interface SubmissionRow {
     id: number;
+    code?: string;
     assignmentId: number;
+    assignmentCode?: string;
     assignmentTitle: string;
     courseId: number;
+    courseCode?: string;
     courseName: string;
     learnerId: number;
     learnerName: string;
@@ -35,14 +38,17 @@ interface SubmissionRow {
 
 function mapDtoToRow(dto: SubmissionDto): SubmissionRow {
     const submitted = Boolean(dto.submittedAtUtc);
-    const lId = dto.learnerId ?? dto.studentId;
+    const lId = dto.learnerId ?? dto.studentId ?? 0;
     const lName = dto.learnerName ?? dto.studentName ?? "Unknown Learner";
     const lAcadId = dto.learnerAcademicId ?? dto.studentAcademicId ?? "";
     return {
         id: dto.id,
+        code: dto.code,
         assignmentId: dto.assignmentId,
+        assignmentCode: dto.assignmentCode,
         assignmentTitle: dto.assignmentTitle ?? "Unknown Assignment",
         courseId: dto.courseId,
+        courseCode: dto.courseCode,
         courseName: dto.courseName ?? "Unknown Course",
         learnerId: lId,
         learnerName: lName,
@@ -166,8 +172,8 @@ export function AdminSubmissionsView() {
             });
     }, [filtered]);
 
-    const handleRowClick = (submissionId: number) => {
-        router.push(`/submissions/${submissionId}`);
+    const handleRowClick = (s: SubmissionRow) => {
+        router.push(`/submissions/${s.code || s.id}`);
     };
 
     const columns = [
@@ -392,7 +398,7 @@ export function AdminSubmissionsView() {
                                         emptyMessage="No submissions in this course."
                                         tableLayout="fixed"
                                         minWidthClassName="min-w-[860px]"
-                                        onRowClick={(s) => handleRowClick(s.id)}
+                                        onRowClick={(s) => handleRowClick(s)}
                                     />
                                 </div>
                             ))}

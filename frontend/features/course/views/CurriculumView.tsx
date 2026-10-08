@@ -54,7 +54,7 @@ export interface CurriculumViewProps {
     isTeacher?: boolean;
     assignmentStatusMap?: Record<number, string>;
     courseTitle?: string;
-    courseId?: number;
+    courseId?: number | string;
     classwork?: ClassworkEntry[];
     onSessionsChange?: () => void;
 }

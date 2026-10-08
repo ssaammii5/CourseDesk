@@ -95,7 +95,7 @@ function formatNotificationPreview(text?: string | null): string {
 }
 
 interface CourseBreadcrumbProps {
-    course: { id: number; name: string; sub?: string };
+    course: { id: number | string; code?: string; name: string; sub?: string };
 }
 
 function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
@@ -105,8 +105,8 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
     const [resolvedCourseName, setResolvedCourseName] = useState<string>(course.name);
     const [tabState, setTabState] = useState<string | null>(null);
 
-    const assignmentMatch = pathname.match(/\/course\/\d+\/assignments\/(\d+)/);
-    const assignmentId = assignmentMatch ? Number(assignmentMatch[1]) : null;
+    const assignmentMatch = pathname.match(/\/course\/[^/]+\/assignments\/([^/]+)/);
+    const assignmentId = assignmentMatch ? assignmentMatch[1] : null;
 
     useEffect(() => {
         if (course.name && course.name !== "Course") {
@@ -190,12 +190,13 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
     const isAssignmentPage = Boolean(assignmentId);
     const isSubmissionsPage = pathname.includes("/submissions");
     const displayName = resolvedCourseName || course.name;
+    const courseLink = course.code || course.id;
 
     return (
         <nav aria-label="Breadcrumbs" className="flex min-w-0 items-center gap-1 sm:gap-1.5 text-xs">
             <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
             <Link
-                href={`/course/${course.id}`}
+                href={`/course/${courseLink}`}
                 title={displayName}
                 className="max-w-[85px] xs:max-w-[120px] sm:max-w-[180px] md:max-w-[260px] truncate font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
             >
@@ -207,7 +208,7 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
                     <span className="hidden md:inline-flex items-center gap-1 sm:gap-1.5">
                         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                         <Link
-                            href={`/course/${course.id}?tab=coursework`}
+                            href={`/course/${courseLink}?tab=coursework`}
                             className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
                         >
                             Coursework
@@ -226,7 +227,7 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
                     <span className="hidden md:inline-flex items-center gap-1 sm:gap-1.5">
                         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                         <Link
-                            href={`/course/${course.id}?tab=coursework`}
+                            href={`/course/${courseLink}?tab=coursework`}
                             className="shrink-0 font-medium text-slate-600 hover:text-[#1a73e8] hover:underline dark:text-slate-300 dark:hover:text-blue-400 transition-colors"
                         >
                             Coursework
@@ -241,7 +242,7 @@ function CourseBreadcrumbContent({ course }: CourseBreadcrumbProps) {
                 <>
                     <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 dark:text-slate-600" />
                     <Link
-                        href={`/course/${course.id}?tab=${activeTabId}`}
+                        href={`/course/${courseLink}?tab=${activeTabId}`}
                         className="max-w-[75px] xs:max-w-[120px] sm:max-w-none truncate shrink-0 font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline transition-colors"
                     >
                         {activeTabLabel}
@@ -358,9 +359,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         };
     }, [loadNotifications]);
 
-    const classMatch = pathname.match(/^\/(?:course|class)\/(\d+)/);
-    const classCourseId = classMatch ? Number(classMatch[1]) : null;
-    const [classCourse, setClassCourse] = useState<{ id: number; name: string; sub?: string } | null>(null);
+    const classMatch = pathname.match(/^\/(?:course|class)\/([^/]+)/);
+    const classCourseId = classMatch ? classMatch[1] : null;
+    const [classCourse, setClassCourse] = useState<{ id: number | string; code?: string; name: string; sub?: string } | null>(null);
 
     useEffect(() => {
         if (!classCourseId) {
@@ -375,6 +376,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     if (!cancelled) {
                         setClassCourse({
                             id: dto.id,
+                            code: dto.code,
                             name: dto.name,
                             sub: dto.department || undefined,
                         });
@@ -436,14 +438,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         setNotifOpen(false);
         if (n.link) {
             let target = n.link;
-            target = target.replace(/\/course\/(\d+)\/coursework\/?$/, "/course/$1?tab=coursework");
-            target = target.replace(/\/course\/(\d+)\/curriculum\/?$/, "/course/$1?tab=video");
-            target = target.replace(/\/course\/(\d+)\/lectures\/?$/, "/course/$1?tab=video");
-            target = target.replace(/\/course\/(\d+)\/videos?\/?$/, "/course/$1?tab=video");
-            target = target.replace(/\/course\/(\d+)\/submissions\/?$/, "/course/$1?tab=coursework");
-            target = target.replace(/\/course\/(\d+)\/people\/?$/, "/course/$1?tab=people");
-            target = target.replace(/\/course\/(\d+)\/grades\/?$/, "/course/$1?tab=grades");
-            target = target.replace(/\/course\/(\d+)\/announcements\/?$/, "/course/$1?tab=stream");
+            target = target.replace(/\/course\/([^/]+)\/coursework\/?$/, "/course/$1?tab=coursework");
+            target = target.replace(/\/course\/([^/]+)\/curriculum\/?$/, "/course/$1?tab=video");
+            target = target.replace(/\/course\/([^/]+)\/lectures\/?$/, "/course/$1?tab=video");
+            target = target.replace(/\/course\/([^/]+)\/videos?\/?$/, "/course/$1?tab=video");
+            target = target.replace(/\/course\/([^/]+)\/submissions\/?$/, "/course/$1?tab=coursework");
+            target = target.replace(/\/course\/([^/]+)\/people\/?$/, "/course/$1?tab=people");
+            target = target.replace(/\/course\/([^/]+)\/grades\/?$/, "/course/$1?tab=grades");
+            target = target.replace(/\/course\/([^/]+)\/announcements\/?$/, "/course/$1?tab=stream");
             router.push(target);
         }
     };

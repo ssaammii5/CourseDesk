@@ -19,6 +19,7 @@ from app.announcement.models import (
     AnnouncementCommentModel,
     AnnouncementModel,
 )
+from app.course.controller import find_course
 from app.course.models import CourseModel
 from app.user.models import UserModel
 from app.utils.helpers import save_upload_file
@@ -41,6 +42,7 @@ def _serialize(a: AnnouncementModel) -> AnnouncementResponseSchema:
     return AnnouncementResponseSchema(
         id=a.id,
         course_id=a.course_id,
+        course_code=a.course.code if getattr(a, "course", None) else None,
         author_id=a.author_id,
         author_name=a.author.name if a.author else None,
         title=a.title,
@@ -82,6 +84,7 @@ def _clean_announcement_preview(
 
 def _announcement_stmt():
     return select(AnnouncementModel).options(
+        selectinload(AnnouncementModel.course),
         selectinload(AnnouncementModel.author),
         selectinload(AnnouncementModel.comments).selectinload(AnnouncementCommentModel.author),
         selectinload(AnnouncementModel.attachments),
@@ -101,23 +104,14 @@ def _check_course_access(user: UserModel, course: CourseModel) -> None:
 
 
 def get_course_announcements(
-    course_id: int, user: UserModel, db: Session
+    course_id: int | str, user: UserModel, db: Session
 ) -> list[AnnouncementResponseSchema]:
-    course = db.scalar(
-        select(CourseModel)
-        .options(
-            selectinload(CourseModel.instructors),
-            selectinload(CourseModel.learners),
-        )
-        .where(CourseModel.id == course_id)
-    )
-    if not course:
-        raise HTTPException(404, detail="Course id is incorrect")
+    course = find_course(course_id, db)
     _check_course_access(user, course)
 
     announcements = db.scalars(
         _announcement_stmt()
-        .where(AnnouncementModel.course_id == course_id)
+        .where(AnnouncementModel.course_id == course.id)
         .order_by(
             AnnouncementModel.is_pinned.desc(),
             AnnouncementModel.created_at_utc.desc(),
@@ -129,21 +123,12 @@ def get_course_announcements(
 def create_announcement(
     body: AnnouncementSchema, user: UserModel, db: Session
 ) -> AnnouncementResponseSchema:
-    course = db.scalar(
-        select(CourseModel)
-        .options(
-            selectinload(CourseModel.instructors),
-            selectinload(CourseModel.learners),
-        )
-        .where(CourseModel.id == body.course_id)
-    )
-    if not course:
-        raise HTTPException(404, detail="Course id is incorrect")
+    course = find_course(body.course_id, db)
     if not _can_manage_course(user, course):
         raise HTTPException(403, detail="You cannot post announcements in this course")
 
     announcement = AnnouncementModel(
-        course_id=body.course_id,
+        course_id=course.id,
         author_id=user.id,
         title=body.title,
         body=body.body,
@@ -167,7 +152,7 @@ def create_announcement(
             title=f"New announcement in {course.name}",
             message=preview,
             kind="announcement",
-            link=f"/course/{body.course_id}",
+            link=f"/course/{course.code or course.id}",
         )
 
     db.commit()
@@ -328,7 +313,7 @@ def create_announcement_comment(
                 title=f"New comment on your announcement in {course.name}",
                 message=f"{user.name}: {snippet}",
                 kind="announcement",
-                link=f"/course/{course.id}",
+                link=f"/course/{course.code or course.id}",
             )
     except Exception:
         pass

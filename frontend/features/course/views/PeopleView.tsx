@@ -25,7 +25,7 @@ import type { ClassPerson } from "@/types";
 export interface PeopleViewProps {
     people: ClassPerson[];
     courseName?: string;
-    courseId?: number;
+    courseId?: number | string;
     isInstructor?: boolean;
     currentUserId?: number;
 }
@@ -784,7 +784,7 @@ function InviteModal({
     isCopied,
 }: {
     courseName: string;
-    courseId?: number;
+    courseId?: number | string;
     onClose: () => void;
     onCopyLink: (link: string) => void;
     isCopied: boolean;

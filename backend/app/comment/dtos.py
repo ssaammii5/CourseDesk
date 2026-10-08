@@ -15,6 +15,7 @@ class CreateCommentSchema(CamelModel):
 class CommentResponseSchema(CamelModel):
     id: int
     assignment_id: int
+    assignment_code: Optional[str] = None
     user_id: int
     user_name: Optional[str] = None
     user_email: Optional[str] = None

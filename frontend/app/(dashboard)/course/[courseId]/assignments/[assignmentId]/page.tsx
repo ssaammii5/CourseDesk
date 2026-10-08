@@ -8,8 +8,8 @@ export default async function AssignmentPage({ params }: AssignmentPageProps) {
     const { courseId, assignmentId } = await params;
     return (
         <LearnerAssignmentDetailClient
-            courseId={Number(courseId)}
-            assignmentId={Number(assignmentId)}
+            courseId={courseId}
+            assignmentId={assignmentId}
         />
     );
 }

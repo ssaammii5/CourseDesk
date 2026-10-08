@@ -18,7 +18,9 @@ import {
 function mapDtoToAdminAssignment(dto: AssignmentDto): AdminAssignment {
     return {
         id: dto.id,
+        code: dto.code,
         courseId: dto.courseId,
+        courseCode: dto.courseCode,
         courseName: dto.courseName ?? "Unknown Course",
         program: dto.program ?? "Unknown",
         department: dto.department ?? "General",
@@ -138,8 +140,8 @@ export function AdminAssignmentsView() {
             });
     }, [filtered]);
 
-    const handleRowClick = (assignmentId: number) => {
-        router.push(`/assignments/${assignmentId}`);
+    const handleRowClick = (a: AdminAssignment) => {
+        router.push(`/assignments/${a.code || a.id}`);
     };
 
     const columns = [
@@ -150,7 +152,7 @@ export function AdminAssignmentsView() {
             render: (a: AdminAssignment) => (
                 <button
                     type="button"
-                    onClick={() => handleRowClick(a.id)}
+                    onClick={() => handleRowClick(a)}
                     className="cursor-pointer text-left text-sm font-medium text-[#1a73e8] dark:text-blue-400 hover:underline"
                 >
                     {a.title}

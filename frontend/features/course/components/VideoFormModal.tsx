@@ -27,7 +27,7 @@ import {
 
 interface VideoFormModalProps {
     open: boolean;
-    courseId: number;
+    courseId: number | string;
     initialData?: SessionDto | null;
     existingTopics?: string[];
     onClose: () => void;

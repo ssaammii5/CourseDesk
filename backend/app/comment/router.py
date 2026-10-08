@@ -16,7 +16,7 @@ comment_routes = APIRouter(tags=["comments"])
     status_code=status.HTTP_200_OK,
 )
 def get_assignment_comments(
-    assignment_id: int,
+    assignment_id: str,
     db: DbSession,
     user: IsAuthenticated,
     is_private: bool = Query(default=False, alias="isPrivate"),
@@ -31,7 +31,7 @@ def get_assignment_comments(
     status_code=status.HTTP_201_CREATED,
 )
 def create_assignment_comment(
-    assignment_id: int,
+    assignment_id: str,
     body: CreateCommentSchema,
     db: DbSession,
     user: IsAuthenticated,

@@ -10,7 +10,7 @@ import { initialOf } from "@/lib/utils/format";
 import { avatarClassFor } from "@/lib/utils/theme";
 
 interface StreamSidebarProps {
-    courseId: number;
+    courseId: number | string;
     details: ClassDetails;
     course?: CourseDto | null;
     nextSession?: SessionDto | null;
@@ -169,7 +169,7 @@ export function StreamSidebar({
                         upcomingDeadlines.map(({ assignment, badge }) => (
                             <Link
                                 key={assignment.id}
-                                href={`/course/${courseId}/assignments/${assignment.id}`}
+                                href={`/course/${courseId}/assignments/${assignment.code || assignment.id}`}
                                 className="group flex items-start justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition-all hover:border-indigo-200 hover:bg-slate-100/80 dark:border-slate-800 dark:bg-slate-800/40 dark:hover:border-indigo-800/80 dark:hover:bg-slate-800/80"
                             >
                                 <div className="min-w-0 flex-1">

@@ -116,7 +116,9 @@ export interface AdminCourse {
 
 export interface AdminAssignment {
     id: number;
+    code?: string;
     courseId: number;
+    courseCode?: string;
     courseName: string;
     program: string;
     department: string;
@@ -134,9 +136,12 @@ export interface AdminAssignment {
 
 export interface AdminSubmission {
     id: number;
+    code?: string;
     assignmentId: number;
+    assignmentCode?: string;
     assignmentTitle: string;
     courseId: number;
+    courseCode?: string;
     courseName: string;
     learnerId: number;
     learnerName: string;

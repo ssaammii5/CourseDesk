@@ -51,7 +51,7 @@ export interface AssignmentCreateViewProps {
     initial: ClassworkEntry | null;
     onClose: () => void;
     onSubmit: (entry: ClassworkEntry, attachments: AssignmentDraftAttachment[]) => void | Promise<void>;
-    courseId?: number;
+    courseId?: number | string;
     sessions?: SessionDto[];
     existingTopics?: string[];
     onTopicRenamed?: (oldName: string, newName: string) => void;

@@ -4,11 +4,11 @@ from app.utils.dto import CamelModel
 
 
 class DraftSubmissionSchema(CamelModel):
-    assignment_id: int
+    assignment_id: int | str
 
 
 class SubmitAssignmentSchema(CamelModel):
-    assignment_id: int
+    assignment_id: int | str
     answer: str = ""
     # ── NEW ──
     private_note: str = ""
@@ -21,7 +21,7 @@ class GradeSubmissionSchema(CamelModel):
 
 
 class GradeLearnerSchema(CamelModel):
-    assignment_id: int
+    assignment_id: int | str
     learner_id: int
     marks: int = 0
     feedback: str | None = None
@@ -46,9 +46,12 @@ class SubmissionActivityResponseSchema(CamelModel):
 
 class SubmissionResponseSchema(CamelModel):
     id: int
+    code: str = ""
     assignment_id: int
+    assignment_code: str | None = None
     assignment_title: str | None = None
     course_id: int
+    course_code: str | None = None
     course_name: str | None = None
     program: str | None = None
     department: str | None = None
@@ -93,9 +96,12 @@ def serialize_submission(submission) -> "SubmissionResponseSchema":
 
     return SubmissionResponseSchema(
         id=submission.id,
+        code=submission.code,
         assignment_id=submission.assignment_id,
+        assignment_code=assignment.code if assignment else None,
         assignment_title=assignment.title if assignment else None,
         course_id=course.id if course else 0,
+        course_code=course.code if course else None,
         course_name=course.name if course else None,
         program=None,
         department=course.department if course else None,

@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.assignment.controller import find_assignment
 from app.assignment.models import AssignmentModel
 from app.comment.dtos import CommentResponseSchema, CreateCommentSchema
 from app.comment.models import CommentModel
@@ -24,6 +25,7 @@ def serialize_comment(comment: CommentModel) -> CommentResponseSchema:
     return CommentResponseSchema(
         id=comment.id,
         assignment_id=comment.assignment_id,
+        assignment_code=comment.assignment.code if comment.assignment else None,
         user_id=comment.user_id,
         user_name=comment.author.name if comment.author else None,
         user_email=comment.author.email if comment.author else None,
@@ -56,32 +58,19 @@ def _check_assignment_access(assignment: AssignmentModel, user: UserModel) -> No
 
 
 def get_comments(
-    assignment_id: int,
+    assignment_id: int | str,
     is_private: bool,
     learner_id: Optional[int],
     user: UserModel,
     db: Session,
 ) -> list[CommentResponseSchema]:
-    assignment = db.scalar(
-        select(AssignmentModel)
-        .options(
-            selectinload(AssignmentModel.course).selectinload(CourseModel.instructors),
-            selectinload(AssignmentModel.course).selectinload(CourseModel.learners),
-        )
-        .where(AssignmentModel.id == assignment_id)
-    )
-    if not assignment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Assignment not found",
-        )
-
+    assignment = find_assignment(assignment_id, db)
     _check_assignment_access(assignment, user)
 
     stmt = (
         _comment_stmt()
         .where(
-            CommentModel.assignment_id == assignment_id,
+            CommentModel.assignment_id == assignment.id,
             CommentModel.is_private == is_private,
         )
         .order_by(CommentModel.created_at_utc.asc())
@@ -100,7 +89,7 @@ def get_comments(
 
 
 def create_comment(
-    assignment_id: int,
+    assignment_id: int | str,
     body: CreateCommentSchema,
     user: UserModel,
     db: Session,
@@ -112,20 +101,7 @@ def create_comment(
             detail="Comment content cannot be empty",
         )
 
-    assignment = db.scalar(
-        select(AssignmentModel)
-        .options(
-            selectinload(AssignmentModel.course).selectinload(CourseModel.instructors),
-            selectinload(AssignmentModel.course).selectinload(CourseModel.learners),
-        )
-        .where(AssignmentModel.id == assignment_id)
-    )
-    if not assignment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Assignment not found",
-        )
-
+    assignment = find_assignment(assignment_id, db)
     _check_assignment_access(assignment, user)
 
     target_learner_id: Optional[int] = None
@@ -146,7 +122,7 @@ def create_comment(
             target_learner_id = body.learner_id
 
     comment = CommentModel(
-        assignment_id=assignment_id,
+        assignment_id=assignment.id,
         user_id=user.id,
         learner_id=target_learner_id,
         content=content,
@@ -160,7 +136,13 @@ def create_comment(
     try:
         from app.notification.controller import create_notification, create_notifications_bulk
 
-        link = f"/course/{assignment.course_id}/assignments/{assignment.id}"
+        course_key = (
+            assignment.course.code
+            if assignment.course and assignment.course.code
+            else assignment.course_id
+        )
+        asg_key = assignment.code or assignment.id
+        link = f"/course/{course_key}/assignments/{asg_key}"
         snippet = content if len(content) <= 80 else f"{content[:80]}…"
 
         if not body.is_private:

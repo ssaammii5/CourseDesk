@@ -581,7 +581,7 @@ export function TodoView() {
                                                         key={assignment.id}
                                                         onClick={() =>
                                                             router.push(
-                                                                `/course/${assignment.courseId}/assignments/${assignment.id}`,
+                                                                `/course/${assignment.courseCode || assignment.courseId}/assignments/${assignment.code || assignment.id}`,
                                                             )
                                                         }
                                                         className="group flex cursor-pointer flex-col gap-4 p-5 transition-colors hover:bg-blue-50/30 dark:hover:bg-slate-800/40 sm:flex-row sm:items-center sm:justify-between"

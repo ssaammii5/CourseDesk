@@ -54,6 +54,9 @@ export function mapAssignmentToCoursework(
     }
     return {
         id: dto.id,
+        code: dto.code,
+        courseId: dto.courseId,
+        courseCode: dto.courseCode,
         title: dto.title,
         topic: dto.topic?.trim() || "General",
         dueLabel: `Due ${formatDue(dto.deadlineUtc)}`,
@@ -76,7 +79,7 @@ export function mapAssignmentToCoursework(
 }
 
 interface CourseDataClientProps {
-    courseId: number;
+    courseId: number | string;
     initialTab?: CourseTab;
 }
 
@@ -132,10 +135,11 @@ export function CourseDataClient({ courseId, initialTab }: CourseDataClientProps
                 setTitle(course.name);
                 setCourse(course);
                 setDetails({
-                    courseId,
+                    courseId: course.id,
+                    courseCode: course.code,
                     session: course.department || undefined,
-                    bannerColor: headerColorFor(courseId),
-                    bannerEmoji: emojiFor(courseId),
+                    bannerColor: headerColorFor(course.id),
+                    bannerEmoji: emojiFor(course.id),
                     announcements: [],
                     classwork: coursework,
                     coursework,

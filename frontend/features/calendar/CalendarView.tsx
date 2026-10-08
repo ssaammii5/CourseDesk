@@ -122,7 +122,11 @@ export function CalendarView() {
 
     const events = useMemo<CalendarEventItem[]>(() => {
         const courseMap = new Map<number, string>();
-        courses.forEach((c) => courseMap.set(c.id, c.name));
+        const courseCodeMap = new Map<number, string>();
+        courses.forEach((c) => {
+            courseMap.set(c.id, c.name);
+            if (c.code) courseCodeMap.set(c.id, c.code);
+        });
 
         const items: CalendarEventItem[] = [];
 
@@ -132,8 +136,9 @@ export function CalendarView() {
             if (isNaN(d.getTime())) continue;
 
             const cName = a.courseName || courseMap.get(a.courseId) || "Course";
+            const cCode = a.courseCode || courseCodeMap.get(a.courseId) || a.courseId;
             const kindLower = (a.kind || "assignment").toLowerCase();
-            const link = `/course/${a.courseId}/assignments/${a.id}`;
+            const link = `/course/${cCode}/assignments/${a.code || a.id}`;
 
             items.push({
                 id: `assignment-${a.id}`,
@@ -155,6 +160,7 @@ export function CalendarView() {
             if (isNaN(d.getTime())) continue;
 
             const cName = courseMap.get(s.courseId) || "Course";
+            const cCode = courseCodeMap.get(s.courseId) || s.courseId;
             items.push({
                 id: `session-${s.id}`,
                 sourceId: s.id,
@@ -164,7 +170,7 @@ export function CalendarView() {
                 date: d,
                 time: formatEventTime(d),
                 kind: "session",
-                link: `/course/${s.courseId}?tab=video`,
+                link: `/course/${cCode}?tab=video`,
                 status: s.status,
             });
         }

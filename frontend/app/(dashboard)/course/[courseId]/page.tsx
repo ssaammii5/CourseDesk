@@ -13,7 +13,7 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
     const initialTab = sp?.tab as CourseTab | undefined;
     return (
         <Suspense>
-            <CourseDataClient courseId={Number(courseId)} initialTab={initialTab} />
+            <CourseDataClient courseId={courseId} initialTab={initialTab} />
         </Suspense>
     );
 }

@@ -300,7 +300,7 @@ export function AdminActivityHub({
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => router.push(`/submissions/${sub.id}`)}
+                                                    onClick={() => router.push(`/submissions/${sub.code || sub.id}`)}
                                                     className={`cursor-pointer inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                                                         isPending
                                                             ? "bg-amber-600 text-white hover:bg-amber-700"

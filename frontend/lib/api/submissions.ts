@@ -19,9 +19,12 @@ export interface SubmissionActivityDto {
 
 export interface SubmissionDto {
     id: number;
+    code?: string;
     assignmentId: number;
+    assignmentCode?: string;
     assignmentTitle: string | null;
     courseId: number;
+    courseCode?: string;
     courseName: string | null;
     program: string | null;
     department: string | null;
@@ -62,7 +65,7 @@ export interface GradeSubmissionPayload {
 }
 
 export interface SubmitAssignmentPayload {
-    assignmentId: number;
+    assignmentId: number | string;
     answer: string;
 }
 
@@ -70,7 +73,7 @@ export function getSubmissionsRequest(): Promise<SubmissionDto[]> {
     return apiFetch<SubmissionDto[]>("/api/submissions", { method: "GET" });
 }
 
-export function getSubmissionRequest(id: number): Promise<SubmissionDto> {
+export function getSubmissionRequest(id: number | string): Promise<SubmissionDto> {
     return apiFetch<SubmissionDto>(`/api/submissions/${id}`, { method: "GET" });
 }
 
@@ -78,7 +81,7 @@ export function getMySubmissionsRequest(): Promise<SubmissionDto[]> {
     return apiFetch<SubmissionDto[]>("/api/submissions/my", { method: "GET" });
 }
 
-export function getSubmissionsByAssignmentRequest(assignmentId: number): Promise<SubmissionDto[]> {
+export function getSubmissionsByAssignmentRequest(assignmentId: number | string): Promise<SubmissionDto[]> {
     return apiFetch<SubmissionDto[]>(`/api/assignments/${assignmentId}/submissions`, { method: "GET" });
 }
 
@@ -89,11 +92,11 @@ export function submitAssignmentRequest(payload: SubmitAssignmentPayload): Promi
     });
 }
 
-export function getCourseSubmissionsRequest(courseId: number): Promise<SubmissionDto[]> {
+export function getCourseSubmissionsRequest(courseId: number | string): Promise<SubmissionDto[]> {
     return apiFetch<SubmissionDto[]>(`/api/courses/${courseId}/submissions`, { method: "GET" });
 }
 
-export function gradeSubmissionRequest(id: number, payload: GradeSubmissionPayload): Promise<SubmissionDto> {
+export function gradeSubmissionRequest(id: number | string, payload: GradeSubmissionPayload): Promise<SubmissionDto> {
     return apiFetch<SubmissionDto>(`/api/submissions/${id}/grade`, {
         method: "POST",
         body: JSON.stringify(payload),
@@ -101,7 +104,7 @@ export function gradeSubmissionRequest(id: number, payload: GradeSubmissionPaylo
 }
 
 export interface GradeLearnerPayload {
-    assignmentId: number;
+    assignmentId: number | string;
     learnerId: number;
     marks: number;
     feedback?: string | null;
@@ -114,25 +117,25 @@ export function gradeLearnerSubmissionRequest(payload: GradeLearnerPayload): Pro
     });
 }
 
-export function ungradeSubmissionRequest(id: number): Promise<SubmissionDto> {
+export function ungradeSubmissionRequest(id: number | string): Promise<SubmissionDto> {
     return apiFetch<SubmissionDto>(`/api/submissions/${id}/ungrade`, {
         method: "POST",
     });
 }
 
-export function uploadSubmissionAttachmentRequest(submissionId: number, formData: FormData): Promise<SubmissionAttachmentDto> {
+export function uploadSubmissionAttachmentRequest(submissionId: number | string, formData: FormData): Promise<SubmissionAttachmentDto> {
     return apiFetch<SubmissionAttachmentDto>(`/api/submissions/${submissionId}/attachments`, {
         method: "POST",
         body: formData,
     });
 }
 
-export function deleteSubmissionAttachmentRequest(submissionId: number, attachmentId: number): Promise<void> {
+export function deleteSubmissionAttachmentRequest(submissionId: number | string, attachmentId: number): Promise<void> {
     return apiFetch<void>(`/api/submissions/${submissionId}/attachments/${attachmentId}`, { method: "DELETE" });
 }
 
 export interface DraftSubmissionPayload {
-    assignmentId: number;
+    assignmentId: number | string;
 }
 
 export function getOrCreateDraftSubmissionRequest(payload: DraftSubmissionPayload): Promise<SubmissionDto> {
@@ -142,7 +145,7 @@ export function getOrCreateDraftSubmissionRequest(payload: DraftSubmissionPayloa
     });
 }
 
-export function unsubmitSubmissionRequest(submissionId: number): Promise<SubmissionDto> {
+export function unsubmitSubmissionRequest(submissionId: number | string): Promise<SubmissionDto> {
     return apiFetch<SubmissionDto>(`/api/submissions/${submissionId}/unsubmit`, {
         method: "POST",
     });

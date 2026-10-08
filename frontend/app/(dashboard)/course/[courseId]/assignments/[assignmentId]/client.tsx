@@ -77,6 +77,7 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
 
     return {
         id: dto.id,
+        code: dto.code,
         title: dto.title,
         instructorName: creatorName,
         teacherName: creatorName,
@@ -94,6 +95,7 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
         })),
         submission: {
             id: submissionId,
+            code: isLearner && typeof submissionId !== "undefined" ? undefined : undefined,
             status: submissionStatus,
             attachments: submissionAttachments,
             marks: submissionMarks,
@@ -103,6 +105,7 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
         },
         privateCommentTarget: creatorName,
         courseId: dto.courseId,
+        courseCode: dto.courseCode,
         deadlineUtc: dto.deadlineUtc,
         createdAtUtc: dto.createdAtUtc,
         kind: dto.kind,
@@ -113,8 +116,8 @@ async function buildDetail(dto: AssignmentDto, isLearner: boolean): Promise<Assi
 }
 
 interface AssignmentDetailClientProps {
-    courseId: number;
-    assignmentId: number;
+    courseId: number | string;
+    assignmentId: number | string;
 }
 
 export function LearnerAssignmentDetailClient({ courseId, assignmentId }: AssignmentDetailClientProps) {

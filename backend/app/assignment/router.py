@@ -30,40 +30,40 @@ def get_all_assignments(db: DbSession, user: IsAuthenticated):
 @assignment_routes.post("", status_code=status.HTTP_201_CREATED)
 def create_assignment(body: AssignmentSchema, db: DbSession, user: IsAdminOrInstructor):
     assignment = controller.create_assignment(body, user, db)
-    return {"id": assignment.id}
+    return {"id": assignment.id, "code": assignment.code}
 
 
 @assignment_routes.get("/{assignment_id}", response_model=AssignmentResponseSchema, status_code=status.HTTP_200_OK)
-def get_one_assignment(assignment_id: int, db: DbSession, user: IsAuthenticated):
+def get_one_assignment(assignment_id: str, db: DbSession, user: IsAuthenticated):
     return controller.get_assignment(assignment_id, user, db)
 
 
 @assignment_routes.put("/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def update_assignment(
-    assignment_id: int, body: AssignmentUpdateSchema, db: DbSession, user: IsAdminOrInstructor
+    assignment_id: str, body: AssignmentUpdateSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.update_assignment(assignment_id, body, user, db)
 
 
 @assignment_routes.delete("/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_assignment(assignment_id: int, db: DbSession, user: IsAdminOrInstructor):
+def delete_assignment(assignment_id: str, db: DbSession, user: IsAdminOrInstructor):
     return controller.delete_assignment(assignment_id, user, db)
 
 
 @assignment_routes.post("/{assignment_id}/publish", status_code=status.HTTP_204_NO_CONTENT)
-def publish_assignment(assignment_id: int, db: DbSession, user: IsAdminOrInstructor):
+def publish_assignment(assignment_id: str, db: DbSession, user: IsAdminOrInstructor):
     return controller.publish_assignment(assignment_id, user, db)
 
 
 @assignment_routes.get("/{assignment_id}/submissions", response_model=list[SubmissionResponseSchema], status_code=status.HTTP_200_OK)
-def get_assignment_submissions(assignment_id: int, db: DbSession, user: IsAdminOrInstructorOrCoordinator):
+def get_assignment_submissions(assignment_id: str, db: DbSession, user: IsAdminOrInstructorOrCoordinator):
     return controller.get_assignment_submissions(assignment_id, user, db)
 
 
 
 @assignment_routes.post("/{assignment_id}/attachments", response_model=AssignmentAttachmentResponseSchema, status_code=status.HTTP_201_CREATED)
 def add_assignment_attachment(
-    assignment_id: int,
+    assignment_id: str,
     db: DbSession,
     user: IsAdminOrInstructor,
     file: UploadFile | None = File(default=None),
@@ -75,20 +75,20 @@ def add_assignment_attachment(
 
 @assignment_routes.delete("/{assignment_id}/attachments/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_assignment_attachment(
-    assignment_id: int, attachment_id: int, db: DbSession, user: IsAdminOrInstructor
+    assignment_id: str, attachment_id: int, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.delete_attachment(assignment_id, attachment_id, user, db)
 
 
 @assignment_routes.put("/courses/{course_id}/topics/rename", status_code=status.HTTP_200_OK)
 def rename_assignment_topic(
-    course_id: int, body: TopicRenameSchema, db: DbSession, user: IsAdminOrInstructor
+    course_id: str, body: TopicRenameSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.rename_topic(course_id, body.old_name, body.new_name, user, db)
 
 
 @assignment_routes.post("/courses/{course_id}/topics/delete", status_code=status.HTTP_200_OK)
 def delete_assignment_topic(
-    course_id: int, body: TopicDeleteSchema, db: DbSession, user: IsAdminOrInstructor
+    course_id: str, body: TopicDeleteSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.delete_topic(course_id, body.topic_name, body.fallback_topic, user, db)

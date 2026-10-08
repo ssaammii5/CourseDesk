@@ -1,4 +1,6 @@
 import os
+import secrets
+import string
 import uuid
 from typing import Annotated
 
@@ -12,6 +14,15 @@ from sqlalchemy.orm import Session, selectinload
 from app.user.models import UserModel
 from app.utils.db import get_db
 from app.utils.settings import settings
+
+_ALPHANUMERIC = string.ascii_letters + string.digits
+
+
+def generate_stripe_id(prefix: str, length: int = 10) -> str:
+    """Generate a Stripe-style unique identifier e.g. crs_9Fk2mX8q, asg_7F2kL9mQ, sub_3Np8xR2v"""
+    rand = "".join(secrets.choice(_ALPHANUMERIC) for _ in range(length))
+    return f"{prefix}_{rand}"
+
 
 password_hash = PasswordHash.recommended()
 

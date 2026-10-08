@@ -7,17 +7,17 @@ import type {
     VideoMarker,
 } from "@/types/session";
 
-export function getCourseSessionsRequest(courseId: number): Promise<SessionDto[]> {
+export function getCourseSessionsRequest(courseId: number | string): Promise<SessionDto[]> {
     return apiFetch<SessionDto[]>(`/api/sessions/course/${courseId}`, { method: "GET" });
 }
 
-export function getNextSessionRequest(courseId: number): Promise<SessionDto | null> {
+export function getNextSessionRequest(courseId: number | string): Promise<SessionDto | null> {
     return apiFetch<SessionDto | null>(`/api/sessions/course/${courseId}/next`, {
         method: "GET",
     });
 }
 
-export function getSessionRequest(sessionId: number): Promise<SessionDto> {
+export function getSessionRequest(sessionId: number | string): Promise<SessionDto> {
     return apiFetch<SessionDto>(`/api/sessions/${sessionId}`, { method: "GET" });
 }
 
@@ -109,7 +109,7 @@ export interface ReorderSessionsPayload {
 }
 
 export function reorderCourseSessionsRequest(
-    courseId: number,
+    courseId: number | string,
     payload: ReorderSessionsPayload,
 ): Promise<SessionDto[]> {
     return apiFetch<SessionDto[]>(`/api/sessions/course/${courseId}/reorder`, {
@@ -123,7 +123,7 @@ export interface CourseTopicsReorderPayload {
 }
 
 export function reorderCourseTopicsRequest(
-    courseId: number,
+    courseId: number | string,
     payload: CourseTopicsReorderPayload,
 ): Promise<SessionDto[]> {
     return apiFetch<SessionDto[]>(`/api/sessions/course/${courseId}/reorder-topics`, {

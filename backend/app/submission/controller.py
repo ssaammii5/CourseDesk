@@ -4,7 +4,9 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.assignment.controller import find_assignment
 from app.assignment.models import AssignmentModel
+from app.course.controller import find_course
 from app.course.models import CourseModel
 from app.submission.dtos import (
     DraftSubmissionSchema,
@@ -44,12 +46,25 @@ def _submission_stmt():
     )
 
 
+def find_submission(submission_id_or_code: int | str, db: Session) -> SubmissionModel | None:
+    if isinstance(submission_id_or_code, int):
+        return db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id_or_code))
+    s_str = str(submission_id_or_code).strip()
+    if s_str.isdigit():
+        s = db.scalar(_submission_stmt().where(SubmissionModel.id == int(s_str)))
+        if s:
+            return s
+    return db.scalar(_submission_stmt().where(SubmissionModel.code == s_str))
+
+
 def get_submissions(
-    user: UserModel, db: Session, course_id: int | None = None
+    user: UserModel, db: Session, course_id: int | str | None = None
 ) -> list[SubmissionResponseSchema]:
     stmt = _submission_stmt()
     if course_id is not None:
-        stmt = stmt.join(SubmissionModel.assignment).where(AssignmentModel.course_id == course_id)
+        course = find_course(course_id, db)
+        if course:
+            stmt = stmt.join(SubmissionModel.assignment).where(AssignmentModel.course_id == course.id)
 
     if user.role in ("Admin", "Coordinator", "Co-ordinator"):
         submissions = db.scalars(stmt).all()
@@ -65,7 +80,7 @@ def get_submissions(
 
 
 def get_course_submissions(
-    course_id: int, user: UserModel, db: Session
+    course_id: int | str, user: UserModel, db: Session
 ) -> list[SubmissionResponseSchema]:
     return get_submissions(user, db, course_id=course_id)
 
@@ -91,9 +106,9 @@ def _can_view_submission(user: UserModel, submission: SubmissionModel) -> bool:
 
 
 def get_submission(
-    submission_id: int, user: UserModel, db: Session
+    submission_id: int | str, user: UserModel, db: Session
 ) -> SubmissionResponseSchema:
-    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    submission = find_submission(submission_id, db)
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_view_submission(user, submission):
@@ -107,9 +122,7 @@ def submit_assignment(
     if user.role != "Learner":
         raise HTTPException(403, detail="Only learners can submit work")
 
-    assignment = db.scalar(
-        select(AssignmentModel).where(AssignmentModel.id == body.assignment_id)
-    )
+    assignment = find_assignment(body.assignment_id, db)
     if not assignment:
         raise HTTPException(404, detail="Assignment id is incorrect")
     if assignment.status != "Published":
@@ -200,9 +213,9 @@ def _can_grade(user: UserModel, submission: SubmissionModel) -> bool:
 
 
 def grade_submission(
-    submission_id: int, body: GradeSubmissionSchema, user: UserModel, db: Session
+    submission_id: int | str, body: GradeSubmissionSchema, user: UserModel, db: Session
 ) -> SubmissionResponseSchema:
-    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    submission = find_submission(submission_id, db)
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_grade(user, submission):
@@ -245,23 +258,26 @@ def grade_submission(
         if assignment.max_marks > 0
         else f"Reviewed by instructor{fb}"
     )
+    course = assignment.course if assignment else None
+    course_ref = course.code or course.id if course else assignment.course_id
+    asg_ref = assignment.code or assignment.id
     create_notification(
         db=db,
         user_id=submission.learner_id,
         title=f"Reviewed: {assignment.title}" if assignment.max_marks == 0 else f"Graded: {assignment.title}",
         message=msg,
         kind="grade",
-        link=f"/course/{assignment.course_id}/assignments/{assignment.id}",
+        link=f"/course/{course_ref}/assignments/{asg_ref}",
     )
 
     db.commit()
-    return get_submission(submission_id, user, db)
+    return get_submission(submission.id, user, db)
 
 
 def ungrade_submission(
-    submission_id: int, user: UserModel, db: Session
+    submission_id: int | str, user: UserModel, db: Session
 ) -> SubmissionResponseSchema:
-    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    submission = find_submission(submission_id, db)
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_grade(user, submission):
@@ -284,7 +300,7 @@ def ungrade_submission(
         )
     )
     db.commit()
-    return get_submission(submission_id, user, db)
+    return get_submission(submission.id, user, db)
 
 
 def _can_modify_submission(user: UserModel, submission: SubmissionModel) -> bool:
@@ -299,14 +315,14 @@ def _can_modify_submission(user: UserModel, submission: SubmissionModel) -> bool
 
 
 def add_submission_attachment(
-    submission_id: int,
+    submission_id: int | str,
     user: UserModel,
     db: Session,
     file: UploadFile | None,
     link_url: str | None,
     link_title: str | None,
 ) -> SubmissionAttachmentResponseSchema:
-    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    submission = find_submission(submission_id, db)
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_modify_submission(user, submission):
@@ -329,7 +345,7 @@ def add_submission_attachment(
     if link_url:
         parsed_title = (link_title or "").strip() or link_url
         attachment = SubmissionAttachmentModel(
-            submission_id=submission_id,
+            submission_id=submission.id,
             file_name=parsed_title,
             file_type="link",
             file_size="0 B",
@@ -338,9 +354,9 @@ def add_submission_attachment(
             uploaded_at_utc=now,
         )
     elif file:
-        file_path, file_mime, file_size_str = save_upload_file(file, f"submissions/{submission_id}")
+        file_path, file_mime, file_size_str = save_upload_file(file, f"submissions/{submission.id}")
         attachment = SubmissionAttachmentModel(
-            submission_id=submission_id,
+            submission_id=submission.id,
             file_name=file.filename or "attachment",
             file_type=file_mime,
             file_size=file_size_str,
@@ -362,9 +378,9 @@ def add_submission_attachment(
 
 
 def delete_submission_attachment(
-    submission_id: int, attachment_id: int, user: UserModel, db: Session
+    submission_id: int | str, attachment_id: int, user: UserModel, db: Session
 ) -> None:
-    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    submission = find_submission(submission_id, db)
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if not _can_modify_submission(user, submission):
@@ -384,7 +400,7 @@ def delete_submission_attachment(
             raise HTTPException(400, detail="Submission deadline has passed. Submissions are closed.")
 
     attachment = db.get(SubmissionAttachmentModel, attachment_id)
-    if not attachment or attachment.submission_id != submission_id:
+    if not attachment or attachment.submission_id != submission.id:
         raise HTTPException(404, detail="Attachment id is incorrect")
 
     if submission.attachments and attachment in submission.attachments:
@@ -401,16 +417,12 @@ def delete_submission_attachment(
 
 
 def get_or_create_draft_submission(
-    assignment_id: int, user: UserModel, db: Session
+    assignment_id: int | str, user: UserModel, db: Session
 ) -> SubmissionResponseSchema:
     if user.role != "Learner":
         raise HTTPException(403, detail="Only learners can create draft submissions")
 
-    assignment = db.scalar(
-        select(AssignmentModel)
-        .options(selectinload(AssignmentModel.course).selectinload(CourseModel.learners))
-        .where(AssignmentModel.id == assignment_id)
-    )
+    assignment = find_assignment(assignment_id, db)
     if not assignment:
         raise HTTPException(404, detail="Assignment id is incorrect")
 
@@ -456,9 +468,9 @@ def get_or_create_draft_submission(
 
 
 def unsubmit_assignment(
-    submission_id: int, user: UserModel, db: Session
+    submission_id: int | str, user: UserModel, db: Session
 ) -> SubmissionResponseSchema:
-    submission = db.scalar(_submission_stmt().where(SubmissionModel.id == submission_id))
+    submission = find_submission(submission_id, db)
     if not submission:
         raise HTTPException(404, detail="Submission id is incorrect")
     if user.role != "Admin" and submission.learner_id != user.id:
@@ -486,17 +498,13 @@ def unsubmit_assignment(
 
 
 def grade_learner_assignment(
-    assignment_id: int,
+    assignment_id: int | str,
     learner_id: int,
     body: GradeSubmissionSchema,
     user: UserModel,
     db: Session,
 ) -> SubmissionResponseSchema:
-    assignment = db.scalar(
-        select(AssignmentModel)
-        .options(selectinload(AssignmentModel.course).selectinload(CourseModel.instructors))
-        .where(AssignmentModel.id == assignment_id)
-    )
+    assignment = find_assignment(assignment_id, db)
     if not assignment:
         raise HTTPException(404, detail="Assignment not found")
 
@@ -511,13 +519,13 @@ def grade_learner_assignment(
 
     submission = db.scalar(
         select(SubmissionModel).where(
-            SubmissionModel.assignment_id == assignment_id,
+            SubmissionModel.assignment_id == assignment.id,
             SubmissionModel.learner_id == learner_id,
         )
     )
     if not submission:
         submission = SubmissionModel(
-            assignment_id=assignment_id,
+            assignment_id=assignment.id,
             learner_id=learner_id,
             answer="",
             status="Assigned",

@@ -4,7 +4,7 @@ from app.utils.dto import CamelModel
 
 
 class AssignmentSchema(CamelModel):
-    course_id: int
+    course_id: int | str
     title: str
     description: str = ""
     topic: str = ""
@@ -44,7 +44,9 @@ class AssignmentAttachmentResponseSchema(CamelModel):
 
 class AssignmentResponseSchema(CamelModel):
     id: int
+    code: str = ""
     course_id: int
+    course_code: str | None = None
     course_name: str | None = None
     subject: str | None = None
     program: str | None = None

@@ -92,7 +92,7 @@ export function AdminUrgentQueue({ pendingCount, pendingSubmissions }: AdminUrge
                                 <button
                                     key={sub.id}
                                     type="button"
-                                    onClick={() => router.push(`/submissions/${sub.id}`)}
+                                    onClick={() => router.push(`/submissions/${sub.code || sub.id}`)}
                                     className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-medium text-slate-800 shadow-xs transition-colors hover:bg-amber-100 hover:text-amber-900 dark:bg-slate-850 dark:text-slate-200 dark:hover:bg-amber-950/60"
                                 >
                                     <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />

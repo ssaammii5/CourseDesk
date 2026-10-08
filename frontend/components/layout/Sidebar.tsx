@@ -42,6 +42,7 @@ interface SidebarProps {
 
 interface EnrolledCourse {
     id: number;
+    code?: string;
     name: string;
     sub?: string;
     letter: string;
@@ -51,6 +52,7 @@ interface EnrolledCourse {
 function mapCourseToEnrolled(c: CourseDto): EnrolledCourse {
     return {
         id: c.id,
+        code: c.code,
         name: c.name,
         sub: c.department || undefined,
         letter: letterOf(c.name),
@@ -288,11 +290,14 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                                 {enrolledOpen && (
                                     <div className="space-y-0.5 pt-0.5">
                                         {enrolledCourses.map((c) => {
-                                            const isActive = pathname.startsWith(`/course/${c.id}`);
+                                            const courseTarget = c.code || c.id;
+                                            const isActive =
+                                                (c.code ? pathname.startsWith(`/course/${c.code}`) : false) ||
+                                                pathname.startsWith(`/course/${c.id}`);
                                             return (
                                                 <Link
                                                     key={c.id}
-                                                    href={`/course/${c.id}`}
+                                                    href={`/course/${courseTarget}`}
                                                     className={`group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs transition-all duration-150 ${
                                                         isActive
                                                             ? "bg-blue-50/90 dark:bg-blue-950/50 font-medium text-blue-900 dark:text-blue-200 ring-1 ring-blue-100/80 dark:ring-blue-900/40"

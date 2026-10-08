@@ -21,7 +21,7 @@ session_routes = APIRouter(prefix="/api/sessions", tags=["sessions"])
     response_model=list[SessionResponseSchema],
     status_code=status.HTTP_200_OK,
 )
-def get_course_sessions(course_id: int, db: DbSession, user: IsAuthenticated):
+def get_course_sessions(course_id: str, db: DbSession, user: IsAuthenticated):
     return controller.get_course_sessions(course_id, user, db)
 
 
@@ -30,7 +30,7 @@ def get_course_sessions(course_id: int, db: DbSession, user: IsAuthenticated):
     response_model=SessionResponseSchema | None,
     status_code=status.HTTP_200_OK,
 )
-def get_next_session(course_id: int, db: DbSession, user: IsAuthenticated):
+def get_next_session(course_id: str, db: DbSession, user: IsAuthenticated):
     return controller.get_next_session(course_id, user, db)
 
 
@@ -60,7 +60,7 @@ def create_session(body: SessionSchema, db: DbSession, user: IsAdminOrInstructor
 def create_video_session(
     db: DbSession,
     user: IsAdminOrInstructor,
-    course_id: int = Form(...),
+    course_id: str = Form(...),
     title: str = Form(...),
     video_url: str = Form(...),
     description: str = Form(default=""),
@@ -140,7 +140,7 @@ def delete_session(session_id: int, db: DbSession, user: IsAdminOrInstructor):
     status_code=status.HTTP_200_OK,
 )
 def reorder_course_sessions(
-    course_id: int,
+    course_id: str,
     body: SessionReorderSchema,
     db: DbSession,
     user: IsAdminOrInstructor,
@@ -154,7 +154,7 @@ def reorder_course_sessions(
     status_code=status.HTTP_200_OK,
 )
 def reorder_course_topics(
-    course_id: int,
+    course_id: str,
     body: CourseTopicsReorderSchema,
     db: DbSession,
     user: IsAdminOrInstructor,

@@ -2,6 +2,7 @@ import { apiFetch } from "./client";
 
 export interface CourseDto {
     id: number;
+    code?: string;
     name: string;
     subject: string;
     program?: string;
@@ -55,7 +56,7 @@ export function getCoursesRequest(): Promise<CourseDto[]> {
     return apiFetch<CourseDto[]>("/api/courses", { method: "GET" });
 }
 
-export function getCourseRequest(id: number): Promise<CourseDto> {
+export function getCourseRequest(id: number | string): Promise<CourseDto> {
     return apiFetch<CourseDto>(`/api/courses/${id}`, { method: "GET" });
 }
 
@@ -63,7 +64,7 @@ export function getMyCoursesRequest(): Promise<CourseDto[]> {
     return apiFetch<CourseDto[]>("/api/courses/my", { method: "GET" });
 }
 
-export function getCoursePeopleRequest(courseId: number): Promise<CoursePeopleDto> {
+export function getCoursePeopleRequest(courseId: number | string): Promise<CoursePeopleDto> {
     return apiFetch<CoursePeopleDto>(`/api/courses/${courseId}/people`, { method: "GET" });
 }
 
@@ -80,7 +81,7 @@ export function createCourseRequest(payload: CoursePayload): Promise<CourseDto> 
     });
 }
 
-export function updateCourseRequest(id: number, payload: CoursePayload): Promise<void> {
+export function updateCourseRequest(id: number | string, payload: CoursePayload): Promise<void> {
     const bodyPayload = {
         ...payload,
         department: payload.department || "",
@@ -93,12 +94,12 @@ export function updateCourseRequest(id: number, payload: CoursePayload): Promise
     });
 }
 
-export function deleteCourseRequest(id: number): Promise<void> {
+export function deleteCourseRequest(id: number | string): Promise<void> {
     return apiFetch<void>(`/api/courses/${id}`, { method: "DELETE" });
 }
 
 export function setCourseInstructorsRequest(
-    courseId: number,
+    courseId: number | string,
     instructorIds: number[],
 ): Promise<CourseDto> {
     return apiFetch<CourseDto>(`/api/courses/${courseId}/instructors`, {
@@ -108,7 +109,7 @@ export function setCourseInstructorsRequest(
 }
 
 export function setCourseLearnersRequest(
-    courseId: number,
+    courseId: number | string,
     learnerIds: number[],
 ): Promise<CourseDto> {
     return apiFetch<CourseDto>(`/api/courses/${courseId}/learners`, {
@@ -118,7 +119,7 @@ export function setCourseLearnersRequest(
 }
 
 export function batchUpdateCourseLearnersRequest(
-    courseId: number,
+    courseId: number | string,
     addLearnerIds: number[],
     removeLearnerIds: number[],
 ): Promise<CourseDto> {
@@ -152,7 +153,7 @@ export function updateCoursePreferencesRequest(
 }
 
 export function updateCourseTagsRequest(
-    courseId: number,
+    courseId: number | string,
     tags: string[],
 ): Promise<CourseDto> {
     return apiFetch<CourseDto>(`/api/courses/${courseId}/tags`, {

@@ -57,17 +57,17 @@ def create_course(body: CourseSchema, db: DbSession, _admin: IsAdmin):
 
 
 @course_routes.get("/{course_id}", response_model=CourseResponseSchema, status_code=status.HTTP_200_OK)
-def get_one_course(course_id: int, db: DbSession, user: IsAuthenticated):
+def get_one_course(course_id: str, db: DbSession, user: IsAuthenticated):
     return controller.get_one_course(course_id, db)
 
 
 @course_routes.get("/{course_id}/people", response_model=CoursePeopleResponseSchema, status_code=status.HTTP_200_OK)
-def get_course_people(course_id: int, db: DbSession, user: IsAuthenticated):
+def get_course_people(course_id: str, db: DbSession, user: IsAuthenticated):
     return controller.get_course_people(course_id, user, db)
 
 
 @course_routes.get("/{course_id}/assignments", response_model=list[AssignmentResponseSchema], status_code=status.HTTP_200_OK)
-def get_course_assignments(course_id: int, db: DbSession, user: IsAuthenticated):
+def get_course_assignments(course_id: str, db: DbSession, user: IsAuthenticated):
     from app.assignment import controller as assignment_controller
 
     return assignment_controller.get_course_assignments(course_id, user, db)
@@ -78,20 +78,20 @@ def get_course_assignments(course_id: int, db: DbSession, user: IsAuthenticated)
     response_model=list[SubmissionResponseSchema],
     status_code=status.HTTP_200_OK,
 )
-def get_course_submissions(course_id: int, db: DbSession, user: IsAuthenticated):
+def get_course_submissions(course_id: str, db: DbSession, user: IsAuthenticated):
     from app.submission import controller as submission_controller
 
     return submission_controller.get_course_submissions(course_id, user, db)
 
 
 @course_routes.put("/{course_id}", response_model=CourseResponseSchema, status_code=status.HTTP_200_OK)
-def update_course(course_id: int, body: CourseSchema, db: DbSession, _user: IsAdminOrCoordinator):
+def update_course(course_id: str, body: CourseSchema, db: DbSession, _user: IsAdminOrCoordinator):
     return controller.update_course(course_id, body, db)
 
 
 
 @course_routes.delete("/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_course(course_id: int, db: DbSession, _admin: IsAdmin):
+def delete_course(course_id: str, db: DbSession, _admin: IsAdmin):
     return controller.delete_course(course_id, db)
 
 
@@ -101,7 +101,7 @@ def delete_course(course_id: int, db: DbSession, _admin: IsAdmin):
     status_code=status.HTTP_200_OK,
 )
 def set_course_tags(
-    course_id: int,
+    course_id: str,
     body: CourseTagsSchema,
     db: DbSession,
     _user: IsAdminOrCoordinator,
@@ -116,7 +116,7 @@ def set_course_tags(
     status_code=status.HTTP_200_OK,
 )
 def set_course_instructors(
-    course_id: int,
+    course_id: str,
     body: CourseInstructorAllotmentSchema,
     db: DbSession,
     _user: IsAdminOrCoordinator,
@@ -130,7 +130,7 @@ def set_course_instructors(
     status_code=status.HTTP_200_OK,
 )
 def set_course_learners(
-    course_id: int,
+    course_id: str,
     body: CourseLearnerAllotmentSchema,
     db: DbSession,
     _user: IsAdminOrCoordinator,
@@ -144,7 +144,7 @@ def set_course_learners(
     status_code=status.HTTP_200_OK,
 )
 def batch_update_course_learners(
-    course_id: int,
+    course_id: str,
     body: CourseLearnerBatchSchema,
     db: DbSession,
     _user: IsAdminOrCoordinator,
@@ -156,7 +156,7 @@ def batch_update_course_learners(
 
 @course_routes.put("/{course_id}/topics/rename", status_code=status.HTTP_200_OK)
 def rename_course_topic(
-    course_id: int, body: TopicRenameSchema, db: DbSession, user: IsAdminOrInstructor
+    course_id: str, body: TopicRenameSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     from app.assignment import controller as assignment_controller
 
@@ -165,7 +165,7 @@ def rename_course_topic(
 
 @course_routes.post("/{course_id}/topics/delete", status_code=status.HTTP_200_OK)
 def delete_course_topic(
-    course_id: int, body: TopicDeleteSchema, db: DbSession, user: IsAdminOrInstructor
+    course_id: str, body: TopicDeleteSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     from app.assignment import controller as assignment_controller
 

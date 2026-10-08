@@ -15,6 +15,7 @@ class CourseSchema(CamelModel):
 
 class CourseResponseSchema(CamelModel):
     id: int
+    code: str = ""
     name: str
     subject: str = ""
     department: str = ""

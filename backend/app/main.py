@@ -123,6 +123,33 @@ try:
         links JSON NOT NULL DEFAULT '[]'
     );
     CREATE INDEX IF NOT EXISTS ix_coordinator_details_table_coordinator_id ON coordinator_details_table(coordinator_id);
+
+    -- Stripe-style ID generator & columns for courses, assignments, submissions
+    CREATE OR REPLACE FUNCTION generate_stripe_id(prefix TEXT, len INT DEFAULT 10)
+    RETURNS TEXT AS $fn$
+    DECLARE
+        chars TEXT := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        result TEXT := '';
+        i INT;
+    BEGIN
+        FOR i IN 1..len LOOP
+            result := result || substr(chars, floor(random() * 62 + 1)::INT, 1);
+        END LOOP;
+        RETURN prefix || '_' || result;
+    END;
+    $fn$ LANGUAGE plpgsql;
+
+    ALTER TABLE course_table ADD COLUMN IF NOT EXISTS code VARCHAR(32);
+    CREATE UNIQUE INDEX IF NOT EXISTS ix_course_table_code ON course_table(code);
+    UPDATE course_table SET code = generate_stripe_id('crs', 10) WHERE code IS NULL OR code = '';
+
+    ALTER TABLE assignment_table ADD COLUMN IF NOT EXISTS code VARCHAR(32);
+    CREATE UNIQUE INDEX IF NOT EXISTS ix_assignment_table_code ON assignment_table(code);
+    UPDATE assignment_table SET code = generate_stripe_id('asg', 10) WHERE code IS NULL OR code = '';
+
+    ALTER TABLE submission_table ADD COLUMN IF NOT EXISTS code VARCHAR(32);
+    CREATE UNIQUE INDEX IF NOT EXISTS ix_submission_table_code ON submission_table(code);
+    UPDATE submission_table SET code = generate_stripe_id('sub', 10) WHERE code IS NULL OR code = '';
     """))
 except Exception:
     pass

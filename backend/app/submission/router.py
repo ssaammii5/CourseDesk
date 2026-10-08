@@ -19,7 +19,7 @@ submission_routes = APIRouter(prefix="/api/submissions", tags=["submissions"])
 def get_all_submissions(
     db: DbSession,
     user: IsAuthenticated,
-    course_id: int | None = None,
+    course_id: str | int | None = None,
 ):
     return controller.get_submissions(user, db, course_id=course_id)
 
@@ -55,32 +55,32 @@ def submit_assignment(body: SubmitAssignmentSchema, db: DbSession, user: IsAuthe
 
 
 @submission_routes.get("/{submission_id}", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
-def get_one_submission(submission_id: int, db: DbSession, user: IsAuthenticated):
+def get_one_submission(submission_id: str, db: DbSession, user: IsAuthenticated):
     return controller.get_submission(submission_id, user, db)
 
 
 @submission_routes.post("/{submission_id}/grade", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
 def grade_submission(
-    submission_id: int, body: GradeSubmissionSchema, db: DbSession, user: IsAdminOrInstructor
+    submission_id: str, body: GradeSubmissionSchema, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.grade_submission(submission_id, body, user, db)
 
 
 @submission_routes.post("/{submission_id}/ungrade", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
 def ungrade_submission(
-    submission_id: int, db: DbSession, user: IsAdminOrInstructor
+    submission_id: str, db: DbSession, user: IsAdminOrInstructor
 ):
     return controller.ungrade_submission(submission_id, user, db)
 
 
 @submission_routes.post("/{submission_id}/unsubmit", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)
-def unsubmit_submission(submission_id: int, db: DbSession, user: IsAuthenticated):
+def unsubmit_submission(submission_id: str, db: DbSession, user: IsAuthenticated):
     return controller.unsubmit_assignment(submission_id, user, db)
 
 
 @submission_routes.post("/{submission_id}/attachments", response_model=SubmissionAttachmentResponseSchema, status_code=status.HTTP_201_CREATED)
 def add_submission_attachment(
-    submission_id: int,
+    submission_id: str,
     db: DbSession,
     user: IsAuthenticated,
     file: UploadFile | None = File(default=None),
@@ -94,6 +94,6 @@ def add_submission_attachment(
 
 @submission_routes.delete("/{submission_id}/attachments/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_submission_attachment(
-    submission_id: int, attachment_id: int, db: DbSession, user: IsAuthenticated
+    submission_id: str, attachment_id: int, db: DbSession, user: IsAuthenticated
 ):
     return controller.delete_submission_attachment(submission_id, attachment_id, user, db)

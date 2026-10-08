@@ -37,7 +37,7 @@ interface GradesViewProps {
     people: ClassPerson[];
     items: ClassworkEntry[];
     submissions?: SubmissionDto[];
-    courseId?: number;
+    courseId?: number | string;
     courseTitle?: string;
     onRefreshSubmissions?: () => Promise<void> | void;
     onUpdateSubmission?: (submission: SubmissionDto) => void;
@@ -765,7 +765,7 @@ export function GradesView({
                                                     <button
                                                         type="button"
                                                         onClick={() =>
-                                                            router.push(`/course/${courseId}/assignments/${c.id}`)
+                                                            router.push(`/course/${courseId}/assignments/${c.code || c.id}`)
                                                         }
                                                         title="Open assignment grading"
                                                         className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"

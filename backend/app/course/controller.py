@@ -20,6 +20,7 @@ def serialize_course(course: CourseModel) -> CourseResponseSchema:
     first_instructor = instructors[0] if instructors else None
     return CourseResponseSchema(
         id=course.id,
+        code=course.code,
         name=course.name,
         subject=course.subject,
         department=course.department,
@@ -46,6 +47,17 @@ def _course_stmt():
     )
 
 
+def find_course(course_id_or_code: int | str, db: Session) -> CourseModel | None:
+    if isinstance(course_id_or_code, int):
+        return db.scalar(_course_stmt().where(CourseModel.id == course_id_or_code))
+    c_str = str(course_id_or_code).strip()
+    if c_str.isdigit():
+        c = db.scalar(_course_stmt().where(CourseModel.id == int(c_str)))
+        if c:
+            return c
+    return db.scalar(_course_stmt().where(CourseModel.code == c_str))
+
+
 def get_courses(db: Session) -> list[CourseResponseSchema]:
     courses = db.scalars(_course_stmt()).all()
     return [serialize_course(c) for c in courses]
@@ -66,17 +78,17 @@ def get_my_courses(user: UserModel, db: Session) -> list[CourseResponseSchema]:
     return [serialize_course(c) for c in courses]
 
 
-def get_one_course(course_id: int, db: Session) -> CourseResponseSchema:
-    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+def get_one_course(course_id: int | str, db: Session) -> CourseResponseSchema:
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     return serialize_course(course)
 
 
 def get_course_people(
-    course_id: int, user: UserModel, db: Session
+    course_id: int | str, user: UserModel, db: Session
 ) -> CoursePeopleResponseSchema:
-    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
 
@@ -136,7 +148,7 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
             title=f"Enrolled in {course.name}",
             message=f"You have been enrolled in {course.name}",
             kind="system",
-            link=f"/course/{course.id}",
+            link=f"/course/{course.code or course.id}",
         )
     if inst_ids:
         create_notifications_bulk(
@@ -145,15 +157,15 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
             title=f"Assigned to instruct {course.name}",
             message=f"You are assigned as an instructor for {course.name}",
             kind="system",
-            link=f"/course/{course.id}",
+            link=f"/course/{course.code or course.id}",
         )
 
     db.commit()
     return get_one_course(course.id, db)
 
 
-def update_course(course_id: int, body: CourseSchema, db: Session) -> CourseResponseSchema:
-    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+def update_course(course_id: int | str, body: CourseSchema, db: Session) -> CourseResponseSchema:
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     course.name = body.name
@@ -165,33 +177,32 @@ def update_course(course_id: int, body: CourseSchema, db: Session) -> CourseResp
     course.learners = _fetch_users(body.learner_ids or body.student_ids, db)
     db.add(course)
     db.commit()
-    return get_one_course(course_id, db)
+    return get_one_course(course.id, db)
 
 
-def delete_course(course_id: int, db: Session) -> None:
-    course = db.get(CourseModel, course_id)
+def delete_course(course_id: int | str, db: Session) -> None:
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     db.delete(course)
     db.commit()
 
 
-def set_course_tags(course_id: int, tags: list[str], db: Session) -> CourseResponseSchema:
-    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+def set_course_tags(course_id: int | str, tags: list[str], db: Session) -> CourseResponseSchema:
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     cleaned = [t.strip().replace("#", "") for t in tags if t.strip().replace("#", "")]
     course.tags = cleaned
     db.add(course)
     db.commit()
-    return get_one_course(course_id, db)
-
+    return get_one_course(course.id, db)
 
 
 def set_course_instructors(
-    course_id: int, instructor_ids: list[int], db: Session
+    course_id: int | str, instructor_ids: list[int], db: Session
 ) -> CourseResponseSchema:
-    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     old_ids = {u.id for u in course.instructors}
@@ -208,16 +219,16 @@ def set_course_instructors(
             title=f"Assigned to instruct {course.name}",
             message=f"You are assigned as an instructor for {course.name}",
             kind="system",
-            link=f"/course/{course.id}",
+            link=f"/course/{course.code or course.id}",
         )
     db.commit()
-    return get_one_course(course_id, db)
+    return get_one_course(course.id, db)
 
 
 def set_course_learners(
-    course_id: int, learner_ids: list[int], db: Session
+    course_id: int | str, learner_ids: list[int], db: Session
 ) -> CourseResponseSchema:
-    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
     old_ids = {u.id for u in course.learners}
@@ -234,16 +245,16 @@ def set_course_learners(
             title=f"Enrolled in {course.name}",
             message=f"You have been enrolled in {course.name}",
             kind="system",
-            link=f"/course/{course.id}",
+            link=f"/course/{course.code or course.id}",
         )
     db.commit()
-    return get_one_course(course_id, db)
+    return get_one_course(course.id, db)
 
 
 def batch_update_course_learners(
-    course_id: int, add_learner_ids: list[int], remove_learner_ids: list[int], db: Session
+    course_id: int | str, add_learner_ids: list[int], remove_learner_ids: list[int], db: Session
 ) -> CourseResponseSchema:
-    course = db.scalar(_course_stmt().where(CourseModel.id == course_id))
+    course = find_course(course_id, db)
     if not course:
         raise HTTPException(404, detail="Course id is incorrect")
 
@@ -265,10 +276,10 @@ def batch_update_course_learners(
             title=f"Enrolled in {course.name}",
             message=f"You have been enrolled in {course.name}",
             kind="system",
-            link=f"/course/{course.id}",
+            link=f"/course/{course.code or course.id}",
         )
     db.commit()
-    return get_one_course(course_id, db)
+    return get_one_course(course.id, db)
 
 
 def get_user_course_preferences(user: UserModel, db: Session) -> CoursePreferencesSchema:

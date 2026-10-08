@@ -16,7 +16,9 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardAssignmentItem {
     id: number;
+    code?: string;
     courseId: number;
+    courseCode?: string;
     title: string;
     courseName: string;
     dueDate: string;
@@ -137,7 +139,9 @@ export function DueSoonCard() {
                     .slice(0, MAX_DISPLAY_ITEMS)
                     .map((d) => ({
                         id: d.id,
+                        code: d.code,
                         courseId: d.courseId,
+                        courseCode: d.courseCode,
                         title: d.title,
                         courseName: d.courseName ?? "Course",
                         dueDate: formatDueDate(d.deadlineUtc),
@@ -267,7 +271,7 @@ export function DueSoonCard() {
                                             <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
                                                 <div className="flex items-center gap-1.5 overflow-hidden sm:gap-2">
                                                     <Link
-                                                        href={`/course/${a.courseId}`}
+                                                        href={`/course/${a.courseCode || a.courseId}`}
                                                         className="inline-flex max-w-[90px] shrink truncate items-center whitespace-nowrap rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:text-white xs:max-w-[130px] sm:max-w-none sm:rounded-md sm:px-2 sm:text-[11px]"
                                                     >
                                                         {a.courseName}
@@ -288,7 +292,7 @@ export function DueSoonCard() {
                                                 </div>
 
                                                 <Link
-                                                    href={`/course/${a.courseId}/assignments/${a.id}`}
+                                                    href={`/course/${a.courseCode || a.courseId}/assignments/${a.code || a.id}`}
                                                     className="block truncate text-xs font-semibold text-slate-900 transition-colors hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-400 sm:text-sm sm:font-bold"
                                                 >
                                                     {a.title}
@@ -306,7 +310,7 @@ export function DueSoonCard() {
                                                     </div>
 
                                                     <Link
-                                                        href={`/course/${a.courseId}/assignments/${a.id}`}
+                                                        href={`/course/${a.courseCode || a.courseId}/assignments/${a.code || a.id}`}
                                                         className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500 sm:px-3.5 sm:py-1.5"
                                                     >
                                                         <span className="hidden sm:inline">Review</span>
@@ -315,7 +319,7 @@ export function DueSoonCard() {
                                                 </div>
                                             ) : (
                                                 <Link
-                                                    href={`/course/${a.courseId}/assignments/${a.id}`}
+                                                    href={`/course/${a.courseCode || a.courseId}/assignments/${a.code || a.id}`}
                                                     className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition-all hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 sm:gap-1.5 sm:px-3.5 sm:py-1.5"
                                                 >
                                                     <span className="hidden sm:inline">Open Task</span>

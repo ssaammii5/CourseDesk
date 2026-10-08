@@ -1,11 +1,12 @@
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Table, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, String, Table, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.user.models import UserModel
 from app.utils.db import Base
+from app.utils.helpers import generate_stripe_id
 
 course_instructor_table = Table(
     "course_instructor_table",
@@ -26,6 +27,12 @@ class CourseModel(Base):
     __tablename__: str = "course_table"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(
+        String(32),
+        unique=True,
+        index=True,
+        default=lambda: generate_stripe_id("crs", 10),
+    )
     name: Mapped[str] = mapped_column()
     subject: Mapped[str] = mapped_column(default="")
     department: Mapped[str] = mapped_column(default="")

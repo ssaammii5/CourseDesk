@@ -6,5 +6,5 @@ interface AdminSubmissionDetailPageProps {
 
 export default async function AdminSubmissionDetailPage({ params }: AdminSubmissionDetailPageProps) {
     const { submissionId } = await params;
-    return <AdminSubmissionDetailClient submissionId={Number(submissionId)} />;
+    return <AdminSubmissionDetailClient submissionId={submissionId} />;
 }

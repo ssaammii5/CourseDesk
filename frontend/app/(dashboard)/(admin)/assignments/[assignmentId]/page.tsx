@@ -6,5 +6,5 @@ interface AdminAssignmentDetailPageProps {
 
 export default async function AdminAssignmentDetailPage({ params }: AdminAssignmentDetailPageProps) {
     const { assignmentId } = await params;
-    return <AdminAssignmentDetailClient assignmentId={Number(assignmentId)} />;
+    return <AdminAssignmentDetailClient assignmentId={assignmentId} />;
 }
