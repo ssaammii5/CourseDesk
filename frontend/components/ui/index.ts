@@ -7,3 +7,4 @@ export * from "./VideoPlayer";
 export * from "./RichTextEditor";
 export * from "./RichTextContent";
 export * from "./ModernDropdown";
+export * from "./FileViewerModal";

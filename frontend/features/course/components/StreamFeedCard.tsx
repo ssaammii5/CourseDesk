@@ -7,6 +7,7 @@ import {
     Download,
     EllipsisVertical,
     ExternalLink,
+    Eye,
     FileText,
     Globe,
     Image as ImageIcon,
@@ -15,6 +16,8 @@ import {
     PinOff,
     Trash2,
 } from "lucide-react";
+import { API_URL } from "@/lib/api/client";
+import { FileViewerModal, type PreviewableAttachment } from "@/components/ui";
 import { initialOf } from "@/lib/utils/format";
 import { avatarClassFor } from "@/lib/utils/theme";
 import type { AnnouncementDto } from "@/types/session";
@@ -438,7 +441,7 @@ export function StreamFeedCard({
     const updatedAtUtc = isApi ? announcement.updatedAtUtc : null;
     const apiAttachments = isApi ? (announcement as AnnouncementDto).attachments || [] : [];
     const mockAttachments = !isApi && announcement.attachments ? announcement.attachments : [];
-    const attachments = [
+    const attachments: PreviewableAttachment[] = [
         ...apiAttachments.map((a) => ({
             id: a.id,
             title: a.fileName,
@@ -453,7 +456,7 @@ export function StreamFeedCard({
             fileType: a.fileType,
             fileSize: "—",
             url: "url" in a ? ((a as Record<string, unknown>).url as string) : undefined,
-            kind: a.fileType?.toLowerCase() === "link" ? "link" : "file",
+            kind: (a.fileType?.toLowerCase() === "link" ? "link" : "file") as "file" | "link",
         })),
     ];
 
@@ -467,6 +470,7 @@ export function StreamFeedCard({
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
+    const [previewAttachment, setPreviewAttachment] = useState<PreviewableAttachment | null>(null);
     const [isOverflowing, setIsOverflowing] = useState(() => {
         return Boolean(body && (body.length > 320 || body.split("\n").length > 7));
     });
@@ -689,16 +693,28 @@ export function StreamFeedCard({
                                     att.fileType?.toLowerCase().includes("webp") ||
                                     att.fileType?.toLowerCase().includes("svg"));
 
+                            const resolvedUrl = att.url
+                                ? att.url.startsWith("http://") ||
+                                  att.url.startsWith("https://") ||
+                                  att.url.startsWith("blob:") ||
+                                  att.url.startsWith("data:")
+                                    ? att.url
+                                    : `${API_URL}${att.url.startsWith("/") ? att.url : `/${att.url}`}`
+                                : "";
+
                             return (
-                                <a
+                                <div
                                     key={att.id}
-                                    href={att.url || "#"}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download={!isLink && Boolean(att.url)}
-                                    className="group/att flex items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-3 transition-all hover:bg-white hover:border-indigo-300 hover:shadow-xs dark:border-slate-800 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 dark:hover:border-indigo-700/60"
+                                    onClick={() => {
+                                        if (isLink && resolvedUrl) {
+                                            window.open(resolvedUrl, "_blank", "noopener,noreferrer");
+                                        } else {
+                                            setPreviewAttachment(att);
+                                        }
+                                    }}
+                                    className="group/att flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-3 transition-all hover:bg-white hover:border-indigo-300 hover:shadow-xs dark:border-slate-800 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 dark:hover:border-indigo-700/60"
                                 >
-                                    <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
                                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100/70 text-indigo-600 transition-colors group-hover/att:bg-indigo-600 group-hover/att:text-white dark:bg-indigo-950/70 dark:text-indigo-400">
                                             {isLink ? (
                                                 <Globe className="h-5 w-5" />
@@ -726,14 +742,44 @@ export function StreamFeedCard({
                                         </div>
                                     </div>
 
-                                    <div className="shrink-0 text-slate-400 group-hover/att:text-indigo-600 dark:group-hover/att:text-indigo-400 transition-colors">
+                                    {/* Action buttons: Preview and Download */}
+                                    <div className="flex shrink-0 items-center gap-1">
+                                        <button
+                                            type="button"
+                                            title="Preview attachment"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setPreviewAttachment(att);
+                                            }}
+                                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-400"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </button>
+
                                         {isLink ? (
-                                            <ExternalLink className="h-4 w-4" />
+                                            <a
+                                                href={resolvedUrl || "#"}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                title="Open link"
+                                                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-400"
+                                            >
+                                                <ExternalLink className="h-4 w-4" />
+                                            </a>
                                         ) : (
-                                            <Download className="h-4 w-4" />
+                                            <a
+                                                href={resolvedUrl || "#"}
+                                                download={att.title || true}
+                                                onClick={(e) => e.stopPropagation()}
+                                                title="Download attachment"
+                                                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-400"
+                                            >
+                                                <Download className="h-4 w-4" />
+                                            </a>
                                         )}
                                     </div>
-                                </a>
+                                </div>
                             );
                         })}
                     </div>
@@ -747,6 +793,14 @@ export function StreamFeedCard({
                 isApi={isApi}
                 canManage={canManage}
             />
+
+            {/* Modal preview */}
+            {previewAttachment && (
+                <FileViewerModal
+                    attachment={previewAttachment}
+                    onClose={() => setPreviewAttachment(null)}
+                />
+            )}
         </article>
     );
 }
