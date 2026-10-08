@@ -183,7 +183,7 @@ export function CourseTagsModal({
                                         void handleCreateAndSelect();
                                     }
                                 }}
-                                placeholder="e.g. Next.js, Cloud Architecture"
+                                placeholder="Enter tag name"
                                 className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
                             <button

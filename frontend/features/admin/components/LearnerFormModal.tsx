@@ -305,7 +305,7 @@ export function LearnerFormModal({ open, user, readOnly = false, onSave, onClose
                                     clearError("firstName");
                                 }}
                                 error={errors.firstName}
-                                placeholder="e.g. Jane"
+                                placeholder="Enter first name"
                             />
                             <Field
                                 label="Last Name"
@@ -317,7 +317,7 @@ export function LearnerFormModal({ open, user, readOnly = false, onSave, onClose
                                     clearError("lastName");
                                 }}
                                 error={errors.lastName}
-                                placeholder="e.g. Doe"
+                                placeholder="Enter last name"
                             />
                         </div>
 
@@ -332,7 +332,7 @@ export function LearnerFormModal({ open, user, readOnly = false, onSave, onClose
                                 clearError("email");
                             }}
                             error={errors.email}
-                            placeholder="e.g. learner@example.com"
+                            placeholder="Enter email"
                         />
 
                         {/* Short Bio */}

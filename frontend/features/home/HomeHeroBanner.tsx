@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
     CalendarDays,
@@ -25,11 +25,18 @@ export function HomeHeroBanner({
     courseCount,
     pendingCount,
 }: HomeHeroBannerProps) {
-    const greeting = useMemo(() => {
+    const [greeting, setGreeting] = useState(() => {
         const hour = new Date().getHours();
-        if (hour >= 5 && hour < 12) return "Good morning";
-        if (hour >= 12 && hour < 17) return "Good afternoon";
+        if (hour < 12) return "Good morning";
+        if (hour < 17) return "Good afternoon";
         return "Good evening";
+    });
+
+    useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting("Good morning");
+        else if (hour < 17) setGreeting("Good afternoon");
+        else setGreeting("Good evening");
     }, []);
 
     const currentDate = useMemo(() => {
@@ -78,8 +85,7 @@ export function HomeHeroBanner({
                         {greeting},{" "}
                         <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-300">
                             {firstName}
-                        </span>{" "}
-                        <span className="inline-block animate-pulse">👋</span>
+                        </span>
                     </h1>
 
                     {/* Personalized Context Subtitle */}

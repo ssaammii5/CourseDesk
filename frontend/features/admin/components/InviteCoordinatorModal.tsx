@@ -165,7 +165,7 @@ export function InviteCoordinatorModal({ open, onClose, onSuccess }: InviteCoord
                                             setEmail(e.target.value);
                                             setError(null);
                                         }}
-                                        placeholder="e.g. coordinator@university.edu"
+                                        placeholder="Enter email"
                                         className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                                         autoFocus
                                     />

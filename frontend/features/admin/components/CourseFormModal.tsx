@@ -461,7 +461,7 @@ export function CourseFormModal({
                                                 handleAddCustomTag();
                                             }
                                         }}
-                                        placeholder="Type or select tags (e.g., Python, Fullstack)..."
+                                        placeholder="Enter tags..."
                                         className="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/80 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                                     />
                                 </div>

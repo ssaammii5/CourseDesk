@@ -25,9 +25,7 @@ interface AdminHeroHeaderProps {
     isCoordinator: boolean;
     onRefresh: () => Promise<void>;
     onOpenNewCourse: () => void;
-    onOpenInviteLearner: () => void;
-    onOpenInviteInstructor: () => void;
-    onOpenInviteCoordinator: () => void;
+    onOpenInviteUser: () => void;
     lastUpdated: Date;
     isRefreshing: boolean;
 }
@@ -37,33 +35,25 @@ export function AdminHeroHeader({
     isCoordinator,
     onRefresh,
     onOpenNewCourse,
-    onOpenInviteLearner,
-    onOpenInviteInstructor,
-    onOpenInviteCoordinator,
+    onOpenInviteUser,
     lastUpdated,
     isRefreshing,
 }: AdminHeroHeaderProps) {
     const router = useRouter();
     const { maintenanceMode, platformName } = useAppSettings();
-    const [inviteMenuOpen, setInviteMenuOpen] = useState(false);
-    const inviteMenuRef = useRef<HTMLDivElement>(null);
 
-    // Close invite menu on outside click
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (inviteMenuRef.current && !inviteMenuRef.current.contains(event.target as Node)) {
-                setInviteMenuOpen(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const greeting = useMemo(() => {
+    const [greeting, setGreeting] = useState(() => {
         const hour = new Date().getHours();
-        if (hour >= 5 && hour < 12) return "Good morning";
-        if (hour >= 12 && hour < 17) return "Good afternoon";
+        if (hour < 12) return "Good morning";
+        if (hour < 17) return "Good afternoon";
         return "Good evening";
+    });
+
+    useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting("Good morning");
+        else if (hour < 17) setGreeting("Good afternoon");
+        else setGreeting("Good evening");
     }, []);
 
     const formattedTime = useMemo(() => {
@@ -147,78 +137,35 @@ export function AdminHeroHeader({
                 </div>
 
                 {/* Right Column: Quick Action Ribbon */}
-                <div className="flex flex-wrap items-center gap-3 self-start lg:self-center">
+                <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 overflow-x-auto no-scrollbar self-start lg:self-center">
                     {/* Primary Button: New Course */}
                     <button
                         type="button"
                         onClick={onOpenNewCourse}
-                        className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-500/20 active:scale-95"
+                        className="inline-flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-3.5 sm:px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-500/20 active:scale-95 shrink-0"
                     >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-4 w-4 shrink-0" />
                         <span>New Course</span>
                     </button>
 
-                    {/* Secondary Action: Invite Member Menu */}
-                    <div className="relative" ref={inviteMenuRef}>
-                        <button
-                            type="button"
-                            onClick={() => setInviteMenuOpen((v) => !v)}
-                            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95"
-                        >
-                            <UserPlus className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                            <span>Invite User</span>
-                            <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-                        </button>
-
-                        {inviteMenuOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900 z-50 animate-in fade-in zoom-in-95">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setInviteMenuOpen(false);
-                                        onOpenInviteLearner();
-                                    }}
-                                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                                >
-                                    <GraduationCap className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                    <span>Invite Learner / Student</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setInviteMenuOpen(false);
-                                        onOpenInviteInstructor();
-                                    }}
-                                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                                >
-                                    <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                    <span>Invite Instructor</span>
-                                </button>
-                                {!isCoordinator && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setInviteMenuOpen(false);
-                                            onOpenInviteCoordinator();
-                                        }}
-                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                                    >
-                                        <UserCheck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                        <span>Invite Coordinator</span>
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    {/* Secondary Action: Invite User */}
+                    <button
+                        type="button"
+                        onClick={onOpenInviteUser}
+                        className="inline-flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95 shrink-0"
+                    >
+                        <UserPlus className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                        <span>Invite User</span>
+                    </button>
 
                     {/* Assignment Shortcut */}
                     <button
                         type="button"
                         onClick={() => router.push("/assignments")}
-                        className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95"
+                        className="inline-flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95 shrink-0"
                     >
-                        <FilePlus2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                        <span className="hidden sm:inline">Assignments</span>
+                        <FilePlus2 className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                        <span>Assignments</span>
                     </button>
 
                     {/* App Settings Shortcut */}
@@ -227,9 +174,10 @@ export function AdminHeroHeader({
                             type="button"
                             onClick={() => router.push("/app-settings")}
                             aria-label="Platform Settings"
-                            className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95"
+                            title="Platform Settings"
+                            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95 shrink-0"
                         >
-                            <Settings className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                            <Settings className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
                         </button>
                     )}
                 </div>

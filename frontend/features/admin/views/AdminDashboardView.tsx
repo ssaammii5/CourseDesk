@@ -16,9 +16,7 @@ import { AdminAnalyticsFunnel } from "../components/AdminAnalyticsFunnel";
 import { AdminActivityHub } from "../components/AdminActivityHub";
 import { AdminQuickShortcuts } from "../components/AdminQuickShortcuts";
 import { CourseFormModal } from "../components/CourseFormModal";
-import { InviteLearnerModal } from "../components/InviteLearnerModal";
-import { InviteInstructorModal } from "../components/InviteInstructorModal";
-import { InviteCoordinatorModal } from "../components/InviteCoordinatorModal";
+import { InviteUserModal } from "../components/InviteUserModal";
 
 export function AdminDashboardView() {
     const { user: currentUser } = useAuth();
@@ -48,9 +46,7 @@ export function AdminDashboardView() {
 
     // Modal Visibility
     const [courseModalOpen, setCourseModalOpen] = useState(false);
-    const [inviteLearnerOpen, setInviteLearnerOpen] = useState(false);
-    const [inviteInstructorOpen, setInviteInstructorOpen] = useState(false);
-    const [inviteCoordinatorOpen, setInviteCoordinatorOpen] = useState(false);
+    const [inviteUserOpen, setInviteUserOpen] = useState(false);
 
     // Toast Auto-Dismiss
     useEffect(() => {
@@ -246,9 +242,7 @@ export function AdminDashboardView() {
                 isCoordinator={isCoordinator}
                 onRefresh={() => fetchAllData(true)}
                 onOpenNewCourse={() => setCourseModalOpen(true)}
-                onOpenInviteLearner={() => setInviteLearnerOpen(true)}
-                onOpenInviteInstructor={() => setInviteInstructorOpen(true)}
-                onOpenInviteCoordinator={() => setInviteCoordinatorOpen(true)}
+                onOpenInviteUser={() => setInviteUserOpen(true)}
                 lastUpdated={lastUpdated}
                 isRefreshing={isRefreshing}
             />
@@ -300,28 +294,13 @@ export function AdminDashboardView() {
                 onClose={() => setCourseModalOpen(false)}
             />
 
-            {/* Invite Learner Modal */}
-            <InviteLearnerModal
-                open={inviteLearnerOpen}
-                onClose={() => setInviteLearnerOpen(false)}
-                onSuccess={(invitation, link) => handleInviteSuccess(invitation, link, "Learner")}
+            {/* Unified Invite User Modal */}
+            <InviteUserModal
+                open={inviteUserOpen}
+                isCoordinator={isCoordinator}
+                onClose={() => setInviteUserOpen(false)}
+                onSuccess={(invitation, link, role) => handleInviteSuccess(invitation, link, role)}
             />
-
-            {/* Invite Instructor Modal */}
-            <InviteInstructorModal
-                open={inviteInstructorOpen}
-                onClose={() => setInviteInstructorOpen(false)}
-                onSuccess={(invitation, link) => handleInviteSuccess(invitation, link, "Instructor")}
-            />
-
-            {/* Invite Coordinator Modal */}
-            {!isCoordinator && (
-                <InviteCoordinatorModal
-                    open={inviteCoordinatorOpen}
-                    onClose={() => setInviteCoordinatorOpen(false)}
-                    onSuccess={(invitation, link) => handleInviteSuccess(invitation, link, "Coordinator")}
-                />
-            )}
         </div>
     );
 }

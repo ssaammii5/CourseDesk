@@ -285,7 +285,7 @@ export function CoordinatorFormModal({
                                     setFirstName(v);
                                     clearError("firstName");
                                 }}
-                                placeholder="e.g. Eleanor"
+                                placeholder="Enter first name"
                                 error={errors.firstName}
                             />
 
@@ -298,7 +298,7 @@ export function CoordinatorFormModal({
                                     setLastName(v);
                                     clearError("lastName");
                                 }}
-                                placeholder="e.g. Vance"
+                                placeholder="Enter last name"
                                 error={errors.lastName}
                             />
                         </div>
@@ -314,7 +314,7 @@ export function CoordinatorFormModal({
                                 setEmail(v);
                                 clearError("email");
                             }}
-                            placeholder="e.g. eleanor.vance@university.edu"
+                            placeholder="Enter email"
                             error={errors.email}
                         />
                     </section>

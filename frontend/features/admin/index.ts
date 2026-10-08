@@ -7,6 +7,7 @@ export * from "./components/CoordinatorFormModal";
 export * from "./components/InviteCoordinatorModal";
 export * from "./components/InviteInstructorModal";
 export * from "./components/InviteLearnerModal";
+export * from "./components/InviteUserModal";
 export * from "./components/TagFormModal";
 export * from "./components/CourseTagsModal";
 export * from "./components/TagCoursesModal";
