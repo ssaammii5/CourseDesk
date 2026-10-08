@@ -10,9 +10,7 @@ import {
     ClipboardList,
     FileText,
     ArrowUpRight,
-    TrendingUp,
     AlertCircle,
-    CheckCircle2,
 } from "lucide-react";
 import type { DashboardStats } from "@/lib/api/dashboard";
 
@@ -38,7 +36,6 @@ interface MetricCardProps {
     iconBg: string;
     accentGlow: string;
     onClick: () => void;
-    showChevron?: boolean;
 }
 
 function MetricCard({
@@ -55,7 +52,7 @@ function MetricCard({
     const badgeColors = {
         success: "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/40",
         warning: "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/40",
-        urgent: "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800/40 animate-pulse",
+        urgent: "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800/40",
         info: "bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/40",
         neutral: "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/60",
     };
@@ -72,27 +69,22 @@ function MetricCard({
             />
 
             <div>
-                {/* Header row: Icon & Status Badge */}
-                <div className="flex items-center justify-between gap-3">
+                {/* Header row: Icon & Status Badge (Uniform size across all cards) */}
+                <div className="flex items-center justify-between gap-2">
                     <div
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-xs transition-transform duration-300 group-hover:scale-105 ${iconBg}`}
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-xs transition-transform duration-300 group-hover:scale-105 ${iconBg}`}
                     >
                         {icon}
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                        {badgeText && (
-                            <span
-                                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${badgeColors[badgeVariant]}`}
-                            >
-                                {badgeVariant === "urgent" && <AlertCircle className="h-3 w-3 shrink-0" />}
-                                {badgeText}
-                            </span>
-                        )}
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-blue-600 group-hover:opacity-100 dark:text-slate-500 dark:group-hover:text-blue-400">
-                            <ArrowUpRight className="h-4 w-4" />
+                    {badgeText && (
+                        <span
+                            className={`inline-flex h-6 min-w-[82px] items-center justify-center rounded-full border px-2.5 text-[11px] font-semibold tracking-tight whitespace-nowrap text-center ${badgeColors[badgeVariant]}`}
+                        >
+                            {badgeVariant === "urgent" && <AlertCircle className="h-3 w-3 shrink-0 mr-1" />}
+                            {badgeText}
                         </span>
-                    </div>
+                    )}
                 </div>
 
                 {/* Metric value and title */}
@@ -107,10 +99,9 @@ function MetricCard({
             </div>
 
             {/* Bottom Sublabel / Trend micro-bar */}
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                    <span>{sublabel}</span>
-                </p>
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span className="truncate">{sublabel}</span>
+                <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-400 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:text-blue-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 dark:text-slate-500 dark:group-hover:text-blue-400" />
             </div>
         </button>
     );
@@ -131,27 +122,27 @@ export function AdminStatCards({ stats, userCounts, isCoordinator }: AdminStatCa
 
     return (
         <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 ${!isCoordinator ? "xl:grid-cols-6" : "xl:grid-cols-5"}`}>
-            {/* 1. Learners / Students */}
+            {/* 1. Learners */}
             <MetricCard
                 title="Learners"
                 value={userCounts.learners}
                 sublabel="Enrolled platform learners"
-                badgeText={`${userCounts.learners} active`}
+                badgeText={`${userCounts.learners} Active`}
                 badgeVariant="success"
-                icon={<GraduationCap className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />}
+                icon={<GraduationCap className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />}
                 iconBg="bg-emerald-50 dark:bg-emerald-950/60"
                 accentGlow="bg-emerald-500"
                 onClick={() => router.push("/learners")}
             />
 
-            {/* 2. Instructors & Teachers */}
+            {/* 2. Instructors */}
             <MetricCard
                 title="Instructors"
                 value={userCounts.instructors}
-                sublabel="Course faculty & teachers"
-                badgeText="Faculty"
+                sublabel="Course faculty & mentors"
+                badgeText={`${userCounts.instructors} Active`}
                 badgeVariant="info"
-                icon={<Users className="h-6 w-6 text-blue-600 dark:text-blue-300" />}
+                icon={<Users className="h-5 w-5 text-blue-600 dark:text-blue-300" />}
                 iconBg="bg-blue-50 dark:bg-blue-950/60"
                 accentGlow="bg-blue-500"
                 onClick={() => router.push("/instructors")}
@@ -163,9 +154,9 @@ export function AdminStatCards({ stats, userCounts, isCoordinator }: AdminStatCa
                     title="Co-ordinators"
                     value={userCounts.coordinators}
                     sublabel="Academic managers"
-                    badgeText="Academic Staff"
+                    badgeText={`${userCounts.coordinators} Active`}
                     badgeVariant="neutral"
-                    icon={<UserCheck className="h-6 w-6 text-purple-600 dark:text-purple-300" />}
+                    icon={<UserCheck className="h-5 w-5 text-purple-600 dark:text-purple-300" />}
                     iconBg="bg-purple-50 dark:bg-purple-950/60"
                     accentGlow="bg-purple-500"
                     onClick={() => router.push("/coordinators")}
@@ -177,9 +168,9 @@ export function AdminStatCards({ stats, userCounts, isCoordinator }: AdminStatCa
                 title="Courses"
                 value={stats.totalCourses}
                 sublabel={`${stats.activeCourses} active courses`}
-                badgeText={`${activeCourseRatio}% live`}
+                badgeText={`${activeCourseRatio}% Live`}
                 badgeVariant="success"
-                icon={<BookOpen className="h-6 w-6 text-amber-600 dark:text-amber-300" />}
+                icon={<BookOpen className="h-5 w-5 text-amber-600 dark:text-amber-300" />}
                 iconBg="bg-amber-50 dark:bg-amber-950/60"
                 accentGlow="bg-amber-500"
                 onClick={() => router.push("/courses")}
@@ -190,9 +181,9 @@ export function AdminStatCards({ stats, userCounts, isCoordinator }: AdminStatCa
                 title="Assignments"
                 value={stats.totalAssignments}
                 sublabel={`${stats.publishedAssignments} currently published`}
-                badgeText={`${publishedAssignmentRatio}% published`}
+                badgeText={`${publishedAssignmentRatio}% Live`}
                 badgeVariant="info"
-                icon={<ClipboardList className="h-6 w-6 text-sky-600 dark:text-sky-300" />}
+                icon={<ClipboardList className="h-5 w-5 text-sky-600 dark:text-sky-300" />}
                 iconBg="bg-sky-50 dark:bg-sky-950/60"
                 accentGlow="bg-sky-500"
                 onClick={() => router.push("/assignments")}
@@ -205,11 +196,11 @@ export function AdminStatCards({ stats, userCounts, isCoordinator }: AdminStatCa
                 sublabel={`${stats.gradedSubmissions} evaluated`}
                 badgeText={
                     stats.pendingSubmissions > 0
-                        ? `${stats.pendingSubmissions} need review`
-                        : "All evaluated"
+                        ? `${stats.pendingSubmissions} Pending`
+                        : "All Done"
                 }
                 badgeVariant={stats.pendingSubmissions > 0 ? "urgent" : "success"}
-                icon={<FileText className="h-6 w-6 text-rose-600 dark:text-rose-300" />}
+                icon={<FileText className="h-5 w-5 text-rose-600 dark:text-rose-300" />}
                 iconBg="bg-rose-50 dark:bg-rose-950/60"
                 accentGlow="bg-rose-500"
                 onClick={() => router.push("/submissions")}
