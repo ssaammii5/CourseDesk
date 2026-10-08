@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session, selectinload
 from app.assignment.models import AssignmentModel
 from app.course.models import CourseModel
 from app.session.dtos import (
+    CourseTopicsReorderSchema,
     SessionMaterialResponseSchema,
+    SessionReorderSchema,
     SessionResponseSchema,
     SessionSchema,
     SessionUpdateSchema,
@@ -112,7 +114,7 @@ def get_course_sessions(
     sessions = db.scalars(
         _session_stmt()
         .where(SessionModel.course_id == course_id)
-        .order_by(SessionModel.session_number)
+        .order_by(SessionModel.session_number, SessionModel.id)
     ).all()
     return [_serialize_session(s) for s in sessions]
 
@@ -237,6 +239,102 @@ def delete_session(session_id: int, user: UserModel, db: Session) -> None:
 
     db.delete(session)
     db.commit()
+
+
+def reorder_course_sessions(
+    course_id: int,
+    body: SessionReorderSchema,
+    user: UserModel,
+    db: Session,
+) -> list[SessionResponseSchema]:
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    if not _can_manage_course(user, course):
+        raise HTTPException(403, detail="You cannot manage sessions in this course")
+
+    if body.items:
+        for item in body.items:
+            session = db.scalar(
+                select(SessionModel).where(
+                    SessionModel.id == item.id,
+                    SessionModel.course_id == course_id,
+                )
+            )
+            if session:
+                if item.session_number is not None:
+                    session.session_number = item.session_number
+                # IMPORTANT: Video reordering must NEVER change the topic of the video
+                db.add(session)
+    elif body.session_ids:
+        for idx, sid in enumerate(body.session_ids, start=1):
+            session = db.scalar(
+                select(SessionModel).where(
+                    SessionModel.id == sid,
+                    SessionModel.course_id == course_id,
+                )
+            )
+            if session:
+                session.session_number = idx
+                db.add(session)
+
+    db.commit()
+    return get_course_sessions(course_id, user, db)
+
+
+def reorder_course_topics(
+    course_id: int,
+    body: CourseTopicsReorderSchema,
+    user: UserModel,
+    db: Session,
+) -> list[SessionResponseSchema]:
+    course = db.scalar(
+        select(CourseModel)
+        .options(selectinload(CourseModel.instructors))
+        .where(CourseModel.id == course_id)
+    )
+    if not course:
+        raise HTTPException(404, detail="Course id is incorrect")
+    if not _can_manage_course(user, course):
+        raise HTTPException(403, detail="You cannot manage sessions in this course")
+
+    all_sessions = db.scalars(
+        _session_stmt()
+        .where(SessionModel.course_id == course_id)
+        .order_by(SessionModel.session_number, SessionModel.id)
+    ).all()
+
+    # Group existing sessions by topic while preserving their internal sequence
+    groups: dict[str, list[SessionModel]] = {}
+    for s in all_sessions:
+        t_name = s.topic.strip() if s.topic else "General Videos"
+        groups.setdefault(t_name, []).append(s)
+
+    # Reassemble sessions in the order of body.topics, then any remaining topics
+    reordered_sessions: list[SessionModel] = []
+    seen_topics: set[str] = set()
+
+    for t_name in body.topics:
+        t_clean = t_name.strip()
+        if t_clean in groups and t_clean not in seen_topics:
+            reordered_sessions.extend(groups[t_clean])
+            seen_topics.add(t_clean)
+
+    for t_clean, s_list in groups.items():
+        if t_clean not in seen_topics:
+            reordered_sessions.extend(s_list)
+
+    # Assign sequential session_number in database
+    for idx, s in enumerate(reordered_sessions, start=1):
+        s.session_number = idx
+        db.add(s)
+
+    db.commit()
+    return get_course_sessions(course_id, user, db)
 
 
 # ── Video Setup (YouTube, title, description, file) ─────────────────────────

@@ -78,6 +78,21 @@ class SessionUpdateSchema(CamelModel):
     status: str | None = None
 
 
+class SessionReorderItemSchema(CamelModel):
+    id: int
+    session_number: int | None = None
+    topic: str | None = None
+
+
+class SessionReorderSchema(CamelModel):
+    session_ids: list[int] | None = None
+    items: list[SessionReorderItemSchema] | None = None
+
+
+class CourseTopicsReorderSchema(CamelModel):
+    topics: list[str]
+
+
 class SessionResponseSchema(CamelModel):
     id: int
     course_id: int

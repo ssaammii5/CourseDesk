@@ -2,7 +2,9 @@ from fastapi import APIRouter, File, Form, UploadFile, status
 
 from app.session import controller
 from app.session.dtos import (
+    CourseTopicsReorderSchema,
     SessionMaterialResponseSchema,
+    SessionReorderSchema,
     SessionResponseSchema,
     SessionSchema,
     SessionUpdateSchema,
@@ -130,6 +132,34 @@ def update_video_session(
 @session_routes.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_session(session_id: int, db: DbSession, user: IsAdminOrInstructor):
     return controller.delete_session(session_id, user, db)
+
+
+@session_routes.put(
+    "/course/{course_id}/reorder",
+    response_model=list[SessionResponseSchema],
+    status_code=status.HTTP_200_OK,
+)
+def reorder_course_sessions(
+    course_id: int,
+    body: SessionReorderSchema,
+    db: DbSession,
+    user: IsAdminOrInstructor,
+):
+    return controller.reorder_course_sessions(course_id, body, user, db)
+
+
+@session_routes.put(
+    "/course/{course_id}/reorder-topics",
+    response_model=list[SessionResponseSchema],
+    status_code=status.HTTP_200_OK,
+)
+def reorder_course_topics(
+    course_id: int,
+    body: CourseTopicsReorderSchema,
+    db: DbSession,
+    user: IsAdminOrInstructor,
+):
+    return controller.reorder_course_topics(course_id, body, user, db)
 
 
 # ── Materials ──────────────────────────────────────────────────────────────

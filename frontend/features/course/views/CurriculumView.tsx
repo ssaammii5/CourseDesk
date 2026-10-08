@@ -8,6 +8,7 @@ import {
     Check,
     CheckCircle2,
     ChevronDown,
+    ChevronUp,
     Clock,
     Download,
     Edit3,
@@ -15,6 +16,8 @@ import {
     FileSpreadsheet,
     FileText,
     Filter,
+    GripVertical,
+    Layers,
     Loader2,
     MoreVertical,
     Paperclip,
@@ -34,9 +37,12 @@ import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { VideoFormModal } from "../components/VideoFormModal";
 import { UploadHandoutModal } from "../components/UploadHandoutModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { TopicReorderModal } from "../components/TopicReorderModal";
 import {
     deleteSessionMaterialRequest,
     deleteSessionRequest,
+    reorderCourseSessionsRequest,
+    reorderCourseTopicsRequest,
     updateVideoSessionRequest,
 } from "@/lib/api/sessions";
 
@@ -74,14 +80,28 @@ export function CurriculumView({
 }: CurriculumViewProps) {
     const canManage = Boolean(isInstructor || isTeacher);
 
+    // Local ordered sessions synchronized with prop
+    const [orderedSessions, setOrderedSessions] = useState<SessionDto[]>(sessions);
+
+    useEffect(() => {
+        setOrderedSessions(sessions);
+    }, [sessions]);
+
+    // Reordering status and drag-and-drop state
+    const [isReordering, setIsReordering] = useState(false);
+    const [reorderStatus, setReorderStatus] = useState<"saving" | "saved" | "error" | null>(null);
+    const [draggingSessionId, setDraggingSessionId] = useState<number | null>(null);
+    const [dragOverSessionId, setDragOverSessionId] = useState<number | null>(null);
+    const [dragOverPosition, setDragOverPosition] = useState<"before" | "after" | null>(null);
+
     // Group real sessions strictly by topic - NO DUMMY DATA
     const topicGroups: LectureTopicGroup[] = useMemo(() => {
-        if (!sessions || sessions.length === 0) {
+        if (!orderedSessions || orderedSessions.length === 0) {
             return [];
         }
 
         const groupMap: Record<string, SessionDto[]> = {};
-        for (const s of sessions) {
+        for (const s of orderedSessions) {
             const topicKey = s.topic?.trim() || "General Videos";
             if (!groupMap[topicKey]) {
                 groupMap[topicKey] = [];
@@ -94,7 +114,7 @@ export function CurriculumView({
             title,
             sessions: sList,
         }));
-    }, [sessions]);
+    }, [orderedSessions]);
 
     // Active topic & session selection
     const [selectedTopicId, setSelectedTopicId] = useState<string>("");
@@ -125,6 +145,7 @@ export function CurriculumView({
     const [videoModalOpen, setVideoModalOpen] = useState(false);
     const [editingSession, setEditingSession] = useState<SessionDto | null>(null);
     const [uploadHandoutOpen, setUploadHandoutOpen] = useState(false);
+    const [topicReorderModalOpen, setTopicReorderModalOpen] = useState(false);
 
     // Delete confirmation
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -280,24 +301,24 @@ export function CurriculumView({
 
     // Progress calculation based on real sessions
     const overallProgress = useMemo(() => {
-        if (sessions.length === 0) {
+        if (orderedSessions.length === 0) {
             return { percent: 0, completedCount: 0, totalCount: 0 };
         }
         let completed = 0;
-        sessions.forEach((s) => {
+        orderedSessions.forEach((s) => {
             if (watchRecords[s.id]?.isFullyWatched) {
                 completed++;
             }
         });
-        const percent = Math.round((completed / sessions.length) * 100);
+        const percent = Math.round((completed / orderedSessions.length) * 100);
         return {
             percent,
             completedCount: completed,
-            totalCount: sessions.length,
+            totalCount: orderedSessions.length,
         };
-    }, [sessions, watchRecords]);
+    }, [orderedSessions, watchRecords]);
 
-    const totalVideoCount = sessions.length;
+    const totalVideoCount = orderedSessions.length;
 
     const handleSelectVideo = (topic: LectureTopicGroup, session: SessionDto) => {
         setSelectedTopicId(topic.id);
@@ -368,7 +389,20 @@ export function CurriculumView({
         try {
             setIsDeleting(true);
             if (sessionToDelete) {
-                await deleteSessionRequest(sessionToDelete.id);
+                const deletedId = sessionToDelete.id;
+                // If currently selected, transition to next available
+                if (selectedSessionId === deletedId) {
+                    const remaining = orderedSessions.filter((s) => s.id !== deletedId);
+                    if (remaining.length > 0) {
+                        const curIdx = orderedSessions.findIndex((s) => s.id === deletedId);
+                        const nextSession = remaining[curIdx] || remaining[curIdx - 1] || remaining[0];
+                        setSelectedSessionId(nextSession.id);
+                    } else {
+                        setSelectedSessionId(null);
+                    }
+                }
+                await deleteSessionRequest(deletedId);
+                setOrderedSessions((prev) => prev.filter((s) => s.id !== deletedId));
                 setSessionToDelete(null);
                 setDeleteModalOpen(false);
                 if (onSessionsChange) {
@@ -393,6 +427,173 @@ export function CurriculumView({
         } finally {
             setIsDeleting(false);
         }
+    };
+
+    // Sequence reordering handlers (saved in DB, not localStorage)
+    const persistSequence = async (newList: SessionDto[]) => {
+        if (!courseId) return;
+        setIsReordering(true);
+        setReorderStatus("saving");
+        try {
+            const items = newList.map((s, idx) => ({
+                id: s.id,
+                sessionNumber: idx + 1,
+                topic: s.topic,
+            }));
+            await reorderCourseSessionsRequest(courseId, { items });
+            setReorderStatus("saved");
+            setTimeout(() => {
+                setReorderStatus(null);
+            }, 2500);
+            if (onSessionsChange) {
+                onSessionsChange();
+            }
+        } catch (err) {
+            console.error("Failed to save sequence to database", err);
+            setReorderStatus("error");
+            setTimeout(() => {
+                setReorderStatus(null);
+            }, 3000);
+        } finally {
+            setIsReordering(false);
+        }
+    };
+
+    const moveSession = async (session: SessionDto, direction: "up" | "down") => {
+        const topicSessions = orderedSessions.filter(
+            (s) => (s.topic?.trim() || "General Videos") === (session.topic?.trim() || "General Videos")
+        );
+        const topicIdx = topicSessions.findIndex((s) => s.id === session.id);
+        const targetTopicIdx = direction === "up" ? topicIdx - 1 : topicIdx + 1;
+        if (targetTopicIdx < 0 || targetTopicIdx >= topicSessions.length) return;
+
+        const swapSession = topicSessions[targetTopicIdx];
+        const fromIdx = orderedSessions.findIndex((s) => s.id === session.id);
+        const toIdx = orderedSessions.findIndex((s) => s.id === swapSession.id);
+        if (fromIdx === -1 || toIdx === -1) return;
+
+        const next = [...orderedSessions];
+        const [moved] = next.splice(fromIdx, 1);
+        next.splice(toIdx, 0, moved);
+
+        setOrderedSessions(next);
+        await persistSequence(next);
+    };
+
+    const modalTopics = useMemo(
+        () =>
+            topicGroups.map((g) => ({
+                id: g.id,
+                title: g.title,
+                count: g.sessions.length,
+            })),
+        [topicGroups]
+    );
+
+    const moveTopicQuickly = async (topicTitle: string, direction: "up" | "down") => {
+        if (!courseId) return;
+        const currentOrder = topicGroups.map((g) => g.title);
+        const idx = currentOrder.indexOf(topicTitle);
+        const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+        if (idx === -1 || targetIdx < 0 || targetIdx >= currentOrder.length) return;
+
+        const nextOrder = [...currentOrder];
+        const [moved] = nextOrder.splice(idx, 1);
+        nextOrder.splice(targetIdx, 0, moved);
+
+        setIsReordering(true);
+        setReorderStatus("saving");
+        try {
+            const updated = await reorderCourseTopicsRequest(courseId, { topics: nextOrder });
+            setOrderedSessions(updated);
+            setReorderStatus("saved");
+            setTimeout(() => setReorderStatus(null), 2000);
+            if (onSessionsChange) {
+                onSessionsChange();
+            }
+        } catch (err) {
+            console.error("Failed to reorder topics in database", err);
+            setReorderStatus("error");
+            setTimeout(() => setReorderStatus(null), 3000);
+        } finally {
+            setIsReordering(false);
+        }
+    };
+
+    const handleDragStart = (e: React.DragEvent, session: SessionDto) => {
+        e.dataTransfer.setData("text/plain", String(session.id));
+        e.dataTransfer.effectAllowed = "move";
+        setDraggingSessionId(session.id);
+    };
+
+    const handleDragOver = (e: React.DragEvent, targetSession: SessionDto) => {
+        e.preventDefault();
+        if (!draggingSessionId || draggingSessionId === targetSession.id) return;
+
+        // Disallow cross-topic dragging: video reordering must NEVER change the topic of video
+        const draggedSession = orderedSessions.find((s) => s.id === draggingSessionId);
+        const draggedTopic = draggedSession?.topic?.trim() || "General Videos";
+        const targetTopic = targetSession.topic?.trim() || "General Videos";
+        if (draggedTopic !== targetTopic) {
+            return;
+        }
+
+        e.dataTransfer.dropEffect = "move";
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        const position = e.clientY < mid ? "before" : "after";
+
+        setDragOverSessionId(targetSession.id);
+        setDragOverPosition(position);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        const related = e.relatedTarget as Node | null;
+        if (!e.currentTarget.contains(related)) {
+            setDragOverSessionId(null);
+            setDragOverPosition(null);
+        }
+    };
+
+    const handleDrop = async (e: React.DragEvent, targetSession: SessionDto) => {
+        e.preventDefault();
+        const draggedId = Number(e.dataTransfer.getData("text/plain")) || draggingSessionId;
+        setDraggingSessionId(null);
+        setDragOverSessionId(null);
+        setDragOverPosition(null);
+
+        if (!draggedId || draggedId === targetSession.id) return;
+
+        const draggedItem = orderedSessions.find((s) => s.id === draggedId);
+        if (!draggedItem) return;
+
+        const draggedTopic = draggedItem.topic?.trim() || "General Videos";
+        const targetTopic = targetSession.topic?.trim() || "General Videos";
+
+        // Strictly enforce: video reordering must NEVER change the topic of video
+        if (draggedTopic !== targetTopic) {
+            return;
+        }
+
+        const fromIdx = orderedSessions.findIndex((s) => s.id === draggedId);
+        if (fromIdx === -1) return;
+
+        const next = [...orderedSessions];
+        const [moved] = next.splice(fromIdx, 1);
+
+        let toIdx = next.findIndex((s) => s.id === targetSession.id);
+        if (toIdx === -1) return;
+
+        if (dragOverPosition === "after") {
+            toIdx += 1;
+        }
+
+        // Keep the moved video's topic completely unchanged
+        next.splice(toIdx, 0, moved);
+
+        setOrderedSessions(next);
+        await persistSequence(next);
     };
 
     // Materials list for current session
@@ -420,11 +621,11 @@ export function CurriculumView({
     // All available topics for topic selection
     const allTopicTitles = useMemo(() => {
         const set = new Set<string>();
-        sessions.forEach((s) => {
+        orderedSessions.forEach((s) => {
             if (s.topic?.trim()) set.add(s.topic.trim());
         });
         return Array.from(set);
-    }, [sessions]);
+    }, [orderedSessions]);
 
     // ── LOADING STATE ───────────────────────────────────────────────────────
     if (isLoading) {
@@ -439,7 +640,7 @@ export function CurriculumView({
     }
 
     // ── EMPTY STATE ─────────────────────────────────────────────────────────
-    if (!sessions || sessions.length === 0) {
+    if (!orderedSessions || orderedSessions.length === 0) {
         return (
             <div className="min-h-[70vh] flex items-center justify-center p-6 bg-[#f8fafc] dark:bg-slate-950">
                 <div className="w-full max-w-lg rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-8 sm:p-10 text-center shadow-xl shadow-slate-200/40 dark:shadow-none">
@@ -505,7 +706,30 @@ export function CurriculumView({
                     </div>
 
                     {canManage && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Separate Topic Area beside Edit Video / Delete Video / Add Video */}
+                            <div className="flex items-center gap-1.5 rounded-xl border border-indigo-200/90 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/40 p-1">
+                                <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hidden sm:inline px-1">
+                                    Topics:
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setTopicReorderModalOpen(true)}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+                                    title="Reorder course topics"
+                                >
+                                    <Layers className="h-3.5 w-3.5" />
+                                    <span>Reorder Topics</span>
+                                    {topicGroups.length > 0 && (
+                                        <span className="ml-0.5 rounded-md bg-indigo-800/70 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                                            {topicGroups.length}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+
+                            <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 hidden sm:block" />
+
                             {currentSession && (
                                 <>
                                     <button
@@ -1105,6 +1329,30 @@ export function CurriculumView({
                                     </div>
                                 </div>
 
+                                {/* Reorder status feedback for instructor */}
+                                {canManage && (
+                                    <div className="mt-2 flex items-center justify-between text-[11px] px-0.5">
+                                        <span className="text-slate-400 dark:text-slate-500">
+                                            Drag or use arrows to reorder
+                                        </span>
+                                        {reorderStatus === "saving" && (
+                                            <span className="flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400 animate-pulse">
+                                                <Loader2 className="h-3 w-3 animate-spin" /> Saving sequence...
+                                            </span>
+                                        )}
+                                        {reorderStatus === "saved" && (
+                                            <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <Check className="h-3 w-3" /> Saved to DB
+                                            </span>
+                                        )}
+                                        {reorderStatus === "error" && (
+                                            <span className="flex items-center gap-1 font-semibold text-rose-600 dark:text-rose-400">
+                                                <AlertCircle className="h-3 w-3" /> Could not save
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Progress Bar */}
                                 <div className="mt-2 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div
@@ -1122,7 +1370,7 @@ export function CurriculumView({
                                             onChange={(e) => setSelectedTopicFilter(e.target.value)}
                                             className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 py-1.5 pl-8.5 pr-8 text-xs font-medium text-slate-800 dark:text-slate-100 focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] outline-none transition-all cursor-pointer shadow-2xs hover:border-slate-300 dark:hover:border-slate-600"
                                         >
-                                            <option value="all">All Topics ({sessions.length})</option>
+                                            <option value="all">All Topics ({orderedSessions.length})</option>
                                             {topicGroups.map((group) => (
                                                 <option key={group.id} value={group.id}>
                                                     {group.title} ({group.sessions.length})
@@ -1171,15 +1419,41 @@ export function CurriculumView({
                                         </button>
                                     </div>
                                 ) : (
-                                    filteredTopics.map((topic) => (
+                                    filteredTopics.map((topic, topicIndex) => (
                                         <div key={topic.id} className="space-y-1.5">
                                             {/* Topic Section Header */}
-                                            <div className="px-2 py-1 flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                                <span>{topic.title}</span>
-                                                <span className="text-[10px] font-normal text-slate-400">
-                                                    {topic.sessions.length}{" "}
-                                                    {topic.sessions.length === 1 ? "video" : "videos"}
-                                                </span>
+                                            <div className="px-2.5 py-1.5 flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider rounded-lg bg-slate-100/70 dark:bg-slate-800/50">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span className="truncate">{topic.title}</span>
+                                                    <span className="text-[10px] font-normal text-slate-400 lowercase shrink-0">
+                                                        ({topic.sessions.length} {topic.sessions.length === 1 ? "video" : "videos"})
+                                                    </span>
+                                                </div>
+                                                {canManage && topicGroups.length > 1 && (
+                                                    <div
+                                                        className="flex items-center gap-0.5 shrink-0"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            disabled={isReordering || topicIndex === 0}
+                                                            onClick={() => moveTopicQuickly(topic.title, "up")}
+                                                            title={`Move "${topic.title}" topic up`}
+                                                            className="h-5 w-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200/80 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-20 disabled:pointer-events-none cursor-pointer"
+                                                        >
+                                                            <ChevronUp className="h-3.5 w-3.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={isReordering || topicIndex === topicGroups.length - 1}
+                                                            onClick={() => moveTopicQuickly(topic.title, "down")}
+                                                            title={`Move "${topic.title}" topic down`}
+                                                            className="h-5 w-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-800 hover:bg-slate-200/80 dark:hover:text-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-20 disabled:pointer-events-none cursor-pointer"
+                                                        >
+                                                            <ChevronDown className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Sessions inside this Topic */}
@@ -1201,26 +1475,53 @@ export function CurriculumView({
                                                     return (
                                                         <div
                                                             key={session.id}
+                                                            draggable={canManage}
+                                                            onDragStart={(e) => canManage && handleDragStart(e, session)}
+                                                            onDragOver={(e) => canManage && handleDragOver(e, session)}
+                                                            onDragLeave={handleDragLeave}
+                                                            onDrop={(e) => canManage && handleDrop(e, session)}
                                                             onClick={() => handleSelectVideo(topic, session)}
-                                                            className={`group relative flex items-center gap-2.5 rounded-xl p-2 cursor-pointer transition-all ${
+                                                            className={`group relative flex items-center gap-2 rounded-xl p-2 cursor-pointer transition-all ${
                                                                 isCurrent
                                                                     ? "bg-blue-50/80 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/60 shadow-2xs"
                                                                     : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent"
+                                                            } ${
+                                                                draggingSessionId === session.id
+                                                                    ? "opacity-35 scale-[0.98] ring-1 ring-blue-400 border-dashed border-blue-400"
+                                                                    : ""
+                                                            } ${
+                                                                dragOverSessionId === session.id && dragOverPosition === "before"
+                                                                    ? "border-t-2 border-t-[#1a73e8] bg-blue-50/40 dark:bg-blue-950/30"
+                                                                    : dragOverSessionId === session.id && dragOverPosition === "after"
+                                                                    ? "border-b-2 border-b-[#1a73e8] bg-blue-50/40 dark:bg-blue-950/30"
+                                                                    : ""
                                                             }`}
                                                         >
-                                                            {/* Play / Watched indicator */}
-                                                            <div className="w-4 shrink-0 text-center">
-                                                                {isCurrent ? (
-                                                                    <Play className="h-3 w-3 text-[#1a73e8] dark:text-blue-400 fill-current mx-auto" />
-                                                                ) : isFullyWatched ? (
-                                                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 mx-auto" />
-                                                                ) : watchedSecs > 0 ? (
-                                                                    <Clock className="h-3 w-3 text-[#1a73e8] dark:text-blue-400 mx-auto" />
-                                                                ) : (
-                                                                    <span className="text-xs font-normal text-slate-400 dark:text-slate-500">
-                                                                        {index + 1}
-                                                                    </span>
+                                                            {/* Drag handle & Play / Watched indicator */}
+                                                            <div className="flex items-center gap-0.5 shrink-0">
+                                                                {canManage && (
+                                                                    <button
+                                                                        type="button"
+                                                                        title="Drag to rearrange video sequence"
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        className="cursor-grab active:cursor-grabbing p-0.5 text-slate-300 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                                                    >
+                                                                        <GripVertical className="h-3.5 w-3.5" />
+                                                                    </button>
                                                                 )}
+                                                                <div className="w-4 text-center">
+                                                                    {isCurrent ? (
+                                                                        <Play className="h-3 w-3 text-[#1a73e8] dark:text-blue-400 fill-current mx-auto" />
+                                                                    ) : isFullyWatched ? (
+                                                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                                                                    ) : watchedSecs > 0 ? (
+                                                                        <Clock className="h-3 w-3 text-[#1a73e8] dark:text-blue-400 mx-auto" />
+                                                                    ) : (
+                                                                        <span className="text-xs font-normal text-slate-400 dark:text-slate-500">
+                                                                            {index + 1}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
 
                                                             {/* Thumbnail */}
@@ -1286,6 +1587,53 @@ export function CurriculumView({
                                                                     <span>{durationText}</span>
                                                                 </div>
                                                             </div>
+
+                                                            {/* Instructor Actions: Move Up, Move Down, Edit, Delete */}
+                                                            {canManage && (
+                                                                <div
+                                                                    className="flex flex-col sm:flex-row items-center gap-0.5 shrink-0 pl-1"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <div className="flex items-center gap-0.5">
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={isReordering || index === 0}
+                                                                            onClick={() => moveSession(session, "up")}
+                                                                            title="Move video up in sequence"
+                                                                            className="h-6 w-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-200/70 dark:hover:text-slate-100 dark:hover:bg-slate-750 transition-colors disabled:opacity-20 disabled:pointer-events-none cursor-pointer"
+                                                                        >
+                                                                            <ChevronUp className="h-3.5 w-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={isReordering || index === topic.sessions.length - 1}
+                                                                            onClick={() => moveSession(session, "down")}
+                                                                            title="Move video down in sequence"
+                                                                            className="h-6 w-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-200/70 dark:hover:text-slate-100 dark:hover:bg-slate-750 transition-colors disabled:opacity-20 disabled:pointer-events-none cursor-pointer"
+                                                                        >
+                                                                            <ChevronDown className="h-3.5 w-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-0.5">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => openEditVideoModal(session)}
+                                                                            title="Edit video"
+                                                                            className="h-6 w-6 flex items-center justify-center rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/50 transition-colors cursor-pointer"
+                                                                        >
+                                                                            <Edit3 className="h-3 w-3" />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => confirmDeleteSession(session)}
+                                                                            title="Delete video"
+                                                                            className="h-6 w-6 flex items-center justify-center rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                                                        >
+                                                                            <Trash2 className="h-3 w-3" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 })}
@@ -1336,6 +1684,20 @@ export function CurriculumView({
                 isDeleting={isDeleting}
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={executeDelete}
+            />
+
+            {/* Topic Reorder Modal */}
+            <TopicReorderModal
+                open={topicReorderModalOpen}
+                courseId={courseId}
+                initialTopics={modalTopics}
+                onClose={() => setTopicReorderModalOpen(false)}
+                onSuccess={(updatedSessions) => {
+                    setOrderedSessions(updatedSessions);
+                    if (onSessionsChange) {
+                        onSessionsChange();
+                    }
+                }}
             />
         </div>
     );

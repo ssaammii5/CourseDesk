@@ -96,3 +96,38 @@ export function deleteVideoMarkerRequest(
         method: "DELETE",
     });
 }
+
+export interface ReorderItemPayload {
+    id: number;
+    sessionNumber?: number;
+    topic?: string;
+}
+
+export interface ReorderSessionsPayload {
+    sessionIds?: number[];
+    items?: ReorderItemPayload[];
+}
+
+export function reorderCourseSessionsRequest(
+    courseId: number,
+    payload: ReorderSessionsPayload,
+): Promise<SessionDto[]> {
+    return apiFetch<SessionDto[]>(`/api/sessions/course/${courseId}/reorder`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+
+export interface CourseTopicsReorderPayload {
+    topics: string[];
+}
+
+export function reorderCourseTopicsRequest(
+    courseId: number,
+    payload: CourseTopicsReorderPayload,
+): Promise<SessionDto[]> {
+    return apiFetch<SessionDto[]>(`/api/sessions/course/${courseId}/reorder-topics`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
