@@ -70,6 +70,7 @@ export interface UserDto {
     email: string;
     role: string;
     isActive: boolean;
+    emailVerified?: boolean;
     createdAtUtc: string;
     avatar?: string;
     timezone?: string;

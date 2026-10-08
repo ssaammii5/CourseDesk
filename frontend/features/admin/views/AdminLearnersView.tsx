@@ -13,9 +13,11 @@ import {
     Eye,
     ShieldAlert,
     Clock,
+    Send,
 } from "lucide-react";
 import type { AdminUser, LearnerDetails } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
+import { resendVerificationRequest } from "@/lib/api/auth";
 import {
     deleteUserRequest,
     getUsersRequest,
@@ -39,6 +41,7 @@ function mapUserDtoToAdminUser(dto: UserDto): AdminUser {
         email: dto.email,
         role: (dto.role === "Student" ? "Learner" : dto.role) as AdminUser["role"],
         isActive: dto.isActive,
+        emailVerified: dto.emailVerified ?? true,
         createdAt: dto.createdAtUtc.split("T")[0],
         learnerDetails: details
             ? {
@@ -138,6 +141,7 @@ export function AdminLearnersView() {
     const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
     const [revokeTarget, setRevokeTarget] = useState<PendingInvitation | null>(null);
     const [copiedId, setCopiedId] = useState<number | null>(null);
+    const [resendingId, setResendingId] = useState<number | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     const loadUsers = async () => {
@@ -181,9 +185,15 @@ export function AdminLearnersView() {
                 u.name.toLowerCase().includes(search.toLowerCase()) ||
                 u.email.toLowerCase().includes(search.toLowerCase()) ||
                 idVal.toLowerCase().includes(search.toLowerCase());
-            const matchStatus =
-                statusFilter === "all" ||
-                (statusFilter === "active" ? u.isActive : !u.isActive);
+            
+            let matchStatus = true;
+            if (statusFilter === "active") {
+                matchStatus = u.isActive && (u.emailVerified ?? true);
+            } else if (statusFilter === "inactive") {
+                matchStatus = !u.isActive;
+            } else if (statusFilter === "unverified") {
+                matchStatus = !(u.emailVerified ?? true);
+            }
 
             return matchSearch && matchStatus;
         });
@@ -252,6 +262,19 @@ export function AdminLearnersView() {
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to revoke invitation.");
             setRevokeTarget(null);
+        }
+    };
+
+    const handleResendOtp = async (u: AdminUser) => {
+        try {
+            setResendingId(u.id);
+            await resendVerificationRequest(u.email);
+            setSuccessMessage(`Verification code sent to ${u.email}`);
+            window.setTimeout(() => setSuccessMessage(null), 5000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to resend verification code.");
+        } finally {
+            setResendingId(null);
         }
     };
 
@@ -329,16 +352,33 @@ export function AdminLearnersView() {
         {
             key: "isActive",
             header: "Status",
-            width: "10%",
-            render: (u: AdminUser) => <StatusBadge status={u.isActive ? "Active" : "Inactive"} />,
+            width: "12%",
+            render: (u: AdminUser) => {
+                if (u.emailVerified === false) {
+                    return <StatusBadge status="Unverified" variant="warning" />;
+                }
+                return <StatusBadge status={u.isActive ? "Active" : "Inactive"} />;
+            },
         },
         {
             key: "actions",
             header: "Actions",
-            width: "10%",
+            width: "14%",
             className: "text-right",
             render: (u: AdminUser) => (
                 <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                    {u.emailVerified === false && !isCoordinator && (
+                        <button
+                            type="button"
+                            title="Resend verification code to learner"
+                            disabled={resendingId === u.id}
+                            onClick={() => void handleResendOtp(u)}
+                            className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 dark:text-amber-300 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 transition disabled:opacity-50"
+                        >
+                            <Send className={`h-3 w-3 ${resendingId === u.id ? "animate-pulse" : ""}`} />
+                            <span>{resendingId === u.id ? "Sending..." : "Resend"}</span>
+                        </button>
+                    )}
                     <button
                         type="button"
                         title={isCoordinator ? "View learner details" : "Edit learner"}
@@ -606,6 +646,7 @@ export function AdminLearnersView() {
                             options={[
                                 { value: "all", label: "All Status" },
                                 { value: "active", label: "Active" },
+                                { value: "unverified", label: "Unverified" },
                                 { value: "inactive", label: "Inactive" },
                             ]}
                             size="md"

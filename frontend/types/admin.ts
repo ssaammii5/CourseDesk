@@ -85,6 +85,7 @@ export interface AdminUser {
     email: string;
     role: "Admin" | "Instructor" | "Learner" | "Teacher" | "Student" | "Coordinator";
     isActive: boolean;
+    emailVerified?: boolean;
     createdAt: string;
     learnerDetails?: LearnerDetails;
     instructorDetails?: InstructorDetails;

@@ -109,11 +109,6 @@ try:
     ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_attempts INTEGER DEFAULT 0;
     CREATE INDEX IF NOT EXISTS ix_user_table_email_verification_token ON user_table(email_verification_token);
 
-    -- Backfill existing users as verified so existing accounts are not locked out
-    UPDATE user_table 
-    SET email_verified = TRUE 
-    WHERE email_verified IS NULL OR email_verified = FALSE;
-
     -- Ensure coordinator_details_table exists
     CREATE TABLE IF NOT EXISTS coordinator_details_table (
         id SERIAL PRIMARY KEY,

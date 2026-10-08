@@ -175,6 +175,7 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
         email=user.email,
         role=user.role,
         is_active=user.is_active,
+        email_verified=getattr(user, "email_verified", True),
         created_at_utc=user.created_at_utc,
         avatar=avatar,
         timezone=user_timezone,

@@ -124,6 +124,7 @@ class UserResponseSchema(CamelModel):
     email: str
     role: str
     is_active: bool
+    email_verified: bool = True
     created_at_utc: datetime
     invite_token: str | None = None
     avatar: str = ""
