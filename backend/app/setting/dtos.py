@@ -33,21 +33,3 @@ class SystemHealthResponseSchema(CamelModel):
     storage_quota_mb: float = 51200.0
     status: str = "Healthy"
     database_status: str = "Connected"
-
-
-class SystemActivityItemSchema(CamelModel):
-    id: int | str
-    action: str
-    details: str
-    actor: str
-    timestamp: str
-    category: str = "system"
-
-
-class PaginatedSystemActivitiesSchema(CamelModel):
-    items: list[SystemActivityItemSchema]
-    total: int
-    has_more: bool
-    offset: int
-    limit: int
-    retention_days: int = 30

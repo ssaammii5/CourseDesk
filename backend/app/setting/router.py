@@ -6,7 +6,6 @@ from app.setting import controller
 from app.setting.dtos import (
     AppSettingResponseSchema,
     AppSettingSchema,
-    PaginatedSystemActivitiesSchema,
     PublicPlatformSettingsSchema,
     SystemHealthResponseSchema,
 )
@@ -58,17 +57,3 @@ def batch_upsert_settings(body: list[AppSettingSchema], db: DbSession, _admin: I
 def get_system_health(db: DbSession, _admin: IsAdmin):
     return controller.get_system_health(db)
 
-
-@setting_routes.get(
-    "/activities", response_model=PaginatedSystemActivitiesSchema, status_code=status.HTTP_200_OK
-)
-def get_system_activities(
-    db: DbSession,
-    _admin: IsAdmin,
-    limit: int = 15,
-    offset: int = 0,
-    search: str | None = None,
-):
-    return controller.get_system_activities(
-        db, limit=limit, offset=offset, search=search
-    )
