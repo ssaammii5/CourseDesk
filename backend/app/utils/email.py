@@ -71,6 +71,22 @@ This code is valid for 15 minutes. Enter it on the registration screen to comple
 If you did not sign up for CourseDesk, please ignore this email.
 """
 
+    if settings.RESEND_API_KEY:
+        try:
+            import resend
+
+            resend.api_key = settings.RESEND_API_KEY
+            resend.Emails.send({
+                "from": settings.RESEND_FROM or "onboarding@resend.dev",
+                "to": to_email,
+                "subject": subject,
+                "html": html_content,
+            })
+            logger.info("Verification code sent to %s via Resend API", to_email)
+            return True
+        except Exception as exc:
+            logger.error("Failed to send OTP email via Resend to %s: %s", to_email, exc)
+
     if settings.SMTP_HOST:
         try:
             msg = EmailMessage()
@@ -80,7 +96,7 @@ If you did not sign up for CourseDesk, please ignore this email.
             msg.set_content(plain_text)
             msg.add_alternative(html_content, subtype="html")
 
-            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:
+            with smtplib.SMTP(settings.SMTP_PORT == 587 and settings.SMTP_HOST or settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:
                 if settings.SMTP_PORT == 587:
                     server.starttls()
                 if settings.SMTP_USER and settings.SMTP_PASSWORD:
@@ -102,5 +118,31 @@ If you did not sign up for CourseDesk, please ignore this email.
     return True
 
 
+def send_resend_email(
+    to: str,
+    subject: str,
+    html: str,
+    from_email: str | None = None,
+) -> dict | None:
+    """Send an arbitrary email via Resend.
+    
+    Returns response dict if sent successfully, or None if failed or API key missing.
+    """
+    if not settings.RESEND_API_KEY:
+        logger.warning("Resend API key not configured")
+        return None
+
+    import resend
+
+    resend.api_key = settings.RESEND_API_KEY
+    return resend.Emails.send({
+        "from": from_email or settings.RESEND_FROM or "onboarding@resend.dev",
+        "to": to,
+        "subject": subject,
+        "html": html,
+    })
+
+
 # Backwards compatibility alias
 send_verification_email = send_otp_email
+

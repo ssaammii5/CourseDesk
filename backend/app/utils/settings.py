@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
     UPLOAD_DIR: str = "uploads"
 
+    # Email configuration
+    RESEND_API_KEY: str = ""
+    RESEND_FROM: str = "onboarding@resend.dev"
+
     # Optional SMTP configuration for email delivery
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
