@@ -572,7 +572,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                         label="First Name"
                         value={form.firstName}
                         onChange={(val) => setForm((p) => ({ ...p, firstName: val }))}
-                        placeholder="e.g. John"
+                        placeholder="Enter first name"
                         required
                         disabled={readOnly}
                     />
@@ -580,7 +580,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                         label="Last Name"
                         value={form.lastName}
                         onChange={(val) => setForm((p) => ({ ...p, lastName: val }))}
-                        placeholder="e.g. Doe"
+                        placeholder="Enter last name"
                         disabled={readOnly}
                     />
                     <div>
@@ -627,7 +627,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                             label="Professional Headline"
                             value={form.professionalHeadline}
                             onChange={(val) => setForm((p) => ({ ...p, professionalHeadline: val }))}
-                            placeholder="e.g. Lead Cloud Architect & Full-Stack Instructor"
+                            placeholder="Enter professional headline"
                             disabled={readOnly}
                         />
 
@@ -646,7 +646,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                                 value={form.shortBio}
                                 onChange={(e) => setForm((p) => ({ ...p, shortBio: e.target.value }))}
                                 disabled={readOnly}
-                                placeholder="Describe your background, teaching expertise, industry experience, and what learners can expect..."
+                                placeholder="Enter instructor bio..."
                                 className="w-full rounded-xl border border-gray-300 bg-white p-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                             />
                         </div>
@@ -680,7 +680,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                             value={form.shortBio}
                             onChange={(e) => setForm((p) => ({ ...p, shortBio: e.target.value }))}
                             disabled={readOnly}
-                            placeholder="Tell us about your learning goals, interests, or background..."
+                            placeholder="Enter short bio..."
                             className="w-full rounded-xl border border-gray-300 bg-white p-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                     </div>
@@ -752,7 +752,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                                 <div className="w-1/3 min-w-[120px]">
                                     <input
                                         type="text"
-                                        placeholder="Title (e.g. GitHub)"
+                                        placeholder="Enter link title (e.g. GitHub)"
                                         value={link.title}
                                         onChange={(e) => handleUpdateLink(idx, "title", e.target.value)}
                                         disabled={readOnly}
@@ -762,7 +762,7 @@ export function ProfileCard({ user: initialUser, readOnly = false }: ProfileCard
                                 <div className="flex-1">
                                     <input
                                         type="url"
-                                        placeholder="https://..."
+                                        placeholder="Enter link URL (https://...)"
                                         value={link.url}
                                         onChange={(e) => handleUpdateLink(idx, "url", e.target.value)}
                                         disabled={readOnly}

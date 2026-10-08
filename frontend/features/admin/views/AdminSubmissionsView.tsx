@@ -2,31 +2,16 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
-    Layers,
     Tag,
-    CalendarRange,
     BookOpen,
     Search,
     SlidersHorizontal,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { PROGRAM_TYPES } from "@/features/settings";
 import { DataTable, StatusBadge, ModernDropdown } from "@/components/ui";
 import { getSubmissionsRequest, type SubmissionDto } from "@/lib/api/submissions";
 
-function sessionRank(key: string): number {
-    const [period, yearStr] = key.split("/");
-    const year = Number(yearStr);
-    if (!Number.isFinite(year)) return 0;
-    const periodIndex = period === "July-December" ? 1 : 0;
-    return year * 2 + periodIndex;
-}
-
-const PROGRAM_ORDER: Record<string, number> = Object.fromEntries(
-    PROGRAM_TYPES.map((p, i) => [p, i])
-);
-
-/** Row shape used by the existing table / grouping logic (identical to before). */
+/** Row shape used by the existing table / grouping logic */
 interface SubmissionRow {
     id: number;
     assignmentId: number;
@@ -43,7 +28,6 @@ interface SubmissionRow {
     marks: number | null;
     feedback: string | null;
     submittedAt: string;
-    // extra context carried directly from the API (replaces mock lookups)
     program: string;
     department: string;
     session: string;
@@ -71,31 +55,20 @@ function mapDtoToRow(dto: SubmissionDto): SubmissionRow {
         feedback: dto.feedback,
         submittedAt: dto.submittedAtUtc ? dto.submittedAtUtc.split("T")[0] : "",
         program: dto.program ?? "Unknown",
-        department: dto.department ?? "Unknown",
+        department: dto.department ?? "General",
         session: dto.session ?? "Unknown",
     };
 }
 
 interface CourseGroup {
+    courseId: number;
     courseName: string;
     submissions: SubmissionRow[];
 }
 
-interface SessionGroup {
-    session: string;
+interface CategoryGroup {
+    name: string;
     courses: CourseGroup[];
-    count: number;
-}
-
-interface DeptGroup {
-    name: string;
-    sessions: SessionGroup[];
-    count: number;
-}
-
-interface ProgramGroup {
-    name: string;
-    departments: DeptGroup[];
     count: number;
 }
 
@@ -106,9 +79,8 @@ export function AdminSubmissionsView() {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [filtersOpen, setFiltersOpen] = useState(false);
-    const [programFilter, setProgramFilter] = useState("all");
-    const [departmentFilter, setDepartmentFilter] = useState("all");
-    const [sessionFilter, setSessionFilter] = useState("all");
+    const [categoryFilter, setCategoryFilter] = useState("all");
+    const [courseFilter, setCourseFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
     const loadSubmissions = useCallback(async () => {
@@ -127,23 +99,17 @@ export function AdminSubmissionsView() {
         void loadSubmissions();
     }, [loadSubmissions]);
 
-    const departmentOptions = useMemo(() => {
-        const base =
-            programFilter === "all"
-                ? submissions
-                : submissions.filter((s) => s.program === programFilter);
-        return Array.from(new Set(base.map((s) => s.department).filter(Boolean))).sort();
-    }, [submissions, programFilter]);
+    const categoryOptions = useMemo(() => {
+        return Array.from(new Set(submissions.map((s) => s.department).filter(Boolean))).sort();
+    }, [submissions]);
 
-    const sessionOptions = useMemo(() => {
+    const courseOptions = useMemo(() => {
         const base =
-            programFilter === "all"
+            categoryFilter === "all"
                 ? submissions
-                : submissions.filter((s) => s.program === programFilter);
-        return Array.from(new Set(base.map((s) => s.session).filter(Boolean))).sort(
-            (a, b) => sessionRank(b) - sessionRank(a)
-        );
-    }, [submissions, programFilter]);
+                : submissions.filter((s) => s.department === categoryFilter);
+        return Array.from(new Set(base.map((s) => s.courseName).filter(Boolean))).sort();
+    }, [submissions, categoryFilter]);
 
     const filtered = useMemo(() => {
         return submissions.filter((s) => {
@@ -152,83 +118,52 @@ export function AdminSubmissionsView() {
                 s.assignmentTitle.toLowerCase().includes(search.toLowerCase()) ||
                 s.courseName.toLowerCase().includes(search.toLowerCase()) ||
                 (s.learnerAcademicId || s.studentAcademicId).toLowerCase().includes(search.toLowerCase());
-            const matchProgram = programFilter === "all" || s.program === programFilter;
-            const matchDept = departmentFilter === "all" || s.department === departmentFilter;
-            const matchSession = sessionFilter === "all" || s.session === sessionFilter;
+            const matchCategory = categoryFilter === "all" || s.department === categoryFilter;
+            const matchCourse = courseFilter === "all" || s.courseName === courseFilter;
             const matchStatus = statusFilter === "all" || s.status === statusFilter;
-            return matchSearch && matchProgram && matchDept && matchSession && matchStatus;
+            return matchSearch && matchCategory && matchCourse && matchStatus;
         });
-    }, [submissions, search, programFilter, departmentFilter, sessionFilter, statusFilter]);
+    }, [submissions, search, categoryFilter, courseFilter, statusFilter]);
 
-    const activeFilterCount = [
-        programFilter,
-        departmentFilter,
-        sessionFilter,
-        statusFilter,
-    ].filter((f) => f !== "all").length;
+    const activeFilterCount = [categoryFilter, courseFilter, statusFilter].filter(
+        (f) => f !== "all"
+    ).length;
 
     const clearFilters = () => {
-        setProgramFilter("all");
-        setDepartmentFilter("all");
-        setSessionFilter("all");
+        setCategoryFilter("all");
+        setCourseFilter("all");
         setStatusFilter("all");
     };
 
-    const programGroups = useMemo<ProgramGroup[]>(() => {
-        const map = new Map<string, Map<string, Map<string, Map<string, SubmissionRow[]>>>>();
+    const categoryGroups = useMemo<CategoryGroup[]>(() => {
+        const map = new Map<string, Map<string, SubmissionRow[]>>();
 
         for (const s of filtered) {
-            if (!map.has(s.program)) map.set(s.program, new Map());
-            const deptMap = map.get(s.program)!;
-            if (!deptMap.has(s.department)) deptMap.set(s.department, new Map());
-            const sessionMap = deptMap.get(s.department)!;
-            if (!sessionMap.has(s.session)) sessionMap.set(s.session, new Map());
-            const courseMap = sessionMap.get(s.session)!;
+            const cat = s.department || "General";
+            if (!map.has(cat)) map.set(cat, new Map());
+            const courseMap = map.get(cat)!;
             if (!courseMap.has(s.courseName)) courseMap.set(s.courseName, []);
             courseMap.get(s.courseName)!.push(s);
         }
 
-        const programs = Array.from(map.keys()).sort((a, b) => {
-            const ia = PROGRAM_ORDER[a] ?? 99;
-            const ib = PROGRAM_ORDER[b] ?? 99;
-            return ia - ib || a.localeCompare(b);
-        });
-
-        return programs.map((program) => {
-            const deptMap = map.get(program)!;
-            const departments: DeptGroup[] = Array.from(deptMap.keys())
-                .sort((a, b) => a.localeCompare(b))
-                .map((deptName) => {
-                    const sessionMap = deptMap.get(deptName)!;
-                    const sessions: SessionGroup[] = Array.from(sessionMap.entries())
-                        .sort((a, b) => sessionRank(b[0]) - sessionRank(a[0]))
-                        .map(([session, courseMap]) => {
-                            const courses: CourseGroup[] = Array.from(courseMap.entries())
-                                .sort((a, b) => a[0].localeCompare(b[0]))
-                                .map(([courseName, rows]) => ({
-                                    courseName,
-                                    submissions: rows.sort((a, b) =>
-                                        (a.learnerName || a.studentName).localeCompare(b.learnerName || b.studentName)
-                                    ),
-                                }));
-                            return {
-                                session,
-                                courses,
-                                count: courses.reduce((sum, c) => sum + c.submissions.length, 0),
-                            };
-                        });
-                    return {
-                        name: deptName,
-                        sessions,
-                        count: sessions.reduce((sum, sess) => sum + sess.count, 0),
-                    };
-                });
-            return {
-                name: program,
-                departments,
-                count: departments.reduce((sum, d) => sum + d.count, 0),
-            };
-        });
+        return Array.from(map.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([categoryName, courseMap]) => {
+                const courses: CourseGroup[] = Array.from(courseMap.entries())
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([courseName, rows]) => ({
+                        courseId: rows[0]?.courseId ?? 0,
+                        courseName,
+                        submissions: rows.sort((a, b) =>
+                            (a.learnerName || a.studentName).localeCompare(b.learnerName || b.studentName)
+                        ),
+                    }));
+                return {
+                    name: categoryName,
+                    courses,
+                    count: courses.reduce((sum, c) => sum + c.submissions.length, 0),
+                };
+            });
     }, [filtered]);
 
     const handleRowClick = (submissionId: number) => {
@@ -366,47 +301,36 @@ export function AdminSubmissionsView() {
             </div>
 
             {filtersOpen && (
-                <div className="mt-4 grid gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm p-4 sm:grid-cols-2 lg:grid-cols-4 shadow-sm">
+                <div className="mt-4 grid gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm p-4 sm:grid-cols-2 lg:grid-cols-3 shadow-sm">
                     <div>
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Track / Level</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Category</span>
                         <ModernDropdown
-                            value={programFilter}
+                            value={categoryFilter}
                             onChange={(val) => {
-                                setProgramFilter(val);
-                                setDepartmentFilter("all");
-                                setSessionFilter("all");
+                                setCategoryFilter(val);
+                                setCourseFilter("all");
                             }}
                             options={[
-                                { value: "all", label: "All Tracks" },
-                                ...PROGRAM_TYPES.map((p) => ({ value: p, label: p })),
-                            ]}
-                            size="sm"
-                        />
-                    </div>
-                    <div>
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Category / Domain</span>
-                        <ModernDropdown
-                            value={departmentFilter}
-                            onChange={setDepartmentFilter}
-                            options={[
                                 { value: "all", label: "All Categories" },
-                                ...departmentOptions.map((d) => ({ value: d, label: d })),
+                                ...categoryOptions.map((c) => ({ value: c, label: c })),
                             ]}
                             size="sm"
                         />
                     </div>
+
                     <div>
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Cohort / Schedule</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Course</span>
                         <ModernDropdown
-                            value={sessionFilter}
-                            onChange={setSessionFilter}
+                            value={courseFilter}
+                            onChange={setCourseFilter}
                             options={[
-                                { value: "all", label: "All Cohorts" },
-                                ...sessionOptions.map((s) => ({ value: s, label: s })),
+                                { value: "all", label: "All Courses" },
+                                ...courseOptions.map((c) => ({ value: c, label: c })),
                             ]}
                             size="sm"
                         />
                     </div>
+
                     <div>
                         <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Status</span>
                         <ModernDropdown
@@ -432,77 +356,47 @@ export function AdminSubmissionsView() {
                     </div>
                 )}
 
-                {programGroups.map((pg) => (
-                    <section key={pg.name}>
+                {categoryGroups.map((cat) => (
+                    <section key={cat.name} className="space-y-6">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-200 dark:border-slate-800 pb-3">
                             <div className="flex min-w-0 items-center gap-3">
                                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7e3fd] dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300 sm:h-10 sm:w-10">
-                                    <Layers className="h-5 w-5" />
+                                    <Tag className="h-5 w-5" />
                                 </span>
-                                <h2 className="truncate text-xl text-gray-900 dark:text-slate-100 sm:text-2xl">{pg.name}</h2>
+                                <h2 className="truncate text-xl font-semibold text-gray-900 dark:text-slate-100 sm:text-2xl">
+                                    {cat.name}
+                                </h2>
                             </div>
                             <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-slate-400">
-                                {pg.count} submission{pg.count === 1 ? "" : "s"}
+                                {cat.count} submission{cat.count === 1 ? "" : "s"}
                             </span>
                         </div>
 
-                        {pg.departments.map((dept) => (
-                            <div key={dept.name} className="mt-6">
-                                <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                                    <div className="flex min-w-0 items-center gap-2">
-                                        <Tag className="h-4 w-4 shrink-0 text-gray-500 dark:text-slate-400" />
-                                        <h3 className="min-w-0 truncate text-lg text-gray-800 dark:text-slate-200 sm:text-xl">
-                                            {dept.name}
-                                        </h3>
+                        <div className="space-y-8">
+                            {cat.courses.map((course) => (
+                                <div key={course.courseName} className="space-y-3">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <BookOpen className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+                                        <span className="text-base font-semibold text-gray-800 dark:text-slate-200">
+                                            {course.courseName}
+                                        </span>
+                                        <span className="text-xs text-gray-500 dark:text-slate-400">
+                                            ({course.submissions.length} submission
+                                            {course.submissions.length === 1 ? "" : "s"})
+                                        </span>
                                     </div>
-                                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-slate-400">
-                                        {dept.count} submission{dept.count === 1 ? "" : "s"}
-                                    </span>
+                                    <DataTable
+                                        columns={columns}
+                                        data={course.submissions}
+                                        keyExtractor={(s) => s.id}
+                                        emptyMessage="No submissions in this course."
+                                        tableLayout="fixed"
+                                        minWidthClassName="min-w-[860px]"
+                                        onRowClick={(s) => handleRowClick(s.id)}
+                                    />
                                 </div>
-
-                                <div className="mt-4 space-y-6">
-                                    {dept.sessions.map((sess) => (
-                                        <div key={sess.session}>
-                                            <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
-                                                <CalendarRange className="h-4 w-4 text-[#174ea6] dark:text-blue-300" />
-                                                <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-3 py-1 text-xs font-medium text-[#174ea6] dark:text-blue-300">
-                                                    {sess.session}
-                                                </span>
-                                                <span className="text-xs text-gray-500 dark:text-slate-400">
-                                                    {sess.count} submission{sess.count === 1 ? "" : "s"}
-                                                </span>
-                                            </div>
-
-                                            <div className="space-y-5">
-                                                {sess.courses.map((course) => (
-                                                    <div key={course.courseName}>
-                                                        <div className="mb-2 flex items-center gap-2 px-1">
-                                                            <BookOpen className="h-4 w-4 text-gray-600 dark:text-slate-400" />
-                                                            <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">
-                                                                {course.courseName}
-                                                            </span>
-                                                            <span className="text-xs text-gray-500 dark:text-slate-400">
-                                                                ({course.submissions.length} submission
-                                                                {course.submissions.length === 1 ? "" : "s"})
-                                                            </span>
-                                                        </div>
-                                                        <DataTable
-                                                            columns={columns}
-                                                            data={course.submissions}
-                                                            keyExtractor={(s) => s.id}
-                                                            emptyMessage="No submissions in this course."
-                                                            tableLayout="fixed"
-                                                            minWidthClassName="min-w-[860px]"
-                                                            onRowClick={(s) => handleRowClick(s.id)}
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </section>
                 ))}
             </div>

@@ -449,42 +449,24 @@ export function AdminAssignmentDetailView({
                         <aside className="space-y-6">
                             <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
                                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">
-                                    Academic Scope
+                                    Course Details
                                 </h3>
                                 <dl className="space-y-3.5 text-xs">
-                                    <div className="flex items-start gap-3">
-                                        <Layers className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
-                                        <div>
-                                            <dt className="text-slate-500">Program</dt>
-                                            <dd className="font-medium text-slate-900 dark:text-slate-100">
-                                                {assignment.program ?? "—"}
-                                            </dd>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <Tag className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
-                                        <div>
-                                            <dt className="text-slate-500">Department</dt>
-                                            <dd className="font-medium text-slate-900 dark:text-slate-100">
-                                                {assignment.department ?? "—"}
-                                            </dd>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <CalendarRange className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
-                                        <div>
-                                            <dt className="text-slate-500">Session</dt>
-                                            <dd className="font-medium text-slate-900 dark:text-slate-100">
-                                                {assignment.session ?? "—"}
-                                            </dd>
-                                        </div>
-                                    </div>
                                     <div className="flex items-start gap-3">
                                         <BookOpen className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
                                         <div>
                                             <dt className="text-slate-500">Course</dt>
                                             <dd className="font-medium text-slate-900 dark:text-slate-100">
                                                 {assignment.courseName ?? "—"}
+                                            </dd>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <Tag className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
+                                        <div>
+                                            <dt className="text-slate-500">Category</dt>
+                                            <dd className="font-medium text-slate-900 dark:text-slate-100">
+                                                {assignment.department ?? "—"}
                                             </dd>
                                         </div>
                                     </div>

@@ -2,17 +2,13 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
-    ClipboardList,
-    Layers,
     Tag,
-    CalendarRange,
     BookOpen,
     Search,
     SlidersHorizontal,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AdminAssignment } from "@/types";
-import { PROGRAM_TYPES } from "@/features/settings";
 import { DataTable, StatusBadge, ModernDropdown } from "@/components/ui";
 import {
     getAssignmentsRequest,
@@ -25,7 +21,7 @@ function mapDtoToAdminAssignment(dto: AssignmentDto): AdminAssignment {
         courseId: dto.courseId,
         courseName: dto.courseName ?? "Unknown Course",
         program: dto.program ?? "Unknown",
-        department: dto.department ?? "Unknown",
+        department: dto.department ?? "General",
         session: dto.session ?? "Unknown",
         title: dto.title,
         description: dto.description,
@@ -39,38 +35,15 @@ function mapDtoToAdminAssignment(dto: AssignmentDto): AdminAssignment {
     };
 }
 
-function sessionRank(key: string): number {
-    const [period, yearStr] = key.split("/");
-    const year = Number(yearStr);
-    if (!Number.isFinite(year)) return 0;
-    const periodIndex = period === "July-December" ? 1 : 0;
-    return year * 2 + periodIndex;
-}
-
-const PROGRAM_ORDER: Record<string, number> = Object.fromEntries(
-    PROGRAM_TYPES.map((p, i) => [p, i])
-);
-
 interface CourseGroup {
+    courseId: number;
     courseName: string;
     assignments: AdminAssignment[];
 }
 
-interface SessionGroup {
-    session: string;
+interface CategoryGroup {
+    name: string;
     courses: CourseGroup[];
-    count: number;
-}
-
-interface DeptGroup {
-    name: string;
-    sessions: SessionGroup[];
-    count: number;
-}
-
-interface ProgramGroup {
-    name: string;
-    departments: DeptGroup[];
     count: number;
 }
 
@@ -81,9 +54,8 @@ export function AdminAssignmentsView() {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [filtersOpen, setFiltersOpen] = useState(false);
-    const [programFilter, setProgramFilter] = useState("all");
-    const [departmentFilter, setDepartmentFilter] = useState("all");
-    const [sessionFilter, setSessionFilter] = useState("all");
+    const [categoryFilter, setCategoryFilter] = useState("all");
+    const [courseFilter, setCourseFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
     const loadAssignments = useCallback(async () => {
@@ -102,23 +74,17 @@ export function AdminAssignmentsView() {
         void loadAssignments();
     }, [loadAssignments]);
 
-    const departmentOptions = useMemo(() => {
-        const base =
-            programFilter === "all"
-                ? assignments
-                : assignments.filter((a) => a.program === programFilter);
-        return Array.from(new Set(base.map((a) => a.department).filter(Boolean))).sort();
-    }, [assignments, programFilter]);
+    const categoryOptions = useMemo(() => {
+        return Array.from(new Set(assignments.map((a) => a.department).filter(Boolean))).sort();
+    }, [assignments]);
 
-    const sessionOptions = useMemo(() => {
+    const courseOptions = useMemo(() => {
         const base =
-            programFilter === "all"
+            categoryFilter === "all"
                 ? assignments
-                : assignments.filter((a) => a.program === programFilter);
-        return Array.from(new Set(base.map((a) => a.session).filter(Boolean))).sort(
-            (a, b) => sessionRank(b) - sessionRank(a)
-        );
-    }, [assignments, programFilter]);
+                : assignments.filter((a) => a.department === categoryFilter);
+        return Array.from(new Set(base.map((a) => a.courseName).filter(Boolean))).sort();
+    }, [assignments, categoryFilter]);
 
     const filtered = useMemo(() => {
         return assignments.filter((a) => {
@@ -126,78 +92,50 @@ export function AdminAssignmentsView() {
                 a.title.toLowerCase().includes(search.toLowerCase()) ||
                 a.createdBy.toLowerCase().includes(search.toLowerCase()) ||
                 a.courseName.toLowerCase().includes(search.toLowerCase());
-            const matchProgram = programFilter === "all" || a.program === programFilter;
-            const matchDept = departmentFilter === "all" || a.department === departmentFilter;
-            const matchSession = sessionFilter === "all" || a.session === sessionFilter;
+            const matchCategory = categoryFilter === "all" || a.department === categoryFilter;
+            const matchCourse = courseFilter === "all" || a.courseName === courseFilter;
             const matchStatus = statusFilter === "all" || a.status === statusFilter;
-            return matchSearch && matchProgram && matchDept && matchSession && matchStatus;
+            return matchSearch && matchCategory && matchCourse && matchStatus;
         });
-    }, [assignments, search, programFilter, departmentFilter, sessionFilter, statusFilter]);
+    }, [assignments, search, categoryFilter, courseFilter, statusFilter]);
 
-    const activeFilterCount = [programFilter, departmentFilter, sessionFilter, statusFilter].filter(
+    const activeFilterCount = [categoryFilter, courseFilter, statusFilter].filter(
         (f) => f !== "all"
     ).length;
 
     const clearFilters = () => {
-        setProgramFilter("all");
-        setDepartmentFilter("all");
-        setSessionFilter("all");
+        setCategoryFilter("all");
+        setCourseFilter("all");
         setStatusFilter("all");
     };
 
-    const programGroups = useMemo<ProgramGroup[]>(() => {
-        const map = new Map<string, Map<string, Map<string, Map<string, AdminAssignment[]>>>>();
+    const categoryGroups = useMemo<CategoryGroup[]>(() => {
+        const map = new Map<string, Map<string, AdminAssignment[]>>();
 
         for (const a of filtered) {
-            if (!map.has(a.program)) map.set(a.program, new Map());
-            const deptMap = map.get(a.program)!;
-            if (!deptMap.has(a.department)) deptMap.set(a.department, new Map());
-            const sessionMap = deptMap.get(a.department)!;
-            if (!sessionMap.has(a.session)) sessionMap.set(a.session, new Map());
-            const courseMap = sessionMap.get(a.session)!;
+            const cat = a.department || "General";
+            if (!map.has(cat)) map.set(cat, new Map());
+            const courseMap = map.get(cat)!;
             if (!courseMap.has(a.courseName)) courseMap.set(a.courseName, []);
             courseMap.get(a.courseName)!.push(a);
         }
 
-        const programs = Array.from(map.keys()).sort((a, b) => {
-            const ia = PROGRAM_ORDER[a] ?? 99;
-            const ib = PROGRAM_ORDER[b] ?? 99;
-            return ia - ib || a.localeCompare(b);
-        });
-
-        return programs.map((program) => {
-            const deptMap = map.get(program)!;
-            const departments: DeptGroup[] = Array.from(deptMap.keys())
-                .sort((a, b) => a.localeCompare(b))
-                .map((deptName) => {
-                    const sessionMap = deptMap.get(deptName)!;
-                    const sessions: SessionGroup[] = Array.from(sessionMap.entries())
-                        .sort((a, b) => sessionRank(b[0]) - sessionRank(a[0]))
-                        .map(([session, courseMap]) => {
-                            const courses: CourseGroup[] = Array.from(courseMap.entries())
-                                .sort((a, b) => a[0].localeCompare(b[0]))
-                                .map(([courseName, assignments]) => ({
-                                    courseName,
-                                    assignments: assignments.sort((a, b) => a.title.localeCompare(b.title)),
-                                }));
-                            return {
-                                session,
-                                courses,
-                                count: courses.reduce((s, c) => s + c.assignments.length, 0),
-                            };
-                        });
-                    return {
-                        name: deptName,
-                        sessions,
-                        count: sessions.reduce((s, sess) => s + sess.count, 0),
-                    };
-                });
-            return {
-                name: program,
-                departments,
-                count: departments.reduce((s, d) => s + d.count, 0),
-            };
-        });
+        return Array.from(map.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([categoryName, courseMap]) => {
+                const courses: CourseGroup[] = Array.from(courseMap.entries())
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([courseName, list]) => ({
+                        courseId: list[0]?.courseId ?? 0,
+                        courseName,
+                        assignments: list.sort((a, b) => a.title.localeCompare(b.title)),
+                    }));
+                return {
+                    name: categoryName,
+                    courses,
+                    count: courses.reduce((s, c) => s + c.assignments.length, 0),
+                };
+            });
     }, [filtered]);
 
     const handleRowClick = (assignmentId: number) => {
@@ -304,45 +242,31 @@ export function AdminAssignmentsView() {
 
             {/* Filter Panel */}
             {filtersOpen && (
-                <div className="mt-4 grid gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm p-4 sm:grid-cols-2 lg:grid-cols-4 shadow-sm">
+                <div className="mt-4 grid gap-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm p-4 sm:grid-cols-2 lg:grid-cols-3 shadow-sm">
                     <div>
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Track / Level</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Category</span>
                         <ModernDropdown
-                            value={programFilter}
+                            value={categoryFilter}
                             onChange={(val) => {
-                                setProgramFilter(val);
-                                setDepartmentFilter("all");
-                                setSessionFilter("all");
+                                setCategoryFilter(val);
+                                setCourseFilter("all");
                             }}
                             options={[
-                                { value: "all", label: "All Tracks" },
-                                ...PROGRAM_TYPES.map((p) => ({ value: p, label: p })),
-                            ]}
-                            size="sm"
-                        />
-                    </div>
-
-                    <div>
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Category / Domain</span>
-                        <ModernDropdown
-                            value={departmentFilter}
-                            onChange={setDepartmentFilter}
-                            options={[
                                 { value: "all", label: "All Categories" },
-                                ...departmentOptions.map((d) => ({ value: d, label: d })),
+                                ...categoryOptions.map((c) => ({ value: c, label: c })),
                             ]}
                             size="sm"
                         />
                     </div>
 
                     <div>
-                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Cohort / Schedule</span>
+                        <span className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-slate-400">Course</span>
                         <ModernDropdown
-                            value={sessionFilter}
-                            onChange={setSessionFilter}
+                            value={courseFilter}
+                            onChange={setCourseFilter}
                             options={[
-                                { value: "all", label: "All Cohorts" },
-                                ...sessionOptions.map((s) => ({ value: s, label: s })),
+                                { value: "all", label: "All Courses" },
+                                ...courseOptions.map((c) => ({ value: c, label: c })),
                             ]}
                             size="sm"
                         />
@@ -374,75 +298,45 @@ export function AdminAssignmentsView() {
                     </div>
                 )}
 
-                {programGroups.map((pg) => (
-                    <section key={pg.name}>
-                        {/* Program Header */}
+                {categoryGroups.map((cat) => (
+                    <section key={cat.name} className="space-y-6">
+                        {/* Category Header */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-gray-200 dark:border-slate-800 pb-3">
                             <div className="flex min-w-0 items-center gap-3">
                                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7e3fd] dark:bg-blue-950/60 text-[#174ea6] dark:text-blue-300 sm:h-10 sm:w-10">
-                                    <Layers className="h-5 w-5" />
+                                    <Tag className="h-5 w-5" />
                                 </span>
-                                <h2 className="truncate text-xl text-gray-900 dark:text-slate-100 sm:text-2xl">{pg.name}</h2>
+                                <h2 className="truncate text-xl font-semibold text-gray-900 dark:text-slate-100 sm:text-2xl">
+                                    {cat.name}
+                                </h2>
                             </div>
                             <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-slate-400">
-                                {pg.count} assignment{pg.count === 1 ? "" : "s"}
+                                {cat.count} assignment{cat.count === 1 ? "" : "s"}
                             </span>
                         </div>
 
-                        {/* Departments */}
-                        {pg.departments.map((dept) => (
-                            <div key={dept.name} className="mt-6">
-                                <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                                    <div className="flex min-w-0 items-center gap-2">
-                                        <Tag className="h-4 w-4 shrink-0 text-gray-500 dark:text-slate-400" />
-                                        <h3 className="min-w-0 truncate text-lg text-gray-800 dark:text-slate-200 sm:text-xl">{dept.name}</h3>
+                        {/* Courses */}
+                        <div className="space-y-8">
+                            {cat.courses.map((course) => (
+                                <div key={course.courseName} className="space-y-3">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <BookOpen className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+                                        <span className="text-base font-semibold text-gray-800 dark:text-slate-200">
+                                            {course.courseName}
+                                        </span>
+                                        <span className="text-xs text-gray-500 dark:text-slate-400">
+                                            ({course.assignments.length} assignment{course.assignments.length === 1 ? "" : "s"})
+                                        </span>
                                     </div>
-                                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-slate-400">
-                                        {dept.count} assignment{dept.count === 1 ? "" : "s"}
-                                    </span>
+                                    <DataTable
+                                        columns={columns}
+                                        data={course.assignments}
+                                        keyExtractor={(a) => a.id}
+                                        emptyMessage="No assignments in this course."
+                                    />
                                 </div>
-
-                                {/* Sessions */}
-                                <div className="mt-4 space-y-6">
-                                    {dept.sessions.map((sess) => (
-                                        <div key={sess.session}>
-                                            <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
-                                                <CalendarRange className="h-4 w-4 text-[#174ea6] dark:text-blue-300" />
-                                                <span className="rounded-full bg-[#e8f0fe] dark:bg-blue-950/60 px-3 py-1 text-xs font-medium text-[#174ea6] dark:text-blue-300">
-                                                    {sess.session}
-                                                </span>
-                                                <span className="text-xs text-gray-500 dark:text-slate-400">
-                                                    {sess.count} assignment{sess.count === 1 ? "" : "s"}
-                                                </span>
-                                            </div>
-
-                                            {/* Courses */}
-                                            <div className="space-y-5">
-                                                {sess.courses.map((course) => (
-                                                    <div key={course.courseName}>
-                                                        <div className="mb-2 flex items-center gap-2 px-1">
-                                                            <BookOpen className="h-4 w-4 text-gray-600 dark:text-slate-400" />
-                                                            <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">
-                                                                {course.courseName}
-                                                            </span>
-                                                            <span className="text-xs text-gray-500 dark:text-slate-400">
-                                                                ({course.assignments.length} assignment{course.assignments.length === 1 ? "" : "s"})
-                                                            </span>
-                                                        </div>
-                                                        <DataTable
-                                                            columns={columns}
-                                                            data={course.assignments}
-                                                            keyExtractor={(a) => a.id}
-                                                            emptyMessage="No assignments in this course."
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </section>
                 ))}
             </div>

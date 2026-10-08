@@ -273,7 +273,6 @@ export function AdminSubmissionDetailView({ submission }: AdminSubmissionDetailV
                             <dl className="mt-4 space-y-3 text-sm">
                                 <InfoRow icon={<ClipboardList className="h-4 w-4" />} label="Assignment" value={submission.assignmentTitle ?? "—"} />
                                 <InfoRow icon={<BookOpen className="h-4 w-4" />} label="Course" value={submission.courseName ?? "—"} />
-                                <InfoRow icon={<CalendarRange className="h-4 w-4" />} label="Session" value={courseSession} />
                                 <InfoRow
                                     icon={<Clock className="h-4 w-4" />}
                                     label="Submitted"

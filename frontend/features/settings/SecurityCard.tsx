@@ -138,7 +138,7 @@ export function SecurityCard() {
                                         setCurrentPassword(e.target.value);
                                         setErrorMessage(null);
                                     }}
-                                    placeholder="Enter your current password"
+                                    placeholder="Enter current password"
                                     className="w-full rounded-xl border border-gray-300 bg-white pl-4 pr-11 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                                 />
                                 <button
@@ -164,7 +164,7 @@ export function SecurityCard() {
                                         setNewPassword(e.target.value);
                                         setErrorMessage(null);
                                     }}
-                                    placeholder="Create a strong new password"
+                                    placeholder="Enter new password"
                                     className="w-full rounded-xl border border-gray-300 bg-white pl-4 pr-11 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                                 />
                                 <button
@@ -221,7 +221,7 @@ export function SecurityCard() {
                                         setConfirmPassword(e.target.value);
                                         setErrorMessage(null);
                                     }}
-                                    placeholder="Repeat new password"
+                                    placeholder="Confirm new password"
                                     className={`w-full rounded-xl border bg-white pl-4 pr-11 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:bg-slate-900 dark:text-slate-100 ${
                                         confirmPassword && !passwordsMatch
                                             ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-red-800"
