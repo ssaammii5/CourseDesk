@@ -494,41 +494,31 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                     <Menu className="h-5 w-5" />
                 </button>
 
-                <Link href="/" className="group flex shrink-0 items-center gap-2">
+                <Link href="/" className="group flex shrink-0 items-center gap-2.5">
                     {activeLogo && !logoError ? (
                         <img
                             src={activeLogo}
-                            alt={platformName || "Logo"}
+                            alt={platformName || "CourseDesk"}
                             onError={() => setLogoError(true)}
-                            className="h-8 max-w-[150px] object-contain transition-transform group-hover:scale-105"
+                            className="h-8 w-auto max-w-[160px] object-contain transition-transform group-hover:scale-105"
                         />
                     ) : (
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
-                            <GraduationCap className="h-5 w-5" />
-                        </span>
-                    )}
-                    <div className="flex flex-col min-w-0">
-                        <span
-                            className={`text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${
-                                classCourse || classCourseId || isTodo || isCalendar || isSettings || isAdminPage
-                                    ? "hidden md:inline-block"
-                                    : "inline-block"
-                            }`}
-                        >
-                            {platformName || "CourseDesk"}
-                        </span>
-                        {platformTagline && (
-                            <span
-                                className={`text-[10px] font-medium leading-none text-slate-500 dark:text-slate-400 tracking-tight truncate max-w-[180px] sm:max-w-[260px] ${
-                                    classCourse || classCourseId || isTodo || isCalendar || isSettings || isAdminPage
-                                        ? "hidden xl:inline-block"
-                                        : "hidden sm:inline-block"
-                                }`}
-                            >
-                                {platformTagline}
+                        <>
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/25 transition-transform group-hover:scale-105">
+                                <GraduationCap className="h-5 w-5" />
                             </span>
-                        )}
-                    </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {platformName || "CourseDesk"}
+                                </span>
+                                {platformTagline && !classCourse && !classCourseId && !isTodo && !isCalendar && !isSettings && !isAdminPage && (
+                                    <span className="text-[10px] font-medium leading-none text-slate-500 dark:text-slate-400 tracking-tight truncate max-w-[180px] sm:max-w-[260px] hidden sm:inline-block">
+                                        {platformTagline}
+                                    </span>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </Link>
 
                 {/* Breadcrumb Info */}

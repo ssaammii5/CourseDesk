@@ -896,37 +896,39 @@ export function AdminSettingsView() {
                                             <div className="flex items-center">
                                                 <img
                                                     src={resolved}
-                                                    alt={platformName || "Logo"}
-                                                    className="h-9 max-w-[190px] object-contain transition-transform"
+                                                    alt={platformName || "CourseDesk"}
+                                                    className="h-8 max-w-[170px] object-contain transition-transform"
                                                     onError={(e) => {
                                                         (e.currentTarget as HTMLElement).style.display = "none";
                                                     }}
                                                 />
                                             </div>
                                         ) : (
-                                            <div
-                                                className={`flex h-10 w-10 items-center justify-center rounded-xl font-black text-lg ${
-                                                    previewTheme === "dark"
-                                                        ? "bg-blue-600 text-white shadow-xs"
-                                                        : "bg-blue-50 text-blue-600 border border-blue-200 shadow-xs"
-                                                }`}
-                                            >
-                                                {platformName ? platformName.charAt(0).toUpperCase() : "C"}
+                                            <div className="flex items-center gap-2.5">
+                                                <div
+                                                    className={`flex h-9 w-9 items-center justify-center rounded-xl font-black text-base ${
+                                                        previewTheme === "dark"
+                                                            ? "bg-blue-600 text-white shadow-xs"
+                                                            : "bg-blue-50 text-blue-600 border border-blue-200 shadow-xs"
+                                                    }`}
+                                                >
+                                                    {platformName ? platformName.charAt(0).toUpperCase() : "C"}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-sm leading-tight truncate">
+                                                        {platformName || "CourseDesk"}
+                                                    </p>
+                                                    <p
+                                                        className={`text-[10px] truncate ${
+                                                            previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
+                                                        }`}
+                                                    >
+                                                        {platformTagline || "Modern Learning & Assessment Management Platform"}
+                                                    </p>
+                                                </div>
                                             </div>
                                         );
                                     })()}
-                                    <div className="min-w-0">
-                                        <p className="font-bold text-base leading-tight truncate">
-                                            {platformName || "CourseDesk"}
-                                        </p>
-                                        <p
-                                            className={`text-xs truncate ${
-                                                previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
-                                            }`}
-                                        >
-                                            {platformTagline || "Modern Learning & Assessment Management Platform"}
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
 

@@ -462,25 +462,27 @@ export function Sidebar({ open, mobileReady = true, onExpand, onClose }: Sidebar
                         {activeLogo && !logoError ? (
                             <img
                                 src={activeLogo}
-                                alt={platformName || "Logo"}
+                                alt={platformName || "CourseDesk"}
                                 onError={() => setLogoError(true)}
-                                className="h-7 max-w-[120px] object-contain"
+                                className="h-7 w-auto max-w-[140px] object-contain"
                             />
                         ) : (
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-xs">
-                                <GraduationCap className="h-4 w-4" />
-                            </span>
-                        )}
-                        <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-slate-800 dark:text-white text-sm leading-tight truncate">
-                                {platformName || "CourseDesk"}
-                            </span>
-                            {platformTagline && (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[150px]">
-                                    {platformTagline}
+                            <>
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a73e8] to-[#174ea6] text-white shadow-xs">
+                                    <GraduationCap className="h-4 w-4" />
                                 </span>
-                            )}
-                        </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="font-semibold text-slate-800 dark:text-white text-sm leading-tight truncate">
+                                        {platformName || "CourseDesk"}
+                                    </span>
+                                    {platformTagline && (
+                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[150px]">
+                                            {platformTagline}
+                                        </span>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
                     <button
                         type="button"
