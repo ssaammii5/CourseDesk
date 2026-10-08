@@ -8,11 +8,11 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CourseDesk - Course & Assignment Management",
+  title: "CourseDesk - Learning Platform",
   description: "Modern Course and Assignment Management Platform for instructors, learners, and teams",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
+    icon: "/brand/favicon.svg",
+    shortcut: "/brand/favicon.svg",
   },
 };
 
@@ -33,6 +33,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
                 if (isDark) document.documentElement.classList.add('dark');
                 else document.documentElement.classList.remove('dark');
+
+                const sRaw = localStorage.getItem('coursedesk_public_settings');
+                if (sRaw) {
+                  const s = JSON.parse(sRaw);
+                  const b = (s.platformName || 'CourseDesk').trim();
+                  const tag = (s.platformTagline || '').trim();
+                  document.title = tag ? (b + ' - ' + tag) : b;
+                }
               } catch (e) {}
             `,
           }}

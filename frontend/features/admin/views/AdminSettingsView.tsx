@@ -40,6 +40,7 @@ import {
     getSystemActivitiesRequest,
     uploadBrandingAssetRequest,
     type AppSettingDto,
+    type PublicPlatformSettingsDto,
     type SystemHealthDto,
     type SystemActivityDto,
 } from "@/lib/api/appSettings";
@@ -225,7 +226,8 @@ function AssetField({
 }
 
 export function AdminSettingsView() {
-    const { refreshSettings } = useAppSettings();
+    const appSettings = useAppSettings();
+    const { refreshSettings } = appSettings;
     const [activeTab, setActiveTab] = useState<SettingsTab>("branding");
     const [settings, setSettings] = useState<AppSettingDto[]>([]);
     const [systemHealth, setSystemHealth] = useState<SystemHealthDto | null>(null);
@@ -245,12 +247,12 @@ export function AdminSettingsView() {
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-    // Form fields for Platform & Branding
-    const [platformName, setPlatformName] = useState("CourseDesk");
-    const [platformTagline, setPlatformTagline] = useState("Modern Learning & Assessment Management Platform");
-    const [brandLogoLight, setBrandLogoLight] = useState("");
-    const [brandLogoDark, setBrandLogoDark] = useState("");
-    const [brandFavicon, setBrandFavicon] = useState("/favicon.ico");
+    // Form fields for Platform & Branding (initialized from active appSettings to prevent delayed pop-in)
+    const [platformName, setPlatformName] = useState(() => appSettings.platformName || "CourseDesk");
+    const [platformTagline, setPlatformTagline] = useState(() => appSettings.platformTagline || "Learning Platform");
+    const [brandLogoLight, setBrandLogoLight] = useState(() => appSettings.brandLogoLight || "/brand/logo-light.svg");
+    const [brandLogoDark, setBrandLogoDark] = useState(() => appSettings.brandLogoDark || "/brand/logo-dark.svg");
+    const [brandFavicon, setBrandFavicon] = useState(() => appSettings.brandFavicon || "/brand/favicon.svg");
     const [maintenanceMode, setMaintenanceMode] = useState(false);
     const [maintenanceBannerMessage, setMaintenanceBannerMessage] = useState(
         "CourseDesk is currently undergoing scheduled maintenance. Normal access will resume shortly."
@@ -314,12 +316,12 @@ export function AdminSettingsView() {
                 return found !== undefined && found.value !== null ? found.value : fallback;
             };
 
-            const nameVal = getVal("platform_name", getVal("site_name", "CourseDesk"));
+            const nameVal = getVal("platform_name", getVal("site_name", appSettings.platformName || "CourseDesk"));
             setPlatformName(nameVal);
-            setPlatformTagline(getVal("platform_tagline", "Modern Learning & Assessment Management Platform"));
-            setBrandLogoLight(getVal("brand_logo_light", ""));
-            setBrandLogoDark(getVal("brand_logo_dark", ""));
-            setBrandFavicon(getVal("brand_favicon", "/favicon.ico"));
+            setPlatformTagline(getVal("platform_tagline", appSettings.platformTagline || "Learning Platform"));
+            setBrandLogoLight(getVal("brand_logo_light", appSettings.brandLogoLight || "/brand/logo-light.svg"));
+            setBrandLogoDark(getVal("brand_logo_dark", appSettings.brandLogoDark || "/brand/logo-dark.svg"));
+            setBrandFavicon(getVal("brand_favicon", appSettings.brandFavicon || "/brand/favicon.svg"));
             setMaintenanceMode(getVal("maintenance_mode", "false") === "true");
             setMaintenanceBannerMessage(
                 getVal(
@@ -332,7 +334,7 @@ export function AdminSettingsView() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [appSettings]);
 
     useEffect(() => {
         void loadAll();
@@ -396,11 +398,27 @@ export function AdminSettingsView() {
             ];
 
             await batchUpsertAppSettingsRequest(payload);
+            const updatedDto: PublicPlatformSettingsDto = {
+                platformName: platformName.trim() || "CourseDesk",
+                siteName: platformName.trim() || "CourseDesk",
+                platformTagline: platformTagline.trim(),
+                brandLogoLight: brandLogoLight.trim(),
+                brandLogoDark: brandLogoDark.trim(),
+                brandFavicon: brandFavicon.trim() || "/brand/favicon.svg",
+                maintenanceMode,
+                maintenanceBannerMessage: maintenanceBannerMessage.trim(),
+            };
+            if (typeof window !== "undefined") {
+                try {
+                    window.localStorage.setItem("coursedesk_public_settings", JSON.stringify(updatedDto));
+                } catch {}
+                window.dispatchEvent(new CustomEvent("coursedesk:settings-updated", { detail: updatedDto }));
+            }
             await refreshSettings();
-            applyFavicon(brandFavicon.trim());
+            applyFavicon(updatedDto.brandFavicon);
             if (typeof document !== "undefined") {
-                const brand = platformName.trim() || "CourseDesk";
-                const tagline = platformTagline.trim() ? ` - ${platformTagline.trim()}` : " - Course & Assignment Management";
+                const brand = updatedDto.platformName;
+                const tagline = updatedDto.platformTagline ? ` - ${updatedDto.platformTagline}` : "";
                 document.title = `${brand}${tagline}`;
             }
             flashSuccess("Platform & Branding settings saved successfully.");
@@ -940,7 +958,7 @@ export function AdminSettingsView() {
                                 <div className="flex items-center">
                                     <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-t-xl bg-white dark:bg-slate-900 border-t border-x border-slate-200 dark:border-slate-800 shadow-xs max-w-md">
                                         <img
-                                            src={resolveBrandAssetUrl(brandFavicon.trim() || "/favicon.ico")}
+                                            src={resolveBrandAssetUrl(brandFavicon.trim() || "/brand/favicon.svg")}
                                             alt="Favicon"
                                             className="h-4 w-4 shrink-0 object-contain rounded-xs"
                                             onError={(e) => {
@@ -948,7 +966,7 @@ export function AdminSettingsView() {
                                             }}
                                         />
                                         <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                                            {platformName.trim() || "CourseDesk"} - {platformTagline.trim() || "Course & Assignment Management"}
+                                            {platformName.trim() || "CourseDesk"}{platformTagline.trim() ? ` - ${platformTagline.trim()}` : ""}
                                         </span>
                                         <X className="h-3 w-3 text-slate-400 ml-auto shrink-0" />
                                     </div>
