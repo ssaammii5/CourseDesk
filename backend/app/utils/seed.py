@@ -696,7 +696,6 @@ def seed() -> None:
         courses_specs = [
             (
                 "Full-Stack Web Development Bootcamp (Next.js, Node.js & PostgreSQL)",
-                "Modern Full-Stack Web Architecture, Server Components, and Database Engineering",
                 "Web Development",
                 ["asaduzzaman.nur@coursedesk.com", "enamul.hoque@coursedesk.com"],
                 cohort_web,
@@ -704,7 +703,6 @@ def seed() -> None:
             ),
             (
                 "Python for Data Science & Machine Learning Masterclass",
-                "Exploratory Data Analysis, Pandas, Scikit-Learn, and Deep Learning Models",
                 "Data Science & AI",
                 ["laila.banu@coursedesk.com", "tahmina.ferdous@coursedesk.com"],
                 cohort_ai,
@@ -712,7 +710,6 @@ def seed() -> None:
             ),
             (
                 "Modern UI/UX Design with Figma: From Wireframing to Interactive Prototype",
-                "Design Systems, High-Fidelity UI Kits, Responsive Auto-Layouts, and Usability Testing",
                 "UI/UX Design",
                 ["shahana.parveen@coursedesk.com"],
                 cohort_design,
@@ -720,7 +717,6 @@ def seed() -> None:
             ),
             (
                 "Practical Ethical Hacking & Web Application Penetration Testing",
-                "Hands-on Web Security, OWASP Top 10 Exploitation, Network Defense, and Security Auditing",
                 "Cybersecurity",
                 ["kamrul.ahsan@coursedesk.com"],
                 cohort_sec,
@@ -728,7 +724,6 @@ def seed() -> None:
             ),
             (
                 "Cloud Engineering & DevOps with Docker, Kubernetes & AWS",
-                "Production Containerization, Cloud Infrastructure Deployment, and CI/CD Automation",
                 "Cloud & DevOps",
                 ["asaduzzaman.nur@coursedesk.com", "enamul.hoque@coursedesk.com"],
                 cohort_devops,
@@ -736,7 +731,6 @@ def seed() -> None:
             ),
             (
                 "Cross-Platform Mobile App Development with Flutter & Dart",
-                "Build, Test, and Deploy Native iOS and Android Applications from a Single Codebase",
                 "Mobile App Development",
                 ["jahangir.alam@coursedesk.com"],
                 cohort_mobile,
@@ -744,7 +738,6 @@ def seed() -> None:
             ),
             (
                 "Product Management: Agile Roadmapping, Scrum & Growth Metrics",
-                "Customer Discovery, PRD Writing, Sprint Ceremonies, Product Analytics, and MVP Scoping",
                 "Product Management",
                 ["rokeya.khandakar@coursedesk.com"],
                 cohort_pm,
@@ -752,7 +745,6 @@ def seed() -> None:
             ),
             (
                 "Advanced Algorithms & Problem Solving for Technical Interviews",
-                "Data Structures Mastery, Dynamic Programming, Graph Traversal, and LeetCode Strategies",
                 "Web Development",
                 ["zahidul.haque@coursedesk.com"],
                 cohort_algo,
@@ -760,11 +752,11 @@ def seed() -> None:
             ),
         ]
 
-        for name, subject, category, inst_emails, l_cohort, tags in courses_specs:
+        for name, category, inst_emails, l_cohort, tags in courses_specs:
             create_course(
                 CourseSchema(
                     name=name,
-                    subject=subject,
+                    subject="",
                     department=category,
                     is_active=True,
                     tags=tags,

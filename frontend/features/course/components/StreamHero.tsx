@@ -114,7 +114,6 @@ export function StreamHero({
         details.people.filter((p) => p.role === "Learner" || (p.role as string) === "Student").length;
 
     const categoryLabel = course?.department || (details as any)?.department || null;
-    const subjectLabel = course?.subject || null;
 
     const handleCopyLink = () => {
         if (typeof window !== "undefined") {
@@ -173,11 +172,6 @@ export function StreamHero({
                         <div className="min-w-0 flex-1 space-y-2">
                             {/* Tags line */}
                             <div className="flex flex-wrap items-center gap-2 text-xs">
-                                {subjectLabel && (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 text-[11px]">
-                                        {subjectLabel}
-                                    </span>
-                                )}
                                 {categoryLabel && (
                                     <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[11px]">
                                         {categoryLabel}
@@ -334,21 +328,11 @@ export function StreamHero({
                                 <p className="mt-0.5 text-xs font-semibold text-slate-900 dark:text-slate-100">{title}</p>
                             </div>
 
-                            {/* Course Metadata: Subject Code, Category */}
-                            {(subjectLabel || categoryLabel) && (
-                                <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/30">
-                                    {subjectLabel && (
-                                        <div>
-                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Subject Code</p>
-                                            <p className="mt-0.5 font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">{subjectLabel}</p>
-                                        </div>
-                                    )}
-                                    {categoryLabel && (
-                                        <div>
-                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Category</p>
-                                            <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{categoryLabel}</p>
-                                        </div>
-                                    )}
+                            {/* Course Metadata: Category */}
+                            {categoryLabel && (
+                                <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/30">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Category</p>
+                                    <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{categoryLabel}</p>
                                 </div>
                             )}
 

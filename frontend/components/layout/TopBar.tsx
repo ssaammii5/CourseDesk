@@ -376,7 +376,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                         setClassCourse({
                             id: dto.id,
                             name: dto.name,
-                            sub: dto.department || dto.subject || undefined,
+                            sub: dto.department || undefined,
                         });
                     }
                 })

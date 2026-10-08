@@ -111,7 +111,6 @@ export function CourseHeroBanner({
         details.people.filter((p) => p.role === "Learner" || (p.role as string) === "Student").length;
 
     const categoryLabel = course?.department || (details as any)?.department || null;
-    const subjectLabel = course?.subject || null;
 
     const handleCopyLink = () => {
         if (typeof window !== "undefined") {
@@ -156,11 +155,6 @@ export function CourseHeroBanner({
                             {categoryLabel && (
                                 <span className="inline-flex items-center rounded-md border border-indigo-400/25 bg-indigo-500/15 px-2.5 py-0.5 text-xs font-medium text-indigo-200">
                                     {categoryLabel}
-                                </span>
-                            )}
-                            {subjectLabel && (
-                                <span className="inline-flex items-center rounded-md border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-200 backdrop-blur-md">
-                                    {subjectLabel}
                                 </span>
                             )}
                         </div>
@@ -286,12 +280,7 @@ export function CourseHeroBanner({
                         </div>
 
                         <div className="mt-5 divide-y divide-gray-100 dark:divide-slate-800 text-sm">
-                            {subjectLabel && (
-                                <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500 dark:text-slate-400">Subject Code</span>
-                                    <span className="font-semibold text-gray-900 dark:text-slate-100">{subjectLabel}</span>
-                                </div>
-                            )}
+
 
                             {categoryLabel && (
                                 <div className="flex justify-between py-2.5">

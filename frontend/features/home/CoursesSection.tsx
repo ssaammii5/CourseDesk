@@ -94,7 +94,7 @@ function mapCourseToHomeCourse(c: CourseDto): HomeCourse {
     return {
         id: c.id,
         name: c.name,
-        subject: c.subject || c.department || "",
+        subject: c.department || c.subject || "",
         instructorId: c.instructorId ?? c.teacherId ?? 0,
         instructorName: displayName,
         instructorIds: c.instructorIds ?? c.teacherIds ?? [],

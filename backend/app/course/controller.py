@@ -134,7 +134,7 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
             db=db,
             user_ids=learn_ids,
             title=f"Enrolled in {course.name}",
-            message=f"You have been enrolled in {course.name} ({course.subject})",
+            message=f"You have been enrolled in {course.name}",
             kind="system",
             link=f"/course/{course.id}",
         )
