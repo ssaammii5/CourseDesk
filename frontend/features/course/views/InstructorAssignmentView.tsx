@@ -305,7 +305,7 @@ export function InstructorAssignmentView({
                                     </span>
                                 </div>
                                 <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate">
-                                    Due {formatDateTime(assignment.deadlineUtc)} • {assignment.maxMarks > 0 ? `Marks: ${assignment.maxMarks}` : "Ungraded"}
+                                    Posted {formatDateTime(assignment.createdAtUtc)} • Due {formatDateTime(assignment.deadlineUtc)} • {assignment.maxMarks > 0 ? `Marks: ${assignment.maxMarks}` : "Ungraded"}
                                     {assignment.topic && ` • ${assignment.topic}`}
                                 </p>
                             </div>
@@ -1010,7 +1010,7 @@ export function InstructorAssignmentView({
                                 </h2>
                                 <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
                                     Posted by {assignment.createdByName ?? "Instructor"} •{" "}
-                                    {new Date(assignment.createdAtUtc).toLocaleDateString()}
+                                    {formatDateTime(assignment.createdAtUtc)}
                                 </p>
                             </div>
 

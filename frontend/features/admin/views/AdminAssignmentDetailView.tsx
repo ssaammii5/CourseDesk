@@ -260,7 +260,7 @@ export function AdminAssignmentDetailView({
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                                    <span>Created {formatDate(assignment.createdAtUtc)}</span>
+                                    <span>Created {formatDateTime(assignment.createdAtUtc)}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <Clock className="h-3.5 w-3.5 text-slate-400" />
