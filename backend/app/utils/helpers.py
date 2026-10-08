@@ -146,15 +146,31 @@ def save_upload_file(file: UploadFile, subdir: str, max_size_bytes: int = 50 * 1
     unique_name = f"{uuid.uuid4().hex}{ext}"
     file_path = os.path.join(target_dir, unique_name)
     
-    contents = file.file.read()
-    if len(contents) > max_size_bytes:
-        raise HTTPException(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File exceeds maximum allowed size of {human_readable_size(max_size_bytes)}",
-        )
+    # Chunked read to protect server memory against massive uploads crashing RAM
+    total_read = 0
+    chunk_size = 1024 * 1024  # 1MB chunk
+    
+    status_413 = getattr(status, "HTTP_413_CONTENT_TOO_LARGE", status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
     
     with open(file_path, "wb") as f:
-        f.write(contents)
+        while True:
+            chunk = file.file.read(chunk_size)
+            if not chunk:
+                break
+            total_read += len(chunk)
+            if total_read > max_size_bytes:
+                # Remove partially written file if it exceeds limit
+                f.close()
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except OSError:
+                        pass
+                raise HTTPException(
+                    status_413,
+                    detail=f"File exceeds maximum allowed size of {human_readable_size(max_size_bytes)}",
+                )
+            f.write(chunk)
     
     file_type = (ext.lstrip(".") or "FILE").upper()
-    return f"/uploads/{clean_subdir}/{unique_name}", file_type, human_readable_size(len(contents))
+    return f"/uploads/{clean_subdir}/{unique_name}", file_type, human_readable_size(total_read)

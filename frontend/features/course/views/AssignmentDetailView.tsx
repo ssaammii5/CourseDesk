@@ -165,6 +165,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
         detail.submission.attachments ?? []
     );
     const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const [submittingWork, setSubmittingWork] = useState(false);
     const [addMenuOpen, setAddMenuOpen] = useState(false);
     const [turnInOpen, setTurnInOpen] = useState(false);
@@ -218,6 +219,7 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
         setUploading(true);
 
         try {
+            setUploadError(null);
             const subId = await getEnsuredSubmissionId();
             for (const f of files) {
                 const fd = new FormData();
@@ -239,6 +241,9 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error("Failed to upload draft file", err);
+            const msg = err instanceof Error ? err.message : "Failed to upload file.";
+            setUploadError(msg);
+            alert(msg);
         } finally {
             setUploading(false);
         }
@@ -744,6 +749,24 @@ export function AssignmentDetailView({ detail, readOnly = false, onRefresh }: As
                                 <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-blue-200/80 bg-blue-50/80 px-3.5 py-2.5 text-xs font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/60 dark:text-blue-300">
                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent dark:border-blue-400" />
                                     <span>Uploading attachment to draft…</span>
+                                </div>
+                            )}
+
+                            {/* Upload Error Banner */}
+                            {uploadError && !uploading && (
+                                <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
+                                    <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-rose-800 dark:text-rose-200">Upload Failed</p>
+                                        <p className="mt-0.5 leading-relaxed text-rose-700 dark:text-rose-300">{uploadError}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setUploadError(null)}
+                                        className="shrink-0 text-rose-500 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-200 cursor-pointer"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
                                 </div>
                             )}
 
