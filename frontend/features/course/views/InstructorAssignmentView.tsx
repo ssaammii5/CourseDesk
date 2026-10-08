@@ -38,6 +38,7 @@ export interface InstructorAssignmentViewProps {
     assignment: AssignmentDto;
     courseId: number;
     onRefresh?: () => void;
+    backHref?: string;
 }
 
 type TabType = "learner-work" | "private-comments" | "instructions";
@@ -59,6 +60,7 @@ export function InstructorAssignmentView({
     assignment,
     courseId,
     onRefresh,
+    backHref,
 }: InstructorAssignmentViewProps) {
     const router = useRouter();
     const [tab, setTab] = useState<TabType>("learner-work");
@@ -274,7 +276,9 @@ export function InstructorAssignmentView({
                             <button
                                 type="button"
                                 onClick={() => {
-                                    if (typeof window !== "undefined" && window.history.length > 1) {
+                                    if (backHref) {
+                                        router.push(backHref);
+                                    } else if (typeof window !== "undefined" && window.history.length > 1) {
                                         router.back();
                                     } else {
                                         router.push(`/course/${courseId}?tab=coursework`);

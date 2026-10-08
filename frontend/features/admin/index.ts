@@ -14,6 +14,7 @@ export * from "./components/TagCoursesModal";
 // Views
 export * from "./views/AdminAcademicsView";
 export * from "./views/AdminAssignmentsView";
+export * from "./views/AdminAssignmentDetailView";
 export * from "./views/AdminCoursesView";
 export * from "./views/AdminDashboardView";
 export * from "./views/AdminSettingsView";

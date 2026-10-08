@@ -1,64 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, FileQuestion } from "lucide-react";
-import { AssignmentDetailView } from "@/features/course";
+import { AdminAssignmentDetailView } from "@/features/admin";
 import { getAssignmentRequest, type AssignmentDto } from "@/lib/api/assignments";
-import type { AssignmentDetail } from "@/lib/assignmentDetails";
-
-function mapDtoToAssignmentDetail(dto: AssignmentDto): AssignmentDetail {
-    return {
-        id: dto.id,
-        title: dto.title,
-        instructorName: dto.createdByName ?? "Unknown",
-        teacherName: dto.createdByName ?? "Unknown",
-        postedDate: dto.createdAtUtc.split("T")[0],
-        points: dto.maxMarks,
-        dueLabel: `Due ${dto.deadlineUtc.split("T")[0]}`,
-        description: dto.description,
-        attachments: [],
-        submission: {
-            status: "Assigned",
-            attachments: [],
-        },
-        privateCommentTarget: dto.createdByName ?? "Unknown",
-        courseId: dto.courseId,
-    };
-}
+import { getSubmissionsByAssignmentRequest, type SubmissionDto } from "@/lib/api/submissions";
 
 interface AdminAssignmentDetailClientProps {
     assignmentId: number;
 }
 
 export function AdminAssignmentDetailClient({ assignmentId }: AdminAssignmentDetailClientProps) {
-    const [detail, setDetail] = useState<AssignmentDetail | null>(null);
+    const [assignment, setAssignment] = useState<AssignmentDto | null>(null);
+    const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [notFoundFlag, setNotFoundFlag] = useState(false);
 
-    useEffect(() => {
-        let cancelled = false;
-
-        const load = async () => {
-            try {
-                const dto = await getAssignmentRequest(assignmentId);
-                if (!cancelled) {
-                    setDetail(mapDtoToAssignmentDetail(dto));
-                }
-            } catch {
-                if (!cancelled) {
-                    setNotFoundFlag(true);
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        void load();
-        return () => { cancelled = true; };
+    const loadData = useCallback(async () => {
+        try {
+            const [assignmentData, subsData] = await Promise.all([
+                getAssignmentRequest(assignmentId),
+                getSubmissionsByAssignmentRequest(assignmentId).catch(() => []),
+            ]);
+            setAssignment(assignmentData);
+            setSubmissions(subsData);
+        } catch {
+            setNotFoundFlag(true);
+        } finally {
+            setLoading(false);
+        }
     }, [assignmentId]);
+
+    useEffect(() => {
+        void loadData();
+    }, [loadData]);
 
     if (notFoundFlag) {
         return (
@@ -85,7 +61,7 @@ export function AdminAssignmentDetailClient({ assignmentId }: AdminAssignmentDet
         );
     }
 
-    if (loading || !detail) {
+    if (loading || !assignment) {
         return (
             <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
@@ -93,5 +69,11 @@ export function AdminAssignmentDetailClient({ assignmentId }: AdminAssignmentDet
         );
     }
 
-    return <AssignmentDetailView detail={detail} readOnly />;
+    return (
+        <AdminAssignmentDetailView
+            assignment={assignment}
+            submissions={submissions}
+            onRefresh={loadData}
+        />
+    );
 }
