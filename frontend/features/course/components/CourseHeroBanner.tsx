@@ -175,28 +175,12 @@ export function CourseHeroBanner({
 
                     {/* Middle Row: Course Title & Live Headline */}
                     <div className="min-w-0">
-                        <div className="relative group/title inline-block max-w-full">
-                            <h1
-                                title={title}
-                                className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl cursor-default transition-colors hover:text-indigo-200"
-                            >
-                                {title}
-                            </h1>
-
-                            {/* Hover tooltip to view full course title */}
-                            <div
-                                role="tooltip"
-                                className="pointer-events-none absolute left-0 top-full mt-1.5 z-50 hidden max-w-md md:max-w-xl rounded-xl bg-slate-900/95 px-3.5 py-2.5 text-xs font-semibold leading-relaxed text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xs group-hover/title:block animate-in fade-in zoom-in-95 duration-150"
-                            >
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-0.5">
-                                    Full Course Name
-                                </p>
-                                <p className="text-xs font-medium text-slate-100 break-words">
-                                    {title}
-                                </p>
-                                <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-slate-900/95 ring-1 ring-white/10" />
-                            </div>
-                        </div>
+                        <h1
+                            title={title}
+                            className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl"
+                        >
+                            {title}
+                        </h1>
 
                         {isLive && nextSession && (
                             <p className="mt-1 flex items-center gap-2 truncate text-sm font-medium text-rose-200">
