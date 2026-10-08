@@ -43,6 +43,15 @@ interface ConfirmActionState {
     onConfirm: () => Promise<void> | void;
 }
 
+function getInstructorId(ins?: UserDto | null): string {
+    if (!ins) return "";
+    return (
+        ins.instructorDetails?.instructorId ||
+        ins.teacherDetails?.teacherId ||
+        (ins.id ? `#${ins.id}` : "")
+    );
+}
+
 export function AdminAcademicsView() {
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [courses, setCourses] = useState<CourseDto[]>([]);
@@ -134,10 +143,20 @@ export function AdminAcademicsView() {
     // Filtered courses for Studio
     const filteredCourses = useMemo(() => {
         return courses.filter((c) => {
+            const insIds = c.instructorIds ?? c.teacherIds ?? [];
+            const courseInstructors = users.filter((u) => insIds.includes(u.id));
+
             const matchSearch =
                 !courseSearch ||
                 c.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
-                (c.subject && c.subject.toLowerCase().includes(courseSearch.toLowerCase()));
+                (c.subject && c.subject.toLowerCase().includes(courseSearch.toLowerCase())) ||
+                courseInstructors.some((ins) => {
+                    const insId = getInstructorId(ins);
+                    return (
+                        ins.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
+                        insId.toLowerCase().includes(courseSearch.toLowerCase())
+                    );
+                });
 
             const matchCat =
                 categoryFilter === "all" ||
@@ -155,7 +174,7 @@ export function AdminAcademicsView() {
 
             return matchSearch && matchCat && matchQuick;
         });
-    }, [courses, courseSearch, categoryFilter, categories, quickFilter]);
+    }, [courses, courseSearch, categoryFilter, categories, quickFilter, users]);
 
     // Urgent stats
     const coursesNeedingFacultyCount = useMemo(() => {
@@ -184,9 +203,11 @@ export function AdminAcademicsView() {
         return allInstructors.filter((ins) => {
             if (currentIds.includes(ins.id)) return false;
             if (!query) return true;
+            const insId = getInstructorId(ins);
             return (
                 ins.name.toLowerCase().includes(query) ||
-                ins.email.toLowerCase().includes(query)
+                ins.email.toLowerCase().includes(query) ||
+                insId.toLowerCase().includes(query)
             );
         });
     }, [selectedCourse, allInstructors, allotInstructorsSearch]);
@@ -443,7 +464,7 @@ export function AdminAcademicsView() {
                                 type="text"
                                 value={courseSearch}
                                 onChange={(e) => setCourseSearch(e.target.value)}
-                                placeholder="Search courses by name or subject code..."
+                                placeholder="Search courses by name, subject, or instructor ID..."
                                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-10 pr-9 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                             {courseSearch && (
@@ -575,31 +596,49 @@ export function AdminAcademicsView() {
 
                                     {/* Instructor Avatars stack & Learner count */}
                                     <div className="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-2.5 text-xs text-slate-500">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-1.5 min-w-0">
                                             {courseInstructors.length > 0 ? (
-                                                <div className="flex -space-x-1.5 overflow-hidden">
-                                                    {courseInstructors.slice(0, 3).map((ins) => {
-                                                        const avatar = resolveAvatarUrl(ins.avatar);
-                                                        return avatar ? (
-                                                            <img
-                                                                key={ins.id}
-                                                                src={avatar}
-                                                                alt={ins.name}
-                                                                className="inline-block h-5 w-5 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div
-                                                                key={ins.id}
-                                                                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900"
-                                                            >
-                                                                {initialOf(ins.name)}
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+                                                        {courseInstructors.slice(0, 3).map((ins) => {
+                                                            const avatar = resolveAvatarUrl(ins.avatar);
+                                                            const insId = getInstructorId(ins);
+                                                            const tooltip = insId ? `${ins.name} (${insId})` : ins.name;
+                                                            return avatar ? (
+                                                                <img
+                                                                    key={ins.id}
+                                                                    src={avatar}
+                                                                    alt={ins.name}
+                                                                    title={tooltip}
+                                                                    className="inline-block h-5 w-5 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div
+                                                                    key={ins.id}
+                                                                    title={tooltip}
+                                                                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900"
+                                                                >
+                                                                    {initialOf(ins.name)}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {courseInstructors.length > 3 && (
+                                                            <div className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[9px] font-bold text-slate-600 dark:text-slate-300 ring-2 ring-white dark:ring-slate-900">
+                                                                +{courseInstructors.length - 3}
                                                             </div>
-                                                        );
-                                                    })}
-                                                    {courseInstructors.length > 3 && (
-                                                        <div className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-[9px] font-bold text-slate-600 dark:text-slate-300 ring-2 ring-white dark:ring-slate-900">
-                                                            +{courseInstructors.length - 3}
-                                                        </div>
+                                                        )}
+                                                    </div>
+                                                    {courseInstructors.length === 1 && (
+                                                        <span
+                                                            className="truncate text-[10px] font-mono text-slate-500 dark:text-slate-400 max-w-[110px]"
+                                                            title={(() => {
+                                                                const single = courseInstructors[0];
+                                                                const sId = getInstructorId(single);
+                                                                return sId ? `${single.name} (${sId})` : single.name;
+                                                            })()}
+                                                        >
+                                                            {getInstructorId(courseInstructors[0])}
+                                                        </span>
                                                     )}
                                                 </div>
                                             ) : (
@@ -609,7 +648,7 @@ export function AdminAcademicsView() {
                                             )}
                                         </div>
 
-                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 shrink-0">
                                             <GraduationCap className="h-3.5 w-3.5 text-violet-500" />
                                             <span>{lrnCount} Students</span>
                                         </div>
@@ -708,6 +747,7 @@ export function AdminAcademicsView() {
                                                     const avatarUrl = resolveAvatarUrl(ins.avatar);
                                                     const initial = initialOf(ins.name);
                                                     const load = instructorWorkloadMap.get(ins.id) ?? 1;
+                                                    const insId = getInstructorId(ins);
                                                     return (
                                                         <div
                                                             key={ins.id}
@@ -726,10 +766,15 @@ export function AdminAcademicsView() {
                                                                     </div>
                                                                 )}
                                                                 <div className="min-w-0">
-                                                                    <div className="flex items-center gap-1.5">
+                                                                    <div className="flex items-center gap-1.5 flex-wrap">
                                                                         <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
                                                                             {ins.name}
                                                                         </p>
+                                                                        {insId && (
+                                                                            <span className="font-mono text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                                                                                {insId}
+                                                                            </span>
+                                                                        )}
                                                                         <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2 py-0.2 text-[9px] font-bold text-blue-600 dark:text-blue-300">
                                                                             Instructor
                                                                         </span>
@@ -749,7 +794,7 @@ export function AdminAcademicsView() {
                                                                     onClick={() => {
                                                                         setConfirmAction({
                                                                             title: "Remove Instructor",
-                                                                            message: `Are you sure you want to remove ${ins.name} from "${selectedCourse?.name}"?`,
+                                                                            message: `Are you sure you want to remove ${ins.name}${insId ? ` (${insId})` : ""} from "${selectedCourse?.name}"?`,
                                                                             confirmLabel: "Remove Instructor",
                                                                             variant: "danger",
                                                                             onConfirm: () => handleUnassignInstructor(ins.id),
@@ -1027,7 +1072,7 @@ export function AdminAcademicsView() {
                                     type="text"
                                     value={allotInstructorsSearch}
                                     onChange={(e) => setAllotInstructorsSearch(e.target.value)}
-                                    placeholder="Search instructors by name or email..."
+                                    placeholder="Search instructors by name, email, or ID..."
                                     className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                             </div>
@@ -1059,6 +1104,7 @@ export function AdminAcademicsView() {
                                     const avatarUrl = resolveAvatarUrl(ins.avatar);
                                     const initial = initialOf(ins.name);
                                     const load = instructorWorkloadMap.get(ins.id) ?? 0;
+                                    const insId = getInstructorId(ins);
                                     return (
                                         <div
                                             key={ins.id}
@@ -1096,9 +1142,16 @@ export function AdminAcademicsView() {
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                                        {ins.name}
-                                                    </p>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                                                            {ins.name}
+                                                        </p>
+                                                        {insId && (
+                                                            <span className="font-mono text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                                                                {insId}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <p className="text-[11px] text-slate-400">{ins.email}</p>
                                                 </div>
                                             </div>
