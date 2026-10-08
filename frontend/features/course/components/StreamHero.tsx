@@ -187,9 +187,28 @@ export function StreamHero({
                             </div>
 
                             {/* Title */}
-                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate">
-                                {title}
-                            </h1>
+                            <div className="relative group/title inline-block max-w-full">
+                                <h1
+                                    title={title}
+                                    className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 truncate cursor-default transition-colors hover:text-indigo-600 dark:hover:text-indigo-400"
+                                >
+                                    {title}
+                                </h1>
+
+                                {/* Hover tooltip to view full course title */}
+                                <div
+                                    role="tooltip"
+                                    className="pointer-events-none absolute left-0 top-full mt-1.5 z-50 hidden max-w-md md:max-w-xl rounded-xl bg-slate-900/95 dark:bg-slate-800/95 px-3.5 py-2.5 text-xs font-semibold leading-relaxed text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xs group-hover/title:block animate-in fade-in zoom-in-95 duration-150"
+                                >
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-0.5">
+                                        Full Course Name
+                                    </p>
+                                    <p className="text-xs font-medium text-slate-100 break-words">
+                                        {title}
+                                    </p>
+                                    <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-slate-900/95 dark:bg-slate-800/95 ring-1 ring-white/10" />
+                                </div>
+                            </div>
 
                             {/* Meta information line */}
                             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
