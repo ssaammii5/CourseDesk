@@ -110,9 +110,8 @@ export function CourseHeroBanner({
         course?.studentCount ??
         details.people.filter((p) => p.role === "Learner" || (p.role as string) === "Student").length;
 
-    const sessionLabel = course?.session || details.session || null;
+    const categoryLabel = course?.department || (details as any)?.department || null;
     const subjectLabel = course?.subject || null;
-    const programLabel = course?.program || course?.department || null;
 
     const handleCopyLink = () => {
         if (typeof window !== "undefined") {
@@ -154,19 +153,14 @@ export function CourseHeroBanner({
                     {/* Top Row: Context Badges & Live Status */}
                     <div className="flex flex-wrap items-center justify-between gap-2.5">
                         <div className="flex flex-wrap items-center gap-2">
+                            {categoryLabel && (
+                                <span className="inline-flex items-center rounded-md border border-indigo-400/25 bg-indigo-500/15 px-2.5 py-0.5 text-xs font-medium text-indigo-200">
+                                    {categoryLabel}
+                                </span>
+                            )}
                             {subjectLabel && (
                                 <span className="inline-flex items-center rounded-md border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-200 backdrop-blur-md">
                                     {subjectLabel}
-                                </span>
-                            )}
-                            {sessionLabel && (
-                                <span className="inline-flex items-center rounded-md border border-indigo-400/25 bg-indigo-500/15 px-2.5 py-0.5 text-xs font-medium text-indigo-200">
-                                    {sessionLabel}
-                                </span>
-                            )}
-                            {programLabel && (
-                                <span className="hidden sm:inline-flex items-center rounded-md border border-slate-700/60 bg-slate-800/60 px-2.5 py-0.5 text-xs text-slate-300">
-                                    {programLabel}
                                 </span>
                             )}
                         </div>
@@ -299,24 +293,10 @@ export function CourseHeroBanner({
                                 </div>
                             )}
 
-                            {sessionLabel && (
+                            {categoryLabel && (
                                 <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500 dark:text-slate-400">Session / Cohort</span>
-                                    <span className="font-medium text-gray-900 dark:text-slate-100">{sessionLabel}</span>
-                                </div>
-                            )}
-
-                            {course?.program && (
-                                <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500 dark:text-slate-400">Program</span>
-                                    <span className="font-medium text-gray-900 dark:text-slate-100">{course.program}</span>
-                                </div>
-                            )}
-
-                            {course?.department && (
-                                <div className="flex justify-between py-2.5">
-                                    <span className="text-gray-500 dark:text-slate-400">Department</span>
-                                    <span className="font-medium text-gray-900 dark:text-slate-100">{course.department}</span>
+                                    <span className="text-gray-500 dark:text-slate-400">Category</span>
+                                    <span className="font-medium text-gray-900 dark:text-slate-100">{categoryLabel}</span>
                                 </div>
                             )}
 

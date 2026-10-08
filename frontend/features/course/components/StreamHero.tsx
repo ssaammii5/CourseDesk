@@ -113,9 +113,8 @@ export function StreamHero({
         course?.studentCount ??
         details.people.filter((p) => p.role === "Learner" || (p.role as string) === "Student").length;
 
-    const sessionLabel = course?.session || details.session || null;
+    const categoryLabel = course?.department || (details as any)?.department || null;
     const subjectLabel = course?.subject || null;
-    const programLabel = course?.program || course?.department || null;
 
     const handleCopyLink = () => {
         if (typeof window !== "undefined") {
@@ -179,14 +178,9 @@ export function StreamHero({
                                         {subjectLabel}
                                     </span>
                                 )}
-                                {sessionLabel && (
+                                {categoryLabel && (
                                     <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[11px]">
-                                        {sessionLabel}
-                                    </span>
-                                )}
-                                {programLabel && (
-                                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[11px]">
-                                        {programLabel}
+                                        {categoryLabel}
                                     </span>
                                 )}
 
@@ -340,8 +334,8 @@ export function StreamHero({
                                 <p className="mt-0.5 text-xs font-semibold text-slate-900 dark:text-slate-100">{title}</p>
                             </div>
 
-                            {/* Academic Metadata: Subject Code, Department, Session */}
-                            {(subjectLabel || programLabel || sessionLabel) && (
+                            {/* Course Metadata: Subject Code, Category */}
+                            {(subjectLabel || categoryLabel) && (
                                 <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/30">
                                     {subjectLabel && (
                                         <div>
@@ -349,16 +343,10 @@ export function StreamHero({
                                             <p className="mt-0.5 font-mono text-xs font-semibold text-slate-900 dark:text-slate-100">{subjectLabel}</p>
                                         </div>
                                     )}
-                                    {programLabel && (
+                                    {categoryLabel && (
                                         <div>
-                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Department</p>
-                                            <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{programLabel}</p>
-                                        </div>
-                                    )}
-                                    {sessionLabel && (
-                                        <div className={subjectLabel && programLabel ? "col-span-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60" : ""}>
-                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Session</p>
-                                            <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{sessionLabel}</p>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Category</p>
+                                            <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{categoryLabel}</p>
                                         </div>
                                     )}
                                 </div>

@@ -133,7 +133,7 @@ export function CourseDataClient({ courseId, initialTab }: CourseDataClientProps
                 setCourse(course);
                 setDetails({
                     courseId,
-                    session: course.session || course.subject || undefined,
+                    session: course.department || course.subject || undefined,
                     bannerColor: headerColorFor(courseId),
                     bannerEmoji: emojiFor(courseId),
                     announcements: [],

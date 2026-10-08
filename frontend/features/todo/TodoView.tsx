@@ -597,7 +597,7 @@ export function TodoView() {
                                                                 </h4>
                                                                 <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-slate-400">
                                                                     {assignment.courseName ?? "Course"}
-                                                                    {assignment.session && ` • ${assignment.session}`}
+                                                                    {assignment.department && ` • ${assignment.department}`}
                                                                     {assignment.topic && ` • ${assignment.topic}`}
                                                                 </p>
                                                                 <span

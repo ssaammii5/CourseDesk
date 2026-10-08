@@ -103,13 +103,13 @@ export interface CourseCatalogItem {
 export interface AdminCourse {
     id: number;
     name: string;
-    program: string;
+    program?: string;
     department: string;
     instructorIds: number[];
     teacherIds?: number[];
     learnerIds: number[];
     studentIds?: number[];
-    session: string;
+    session?: string;
     isActive: boolean;
     tags?: string[];
 }

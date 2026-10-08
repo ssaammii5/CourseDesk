@@ -28,9 +28,7 @@ class CourseModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column()
     subject: Mapped[str] = mapped_column(default="")
-    program: Mapped[str] = mapped_column(default="")
     department: Mapped[str] = mapped_column(default="")
-    session: Mapped[str] = mapped_column(default="")
     is_active: Mapped[bool] = mapped_column(default=True)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
 

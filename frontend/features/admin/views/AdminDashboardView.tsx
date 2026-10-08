@@ -112,8 +112,6 @@ export function AdminDashboardView() {
             const payload: CoursePayload = {
                 name: data.name,
                 department: data.department || undefined,
-                program: data.program || undefined,
-                session: data.session || undefined,
                 isActive: data.isActive,
                 tags: data.tags || [],
                 instructorIds: data.instructorIds || [],

@@ -2,8 +2,7 @@
 
 Transform from departmental/university format to a standard online LMS:
 - Modern LMS Categories: Web Development, Data Science & AI, UI/UX Design, Cybersecurity, Cloud & DevOps, Mobile App Development, Product Management
-- Course Levels: All Levels, Beginner to Intermediate, Intermediate, Advanced
-- Cohorts & Batches: 2024 Cohort, Summer 2024, Self-Paced
+- Modern LMS Categories: Web Development, Data Science & AI, UI/UX Design, Cybersecurity, Cloud & DevOps, Mobile App Development, Product Management
 - Real-World Commercial Courses: Full-Stack Bootcamp, Python for Data Science, Figma UI/UX, Ethical Hacking, Cloud & DevOps, Flutter Apps, Product Management
 - Industry Instructors & Mentors: Lead Software Architects, Senior AI Scientists, Design Leads, DevOps Specialists (authentic Bangladeshi names)
 - Community Coordinators: Student Success, Curriculum Director, Operations Lead
@@ -370,7 +369,7 @@ def build_100_learners():
     for idx, (name, email, domain, bio) in enumerate(LEARNERS_RAW_LIST):
         learner_id = f"CD-LRN-{1001 + idx:04d}"
         city = cities[idx % len(cities)]
-        learners.append((name, email, learner_id, domain, "Learner", "2024 Cohort", city, bio))
+        learners.append((name, email, learner_id, domain, city, bio))
     return learners
 
 
@@ -650,7 +649,7 @@ def seed() -> None:
         ]
 
         for item in all_learners_info:
-            name, email, learner_id, domain, prog, session, city, bio = item
+            name, email, learner_id, domain, city, bio = item
             parts = name.split(" ", 1)
             f_name = parts[0]
             l_name = parts[1] if len(parts) > 1 else ""
@@ -698,9 +697,7 @@ def seed() -> None:
             (
                 "Full-Stack Web Development Bootcamp (Next.js, Node.js & PostgreSQL)",
                 "Modern Full-Stack Web Architecture, Server Components, and Database Engineering",
-                "All Levels",
                 "Web Development",
-                "2024 Cohort",
                 ["asaduzzaman.nur@coursedesk.com", "enamul.hoque@coursedesk.com"],
                 cohort_web,
                 ["React", "Next.js", "Web", "ProjectBased"],
@@ -708,9 +705,7 @@ def seed() -> None:
             (
                 "Python for Data Science & Machine Learning Masterclass",
                 "Exploratory Data Analysis, Pandas, Scikit-Learn, and Deep Learning Models",
-                "Beginner to Advanced",
                 "Data Science & AI",
-                "2024 Cohort",
                 ["laila.banu@coursedesk.com", "tahmina.ferdous@coursedesk.com"],
                 cohort_ai,
                 ["Python", "MachineLearning", "DataScience", "ProjectBased"],
@@ -718,9 +713,7 @@ def seed() -> None:
             (
                 "Modern UI/UX Design with Figma: From Wireframing to Interactive Prototype",
                 "Design Systems, High-Fidelity UI Kits, Responsive Auto-Layouts, and Usability Testing",
-                "All Levels",
                 "UI/UX Design",
-                "2024 Cohort",
                 ["shahana.parveen@coursedesk.com"],
                 cohort_design,
                 ["Figma", "UIUX", "Design", "ProjectBased"],
@@ -728,9 +721,7 @@ def seed() -> None:
             (
                 "Practical Ethical Hacking & Web Application Penetration Testing",
                 "Hands-on Web Security, OWASP Top 10 Exploitation, Network Defense, and Security Auditing",
-                "Intermediate",
                 "Cybersecurity",
-                "2024 Cohort",
                 ["kamrul.ahsan@coursedesk.com"],
                 cohort_sec,
                 ["Security", "EthicalHacking", "PenTesting"],
@@ -738,9 +729,7 @@ def seed() -> None:
             (
                 "Cloud Engineering & DevOps with Docker, Kubernetes & AWS",
                 "Production Containerization, Cloud Infrastructure Deployment, and CI/CD Automation",
-                "Intermediate to Advanced",
                 "Cloud & DevOps",
-                "2024 Cohort",
                 ["asaduzzaman.nur@coursedesk.com", "enamul.hoque@coursedesk.com"],
                 cohort_devops,
                 ["DevOps", "Docker", "AWS", "Kubernetes"],
@@ -748,9 +737,7 @@ def seed() -> None:
             (
                 "Cross-Platform Mobile App Development with Flutter & Dart",
                 "Build, Test, and Deploy Native iOS and Android Applications from a Single Codebase",
-                "Beginner to Intermediate",
                 "Mobile App Development",
-                "2024 Cohort",
                 ["jahangir.alam@coursedesk.com"],
                 cohort_mobile,
                 ["Flutter", "Dart", "Mobile", "ProjectBased"],
@@ -758,9 +745,7 @@ def seed() -> None:
             (
                 "Product Management: Agile Roadmapping, Scrum & Growth Metrics",
                 "Customer Discovery, PRD Writing, Sprint Ceremonies, Product Analytics, and MVP Scoping",
-                "All Levels",
                 "Product Management",
-                "2024 Cohort",
                 ["rokeya.khandakar@coursedesk.com"],
                 cohort_pm,
                 ["Agile", "Scrum", "Product", "BeginnerFriendly"],
@@ -768,23 +753,19 @@ def seed() -> None:
             (
                 "Advanced Algorithms & Problem Solving for Technical Interviews",
                 "Data Structures Mastery, Dynamic Programming, Graph Traversal, and LeetCode Strategies",
-                "Advanced",
                 "Web Development",
-                "2024 Cohort",
                 ["zahidul.haque@coursedesk.com"],
                 cohort_algo,
                 ["Algorithms", "InterviewPrep", "DataStructures"],
             ),
         ]
 
-        for name, subject, level, category, session, inst_emails, l_cohort, tags in courses_specs:
+        for name, subject, category, inst_emails, l_cohort, tags in courses_specs:
             create_course(
                 CourseSchema(
                     name=name,
                     subject=subject,
-                    program=level,
                     department=category,
-                    session=session,
                     is_active=True,
                     tags=tags,
                     instructor_ids=[_email_id(db, e) for e in inst_emails],

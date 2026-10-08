@@ -4,9 +4,7 @@ from app.utils.dto import CamelModel
 class CourseSchema(CamelModel):
     name: str
     subject: str = ""
-    program: str = ""
     department: str = ""
-    session: str = ""
     is_active: bool = True
     instructor_ids: list[int] = []
     learner_ids: list[int] = []
@@ -19,9 +17,7 @@ class CourseResponseSchema(CamelModel):
     id: int
     name: str
     subject: str = ""
-    program: str = ""
     department: str = ""
-    session: str = ""
     is_active: bool = True
     tags: list[str] = []
     instructor_id: int | None = None

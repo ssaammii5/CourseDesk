@@ -4,9 +4,9 @@ export interface CourseDto {
     id: number;
     name: string;
     subject: string;
-    program: string;
+    program?: string;
     department: string;
-    session: string;
+    session?: string;
     isActive: boolean;
     instructorId?: number | null;
     instructorName?: string | null;
@@ -70,9 +70,7 @@ export function getCoursePeopleRequest(courseId: number): Promise<CoursePeopleDt
 export function createCourseRequest(payload: CoursePayload): Promise<CourseDto> {
     const bodyPayload = {
         ...payload,
-        program: payload.program || "",
         department: payload.department || "",
-        session: payload.session || "",
         instructorIds: payload.instructorIds || payload.teacherIds || [],
         learnerIds: payload.learnerIds || payload.studentIds || [],
     };
@@ -85,9 +83,7 @@ export function createCourseRequest(payload: CoursePayload): Promise<CourseDto> 
 export function updateCourseRequest(id: number, payload: CoursePayload): Promise<void> {
     const bodyPayload = {
         ...payload,
-        program: payload.program || "",
         department: payload.department || "",
-        session: payload.session || "",
         instructorIds: payload.instructorIds || payload.teacherIds || [],
         learnerIds: payload.learnerIds || payload.studentIds || [],
     };

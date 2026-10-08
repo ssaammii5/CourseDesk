@@ -200,8 +200,6 @@ export function CourseFormModal({
             department: department.trim(),
             isActive,
             tags: selectedTags,
-            program: course?.program ?? "",
-            session: course?.session ?? "",
             instructorIds: course?.instructorIds ?? [],
             learnerIds: course?.learnerIds ?? [],
             teacherIds: course?.teacherIds ?? course?.instructorIds ?? [],

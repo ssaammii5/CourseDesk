@@ -52,7 +52,7 @@ function mapCourseToEnrolled(c: CourseDto): EnrolledCourse {
     return {
         id: c.id,
         name: c.name,
-        sub: c.session || c.subject || undefined,
+        sub: c.department || c.subject || undefined,
         letter: letterOf(c.name),
         avatarClass: avatarClassFor(c.id),
     };

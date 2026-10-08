@@ -22,9 +22,7 @@ def serialize_course(course: CourseModel) -> CourseResponseSchema:
         id=course.id,
         name=course.name,
         subject=course.subject,
-        program=course.program,
         department=course.department,
-        session=course.session,
         is_active=course.is_active,
         tags=course.tags or [],
         instructor_id=first_instructor.id if first_instructor else None,
@@ -118,9 +116,7 @@ def create_course(body: CourseSchema, db: Session) -> CourseResponseSchema:
     course = CourseModel(
         name=body.name,
         subject=body.subject,
-        program=body.program,
         department=body.department,
-        session=body.session,
         is_active=body.is_active,
         tags=body.tags or [],
     )
@@ -162,9 +158,7 @@ def update_course(course_id: int, body: CourseSchema, db: Session) -> CourseResp
         raise HTTPException(404, detail="Course id is incorrect")
     course.name = body.name
     course.subject = body.subject
-    course.program = body.program
     course.department = body.department
-    course.session = body.session
     course.is_active = body.is_active
     course.tags = body.tags or []
     course.instructors = _fetch_users(body.instructor_ids or body.teacher_ids, db)

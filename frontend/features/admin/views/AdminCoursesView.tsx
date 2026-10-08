@@ -50,13 +50,11 @@ function mapCourseDtoToAdminCourse(dto: CourseDto): AdminCourse {
     return {
         id: dto.id,
         name: dto.name,
-        program: dto.program,
         department: dto.department,
         instructorIds: iIds,
         learnerIds: lIds,
         teacherIds: iIds,
         studentIds: lIds,
-        session: dto.session,
         isActive: dto.isActive,
         tags: dto.tags ?? [],
     };
@@ -192,9 +190,7 @@ export function AdminCoursesView() {
             const payload = {
                 name: data.name,
                 subject: "",
-                program: data.program,
                 department: data.department,
-                session: data.session,
                 isActive: data.isActive,
                 tags: data.tags ?? [],
                 instructorIds: instIds,
