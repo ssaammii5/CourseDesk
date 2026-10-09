@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+import logging
 import os
 
 from fastapi import FastAPI
@@ -38,125 +40,23 @@ from app.user.router import (
     user_routes,
 )
 
-from sqlalchemy import text
+logger = logging.getLogger("coursedesk")
 
-
-Base.metadata.create_all(engine)
-
-# Safe idempotent migration to ensure new instructor and learner columns exist
-try:
-    with engine.begin() as conn:
-        conn.execute(text("SET LOCAL lock_timeout = '2s';"))
-        conn.execute(text("""
-        ALTER TABLE academic_department_table ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
-    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
-    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
-    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
-    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS last_name VARCHAR NOT NULL DEFAULT '';
-    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
-    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS professional_headline VARCHAR NOT NULL DEFAULT '';
-    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS short_bio TEXT NOT NULL DEFAULT '';
-    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
-    ALTER TABLE instructor_details_table ADD COLUMN IF NOT EXISTS links JSON NOT NULL DEFAULT '[]';
-    
-    UPDATE instructor_details_table idt
-    SET 
-        first_name = CASE 
-            WHEN position(' ' in ut.name) > 0 THEN split_part(ut.name, ' ', 1)
-            ELSE ut.name
-        END,
-        last_name = CASE 
-            WHEN position(' ' in ut.name) > 0 THEN substring(ut.name from position(' ' in ut.name) + 1)
-            ELSE ''
-        END
-    FROM user_table ut
-    WHERE idt.user_id = ut.id AND (idt.first_name = '' OR idt.first_name IS NULL);
-
-    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS first_name VARCHAR NOT NULL DEFAULT '';
-    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS last_name VARCHAR NOT NULL DEFAULT '';
-    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS avatar TEXT NOT NULL DEFAULT '';
-    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS short_bio TEXT NOT NULL DEFAULT '';
-    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS timezone VARCHAR NOT NULL DEFAULT 'UTC';
-    ALTER TABLE learner_details_table ADD COLUMN IF NOT EXISTS links JSON NOT NULL DEFAULT '[]';
-
-    UPDATE learner_details_table ldt
-    SET 
-        first_name = CASE 
-            WHEN position(' ' in ut.name) > 0 THEN split_part(ut.name, ' ', 1)
-            ELSE ut.name
-        END,
-        last_name = CASE 
-            WHEN position(' ' in ut.name) > 0 THEN substring(ut.name from position(' ' in ut.name) + 1)
-            ELSE ''
-        END
-    FROM user_table ut
-    WHERE ldt.user_id = ut.id AND (ldt.first_name = '' OR ldt.first_name IS NULL);
-
-    UPDATE user_table ut
-    SET timezone = idt.timezone
-    FROM instructor_details_table idt
-    WHERE idt.user_id = ut.id AND idt.timezone IS NOT NULL AND idt.timezone != '' AND (ut.timezone = 'UTC' OR ut.timezone IS NULL);
-
-    UPDATE user_table ut
-    SET timezone = ldt.timezone
-    FROM learner_details_table ldt
-    WHERE ldt.user_id = ut.id AND ldt.timezone IS NOT NULL AND ldt.timezone != '' AND (ut.timezone = 'UTC' OR ut.timezone IS NULL);
-
-    -- Ensure email verification columns exist on user_table
-    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
-    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255);
-    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_expires_at_utc TIMESTAMP WITH TIME ZONE;
-    ALTER TABLE user_table ADD COLUMN IF NOT EXISTS email_verification_attempts INTEGER DEFAULT 0;
-    CREATE INDEX IF NOT EXISTS ix_user_table_email_verification_token ON user_table(email_verification_token);
-
-    -- Ensure coordinator_details_table exists
-    CREATE TABLE IF NOT EXISTS coordinator_details_table (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER UNIQUE REFERENCES user_table(id) ON DELETE CASCADE,
-        coordinator_id VARCHAR UNIQUE DEFAULT generate_base32_id('CRD', 6),
-        first_name VARCHAR NOT NULL DEFAULT '',
-        last_name VARCHAR NOT NULL DEFAULT '',
-        avatar TEXT NOT NULL DEFAULT '',
-        phone VARCHAR NOT NULL DEFAULT '',
-        short_bio TEXT NOT NULL DEFAULT '',
-        timezone VARCHAR NOT NULL DEFAULT 'UTC',
-        links JSON NOT NULL DEFAULT '[]'
-    );
-    CREATE INDEX IF NOT EXISTS ix_coordinator_details_table_coordinator_id ON coordinator_details_table(coordinator_id);
-
-    -- Stripe-style ID generator & columns for courses, assignments, submissions
-    CREATE OR REPLACE FUNCTION generate_stripe_id(prefix TEXT, len INT DEFAULT 10)
-    RETURNS TEXT AS $fn$
-    DECLARE
-        chars TEXT := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        result TEXT := '';
-        i INT;
-    BEGIN
-        FOR i IN 1..len LOOP
-            result := result || substr(chars, floor(random() * 62 + 1)::INT, 1);
-        END LOOP;
-        RETURN prefix || '_' || result;
-    END;
-    $fn$ LANGUAGE plpgsql;
-
-    ALTER TABLE course_table ADD COLUMN IF NOT EXISTS code VARCHAR(32);
-    CREATE UNIQUE INDEX IF NOT EXISTS ix_course_table_code ON course_table(code);
-    UPDATE course_table SET code = generate_stripe_id('crs', 10) WHERE code IS NULL OR code = '';
-
-    ALTER TABLE assignment_table ADD COLUMN IF NOT EXISTS code VARCHAR(32);
-    CREATE UNIQUE INDEX IF NOT EXISTS ix_assignment_table_code ON assignment_table(code);
-    UPDATE assignment_table SET code = generate_stripe_id('asg', 10) WHERE code IS NULL OR code = '';
-
-    ALTER TABLE submission_table ADD COLUMN IF NOT EXISTS code VARCHAR(32);
-    CREATE UNIQUE INDEX IF NOT EXISTS ix_submission_table_code ON submission_table(code);
-    UPDATE submission_table SET code = generate_stripe_id('sub', 10) WHERE code IS NULL OR code = '';
-    """))
-except Exception:
-    pass
-
+# Ensure static upload directory exists
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
-app = FastAPI(title="CourseDesk API")
+# Create tables in local/development environments
+Base.metadata.create_all(bind=engine)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting CourseDesk API...")
+    yield
+    logger.info("Shutting down CourseDesk API...")
+
+
+app = FastAPI(title="CourseDesk API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
