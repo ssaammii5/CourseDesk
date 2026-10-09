@@ -71,8 +71,19 @@ export interface AssignmentAttachmentDto {
     url: string | null;
 }
 
-export function getAssignmentsRequest(): Promise<AssignmentDto[]> {
-    return apiFetch<AssignmentDto[]>("/api/assignments", { method: "GET" });
+export interface GetAssignmentsParams {
+    courseId?: number;
+    limit?: number;
+    offset?: number;
+}
+
+export function getAssignmentsRequest(params?: GetAssignmentsParams): Promise<AssignmentDto[]> {
+    const query = new URLSearchParams();
+    if (params?.courseId !== undefined) query.set("course_id", String(params.courseId));
+    if (params?.limit !== undefined) query.set("limit", String(params.limit));
+    if (params?.offset !== undefined) query.set("offset", String(params.offset));
+    const qs = query.toString();
+    return apiFetch<AssignmentDto[]>(qs ? `/api/assignments?${qs}` : "/api/assignments", { method: "GET" });
 }
 
 export function getAssignmentRequest(id: number | string): Promise<AssignmentDto> {

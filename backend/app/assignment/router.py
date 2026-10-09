@@ -23,8 +23,14 @@ assignment_routes = APIRouter(prefix="/api/assignments", tags=["assignments"])
 
 
 @assignment_routes.get("", response_model=list[AssignmentResponseSchema], status_code=status.HTTP_200_OK)
-def get_all_assignments(db: DbSession, user: IsAuthenticated):
-    return controller.get_assignments(user, db)
+def get_all_assignments(
+    db: DbSession,
+    user: IsAuthenticated,
+    course_id: int | None = None,
+    limit: int | None = None,
+    offset: int | None = None,
+):
+    return controller.get_assignments(user, db, course_id=course_id, limit=limit, offset=offset)
 
 
 @assignment_routes.post("", status_code=status.HTTP_201_CREATED)

@@ -78,10 +78,14 @@ interface CategoryGroup {
     count: number;
 }
 
+const BATCH_SIZE = 50;
+
 export function AdminSubmissionsView() {
     const router = useRouter();
     const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [filtersOpen, setFiltersOpen] = useState(false);
@@ -89,21 +93,49 @@ export function AdminSubmissionsView() {
     const [courseFilter, setCourseFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
-    const loadSubmissions = useCallback(async () => {
+    const loadInitialSubmissions = useCallback(async () => {
         try {
+            setLoading(true);
             setError(null);
-            const dtos = await getSubmissionsRequest();
-            setSubmissions(dtos.map(mapDtoToRow));
+            const statusParam = statusFilter !== "all" ? statusFilter.toLowerCase() : undefined;
+            const dtos = await getSubmissionsRequest({
+                status: statusParam,
+                limit: BATCH_SIZE,
+                offset: 0,
+            });
+            const rows = dtos.map(mapDtoToRow);
+            setSubmissions(rows);
+            setHasMore(rows.length === BATCH_SIZE);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load submissions.");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [statusFilter]);
+
+    const handleLoadMore = async () => {
+        if (loadingMore || !hasMore) return;
+        try {
+            setLoadingMore(true);
+            const statusParam = statusFilter !== "all" ? statusFilter.toLowerCase() : undefined;
+            const dtos = await getSubmissionsRequest({
+                status: statusParam,
+                limit: BATCH_SIZE,
+                offset: submissions.length,
+            });
+            const newRows = dtos.map(mapDtoToRow);
+            setSubmissions((prev) => [...prev, ...newRows]);
+            setHasMore(newRows.length === BATCH_SIZE);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to load more submissions.");
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     useEffect(() => {
-        void loadSubmissions();
-    }, [loadSubmissions]);
+        void loadInitialSubmissions();
+    }, [loadInitialSubmissions]);
 
     const categoryOptions = useMemo(() => {
         return Array.from(new Set(submissions.map((s) => s.department).filter(Boolean))).sort();
@@ -406,6 +438,33 @@ export function AdminSubmissionsView() {
                     </section>
                 ))}
             </div>
+
+            {hasMore ? (
+                <div className="mt-10 flex flex-col items-center justify-center gap-3 pb-8">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                        Showing {submissions.length} loaded submissions
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none disabled:opacity-50 transition-colors"
+                    >
+                        {loadingMore ? (
+                            <>
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
+                                <span>Loading more submissions...</span>
+                            </>
+                        ) : (
+                            <span>Load More ({BATCH_SIZE} more)</span>
+                        )}
+                    </button>
+                </div>
+            ) : submissions.length > BATCH_SIZE ? (
+                <div className="mt-10 py-6 text-center text-xs text-gray-400 dark:text-slate-500">
+                    All {submissions.length} submissions loaded
+                </div>
+            ) : null}
         </div>
     );
 }

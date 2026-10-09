@@ -144,12 +144,14 @@ export function AdminLearnersView() {
     const [resendingId, setResendingId] = useState<number | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+    const [invitationsLoaded, setInvitationsLoaded] = useState(false);
+
     const loadUsers = async () => {
         try {
             setLoading(true);
             setError(null);
-            const all = await getUsersRequest();
-            setUsers(all.filter((u) => u.role === "Learner" || u.role === "Student").map(mapUserDtoToAdminUser));
+            const all = await getUsersRequest({ role: "Learner" });
+            setUsers(all.map(mapUserDtoToAdminUser));
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load learners.");
         } finally {
@@ -163,6 +165,7 @@ export function AdminLearnersView() {
             setLoadingInvitations(true);
             const invites = await getPendingLearnerInvitationsRequest();
             setPendingInvitations(invites);
+            setInvitationsLoaded(true);
         } catch (err) {
             console.error("Failed to load pending learner invitations", err);
         } finally {
@@ -172,10 +175,13 @@ export function AdminLearnersView() {
 
     useEffect(() => {
         void loadUsers();
-        if (!isCoordinator) {
+    }, []);
+
+    useEffect(() => {
+        if (tab === "invitations" && !isCoordinator && !invitationsLoaded) {
             void loadInvitations();
         }
-    }, [isCoordinator]);
+    }, [tab, isCoordinator, invitationsLoaded]);
 
     const filteredUsers = useMemo(() => {
         return users.filter((u) => {

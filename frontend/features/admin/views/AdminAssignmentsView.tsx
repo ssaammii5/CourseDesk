@@ -49,10 +49,14 @@ interface CategoryGroup {
     count: number;
 }
 
+const BATCH_SIZE = 50;
+
 export function AdminAssignmentsView() {
     const router = useRouter();
     const [assignments, setAssignments] = useState<AdminAssignment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [filtersOpen, setFiltersOpen] = useState(false);
@@ -60,11 +64,17 @@ export function AdminAssignmentsView() {
     const [courseFilter, setCourseFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
-    const loadAssignments = useCallback(async () => {
+    const loadInitialAssignments = useCallback(async () => {
         try {
+            setLoading(true);
             setError(null);
-            const dtos = await getAssignmentsRequest();
-            setAssignments(dtos.map(mapDtoToAdminAssignment));
+            const dtos = await getAssignmentsRequest({
+                limit: BATCH_SIZE,
+                offset: 0,
+            });
+            const rows = dtos.map(mapDtoToAdminAssignment);
+            setAssignments(rows);
+            setHasMore(rows.length === BATCH_SIZE);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load assignments.");
         } finally {
@@ -72,9 +82,27 @@ export function AdminAssignmentsView() {
         }
     }, []);
 
+    const handleLoadMore = async () => {
+        if (loadingMore || !hasMore) return;
+        try {
+            setLoadingMore(true);
+            const dtos = await getAssignmentsRequest({
+                limit: BATCH_SIZE,
+                offset: assignments.length,
+            });
+            const newRows = dtos.map(mapDtoToAdminAssignment);
+            setAssignments((prev) => [...prev, ...newRows]);
+            setHasMore(newRows.length === BATCH_SIZE);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to load more assignments.");
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
     useEffect(() => {
-        void loadAssignments();
-    }, [loadAssignments]);
+        void loadInitialAssignments();
+    }, [loadInitialAssignments]);
 
     const categoryOptions = useMemo(() => {
         return Array.from(new Set(assignments.map((a) => a.department).filter(Boolean))).sort();
@@ -342,6 +370,33 @@ export function AdminAssignmentsView() {
                     </section>
                 ))}
             </div>
+
+            {hasMore ? (
+                <div className="mt-10 flex flex-col items-center justify-center gap-3 pb-8">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                        Showing {assignments.length} loaded assignments
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none disabled:opacity-50 transition-colors"
+                    >
+                        {loadingMore ? (
+                            <>
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1a73e8] border-t-transparent" />
+                                <span>Loading more assignments...</span>
+                            </>
+                        ) : (
+                            <span>Load More ({BATCH_SIZE} more)</span>
+                        )}
+                    </button>
+                </div>
+            ) : assignments.length > BATCH_SIZE ? (
+                <div className="mt-10 py-6 text-center text-xs text-gray-400 dark:text-slate-500">
+                    All {assignments.length} assignments loaded
+                </div>
+            ) : null}
         </div>
     );
 }

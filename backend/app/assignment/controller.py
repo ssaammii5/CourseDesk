@@ -149,16 +149,27 @@ def _my_submission_status(assignment: AssignmentModel, user: UserModel) -> str |
     return "Assigned"
 
 
-def get_assignments(user: UserModel, db: Session) -> list[AssignmentResponseSchema]:
+def get_assignments(
+    user: UserModel,
+    db: Session,
+    course_id: int | None = None,
+    limit: int | None = None,
+    offset: int | None = None,
+) -> list[AssignmentResponseSchema]:
     stmt = _assignment_stmt()
-    if user.role in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
-        assignments = db.scalars(stmt).all()
-    else:
-        assignments = db.scalars(
-            stmt.where(
-                AssignmentModel.status == "Published",
-            )
-        ).all()
+    if course_id is not None:
+        stmt = stmt.where(AssignmentModel.course_id == course_id)
+    if user.role not in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
+        stmt = stmt.where(AssignmentModel.status == "Published")
+    
+    stmt = stmt.order_by(AssignmentModel.created_at_utc.desc())
+    if offset is not None:
+        stmt = stmt.offset(offset)
+    if limit is not None:
+        stmt = stmt.limit(limit)
+
+    assignments = db.scalars(stmt).all()
+    if user.role not in ("Admin", "Instructor", "Coordinator", "Co-ordinator"):
         assignments = [a for a in assignments if _is_assignment_assigned_to_user(a, user)]
     return [serialize_assignment(a, _my_submission_status(a, user)) for a in assignments]
 

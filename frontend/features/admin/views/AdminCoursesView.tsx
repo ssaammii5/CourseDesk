@@ -14,14 +14,16 @@ import {
     CheckCircle2,
     GraduationCap,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import type { AdminCourse } from "@/types";
 import { DataTable, StatusBadge, ConfirmDialog, ModernDropdown } from "@/components/ui";
-import { CourseFormModal } from "../components/CourseFormModal";
-import { CategoryFormModal } from "../components/AcademicFormModal";
-import { TagFormModal } from "../components/TagFormModal";
-import { CourseTagsModal } from "../components/CourseTagsModal";
-import { TagCoursesModal } from "../components/TagCoursesModal";
 import { useAuth } from "@/hooks/useAuth";
+
+const CourseFormModal = dynamic(() => import("../components/CourseFormModal").then((m) => m.CourseFormModal), { ssr: false });
+const CategoryFormModal = dynamic(() => import("../components/AcademicFormModal").then((m) => m.CategoryFormModal), { ssr: false });
+const TagFormModal = dynamic(() => import("../components/TagFormModal").then((m) => m.TagFormModal), { ssr: false });
+const CourseTagsModal = dynamic(() => import("../components/CourseTagsModal").then((m) => m.CourseTagsModal), { ssr: false });
+const TagCoursesModal = dynamic(() => import("../components/TagCoursesModal").then((m) => m.TagCoursesModal), { ssr: false });
 import {
     getCoursesRequest,
     createCourseRequest,
@@ -105,17 +107,11 @@ export function AdminCoursesView() {
         setTimeout(() => setSuccessMessage(null), 3500);
     };
 
-    const loadAllData = useCallback(async () => {
+    const loadCourses = useCallback(async () => {
         try {
             setError(null);
-            const [dtos, cats, tgs] = await Promise.all([
-                getCoursesRequest(),
-                getCategoriesRequest().catch(() => []),
-                getTagsRequest().catch(() => []),
-            ]);
+            const dtos = await getCoursesRequest();
             setCourses(dtos.map(mapCourseDtoToAdminCourse));
-            setCategories(cats);
-            setTags(tgs);
 
             const names: Record<number, string[]> = {};
             for (const d of dtos) {
@@ -129,9 +125,27 @@ export function AdminCoursesView() {
         }
     }, []);
 
+    const loadMetadata = useCallback(async () => {
+        try {
+            const [cats, tgs] = await Promise.all([
+                getCategoriesRequest().catch(() => []),
+                getTagsRequest().catch(() => []),
+            ]);
+            setCategories(cats);
+            setTags(tgs);
+        } catch {
+            // Non-fatal metadata background loading
+        }
+    }, []);
+
+    const loadAllData = useCallback(async () => {
+        await Promise.all([loadCourses(), loadMetadata()]);
+    }, [loadCourses, loadMetadata]);
+
     useEffect(() => {
-        void loadAllData();
-    }, [loadAllData]);
+        void loadCourses();
+        void loadMetadata();
+    }, [loadCourses, loadMetadata]);
 
     const departmentOptions = useMemo(() => {
         const fromCats = categories.map((c) => c.name);
