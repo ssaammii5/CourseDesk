@@ -284,12 +284,11 @@ export function LoginView() {
                         ========================================================================= */}
                     <div className="mt-5 rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/60 to-slate-50/60 p-3 sm:p-3.5 dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900/70">
                         <div className="flex items-center justify-between pb-2.5">
-                            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                                <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
                                 Demo Accounts
                             </span>
                             <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                                Click to fill <span className="text-slate-300 dark:text-slate-600">·</span> ⚡ Instant sign in
+                                Click to fill credentials
                             </span>
                         </div>
 
@@ -387,51 +386,18 @@ export function LoginView() {
                                                 {demoUser.icon}
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-xs font-semibold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-400 truncate">
-                                                        {demoUser.role}
-                                                    </span>
-                                                    {isSelected && (
-                                                        <CheckCircle2 className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
-                                                    )}
-                                                </div>
+                                                <span className="block text-xs font-semibold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-400 truncate">
+                                                    {demoUser.role}
+                                                </span>
                                                 <span className="block text-[10px] text-slate-500 transition-colors group-hover:text-slate-700 dark:text-slate-400 dark:group-hover:text-slate-200 truncate">
                                                     {demoUser.name}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setEmail(demoUser.email);
-                                                setPassword(demoUser.password);
-                                                setErrors({});
-                                                setFormError(null);
-                                                setShowOtpSection(false);
-                                                setLoading(true);
-                                                login(demoUser.email, demoUser.password)
-                                                    .then(() => router.push("/"))
-                                                    .catch((err) => {
-                                                        const msg =
-                                                            err instanceof Error && err.message
-                                                                ? err.message
-                                                                : "Sign in failed. Please try again.";
-                                                        setFormError(msg);
-                                                        setLoading(false);
-                                                    });
-                                            }}
-                                            disabled={loading}
-                                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition-all hover:scale-110 hover:bg-blue-600 hover:text-white dark:border dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-600 dark:hover:text-white active:scale-95"
-                                            title={`Instant sign in as ${demoUser.role}`}
-                                        >
-                                            {loading && isSelected ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
-                                            ) : (
-                                                <span className="text-[11px] font-bold leading-none">⚡</span>
-                                            )}
-                                        </button>
+                                        {isSelected && (
+                                            <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                        )}
                                     </div>
                                 );
                             })}
