@@ -33,8 +33,14 @@ def update_profile(body: UpdateProfileSchema, db: DbSession, user: IsAuthenticat
 
 
 @user_routes.get("", response_model=list[UserResponseSchema], status_code=status.HTTP_200_OK)
-def get_all_users(db: DbSession, _user: IsAdminOrCoordinator):
-    return controller.get_users(db)
+def get_all_users(
+    db: DbSession,
+    _user: IsAdminOrCoordinator,
+    role: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
+):
+    return controller.get_users(db, role=role, limit=limit, offset=offset)
 
 
 @user_routes.post("", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED)

@@ -69,8 +69,21 @@ export interface SubmitAssignmentPayload {
     answer: string;
 }
 
-export function getSubmissionsRequest(): Promise<SubmissionDto[]> {
-    return apiFetch<SubmissionDto[]>("/api/submissions", { method: "GET" });
+export interface GetSubmissionsParams {
+    courseId?: number | string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+}
+
+export function getSubmissionsRequest(params?: GetSubmissionsParams): Promise<SubmissionDto[]> {
+    const query = new URLSearchParams();
+    if (params?.courseId) query.set("course_id", String(params.courseId));
+    if (params?.status) query.set("status", params.status);
+    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.offset) query.set("offset", String(params.offset));
+    const qs = query.toString();
+    return apiFetch<SubmissionDto[]>(`/api/submissions${qs ? `?${qs}` : ""}`, { method: "GET" });
 }
 
 export function getSubmissionRequest(id: number | string): Promise<SubmissionDto> {

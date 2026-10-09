@@ -20,8 +20,13 @@ def get_all_submissions(
     db: DbSession,
     user: IsAuthenticated,
     course_id: str | int | None = None,
+    status: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
 ):
-    return controller.get_submissions(user, db, course_id=course_id)
+    return controller.get_submissions(
+        user, db, course_id=course_id, status=status, limit=limit, offset=offset
+    )
 
 
 @submission_routes.post("/grade-learner", response_model=SubmissionResponseSchema, status_code=status.HTTP_200_OK)

@@ -109,8 +109,19 @@ export interface UpdateUserPayload {
     coordinatorDetails?: CoordinatorDetails;
 }
 
-export function getUsersRequest(): Promise<UserDto[]> {
-    return apiFetch<UserDto[]>("/api/users", { method: "GET" });
+export interface GetUsersParams {
+    role?: string;
+    limit?: number;
+    offset?: number;
+}
+
+export function getUsersRequest(params?: GetUsersParams): Promise<UserDto[]> {
+    const query = new URLSearchParams();
+    if (params?.role) query.set("role", params.role);
+    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.offset) query.set("offset", String(params.offset));
+    const qs = query.toString();
+    return apiFetch<UserDto[]>(`/api/users${qs ? `?${qs}` : ""}`, { method: "GET" });
 }
 
 export function createUserRequest(payload: CreateUserPayload): Promise<UserDto> {

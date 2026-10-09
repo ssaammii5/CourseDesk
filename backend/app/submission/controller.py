@@ -58,7 +58,12 @@ def find_submission(submission_id_or_code: int | str, db: Session) -> Submission
 
 
 def get_submissions(
-    user: UserModel, db: Session, course_id: int | str | None = None
+    user: UserModel,
+    db: Session,
+    course_id: int | str | None = None,
+    status: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
 ) -> list[SubmissionResponseSchema]:
     stmt = _submission_stmt()
     if course_id is not None:
@@ -66,16 +71,27 @@ def get_submissions(
         if course:
             stmt = stmt.join(SubmissionModel.assignment).where(AssignmentModel.course_id == course.id)
 
+    if status:
+        if status.lower() == "pending":
+            stmt = stmt.where(SubmissionModel.status.in_(("Submitted", "Pending")))
+        else:
+            stmt = stmt.where(SubmissionModel.status == status)
+
     if user.role in ("Admin", "Coordinator", "Co-ordinator"):
-        submissions = db.scalars(stmt).all()
+        pass
     elif user.role == "Instructor":
-        submissions = db.scalars(
-            stmt.where(CourseModel.instructors.any(UserModel.id == user.id))
-        ).all()
+        stmt = stmt.where(CourseModel.instructors.any(UserModel.id == user.id))
     else:
-        submissions = db.scalars(
-            stmt.where(SubmissionModel.learner_id == user.id)
-        ).all()
+        stmt = stmt.where(SubmissionModel.learner_id == user.id)
+
+    stmt = stmt.order_by(SubmissionModel.created_at_utc.desc())
+
+    if offset > 0:
+        stmt = stmt.offset(offset)
+    if limit is not None and limit > 0:
+        stmt = stmt.limit(limit)
+
+    submissions = db.scalars(stmt).all()
     return [serialize_submission(s) for s in submissions]
 
 

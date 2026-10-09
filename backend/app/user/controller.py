@@ -185,14 +185,25 @@ def serialize_user(user: UserModel) -> UserResponseSchema:
     )
 
 
-def get_users(db: Session) -> list[UserResponseSchema]:
-    users = db.scalars(
-        select(UserModel).options(
-            selectinload(UserModel.learner_details),
-            selectinload(UserModel.instructor_details),
-            selectinload(UserModel.coordinator_details),
-        )
-    ).all()
+def get_users(
+    db: Session,
+    role: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
+) -> list[UserResponseSchema]:
+    stmt = select(UserModel).options(
+        selectinload(UserModel.learner_details),
+        selectinload(UserModel.instructor_details),
+        selectinload(UserModel.coordinator_details),
+    )
+    if role:
+        stmt = stmt.where(UserModel.role == role)
+    stmt = stmt.order_by(UserModel.id.desc())
+    if offset > 0:
+        stmt = stmt.offset(offset)
+    if limit is not None and limit > 0:
+        stmt = stmt.limit(limit)
+    users = db.scalars(stmt).all()
     return [serialize_user(u) for u in users]
 
 

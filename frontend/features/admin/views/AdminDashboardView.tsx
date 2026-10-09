@@ -34,6 +34,7 @@ export function AdminDashboardView() {
     const [users, setUsers] = useState<UserDto[]>([]);
     const [courses, setCourses] = useState<CourseDto[]>([]);
     const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
+    const [pendingSubmissions, setPendingSubmissions] = useState<SubmissionDto[]>([]);
 
     // Loading & Error States
     const [loading, setLoading] = useState(true);
@@ -55,7 +56,7 @@ export function AdminDashboardView() {
         return () => clearTimeout(timer);
     }, [toast]);
 
-    // Data Fetcher
+    // Data Fetcher - Production-Grade: Fetch aggregated stats + bounded preview datasets
     const fetchAllData = useCallback(async (isBackground = false) => {
         if (isBackground) {
             setIsRefreshing(true);
@@ -65,32 +66,26 @@ export function AdminDashboardView() {
         setError(null);
 
         try {
-            const [dashStats, allUsers, allCourses, allSubmissions] = await Promise.all([
+            const [dashStats, previewUsers, allCourses, recentSubmissions, urgentSubmissions] = await Promise.all([
                 getDashboardStatsRequest(),
-                getUsersRequest().catch(() => [] as UserDto[]),
+                getUsersRequest({ limit: 10 }).catch(() => [] as UserDto[]),
                 getCoursesRequest().catch(() => [] as CourseDto[]),
-                getSubmissionsRequest().catch(() => [] as SubmissionDto[]),
+                getSubmissionsRequest({ limit: 10 }).catch(() => [] as SubmissionDto[]),
+                getSubmissionsRequest({ status: "pending", limit: 5 }).catch(() => [] as SubmissionDto[]),
             ]);
 
             setStats(dashStats);
-            setUsers(allUsers);
+            setUsers(previewUsers);
             setCourses(allCourses);
-            setSubmissions(allSubmissions);
+            setSubmissions(recentSubmissions);
+            setPendingSubmissions(urgentSubmissions);
 
-            const activeCount = allUsers.filter((u) => u.isActive).length;
             setUserCounts({
-                total: allUsers.length || dashStats.totalUsers,
-                instructors:
-                    allUsers.filter((u) => u.role === "Instructor" || u.role === "Teacher").length ||
-                    dashStats.totalInstructors,
-                learners:
-                    allUsers.filter((u) => u.role === "Learner" || u.role === "Student").length ||
-                    dashStats.totalLearners,
-                coordinators:
-                    allUsers.filter((u) => u.role === "Coordinator" || (u.role as string) === "Co-ordinator").length ||
-                    dashStats.totalCoordinators ||
-                    0,
-                activeUsers: activeCount || dashStats.activeUsers,
+                total: dashStats.totalUsers,
+                instructors: dashStats.totalInstructors,
+                learners: dashStats.totalLearners,
+                coordinators: dashStats.totalCoordinators ?? 0,
+                activeUsers: dashStats.activeUsers,
             });
 
             setLastUpdated(new Date());
@@ -203,9 +198,10 @@ export function AdminDashboardView() {
     }
 
     // Pending submissions awaiting review
-    const pendingSubmissionsList = submissions.filter(
-        (s) => s.status === "Submitted" || s.status === "Pending"
-    );
+    const pendingSubmissionsList =
+        pendingSubmissions.length > 0
+            ? pendingSubmissions
+            : submissions.filter((s) => s.status === "Submitted" || s.status === "Pending");
 
     return (
         <div className="mx-auto w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 space-y-8">
