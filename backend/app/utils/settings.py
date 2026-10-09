@@ -23,7 +23,15 @@ class Settings(BaseSettings):
     # App & Storage Configuration
     ALLOWED_ORIGINS: str
     FRONTEND_URL: str
-    UPLOAD_DIR: str
+    UPLOAD_DIR: str = "uploads"
+
+    # Cloudflare R2 Storage Configuration
+    STORAGE_PROVIDER: str = "r2"  # "r2" or "local"
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = ""
+    R2_PUBLIC_URL: str = ""
 
     # Email Service Configuration (Resend)
     RESEND_API_KEY: str = ""

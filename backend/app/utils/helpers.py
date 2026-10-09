@@ -130,17 +130,16 @@ IsAdminOrCoordinator = Annotated[UserModel, Depends(is_admin_or_coordinator)]
 IsAdminOrInstructorOrCoordinator = Annotated[UserModel, Depends(is_admin_or_instructor_or_coordinator)]
 
 
-def human_readable_size(num_bytes: int) -> str:
-    size = float(num_bytes)
-    for unit in ("B", "KB", "MB", "GB"):
-        if size < 1024 or unit == "GB":
-            return f"{int(size)} {unit}" if unit == "B" else f"{size:.1f} {unit}"
-        size /= 1024
-    return f"{size:.1f} GB"
+from app.utils.storage import (  # noqa: E402
+    delete_from_r2,
+    human_readable_size,
+    is_r2_configured,
+    upload_to_r2,
+)
 
 
-def save_upload_file(file: UploadFile, subdir: str, max_size_bytes: int = 50 * 1024 * 1024) -> tuple[str, str, str]:
-    """Persist an uploaded file to disk securely. Returns (url, file_type, file_size)."""
+def save_upload_file_local(file: UploadFile, subdir: str, max_size_bytes: int = 50 * 1024 * 1024) -> tuple[str, str, str]:
+    """Persist an uploaded file to local disk securely. Returns (url, file_type, file_size)."""
     clean_subdir = os.path.normpath(subdir).lstrip("/\\")
     base_upload_dir = os.path.abspath(settings.UPLOAD_DIR)
     target_dir = os.path.abspath(os.path.join(base_upload_dir, clean_subdir))
@@ -185,3 +184,13 @@ def save_upload_file(file: UploadFile, subdir: str, max_size_bytes: int = 50 * 1
     
     file_type = (ext.lstrip(".") or "FILE").upper()
     return f"/uploads/{clean_subdir}/{unique_name}", file_type, human_readable_size(total_read)
+
+
+def save_upload_file(file: UploadFile, subdir: str, max_size_bytes: int = 50 * 1024 * 1024) -> tuple[str, str, str]:
+    """Persist an uploaded file to storage (Cloudflare R2 or local disk fallback).
+    
+    Returns (url, file_type, file_size).
+    """
+    if getattr(settings, "STORAGE_PROVIDER", "r2") == "r2" and is_r2_configured():
+        return upload_to_r2(file, subdir, max_size_bytes)
+    return save_upload_file_local(file, subdir, max_size_bytes)
