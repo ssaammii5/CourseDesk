@@ -656,13 +656,13 @@ export function LoginView() {
 
                     {/* Legal */}
                     <div className="mt-10 flex items-center justify-center gap-2 text-xs text-gray-700 dark:text-slate-500">
-                        <a href="#" className="hover:underline">
+                        <Link href="/privacy" className="transition-colors hover:text-blue-600 hover:underline dark:hover:text-blue-400">
                             Privacy Policy
-                        </a>
+                        </Link>
                         <span>•</span>
-                        <a href="#" className="hover:underline">
+                        <Link href="/terms" className="transition-colors hover:text-blue-600 hover:underline dark:hover:text-blue-400">
                             Terms of Service
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>

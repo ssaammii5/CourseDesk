@@ -3,7 +3,6 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-    Sparkles,
     Shield,
     Plus,
     UserPlus,
@@ -75,10 +74,7 @@ export function AdminHeroHeader({
                     <div className="flex flex-wrap items-center gap-2.5">
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/70 bg-blue-100/70 px-3 py-1 text-xs font-semibold text-blue-800 backdrop-blur-md dark:border-blue-800/80 dark:bg-blue-950/80 dark:text-blue-300">
                             {isCoordinator ? (
-                                <>
-                                    <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                                    Coordinator Workspace
-                                </>
+                                "Coordinator Workspace"
                             ) : (
                                 <>
                                     <Shield className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
