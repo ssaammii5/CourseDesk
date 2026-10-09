@@ -93,13 +93,13 @@ export function AdminUrgentQueue({ pendingCount, pendingSubmissions }: AdminUrge
                                     key={sub.id}
                                     type="button"
                                     onClick={() => router.push(`/submissions/${sub.code || sub.id}`)}
-                                    className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-medium text-slate-800 shadow-xs transition-colors hover:bg-amber-100 hover:text-amber-900 dark:bg-slate-850 dark:text-slate-200 dark:hover:bg-amber-950/60"
+                                    className="group inline-flex cursor-pointer items-center gap-2 rounded-lg border border-transparent bg-white/90 px-2.5 py-1 text-xs font-medium text-slate-800 shadow-xs transition-colors hover:border-amber-300 hover:bg-amber-100 hover:text-amber-900 dark:border-slate-800 dark:bg-slate-800/90 dark:text-slate-200 dark:hover:border-amber-800/60 dark:hover:bg-amber-950/70 dark:hover:text-amber-200"
                                 >
                                     <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                                     <span className="font-semibold">{name}</span>
                                     <span className="text-slate-400 dark:text-slate-500">•</span>
-                                    <span className="max-w-[140px] truncate text-slate-600 dark:text-slate-400">{title}</span>
-                                    <span className="text-amber-600 font-semibold dark:text-amber-400 text-[10px]">Grade →</span>
+                                    <span className="max-w-[140px] truncate text-slate-600 transition-colors group-hover:text-amber-800 dark:text-slate-400 dark:group-hover:text-amber-300">{title}</span>
+                                    <span className="text-amber-600 font-semibold transition-transform group-hover:translate-x-0.5 dark:text-amber-400 text-[10px]">Grade →</span>
                                 </button>
                             );
                         })}

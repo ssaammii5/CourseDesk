@@ -61,11 +61,11 @@ function MetricCard({
         <button
             type="button"
             onClick={onClick}
-            className="group relative flex w-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-slate-700"
+            className="group relative flex w-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-slate-700 dark:hover:bg-slate-800/80 dark:hover:shadow-2xl dark:hover:shadow-slate-950/60"
         >
             {/* Ambient subtle glow backdrop */}
             <div
-                className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 ${accentGlow}`}
+                className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40 dark:opacity-15 dark:group-hover:opacity-35 ${accentGlow}`}
             />
 
             <div>
@@ -92,14 +92,14 @@ function MetricCard({
                     <p className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                         {value.toLocaleString()}
                     </p>
-                    <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    <p className="mt-1 text-sm font-medium text-slate-600 transition-colors group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-slate-200">
                         {title}
                     </p>
                 </div>
             </div>
 
             {/* Bottom Sublabel / Trend micro-bar */}
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 transition-colors group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300">
                 <span className="truncate">{sublabel}</span>
                 <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-400 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:text-blue-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 dark:text-slate-500 dark:group-hover:text-blue-400" />
             </div>

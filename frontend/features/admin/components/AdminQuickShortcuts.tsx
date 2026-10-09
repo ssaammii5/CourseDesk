@@ -111,22 +111,22 @@ export function AdminQuickShortcuts({ isCoordinator }: AdminQuickShortcutsProps)
                         key={item.title}
                         type="button"
                         onClick={() => router.push(item.href)}
-                        className="group flex cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-slate-700"
+                        className="group flex cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-slate-700 dark:hover:bg-slate-800/80 dark:hover:shadow-xl dark:hover:shadow-slate-950/40"
                     >
                         <div className="flex items-start justify-between">
-                            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconBg}`}>
+                            <div className={`flex h-11 w-11 items-center justify-center rounded-xl shadow-xs transition-transform duration-200 group-hover:scale-105 ${item.iconBg}`}>
                                 {item.icon}
                             </div>
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 dark:text-slate-500">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:text-blue-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 dark:text-slate-500 dark:group-hover:text-blue-400">
                                 <ArrowUpRight className="h-4 w-4" />
                             </span>
                         </div>
 
                         <div className="mt-4">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                            <h3 className="text-sm font-bold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-400">
                                 {item.title}
                             </h3>
-                            <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+                            <p className="mt-1 line-clamp-2 text-xs text-slate-500 transition-colors group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300">
                                 {item.description}
                             </p>
                         </div>

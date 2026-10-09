@@ -152,9 +152,9 @@ export function AdminHeroHeader({
                     <button
                         type="button"
                         onClick={onOpenInviteUser}
-                        className="inline-flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95 shrink-0"
+                        className="group inline-flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white active:scale-95 shrink-0"
                     >
-                        <UserPlus className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                        <UserPlus className="h-4 w-4 shrink-0 text-slate-500 transition-colors group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white" />
                         <span>Invite User</span>
                     </button>
 
@@ -162,9 +162,9 @@ export function AdminHeroHeader({
                     <button
                         type="button"
                         onClick={() => router.push("/assignments")}
-                        className="inline-flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95 shrink-0"
+                        className="group inline-flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 sm:px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white active:scale-95 shrink-0"
                     >
-                        <FilePlus2 className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                        <FilePlus2 className="h-4 w-4 shrink-0 text-slate-500 transition-colors group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white" />
                         <span>Assignments</span>
                     </button>
 
@@ -175,9 +175,9 @@ export function AdminHeroHeader({
                             onClick={() => router.push("/app-settings")}
                             aria-label="Platform Settings"
                             title="Platform Settings"
-                            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 active:scale-95 shrink-0"
+                            className="group inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white active:scale-95 shrink-0"
                         >
-                            <Settings className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                            <Settings className="h-4 w-4 shrink-0 text-slate-500 transition-colors group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white" />
                         </button>
                     )}
                 </div>

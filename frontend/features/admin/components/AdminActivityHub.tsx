@@ -123,7 +123,7 @@ export function AdminActivityHub({
                         className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                             activeTab === "submissions"
                                 ? "bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-slate-100"
-                                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                : "text-slate-600 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
                         }`}
                     >
                         <FileText className="h-3.5 w-3.5 text-rose-500" />
@@ -142,7 +142,7 @@ export function AdminActivityHub({
                         className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                             activeTab === "courses"
                                 ? "bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-slate-100"
-                                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                : "text-slate-600 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
                         }`}
                     >
                         <BookOpen className="h-3.5 w-3.5 text-amber-500" />
@@ -161,7 +161,7 @@ export function AdminActivityHub({
                         className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                             activeTab === "users"
                                 ? "bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-slate-100"
-                                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                : "text-slate-600 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
                         }`}
                     >
                         <Users className="h-3.5 w-3.5 text-blue-500" />
@@ -175,14 +175,14 @@ export function AdminActivityHub({
                 {/* Sub-Filters / Search */}
                 <div className="flex items-center gap-2.5">
                     {activeTab === "submissions" && (
-                        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/50 p-1 dark:border-slate-800 dark:bg-slate-850">
+                        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/50 p-1 dark:border-slate-800 dark:bg-slate-800/80">
                             <button
                                 type="button"
                                 onClick={() => setSubmissionFilter("all")}
                                 className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                                     submissionFilter === "all"
                                         ? "bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-slate-100"
-                                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                        : "text-slate-600 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
                                 }`}
                             >
                                 All
@@ -193,7 +193,7 @@ export function AdminActivityHub({
                                 className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                                     submissionFilter === "pending"
                                         ? "bg-white text-amber-700 shadow-xs dark:bg-slate-700 dark:text-amber-300"
-                                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                        : "text-slate-600 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
                                 }`}
                             >
                                 Needs Review
@@ -204,7 +204,7 @@ export function AdminActivityHub({
                                 className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                                     submissionFilter === "graded"
                                         ? "bg-white text-emerald-700 shadow-xs dark:bg-slate-700 dark:text-emerald-300"
-                                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                        : "text-slate-600 hover:bg-white/60 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
                                 }`}
                             >
                                 Graded
@@ -220,7 +220,7 @@ export function AdminActivityHub({
                             placeholder="Search..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-36 rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 transition-all placeholder:text-slate-400 focus:w-48 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-44"
+                            className="w-36 rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 transition-all placeholder:text-slate-400 hover:border-slate-300 focus:w-48 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 sm:w-44"
                         />
                     </div>
                 </div>
@@ -249,7 +249,7 @@ export function AdminActivityHub({
                                     return (
                                         <div
                                             key={sub.id}
-                                            className="group flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-850/60 rounded-xl px-3"
+                                            className="group flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/60 rounded-xl px-3"
                                         >
                                             {/* Learner & Assignment Details */}
                                             <div className="flex items-center gap-3.5 min-w-0">
@@ -301,10 +301,10 @@ export function AdminActivityHub({
                                                 <button
                                                     type="button"
                                                     onClick={() => router.push(`/submissions/${sub.code || sub.id}`)}
-                                                    className={`cursor-pointer inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                                                    className={`cursor-pointer inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all shadow-xs active:scale-95 ${
                                                         isPending
                                                             ? "bg-amber-600 text-white hover:bg-amber-700"
-                                                            : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                                            : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white"
                                                     }`}
                                                 >
                                                     <span>{isPending ? "Grade" : "Review"}</span>
@@ -347,7 +347,7 @@ export function AdminActivityHub({
                                     <div
                                         key={c.id}
                                         onClick={() => router.push(`/courses?courseId=${c.id}`)}
-                                        className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-4.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-850 dark:hover:border-slate-700"
+                                        className="group cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-4.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-800/80 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:shadow-lg dark:hover:shadow-slate-950/40"
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
@@ -414,7 +414,7 @@ export function AdminActivityHub({
                                     return (
                                         <div
                                             key={u.id}
-                                            className="flex items-center justify-between py-3.5 px-3 rounded-xl transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-850/60"
+                                            className="flex items-center justify-between py-3.5 px-3 rounded-xl transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/60"
                                         >
                                             <div className="flex items-center gap-3.5 min-w-0">
                                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-sm">
