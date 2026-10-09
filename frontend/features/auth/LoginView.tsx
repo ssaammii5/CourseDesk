@@ -277,6 +277,170 @@ export function LoginView() {
                         </div>
                     )}
 
+                    {/* =========================================================================
+                        🚀 DISPOSABLE PORTFOLIO CODE: Demo Role Quick Switcher
+                        Purpose: 1-click user switch between Admin, Coordinator, Instructor, Learner
+                        To remove later: Simply delete this entire demarcated block
+                        ========================================================================= */}
+                    <div className="mt-5 rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/60 to-slate-50/60 p-3 sm:p-3.5 dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900/70">
+                        <div className="flex items-center justify-between pb-2.5">
+                            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
+                                <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                Demo Accounts
+                            </span>
+                            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                                Click to fill <span className="text-slate-300 dark:text-slate-600">·</span> ⚡ Instant sign in
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            {[
+                                {
+                                    role: "Admin",
+                                    name: "Mostafa Kamal",
+                                    email: "admin@coursedesk.com",
+                                    password: "Admin@123",
+                                    badgeBg: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border dark:border-indigo-800/50",
+                                    icon: (
+                                        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                            <path d="m9 12 2 2 4-4" />
+                                        </svg>
+                                    ),
+                                },
+                                {
+                                    role: "Coordinator",
+                                    name: "Dr. Shamsul Huda",
+                                    email: "shamsul.huda@coursedesk.com",
+                                    password: "Coordinator@123",
+                                    badgeBg: "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 dark:border dark:border-sky-800/50",
+                                    icon: (
+                                        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                            <circle cx="9" cy="7" r="4" />
+                                            <polyline points="16 11 18 13 22 9" />
+                                        </svg>
+                                    ),
+                                },
+                                {
+                                    role: "Instructor",
+                                    name: "Dr. Asaduzzaman",
+                                    email: "asaduzzaman.nur@coursedesk.com",
+                                    password: "Instructor@123",
+                                    badgeBg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border dark:border-emerald-800/50",
+                                    icon: (
+                                        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+                                            <path d="M22 10v6" />
+                                            <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+                                        </svg>
+                                    ),
+                                },
+                                {
+                                    role: "Learner",
+                                    name: "Shakil Mahmud",
+                                    email: "shakil.mahmud@coursedesk.com",
+                                    password: "Learner@123",
+                                    badgeBg: "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 dark:border dark:border-amber-800/50",
+                                    icon: (
+                                        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                                        </svg>
+                                    ),
+                                },
+                            ].map((demoUser) => {
+                                const isSelected = email === demoUser.email;
+                                return (
+                                    <div
+                                        key={demoUser.role}
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => {
+                                            setEmail(demoUser.email);
+                                            setPassword(demoUser.password);
+                                            setErrors({});
+                                            setFormError(null);
+                                            setShowOtpSection(false);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                setEmail(demoUser.email);
+                                                setPassword(demoUser.password);
+                                                setErrors({});
+                                                setFormError(null);
+                                                setShowOtpSection(false);
+                                            }
+                                        }}
+                                        className={`group relative flex items-center justify-between rounded-xl border p-2 text-left transition-all cursor-pointer ${
+                                            isSelected
+                                                ? "border-blue-600 bg-white shadow-sm ring-2 ring-blue-500/25 dark:border-blue-500 dark:bg-slate-800 dark:ring-blue-500/30 dark:shadow-sm dark:shadow-blue-500/10"
+                                                : "border-slate-200/90 bg-white/80 hover:border-blue-400 hover:bg-white hover:shadow-sm dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-blue-500/60 dark:hover:bg-slate-800 dark:hover:shadow-sm"
+                                        }`}
+                                        title={`Select ${demoUser.role} (${demoUser.name})`}
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0 pr-1">
+                                            <div
+                                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105 ${demoUser.badgeBg}`}
+                                            >
+                                                {demoUser.icon}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-xs font-semibold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-400 truncate">
+                                                        {demoUser.role}
+                                                    </span>
+                                                    {isSelected && (
+                                                        <CheckCircle2 className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                                                    )}
+                                                </div>
+                                                <span className="block text-[10px] text-slate-500 transition-colors group-hover:text-slate-700 dark:text-slate-400 dark:group-hover:text-slate-200 truncate">
+                                                    {demoUser.name}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEmail(demoUser.email);
+                                                setPassword(demoUser.password);
+                                                setErrors({});
+                                                setFormError(null);
+                                                setShowOtpSection(false);
+                                                setLoading(true);
+                                                login(demoUser.email, demoUser.password)
+                                                    .then(() => router.push("/"))
+                                                    .catch((err) => {
+                                                        const msg =
+                                                            err instanceof Error && err.message
+                                                                ? err.message
+                                                                : "Sign in failed. Please try again.";
+                                                        setFormError(msg);
+                                                        setLoading(false);
+                                                    });
+                                            }}
+                                            disabled={loading}
+                                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600 transition-all hover:scale-110 hover:bg-blue-600 hover:text-white dark:border dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-600 dark:hover:text-white active:scale-95"
+                                            title={`Instant sign in as ${demoUser.role}`}
+                                        >
+                                            {loading && isSelected ? (
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                            ) : (
+                                                <span className="text-[11px] font-bold leading-none">⚡</span>
+                                            )}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    {/* =========================================================================
+                        🚀 END DISPOSABLE PORTFOLIO CODE
+                        ========================================================================= */}
+
                     {/* ---------- Integrated 6-Digit OTP Verification Section ---------- */}
                     {showOtpSection ? (
                         <div className="mt-6 rounded-2xl border-2 border-blue-200 bg-blue-50/50 p-5 dark:border-blue-900/60 dark:bg-blue-950/20 animate-in fade-in zoom-in-95 space-y-4">
@@ -395,11 +559,11 @@ export function LoginView() {
                         {/* Email */}
                         <div>
                             <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] px-4 py-3 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${
-                                    errors.email ? "ring-2 ring-[#c5221f]" : ""
+                                className={`group flex cursor-text items-center gap-3 rounded-lg border border-transparent bg-[#e8eaed] px-4 py-3 transition-all hover:border-gray-300 hover:bg-[#dfe1e5] focus-within:!border-[#1a73e8] focus-within:!bg-[#e8eaed] focus-within:ring-2 focus-within:ring-[#1a73e8]/20 dark:border-slate-700/60 dark:bg-slate-800 dark:hover:border-slate-600 dark:hover:bg-slate-700/70 dark:focus-within:!border-blue-500 dark:focus-within:!bg-slate-800 dark:focus-within:ring-2 dark:focus-within:ring-blue-500/30 ${
+                                    errors.email ? "!border-[#c5221f] !ring-2 !ring-[#c5221f]/20" : ""
                                 }`}
                             >
-                                <Mail className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
+                                <Mail className="h-5 w-5 shrink-0 text-gray-600 transition-colors group-hover:text-gray-900 group-focus-within:text-[#1a73e8] dark:text-slate-400 dark:group-hover:text-slate-200 dark:group-focus-within:text-blue-400" />
                                 <input
                                     type="email"
                                     value={email}
@@ -409,7 +573,7 @@ export function LoginView() {
                                         setEmail(e.target.value);
                                         clearError("email");
                                     }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
+                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500 [color-scheme:light] dark:[color-scheme:dark]"
                                 />
                             </label>
                             {errors.email && (
@@ -420,11 +584,11 @@ export function LoginView() {
                         {/* Password */}
                         <div>
                             <label
-                                className={`flex items-center gap-3 rounded-lg bg-[#e8eaed] py-3 pl-4 pr-2 transition-shadow focus-within:ring-2 focus-within:ring-[#1a73e8] dark:bg-slate-800 ${
-                                    errors.password ? "ring-2 ring-[#c5221f]" : ""
+                                className={`group flex cursor-text items-center gap-3 rounded-lg border border-transparent bg-[#e8eaed] py-3 pl-4 pr-2 transition-all hover:border-gray-300 hover:bg-[#dfe1e5] focus-within:!border-[#1a73e8] focus-within:!bg-[#e8eaed] focus-within:ring-2 focus-within:ring-[#1a73e8]/20 dark:border-slate-700/60 dark:bg-slate-800 dark:hover:border-slate-600 dark:hover:bg-slate-700/70 dark:focus-within:!border-blue-500 dark:focus-within:!bg-slate-800 dark:focus-within:ring-2 dark:focus-within:ring-blue-500/30 ${
+                                    errors.password ? "!border-[#c5221f] !ring-2 !ring-[#c5221f]/20" : ""
                                 }`}
                             >
-                                <Lock className="h-5 w-5 shrink-0 text-gray-700 dark:text-slate-400" />
+                                <Lock className="h-5 w-5 shrink-0 text-gray-600 transition-colors group-hover:text-gray-900 group-focus-within:text-[#1a73e8] dark:text-slate-400 dark:group-hover:text-slate-200 dark:group-focus-within:text-blue-400" />
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
@@ -434,12 +598,12 @@ export function LoginView() {
                                         setPassword(e.target.value);
                                         clearError("password");
                                     }}
-                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500"
+                                    className="w-full bg-transparent text-[15px] text-gray-900 placeholder:text-gray-600 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-500 [color-scheme:light] dark:[color-scheme:dark]"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword((v) => !v)}
-                                    className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] hover:underline dark:text-blue-400"
+                                    className="shrink-0 cursor-pointer px-2 text-xs font-semibold tracking-wider text-[#1a73e8] transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                                 >
                                     {showPassword ? "HIDE" : "SHOW"}
                                 </button>
@@ -486,18 +650,18 @@ export function LoginView() {
 
                         {/* Remember / forgot */}
                         <div className="flex items-center justify-between">
-                            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800 dark:text-slate-300">
+                            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800 transition-colors hover:text-gray-900 dark:text-slate-300 dark:hover:text-slate-100">
                                 <input
                                     type="checkbox"
                                     checked={remember}
                                     onChange={(e) => setRemember(e.target.checked)}
-                                    className="h-4 w-4 accent-[#1a73e8]"
+                                    className="h-4 w-4 rounded accent-[#1a73e8] dark:accent-blue-500"
                                 />
                                 Remember me
                             </label>
                             <Link
                                 href="/forgot-password"
-                                className="text-sm font-medium text-[#1a73e8] hover:underline dark:text-blue-400"
+                                className="text-sm font-medium text-[#1a73e8] transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                             >
                                 Forgot Password?
                             </Link>
@@ -507,7 +671,7 @@ export function LoginView() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1554b5] disabled:cursor-default disabled:opacity-70 dark:bg-blue-600 dark:hover:bg-blue-500"
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#1a63d8] py-3 text-sm font-semibold text-white transition-all hover:bg-[#1554b5] hover:shadow-lg hover:shadow-blue-600/25 active:scale-[0.99] disabled:cursor-default disabled:opacity-70 dark:bg-blue-600 dark:hover:bg-blue-500 dark:hover:shadow-blue-500/25"
                         >
                             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                             {loading ? "Signing in…" : "Sign in"}
@@ -518,7 +682,7 @@ export function LoginView() {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600 dark:text-slate-400">
                             Don&apos;t have an account?{" "}
-                            <Link href="/signup" className="font-medium text-[#1a73e8] hover:underline dark:text-blue-400">
+                            <Link href="/signup" className="font-medium text-[#1a73e8] transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300">
                                 Create account
                             </Link>
                         </p>

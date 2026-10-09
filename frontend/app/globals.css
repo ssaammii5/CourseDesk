@@ -11,6 +11,28 @@ body {
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
+  /* Browser autofill nightmode and lightmode styling resets */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #e8eaed inset !important;
+    -webkit-text-fill-color: #111827 !important;
+    caret-color: #111827 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  :where(.dark, .dark *) input:-webkit-autofill,
+  :where(.dark, .dark *) input:-webkit-autofill:hover,
+  :where(.dark, .dark *) input:-webkit-autofill:focus,
+  :where(.dark, .dark *) input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #1e293b inset !important;
+    -webkit-text-fill-color: #f1f5f9 !important;
+    caret-color: #f1f5f9 !important;
+    color-scheme: dark;
+    transition: background-color 5000s ease-in-out 0s;
+  }
 }
 
 @layer utilities {
